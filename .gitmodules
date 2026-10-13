@@ -1,0 +1,4 @@
+[submodule "external/mtk3_bsp"]
+	path = external/mtk3_bsp
+	url = https://github.com/tron-forum/mtk3_bsp.git
+	branch = pico_rp2040
