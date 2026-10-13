@@ -1,0 +1,17 @@
+# Build trees
+build/
+build-*/
+
+# Local secrets (copy config/secrets.h.example)
+config/secrets.h
+
+# Firmware outputs (only if someone builds in-tree)
+*.uf2
+*.elf
+*.bin
+*.hex
+*.map
+*.dis
+
+# Agent working files (plans, reviews, reports)
+.agents/
