@@ -1,7 +1,6 @@
 # Notice
 
-<!-- TODO(owner-to-confirm): check this attribution wording against the method
-     published by TRON Forum (tron.org) for T-License 2.2, Article 3(6). -->
+owner: 16
 
 This product uses the source code of micro T-Kernel 3.0 BSP (uT-Kernel 3.0
 BSP, branch `pico_rp2040`) released by TRON Forum (https://www.tron.org),
