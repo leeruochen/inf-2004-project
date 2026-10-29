@@ -101,6 +101,9 @@ set(ROBOCAR_MODULE_DIRS common rtos debug motion vc safety line barcode obstacle
 
 # Fail on any sources.cmake that would be silently ignored: only
 # src/<listed module>/sources.cmake is registered.
+# ProjectTemplate/ (course template, tracked as reference only) is never
+# scanned or built: its matches are dropped before the check.
+set(ROBOCAR_NEVER_SCAN_REGEX "^ProjectTemplate/")
 set(_registered "")
 foreach(_dir IN LISTS ROBOCAR_MODULE_DIRS)
     list(APPEND _registered "${ROBOCAR_SRC_DIR}/${_dir}/sources.cmake")
@@ -111,9 +114,12 @@ if(IS_DIRECTORY "${ROBOCAR_SRC_DIR}")
     file(GLOB_RECURSE _found_src "${ROBOCAR_SRC_DIR}/sources.cmake")
 endif()
 foreach(_f IN LISTS _found_top _found_src)
+    file(RELATIVE_PATH _rel "${PROJECT_SOURCE_DIR}" "${_f}")
+    if(_rel MATCHES "${ROBOCAR_NEVER_SCAN_REGEX}")
+        continue()
+    endif()
     list(FIND _registered "${_f}" _idx)
     if(_idx EQUAL -1)
-        file(RELATIVE_PATH _rel "${PROJECT_SOURCE_DIR}" "${_f}")
         message(FATAL_ERROR "robocar: ${_rel} is not registered. Module sources.cmake files "
                             "must be src/<module>/sources.cmake with <module> in ROBOCAR_MODULE_DIRS.")
     endif()

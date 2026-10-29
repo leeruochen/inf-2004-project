@@ -1,0 +1,31 @@
+# Build trees
+build/
+build-*/
+
+# Local secrets (copy config/secrets.h.example)
+config/secrets.h
+
+# Firmware outputs (only if someone builds in-tree)
+*.uf2
+*.elf
+*.bin
+*.hex
+*.map
+*.dis
+
+# Object and dependency files (only if someone builds in-tree)
+*.o
+*.d
+
+# Videos are shared as unlisted YouTube links (videos/README.md), never committed
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv
+
+# macOS
+.DS_Store
+
+# Agent working files (plans, reviews, reports)
+.agents/

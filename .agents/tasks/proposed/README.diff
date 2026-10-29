@@ -1,0 +1,175 @@
+﻿diff --git a/README.md b/.agents/tasks/proposed/README.proposed.md
+index b52c100..a48778a 100644
+--- a/README.md
++++ b/.agents/tasks/proposed/README.proposed.md
+@@ -3,3 +3,170 @@
+ Uses the TRON Forum uT-Kernel 3.0 BSP (micro T-Kernel 3.0) under the T-License 2.2; see [NOTICE.md](NOTICE.md) and the [BSP docs folder PDF](external/mtk3_bsp/docs/TEF000-219-200401.pdf). <!-- TODO(owner-to-confirm): attribution wording -->
+ 
+ Build and debug console: [docs/DEBUG.md](docs/DEBUG.md). Kernel submodule: [docs/SUBMODULE.md](docs/SUBMODULE.md).
++
++Robot car firmware for the Raspberry Pi Pico W. micro T-Kernel 3.0 runs on
++core 0 only, from the official BSP pinned as a git submodule. The code is
++built with the Pico C SDK 1.5.1, CMake and Ninja on Windows. The design is in
++[design.md](design.md); the source layout, kernel integration and coding rules
++are in [ARCHITECTURE.md](ARCHITECTURE.md).
++
++`ProjectTemplate/` is the INF2004 course project template provided by the
++module instructor. It stays in the repo unchanged, as reference only. Nothing
++in it is built or rule-checked. The patterns we kept from it are listed in
++[docs/TEMPLATE_NOTES.md](docs/TEMPLATE_NOTES.md).
++
++---
++
++## 1. Set up
++
++1. Install the **Raspberry Pi Pico SDK 1.5.1 Windows installer** at its
++   default path, `C:\Program Files\Raspberry Pi\Pico SDK v1.5.1`. It installs
++   the SDK, CMake, Ninja, the Arm GCC 10.3.1 compiler, Python, git and
++   OpenOCD. Do not use another SDK or compiler version.
++2. Clone the repo together with the kernel submodule:
++   ```powershell
++   git clone --recurse-submodules https://github.com/leeruochen/inf-2004-project.git
++   ```
++   In an existing clone, run `git submodule update --init`. The submodule
++   `external/mtk3_bsp` must stay at commit `15ed232` and must never be edited
++   ([docs/SUBMODULE.md](docs/SUBMODULE.md)).
++3. In every new PowerShell window, from the repo root, run this preamble:
++   ```powershell
++   $R = "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1"
++   $env:PATH = "$R\cmake\bin;$R\gcc-arm-none-eabi\bin;$R\ninja;$R\python;$R\git\cmd;$env:PATH"
++   $env:PICO_SDK_PATH = "$R\pico-sdk"
++   $CM = "$R\cmake\bin\cmake.exe"
++   $common = @("-G","Ninja","-DCMAKE_BUILD_TYPE=Debug",
++     "-DPICO_SDK_PATH=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk",
++     "-Dpico-sdk-tools_DIR=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk-tools",
++     "-DCMAKE_MAKE_PROGRAM=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/ninja/ninja.exe",
++     "-DPICO_TOOLCHAIN_PATH=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/gcc-arm-none-eabi")
++   ```
++
++## 2. Build
++
++This project builds with **CMake and Ninja on Windows**. The template's
++`build_make/` flow (GNU make under WSL with Pico SDK 2.2.0) is not used and
++does not build this code.
++
++TODO(owner-to-confirm): instructor's build preference (our CMake and Ninja flow on Windows, or the template's make/WSL flow).
++
++```powershell
++& $CM -S . -B build/usb @common -DDBG_BACKEND=USB
++& $CM --build build/usb
++```
++
++The default (ALL) build also runs `check_rules`, which enforces the coding
++rules in [ARCHITECTURE.md](ARCHITECTURE.md). A rule violation fails the
++build. The firmware is `build/usb/robocar.elf`, with `robocar.uf2` next to
++it. Until the first firmware sources exist, configure prints
++`firmware target skipped` and only the kernel library and the checks build.
++
++For a release build (debug ring and drain task compiled out), use a fresh
++build directory:
++
++```powershell
++& $CM -S . -B build/release @common -DCMAKE_BUILD_TYPE=Release -DDBG_BACKEND=USB
++& $CM --build build/release
++```
++
++## 3. Flash
++
++**SWD with the Raspberry Pi Debug Probe** (probe "D" port to the Pico W SWD
++header: SWCLK, SWDIO, GND):
++
++```powershell
++& "$R\openocd\openocd.exe" -s "$R\openocd\scripts" `
++  -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" `
++  -c "program build/usb/robocar.elf verify reset exit"
++```
++
++**UF2 without the probe:** hold BOOTSEL, plug the Pico W into USB, release,
++then copy `build/usb/robocar.uf2` to the `RPI-RP2` drive. The Pico reboots by
++itself.
++
++Debugging over SWD is described in [docs/DEBUG.md](docs/DEBUG.md).
++
++## 4. Console
++
++The only console is **USB CDC** on the Pico W's own USB port. The Debug Probe
++is used for SWD only; its UART port is not connected. Open the Pico W's COM
++port (Device Manager > Ports (COM & LPT)) with PuTTY or
++`python -m serial.tools.miniterm COMn 115200`.
++
++Tasks never print directly. They write to the `dbg_` ring, and a debug-only
++drain task sends it to USB CDC. After a fault, the fault record is kept in
++RAM, can be read over SWD, and is printed and cleared on the next boot.
++Details: [docs/DEBUG.md](docs/DEBUG.md).
++
++## 5. Write your own code
++
++Team code lives in **`app_program/`**, in the template's layout:
++
++| Path | What it is |
++|---|---|
++| `app_program/app.h` | Definitions shared by the whole team, and the `subsystemN_init/start/test` prototypes |
++| `app_program/app_main.c` | `usermain()`, the kernel-side start. It creates all IPC objects, then calls every `subsystemN_init()`, then every `subsystemN_start()`, then the init task sleeps forever |
++| `app_program/test_report.h` | `TEST_INIT`, `TEST_CHECK`, `TEST_SUMMARY` for on-target tests |
++| `app_program/subsystem1/` | Buddy 1: telemetry |
++| `app_program/subsystem2/` | Buddy 2: motion and Vehicle Controller |
++| `app_program/subsystem3/` | Buddy 3: line following and barcode |
++| `app_program/subsystem4/` | Buddy 4: IMU and safety |
++| `app_program/subsystem5/` | Buddy 5: obstacle scan and avoid |
++
++Each subsystem folder holds `subsystemN.c`, `subsystemN.h` (its public
++interface), `subsystemN_test.c`, its tasks as `task_<name>.c` and its drivers
++as `drv_<name>.c` / `drv_<name>.h`. Only the owner edits a subsystem folder.
++Shared files change only by team agreement.
++
++- `drv_*.c` files include Pico SDK headers only. `task_*.c`, `subsystemN.c`
++  and `subsystemN_test.c` include kernel headers only. A `drv_*.c` never
++  includes `subsystemN.h`.
++- Source files are not discovered automatically. List every new `.c` file in
++  that folder's `sources.cmake`. Configure fails on a `sources.cmake` that is
++  not registered.
++- Pins come from `config/pins.h` and are claimed in `TEAM.md` before wiring.
++  Never use GP23, GP24, GP25 or GP29 (Pico W radio).
++
++The platform code lives in **`src/`** and is not team code: `src/app/main.c`
++(the SDK `main()` that starts the kernel), `src/rtos/port/` (kernel port),
++`src/debug/` (debug ring and drain task) and `src/common/`. Configuration
++headers are in `config/`.
++
++## 6. Build options
++
++Options are CMake cache values. They are seeded on the first configure of a
++build directory, so use a fresh build directory or pass the option itself.
++
++| Option | Values (default) | What it does |
++|---|---|---|
++| `DBG_BACKEND` | `USB` | Debug console backend. USB CDC is the only supported backend |
++| `DBG_ENABLE` | `ON`, `OFF` (`OFF` for Release/MinSizeRel, `ON` otherwise) | Debug ring and debug-only drain task |
++| `APP_TEST` | `ON`, (`OFF`) | Builds every `subsystemN_test.c` and runs them in a dedicated lowest-priority test task, with `[TEST] <ID> PASS\|FAIL` lines through the `dbg_` ring. Needs `DBG_ENABLE=ON`; configure fails otherwise |
++| `TEL_BACKEND_WIFI` | `ON`, (`OFF`) | WiFi/MQTT telemetry. Not implemented in Phase 1; `ON` fails at configure |
++
++Test build example:
++
++```powershell
++& $CM -S . -B build/test @common -DDBG_BACKEND=USB -DAPP_TEST=ON
++& $CM --build build/test
++```
++
++The template's make options `SMP`, `CONSOLE`, `WIFI`, `TEST` and
++`CRASH_REPORT` are not supported. The kernel runs on one core, USB CDC is the
++only console, Phase 1 has no WiFi, and `APP_TEST` replaces `TEST`.
++
++## 7. Working as a team
++
++- **`TEAM.md`**: owners, pins, peripherals, task priorities (ours, 1 to 10;
++  11 with `APP_TEST`), interfaces between subsystems and the kernel object
++  budget.
++- **`testing/`**: one `TEST_LOG.md` per subsystem, plus integration and
++  system logs. Rules are in `testing/README.md`.
++- **`videos/`**: test and demo videos, shared as unlisted YouTube links only.
++  Never commit video files.
++
++## 8. Licence
++
++Licences and credits are in [NOTICE.md](NOTICE.md). INF2004 course project
++template provided by the module instructor.

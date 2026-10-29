@@ -28,7 +28,8 @@ set(expected
     "src/vc/r4_libbsp.c:" "[R4]"
     "src/safety/r5_core1.c:" "[R5]"
     "tools/r2_unlisted_dir.c:2:"
-    "r3_root_file.c:2:")
+    "r3_root_file.c:2:"
+    "app_program/subsystem1/r3_app_program.c:2: [R3b]")
 foreach(e IN LISTS expected)
     string(FIND "${all}" "${e}" pos)
     if(pos EQUAL -1)
@@ -36,7 +37,8 @@ foreach(e IN LISTS expected)
     endif()
 endforeach()
 
-set(unexpected "src/app/main.c" "snprintf" "src/line/r3_stdio.c:3:" "docs/excluded.c")
+set(unexpected "src/app/main.c" "snprintf" "src/line/r3_stdio.c:3:" "docs/excluded.c"
+    "ProjectTemplate/")
 foreach(u IN LISTS unexpected)
     string(FIND "${all}" "${u}" pos)
     if(NOT pos EQUAL -1)

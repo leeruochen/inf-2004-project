@@ -23,7 +23,8 @@
 #
 # Scans every C/C++/asm and CMake file in the tree, so a new directory is
 # checked automatically. Skips only the top-level external/, build*/, tests/,
-# docs/, .git/, .agents/ and .vscode/.
+# docs/, .git/, .agents/, .vscode/, ProjectTemplate/ (course template, kept
+# tracked as reference, never built), testing/ and videos/ (records only).
 # Limits: line-based. Calls split across lines or hidden behind macros are missed.
 
 cmake_minimum_required(VERSION 3.13)
@@ -38,9 +39,9 @@ set(RULES_MARK_BOOTCONSOLE      "RULE-ALLOW: boot-console")
 set(RULES_MARK_EXCLUSION        "RULE-ALLOW: exclusion-note")
 
 # Scan scope: the WHOLE tree (fail closed). Only these top-level entries are
-# skipped: vendored code, build trees, test fixtures/host tests, docs, VCS and
-# agent notes.
-set(RULES_EXCLUDE_TOP_REGEX "^(external|build[^/]*|tests|docs|\\.git|\\.agents|\\.vscode)$")
+# skipped: vendored code, build trees, test fixtures/host tests, docs, VCS,
+# agent notes, the course template (reference only) and test/video records.
+set(RULES_EXCLUDE_TOP_REGEX "^(external|build[^/]*|tests|docs|\\.git|\\.agents|\\.vscode|ProjectTemplate|testing|videos)$")
 
 if(DEFINED RULES_ROOT)
     get_filename_component(_root "${RULES_ROOT}" ABSOLUTE)

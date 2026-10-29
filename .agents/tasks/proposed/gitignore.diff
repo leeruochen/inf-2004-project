@@ -1,0 +1,24 @@
+﻿diff --git a/.gitignore b/.agents/tasks/proposed/gitignore.proposed
+index a304e14..383a4ac 100644
+--- a/.gitignore
++++ b/.agents/tasks/proposed/gitignore.proposed
+@@ -13,5 +13,19 @@ config/secrets.h
+ *.map
+ *.dis
+ 
++# Object and dependency files (only if someone builds in-tree)
++*.o
++*.d
++
++# Videos are shared as unlisted YouTube links (videos/README.md), never committed
++*.mp4
++*.mov
++*.webm
++*.avi
++*.mkv
++
++# macOS
++.DS_Store
++
+ # Agent working files (plans, reviews, reports)
+ .agents/
