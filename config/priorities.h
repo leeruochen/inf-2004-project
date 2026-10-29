@@ -3,8 +3,10 @@
  * @brief Task priorities, stack sizes and the kernel memory pool budget.
  *
  * Kernel priority = design priority (design.md section 3: P1 highest .. P9).
- * Design delta: nine design tasks plus one debug-only drain task at priority 10
- * (DBG_ENABLE builds only). Recorded in ARCHITECTURE.md.
+ * Design delta D1: nine design tasks plus one debug-only drain task at
+ * priority 10 (DBG_ENABLE builds only). Template merge: one on-target test task
+ * at priority 11 (APP_TEST builds only), the lowest priority of all.
+ * Recorded in ARCHITECTURE.md.
  *
  * Pure macros: no SDK or kernel includes.
  */
@@ -38,11 +40,15 @@
 #define TASK_PRI_TEL            (9U)
 /** Debug drain (debug-only). The ONLY caller of stdio. */
 #define TASK_PRI_DBG_DRAIN      (10U)
+/** On-target test task (APP_TEST builds only; called PRI_TEST_TASK in the merge
+ *  brief). Lowest priority, below the debug drain at 10. */
+#define TASK_PRI_TEST           (11U)
 
 /** Design tasks. */
 #define TASK_COUNT_APP          (9U)
-/** All tasks: 9 design + init + debug drain (counted even when DBG_ENABLE is OFF). */
-#define TASK_COUNT_TOTAL        (11U)
+/** All tasks: 9 design + init + debug drain + APP_TEST test task (counted even
+ *  when DBG_ENABLE/APP_TEST are OFF). */
+#define TASK_COUNT_TOTAL        (12U)
 
 /* ---------------------------------------------------------------------------
  * Stacks. Tasks run on MSP, so ISR frames land on the running task's stack:
@@ -73,6 +79,8 @@
 #define TASK_STACK_BASE_TEL_BYTES           (4096U)
 /** Base stack need, debug drain. ASSUMPTION. TUNE */
 #define TASK_STACK_BASE_DBG_DRAIN_BYTES     (1024U)
+/** Base stack need, APP_TEST test task. ASSUMPTION. TUNE */
+#define TASK_STACK_BASE_TEST_BYTES          (1024U)
 
 /** Final stack, Safety. */
 #define TASK_STACK_SAFETY_BYTES     (TASK_STACK_BASE_SAFETY_BYTES + STACK_IRQ_MARGIN_BYTES)
@@ -94,6 +102,8 @@
 #define TASK_STACK_TEL_BYTES        (TASK_STACK_BASE_TEL_BYTES + STACK_IRQ_MARGIN_BYTES)
 /** Final stack, debug drain. */
 #define TASK_STACK_DBG_DRAIN_BYTES  (TASK_STACK_BASE_DBG_DRAIN_BYTES + STACK_IRQ_MARGIN_BYTES)
+/** Final stack, APP_TEST test task. */
+#define TASK_STACK_TEST_BYTES       (TASK_STACK_BASE_TEST_BYTES + STACK_IRQ_MARGIN_BYTES)
 
 /* ---------------------------------------------------------------------------
  * Kernel memory pool (static array handed to Imalloc by the port)
@@ -123,6 +133,7 @@
                                 + TASK_STACK_BC_BYTES + TASK_STACK_OBS_SCAN_BYTES            \
                                 + TASK_STACK_OBS_AVOID_BYTES + TASK_STACK_IMU_BYTES          \
                                 + TASK_STACK_TEL_BYTES + TASK_STACK_DBG_DRAIN_BYTES          \
+                                + TASK_STACK_TEST_BYTES                                      \
                                 + (TASK_COUNT_TOTAL * (KERNEL_SYS_STACK_BYTES                \
                                                        + KERNEL_POOL_ALLOC_OVERHEAD_BYTES))  \
                                 + KERNEL_INIT_TASK_STACK_BYTES )
@@ -139,12 +150,17 @@
     || ((TASK_STACK_MOTION_BYTES % 8U) != 0U) || ((TASK_STACK_LF_BYTES % 8U) != 0U)       \
     || ((TASK_STACK_BC_BYTES % 8U) != 0U) || ((TASK_STACK_OBS_SCAN_BYTES % 8U) != 0U)     \
     || ((TASK_STACK_OBS_AVOID_BYTES % 8U) != 0U) || ((TASK_STACK_IMU_BYTES % 8U) != 0U)   \
-    || ((TASK_STACK_TEL_BYTES % 8U) != 0U) || ((TASK_STACK_DBG_DRAIN_BYTES % 8U) != 0U)
+    || ((TASK_STACK_TEL_BYTES % 8U) != 0U) || ((TASK_STACK_DBG_DRAIN_BYTES % 8U) != 0U)   \
+    || ((TASK_STACK_TEST_BYTES % 8U) != 0U)
 #error "priorities.h: every task stack must be a multiple of 8 bytes"
 #endif
 
 #if TASK_PRI_DBG_DRAIN <= TASK_PRI_TEL
 #error "priorities.h: the debug drain must be the lowest-priority task"
+#endif
+
+#if TASK_PRI_TEST <= TASK_PRI_DBG_DRAIN
+#error "priorities.h: the APP_TEST test task must be the lowest-priority task"
 #endif
 
 #endif /* PRIORITIES_H */

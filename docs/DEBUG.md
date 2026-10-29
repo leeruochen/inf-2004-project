@@ -1,33 +1,36 @@
 # Debug console and Debug Probe
 
-Phase 1 uses a Raspberry Pi Debug Probe for both the serial console (UART0)
-and flashing/debugging (SWD).
+USB CDC on the Pico W's own USB port is the **only** console. The Raspberry
+Pi Debug Probe is used for **SWD only** (flashing and GDB); its "U" (UART)
+port is not connected. UART0 was removed in the Week 8 pin map v2: GP0/GP1
+are now the right wheel encoder (`ENC_R_A`/`ENC_R_B`, `config/pins.h`;
+ARCHITECTURE.md D5, D6).
 
 ## Wiring
 
-UART (probe "U" port to Grove 1 on the ROBO PICO, GP0/GP1):
-
-| Debug Probe | Pico W |
-|---|---|
-| TX (probe output) | GP1 (UART0 RX) |
-| RX (probe input) | GP0 (UART0 TX) |
-| GND | GND (common ground) |
-
 SWD (probe "D" port to the Pico W SWD header): SWCLK, SWDIO, GND.
 
-GP0/GP1 and Grove 1 are reserved for the probe (`config/pins.h`).
+The console needs no wiring: plug the Pico W into the PC with a USB cable.
 
-## Opening the serial port
+## Opening the USB CDC console
 
-The probe enumerates as a USB serial device (a COM port on Windows). Settings:
-115200 baud, 8 data bits, no parity, 1 stop bit (8N1), no flow control.
+The firmware enumerates as a USB serial device (a COM port on Windows).
 
 - Find the port: Device Manager > Ports (COM & LPT) > "USB Serial Device (COMn)".
+  The port appears only after the firmware has booted, and it disappears and
+  re-enumerates after every reset or reflash.
 - Open it with any terminal, for example PuTTY (Connection type Serial, COMn,
-  speed 115200) or `python -m serial.tools.miniterm COMn 115200`.
+  speed 115200) or `python -m serial.tools.miniterm COMn 115200`. USB CDC
+  ignores the baud rate; 115200 is only what the terminal shows.
+- Before the kernel starts, the firmware waits up to `DBG_USB_CONNECT_WAIT_MS`
+  (3 s, `config/timing.h`) for `stdio_usb_connected()`, then continues either
+  way. This is the only allowed SDK wait, and only before `hal_kernel_start()`
+  (`src/app/main.c`, line marked `RULE-ALLOW: pre-kernel`). Open the terminal
+  within 3 s of a reset to see the start of the log.
 
-In UART0 builds the kernel boot banner, fault messages (polled UART0) and the
-runtime log (dbg_ ring drained by the debug-only task) all appear here.
+Tasks never print. They write to the `dbg_` ring, and the debug-only drain task
+(priority 10, `DBG_ENABLE` builds only) is the only caller of stdio
+(ARCHITECTURE.md D1).
 
 ## Flashing over SWD
 
@@ -37,36 +40,69 @@ With the OpenOCD bundled by the Pico SDK 1.5.1 installer:
 & "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1\openocd\openocd.exe" `
   -s "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1\openocd\scripts" `
   -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" `
-  -c "program build/uart0/robocar.elf verify reset exit"
+  -c "program build/usb/robocar.elf verify reset exit"
 ```
 
 For debugging, start OpenOCD without the `program` command and attach
-`arm-none-eabi-gdb build/uart0/robocar.elf` with `target extended-remote :3333`.
+`arm-none-eabi-gdb build/usb/robocar.elf` with `target extended-remote :3333`.
 
 Alternative without the probe: hold BOOTSEL, plug in USB, copy `robocar.uf2`
 to the RPI-RP2 drive.
 
-## Switching backends
+## Boot and fault output: the RAM fault record
 
-The backend is a configure-time option. Both backends build.
+USB CDC cannot be used from a HardFault or with interrupts masked (TinyUSB
+needs its IRQ and a 1 ms alarm), and there is no UART any more. So boot and
+fault messages from the kernel side go into a fault record in RAM instead of
+a console:
+
+- The record lives in the SDK's `.uninitialized_data` section, declared with
+  the SDK macro `__uninitialized_ram(...)` (`pico/platform.h`). That section is
+  NOLOAD and `crt0` never zeroes it, so its contents are kept across a warm
+  reset (not across power-off). It is **not**
+  `.noinit`, which our linker script zero-fills (`cmake/memmap_mtk3.ld`). No
+  linker-script change is needed.
+- Layout: a `uint32_t` magic number first, then the payload, then a CRC-32 over
+  the payload (docs/DATA_REPRESENTATION.md).
+- The kernel's `tm_snd_dat` (port layer) writes the record. It never writes to
+  stdio.
+- Read it over SWD at any time: in `arm-none-eabi-gdb`, `print <record symbol>`
+  or `x/16wx &<record symbol>`; or OpenOCD `mdw <address> 16`.
+- On the next boot the debug drain prints it through the `dbg_` ring over USB
+  CDC and then clears it, **only if both the magic number and the CRC match**.
+  Otherwise RAM holds random data (power-on, or after flashing), and the record
+  is silently re-initialised.
+- TODO(phase 1 batch B, buddy 2): implementation (port layer and drain).
+
+## Build options
+
+The backend is a configure-time option. Only `USB` is accepted.
 
 | Option | Values | Default |
 |---|---|---|
-| `DBG_BACKEND` | `UART0`, `USB` | `${DBG_DEFAULT}` |
-| `DBG_DEFAULT` | `UART0`, `USB` | `UART0` (Phase 1) |
+| `DBG_BACKEND` | `USB` (`UART0` fails at configure) | `${DBG_DEFAULT}` |
+| `DBG_DEFAULT` | `USB` | `USB` |
 | `DBG_ENABLE` | `ON` (debug), `OFF` (release) | `OFF` for `Release`/`MinSizeRel`, `ON` otherwise |
+| `APP_TEST` | `ON`, `OFF` | `OFF` |
+
+`-DDBG_BACKEND=UART0` stops configure with "DBG_BACKEND=UART0 was removed
+(Week 8 pin map v2): GP0/GP1 are ENC_R_A/ENC_R_B in config/pins.h". As a
+backstop, `config/pins.h` `#error`s if code is compiled with
+`DBG_BACKEND_UART0` defined while GP0/GP1 are allocated. The build defines
+`DBG_BACKEND_USB=1`, `pico_enable_stdio_usb(robocar 1)` and
+`pico_enable_stdio_uart(robocar 0)`. stdio UART must never be enabled: the
+`pico_w` board puts it on GP0/GP1.
 
 These defaults are CMake cache values: they are seeded on the first configure
 of a build directory and kept after that. Changing `CMAKE_BUILD_TYPE` or
 `DBG_DEFAULT` on an existing build directory does NOT change `DBG_ENABLE` or
 `DBG_BACKEND`. Use a fresh build directory, or set the option itself
-(`-DDBG_ENABLE=OFF`, `-DDBG_BACKEND=USB`).
-
-Use one build directory per backend:
+(`-DDBG_ENABLE=OFF`).
 
 ```
 $R = "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1"
 $env:PATH = "$R\cmake\bin;$R\gcc-arm-none-eabi\bin;$R\ninja;$R\python;$R\git\cmd;$env:PATH"
+$env:PICO_SDK_PATH = "$R\pico-sdk"
 $CM = "$R\cmake\bin\cmake.exe"
 $common = @("-G","Ninja","-DCMAKE_BUILD_TYPE=Debug",
   "-DPICO_SDK_PATH=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk",
@@ -74,16 +110,9 @@ $common = @("-G","Ninja","-DCMAKE_BUILD_TYPE=Debug",
   "-DCMAKE_MAKE_PROGRAM=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/ninja/ninja.exe",
   "-DPICO_TOOLCHAIN_PATH=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/gcc-arm-none-eabi")
 
-& $CM -S . -B build/uart0 @common -DDBG_BACKEND=UART0
-& $CM --build build/uart0
-
 & $CM -S . -B build/usb @common -DDBG_BACKEND=USB
 & $CM --build build/usb
 ```
-
-To make USB CDC the default instead, configure a FRESH build directory with
-`-DDBG_DEFAULT=USB`. On an existing build directory, set `-DDBG_BACKEND=USB`
-directly.
 
 A release build (debug ring and drain task compiled out):
 
@@ -93,12 +122,46 @@ A release build (debug ring and drain task compiled out):
 
 (`$common` sets `-DCMAKE_BUILD_TYPE=Debug`; the later `-D` wins.)
 
-- `UART0`: `pico_enable_stdio_uart(robocar 1)`, `pico_enable_stdio_usb(robocar 0)`,
-  define `DBG_BACKEND_UART0=1`.
-- `USB`: the reverse, define `DBG_BACKEND_USB=1`. Before `hal_kernel_start()`
-  the firmware waits up to `DBG_USB_CONNECT_WAIT_MS` (3 s, `config/timing.h`)
-  for `stdio_usb_connected()`, then continues either way. This is the only
-  allowed SDK wait and only before the kernel starts.
+## USB CDC bring-up test (mandatory)
 
-Phase 1 acceptance (nine heartbeats) is verified on UART0. USB CDC is an extra
-bring-up test, reported but not required.
+USB CDC is the only console, so this test is required for Phase 1 acceptance
+(integration report section 14). Build with `DBG_BACKEND=USB` (the only
+backend). Record it in `testing/system/TEST_LOG.md`.
+
+1. Boot, then open the COM port. Expect the boot banner (through the `dbg_`
+   ring) and nine heartbeat lines per period, each with a task ID and a
+   sequence number.
+2. Run for 10 minutes. Pass if there are no sequence gaps, no HardFault, and
+   the cyclic period jitter (each task logs `time_us_64()` deltas, max and min)
+   is within 1 ms of nominal.
+3. Stress: every task logs at 10x its normal rate through the `dbg_` ring.
+   Check that the overflow counters increment, nothing hangs, and the
+   control-task periods are unaffected.
+4. Unplug and replug USB, and open and close the terminal. The system must
+   keep running.
+
+The integration report's step 5 (repeat on UART0 as a baseline) no longer
+applies: there is no UART0 console.
+
+## On-target tests (APP_TEST)
+
+`APP_TEST=ON` builds every `app_program/subsystemN/subsystemN_test.c` and
+runs the tests in a dedicated test task at priority 11, below the debug drain
+(10). Use a fresh build directory:
+
+```
+& $CM -S . -B build/test @common -DDBG_BACKEND=USB -DAPP_TEST=ON
+& $CM --build build/test
+```
+
+- Each check prints one line through the `dbg_` ring:
+  `[TEST] <ID> PASS  <desc>`, `[TEST] <ID> FAIL  <desc>   (<file>:<line>)`,
+  then `[TEST] <name> SUMMARY <p> passed, <f> failed`
+  (`app_program/test_report.h`).
+- Save the console output to `testing/subsystemN/logs/` and record the result
+  in that folder's `TEST_LOG.md` (`testing/README.md`).
+- `APP_TEST=ON` needs `DBG_ENABLE=ON`. A Release build (`DBG_ENABLE=OFF`) with
+  `APP_TEST=ON` fails at configure.
+- Deferred to Batch B: the `dbg_` ring does not exist yet, so an `APP_TEST=ON`
+  build configures but stops at the deliberate `#error` in
+  `app_program/test_report.h` (TODO(phase 1 batch B, buddy 2)).

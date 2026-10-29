@@ -8,11 +8,13 @@
 # Rules (FAIL with <file>:<line>):
 #   R1  A file includes both a kernel header (<tk/..>, <tm/..>, <bsp/..>,
 #       <sys/{inittask,knldef,machine,profile,queue,sysdef}.h>, <sys/sysdepend/..>,
-#       config/mtk3/..) and an SDK header (pico/.., pico.h, hardware/.., boards/..,
-#       tusb.., lwip/.., cyw43..).
+#       config/mtk3/.., or our kernel-side project headers "app.h",
+#       "test_report.h", "subsystemN.h" with any relative path) and an SDK header
+#       (pico/.., pico.h, hardware/.., boards/.., tusb.., lwip/.., cyw43..).
+#       So a drv_*.c that includes subsystemN.h plus an SDK header fails.
 #   R2  Blocking SDK waits in tasks: sleep_ms/us/until, busy_wait*, mutex_enter_*,
-#       sem_acquire*. Allowed only in src/app/main.c on a line marked
-#       "RULE-ALLOW: pre-kernel".
+#       sem_acquire*, pio_sm_get_blocking, pio_sm_put_blocking. Allowed only in
+#       src/app/main.c on a line marked "RULE-ALLOW: pre-kernel".
 #   R3a stdio calls (printf, puts, putchar, ...). Allowed only in the debug drain
 #       file, or src/app/main.c lines marked "RULE-ALLOW: pre-kernel".
 #   R3b T-Monitor console calls (tm_printf, tm_putstring, ...). Allowed only in the
@@ -21,8 +23,9 @@
 #       "RULE-ALLOW: exclusion-note".
 #   R5  Core 1 / SMP: multicore_launch_core1* calls, or pico_multicore in CMake.
 #
-# Scans every C/C++/asm and CMake file in the tree, so a new directory is
-# checked automatically. Skips only the top-level external/, build*/, tests/,
+# Scans every C/C++/asm and CMake file in the tree (src/, app_program/, config/,
+# cmake/, tools/, ...), so a new directory is checked automatically. Skips only
+# the top-level external/, build*/, tests/,
 # docs/, .git/, .agents/, .vscode/, ProjectTemplate/ (course template, kept
 # tracked as reference, never built), testing/ and videos/ (records only).
 # Limits: line-based. Calls split across lines or hidden behind macros are missed.
@@ -52,8 +55,12 @@ endif()
 # --- Regexes (CMake regex: no \b or \s) --------------------------------------
 set(_B "(^|[^A-Za-z0-9_])")
 set(_RE_KINC "^[ \t]*#[ \t]*include[ \t]*[<\"](tk/|tm/|bsp/|config/mtk3/|sys/(inittask|knldef|machine|profile|queue|sysdef)\\.h|sys/sysdepend/)")
+# Our kernel-side project headers (they include <tk/tkernel.h>), with any
+# relative path: "app.h", "../app.h", "../test_report.h", "subsystem2.h",
+# "../subsystem2/subsystem2.h".
+set(_RE_KINC_PROJ "^[ \t]*#[ \t]*include[ \t]*\"([^\"]*/)?(app|test_report|subsystem[0-9]+)\\.h\"")
 set(_RE_SINC "^[ \t]*#[ \t]*include[ \t]*[<\"](pico/|pico\\.h|hardware/|boards/|tusb|lwip/|cyw43)")
-set(_RE_R2   "${_B}(sleep_(ms|us|until)|busy_wait[A-Za-z0-9_]*|mutex_enter_[A-Za-z0-9_]*|sem_acquire[A-Za-z0-9_]*)[ \t]*\\(")
+set(_RE_R2   "${_B}(sleep_(ms|us|until)|busy_wait[A-Za-z0-9_]*|mutex_enter_[A-Za-z0-9_]*|sem_acquire[A-Za-z0-9_]*|pio_sm_get_blocking|pio_sm_put_blocking)[ \t]*\\(")
 set(_RE_R3A  "${_B}(printf|vprintf|puts|putchar|putchar_raw|puts_raw|fputs|fputc|fprintf|getchar|getchar_timeout_us|stdio_flush)[ \t]*\\(")
 set(_RE_R3B  "${_B}(tm_printf|tm_putstring|tm_putchar|tm_sprintf)[ \t]*\\(")
 set(_RE_R5   "${_B}multicore_launch_core1[A-Za-z0-9_]*[ \t]*\\(")
@@ -167,7 +174,7 @@ foreach(_f IN LISTS _sources)
         endif()
 
         # R1: record the first kernel and first SDK include.
-        if(_code MATCHES "${_RE_KINC}" AND _k_line EQUAL 0)
+        if((_code MATCHES "${_RE_KINC}" OR _code MATCHES "${_RE_KINC_PROJ}") AND _k_line EQUAL 0)
             set(_k_line ${_n})
             set(_k_raw "${_raw}")
         endif()

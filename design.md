@@ -11,11 +11,12 @@ Identify each buddy’s primary subsystem responsibility. The role does not need
 
 | Buddy | Student ID | Primary subsystem / responsibility |
 | :---- | :---- | :---- |
-| Buddy 1 | 2501299 (Damian) | WiFi Communication, Command & Telemetry:\- MQTT pub/sub, topic tree, JSON/struct payloads, heartbeat & reconnection |
-| Buddy 2 | 2500530 (Ruo Chen) | Motion Control System:\- PWM motor drive, encoder ISRs, per-wheel PID, precision turns |
-| Buddy 3 | 2503319 (Jin Yong) | Barcode Decoding & IR Line Following:\- center-line tracking, Code 39 decode, speed-normalized timing |
-| Buddy 4 | 2500709 (Vincent) | IMU-Based Motion & Terrain Monitoring \- pitch/roll estimation, hump detection, collision detection |
-| Buddy 5 | 2500596 (Chay Han) | Adaptive Ultrasonic Scanning & Obstacle Profiling \- servo sweep, obstacle profiling, avoidance/line-recovery coordination |
+| Buddy 1 | 2501299 (Damian/Damian-oliveiro
+) | WiFi Communication, Command & Telemetry:\- MQTT pub/sub, topic tree, JSON/struct payloads, heartbeat & reconnection |
+| Buddy 2 | 2500530 (Ruo Chen/leeruochen) | Motion Control System:\- PWM motor drive, encoder ISRs, per-wheel PID, precision turns |
+| Buddy 3 | 2503319 (Jin Yong/jyong1101) | Barcode Decoding & IR Line Following:\- center-line tracking, Code 39 decode, speed-normalized timing |
+| Buddy 4 | 2500709 (Vincent/Vincent6430) | IMU-Based Motion & Terrain Monitoring \- pitch/roll estimation, hump detection, collision detection |
+| Buddy 5 | 2500596 (Chay Hanlongchayhan03-eng) | Adaptive Ultrasonic Scanning & Obstacle Profiling \- servo sweep, obstacle profiling, avoidance/line-recovery coordination |
 
 # 
 

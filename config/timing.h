@@ -149,8 +149,11 @@
 /** Barcode task poll period while capturing. Not in design.md (ISR-woken there). TUNE */
 #define BC_POLL_PERIOD_MS               (2U)
 /** Abandon a capture after this long. TUNE
- *  TODO(owner-to-confirm, buddy 3): provisional value. */
+ *  TODO(owner-to-confirm, buddy 3): provisional value. Must fit a
+ *  BC_GAP_BITS microsecond gap (checked below). */
 #define BC_CAPTURE_TIMEOUT_MS           (1000U)
+/** Edge-ring gap width in bits, microseconds (delta D8; docs/DATA_REPRESENTATION.md). */
+#define BC_GAP_BITS                     (20U)
 /** End-of-symbol gap = this multiple of the widest element time (T_end). TUNE */
 #define BC_T_END_WIDEST_MULT            (3U)
 /** ISR edge ring length (one Code 39 symbol is 29 elements). */
@@ -187,6 +190,10 @@
 
 #if (BC_EDGE_RING_LEN & (BC_EDGE_RING_LEN - 1U)) != 0U
 #error "timing.h: BC_EDGE_RING_LEN must be a power of two"
+#endif
+
+#if (BC_CAPTURE_TIMEOUT_MS * 1000UL) >= (1UL << BC_GAP_BITS)
+#error "timing.h: BC_CAPTURE_TIMEOUT_MS no longer fits a 20-bit microsecond gap"
 #endif
 
 #if OBS_AVOID_WORST_CASE_MS > 5000U

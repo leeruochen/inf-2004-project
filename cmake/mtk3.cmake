@@ -73,7 +73,8 @@ endif()
 #   kernel/sysdepend/pico_rp2040/hw_setting.c     SDK owns pin mux; drives GP25 = CYW43 CS on Pico W
 #   lib/libtm/sysdepend/pico_rp2040/tm_com.c      port provides tm_com_init/tm_snd_dat/tm_rcv_dat
 #   lib/libbsp/sysdepend/cpu/rp2040/libbsp_pwm.c  never link: clashes with hardware/pwm.h # RULE-ALLOW: exclusion-note
-#   device/**, app_program/**                     sample drivers / sample app, not used
+#   device/**, app_program/**                     the BSP's own sample drivers and sample app in
+#                                                 external/mtk3_bsp (not our app_program/), not used
 #   kernel/usermain/usermain.c                    we provide usermain
 set(MTK3_SOURCES_REL
     kernel/tkernel/cpuctl.c

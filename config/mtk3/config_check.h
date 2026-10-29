@@ -29,9 +29,11 @@ _Static_assert(CNF_MAX_CYCID >= 5, "config: need >= 5 cyclic handlers");
 /* Message buffers: MBF_NAV_IN, MBF_MOTION_CMD, MBF_OBSTACLE, MBF_TELEMETRY. */
 _Static_assert(CNF_MAX_MBFID >= 4, "config: need >= 4 message buffers");
 
-/* Tasks: the owner asked for >= 10. There are 11: nine design tasks, the kernel
- * init task and the debug-only drain task. Check the larger number. */
-_Static_assert(CNF_MAX_TSKID >= 11, "config: need >= 11 tasks (9 + init + debug drain)");
+/* Tasks: the owner asked for >= 10. There are 12: nine design tasks, the kernel
+ * init task, the debug-only drain task and the APP_TEST-only test task. All are
+ * counted unconditionally (this header is also compiled inside mtk3, which never
+ * sees DBG_ENABLE or APP_TEST). Check the larger number. */
+_Static_assert(CNF_MAX_TSKID >= 12, "config: need >= 12 tasks (9 + init + debug drain + test task)");
 _Static_assert(CNF_MAX_TSKID >= TASK_COUNT_TOTAL, "config: CNF_MAX_TSKID < TASK_COUNT_TOTAL");
 
 /* Eventflags: EVF_SAFETY, EVF_NAV. */
@@ -43,9 +45,10 @@ _Static_assert(CNF_MAX_SEMID >= 1, "config: need >= 1 semaphore");
 /* Mutexes: MTX_MOTION (TA_INHERIT). */
 _Static_assert(CNF_MAX_MTXID >= 1, "config: need >= 1 mutex");
 
-/* Priorities: P1..P9 plus the debug drain task at 10. */
+/* Priorities: P1..P9, the debug drain task at 10 and the APP_TEST test task at 11. */
 _Static_assert(CNF_MAX_TSKPRI >= 10, "config: need >= 10 task priorities");
 _Static_assert(CNF_MAX_TSKPRI >= TASK_PRI_DBG_DRAIN, "config: CNF_MAX_TSKPRI < TASK_PRI_DBG_DRAIN");
+_Static_assert(CNF_MAX_TSKPRI >= TASK_PRI_TEST, "config: CNF_MAX_TSKPRI < TASK_PRI_TEST");
 
 /* Ownership: PWM IRQ and the sample drivers belong to the SDK, not the kernel. */
 _Static_assert(USE_PTMR == 0, "config: USE_PTMR must be 0 (PWM is SDK-owned)");
@@ -61,6 +64,8 @@ _Static_assert((TASK_STACK_TOTAL_BYTES + KERNEL_POOL_MBF_RESERVE_BYTES) <= KERNE
 _Static_assert(MOTION_SPEED_BYPASS_CMPS >= 15U, "config: bypass speed must be >= 15 cm/s");
 _Static_assert(MOTION_SPEED_BYPASS_CMPS >= MOTION_SPEED_BYPASS_MIN_CMPS,
                "config: bypass speed below MOTION_SPEED_BYPASS_MIN_CMPS");
+_Static_assert((BC_CAPTURE_TIMEOUT_MS * 1000UL) < (1UL << BC_GAP_BITS),
+               "config: BC_CAPTURE_TIMEOUT_MS does not fit a BC_GAP_BITS microsecond gap");
 
 #endif /* !__ASSEMBLER__ */
 

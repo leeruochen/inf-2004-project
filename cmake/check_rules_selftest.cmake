@@ -22,11 +22,13 @@ if(rc EQUAL 0)
 endif()
 
 set(expected
-    "src/motion/r1_mixed.c:" "[R1]"
-    "src/motion/r2_blocking.c:2:" "src/motion/r2_blocking.c:3:" "[R2]"
-    "src/line/r3_stdio.c:2:" "src/line/r3_stdio.c:4:" "[R3a]" "[R3b]"
-    "src/vc/r4_libbsp.c:" "[R4]"
-    "src/safety/r5_core1.c:" "[R5]"
+    "app_program/subsystem2/r1_mixed.c:" "[R1]"
+    "app_program/subsystem2/r2_blocking.c:2:" "app_program/subsystem2/r2_blocking.c:3:" "[R2]"
+    "app_program/subsystem3/r3_stdio.c:2:" "app_program/subsystem3/r3_stdio.c:4:" "[R3a]" "[R3b]"
+    "app_program/subsystem2/r4_libbsp.c:" "[R4]"
+    "app_program/subsystem4/r5_core1.c:" "[R5]"
+    "app_program/subsystem2/r2_pio_blocking.c:2:" "app_program/subsystem2/r2_pio_blocking.c:3:"
+    "app_program/subsystem2/r1_drv_subsystem_hdr.c:3: [R1]"
     "tools/r2_unlisted_dir.c:2:"
     "r3_root_file.c:2:"
     "app_program/subsystem1/r3_app_program.c:2: [R3b]")
@@ -37,7 +39,7 @@ foreach(e IN LISTS expected)
     endif()
 endforeach()
 
-set(unexpected "src/app/main.c" "snprintf" "src/line/r3_stdio.c:3:" "docs/excluded.c"
+set(unexpected "src/app/main.c" "snprintf" "app_program/subsystem3/r3_stdio.c:3:" "docs/excluded.c"
     "ProjectTemplate/")
 foreach(u IN LISTS unexpected)
     string(FIND "${all}" "${u}" pos)

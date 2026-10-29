@@ -56,6 +56,58 @@
 #define US_MIN_RANGE_MM             (20U)
 
 /* ---------------------------------------------------------------------------
+ * Line sensor ADC sanity check at boot (Buddy 3), used by
+ * hal_adc_sanity_check() on GP26 (IR_R, ADC0). GP26 also has an untaped lead
+ * on Grove 6 (config/pins.h). A boot reading below the low rail limit or above
+ * the high rail limit, or a peak-to-peak spread above the noise limit, is a
+ * sensor fault: logged and counted, never acts on the motors.
+ * All values PROVISIONAL. TUNE.
+ * TODO(owner-to-confirm, buddy 3): measure on the car.
+ * ------------------------------------------------------------------------- */
+
+/** ADC full scale (12-bit RP2040 ADC). */
+#define ADC_FULL_SCALE_RAW          (4095U)
+/** Samples taken by the boot sanity check. PROVISIONAL. TUNE
+ *  TODO(owner-to-confirm, buddy 3). */
+#define ADC_SANITY_SAMPLES          (16U)
+/** Every sample at or below this = stuck at the low rail. PROVISIONAL. TUNE
+ *  TODO(owner-to-confirm, buddy 3). */
+#define ADC_STUCK_LOW_RAW           (16U)
+/** Every sample at or above this = stuck at the high rail. PROVISIONAL. TUNE
+ *  TODO(owner-to-confirm, buddy 3). */
+#define ADC_STUCK_HIGH_RAW          (4079U)
+/** Peak-to-peak spread above this = abnormally noisy. PROVISIONAL. TUNE
+ *  TODO(owner-to-confirm, buddy 3). */
+#define ADC_NOISE_MAX_RAW           (400U)
+
+/* ---------------------------------------------------------------------------
+ * Encoder geometry (Buddy 2). PIO0 quadrature decoding, X4 (delta D7).
+ * 0 = not yet measured. Never invent values: Batch B code that uses them must
+ * #error while either is 0.
+ *
+ * Overflow bound of the free-running int32_t count (documentation only):
+ *   counts per second at top speed
+ *     r = ENC_QUAD_MULT x ENC_CPR x (MOTION_SPEED_MAX_CMPS x 10) / WHEEL_CIRC_MM
+ *   counts = ENC_QUAD_MULT x ENC_CPR x distance_mm / WHEEL_CIRC_MM, so the
+ *   count wraps after (2^31 - 1) x WHEEL_CIRC_MM / (ENC_QUAD_MULT x ENC_CPR) mm
+ *   of one-way driving, i.e. after (2^31 - 1) / r seconds at 50 cm/s.
+ *   CPR-independent hardware bound: the PIO program counts at most
+ *   sysclk / 10 = 12.5 Msteps/s, so a wrap takes at least
+ *   2,147,483,647 / 12,500,000 = 171.8 s even at the decoder's limit.
+ *   Motion uses wrap-safe two's-complement deltas per 20 ms period, exact while
+ *   one period's delta stays below 2^31.
+ * ------------------------------------------------------------------------- */
+
+/** Quadrature decoding multiplier (X4: every edge of A and B). */
+#define ENC_QUAD_MULT               (4U)
+/** Encoder cycles per wheel revolution, per channel, gearbox included.
+ *  TODO(owner-to-confirm, buddy 2): from the encoder spec or a measured turn. */
+#define ENC_CPR                     (0U)
+/** Wheel circumference.
+ *  TODO(owner-to-confirm, buddy 2): measure the wheel. */
+#define WHEEL_CIRC_MM               (0U)
+
+/* ---------------------------------------------------------------------------
  * Barcode (Buddy 3)
  * ------------------------------------------------------------------------- */
 
@@ -176,6 +228,30 @@
 
 #if !((SERVO_PULSE_MIN_US < SERVO_PULSE_MAX_US) && (SERVO_PULSE_MAX_US < (1000000UL / SERVO_PWM_FREQ_HZ)))
 #error "thresholds.h: servo pulse range invalid for SERVO_PWM_FREQ_HZ"
+#endif
+
+#if ADC_STUCK_LOW_RAW >= ADC_STUCK_HIGH_RAW
+#error "thresholds.h: ADC_STUCK_LOW_RAW must be below ADC_STUCK_HIGH_RAW"
+#endif
+
+#if ADC_STUCK_HIGH_RAW > ADC_FULL_SCALE_RAW
+#error "thresholds.h: ADC_STUCK_HIGH_RAW exceeds the ADC full scale"
+#endif
+
+#if ADC_SANITY_SAMPLES == 0U
+#error "thresholds.h: ADC_SANITY_SAMPLES must be > 0"
+#endif
+
+#if ADC_NOISE_MAX_RAW >= ADC_FULL_SCALE_RAW
+#error "thresholds.h: ADC_NOISE_MAX_RAW must be below the ADC full scale"
+#endif
+
+/* Once ENC_CPR and WHEEL_CIRC_MM are measured: one second of counts at top
+ * speed (and so any 20 ms delta) must fit an int32_t. */
+#if (ENC_CPR != 0U) && (WHEEL_CIRC_MM != 0U)
+#if ((ENC_QUAD_MULT * ENC_CPR * MOTION_SPEED_MAX_CMPS * 10U) / WHEEL_CIRC_MM) > 2147483647UL
+#error "thresholds.h: encoder counts per second at top speed overflow int32_t"
+#endif
 #endif
 
 #endif /* THRESHOLDS_H */

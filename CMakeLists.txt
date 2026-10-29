@@ -5,8 +5,8 @@
 # vector table. The kernel is the static library `mtk3` (cmake/mtk3.cmake).
 #
 # Configure (see docs/DEBUG.md for the full Windows command lines):
-#   cmake -S . -B build/uart0 -G Ninja -DCMAKE_BUILD_TYPE=Debug -DDBG_BACKEND=UART0
-#   cmake -S . -B build/usb   -G Ninja -DCMAKE_BUILD_TYPE=Debug -DDBG_BACKEND=USB
+#   cmake -S . -B build/usb -G Ninja -DCMAKE_BUILD_TYPE=Debug -DDBG_BACKEND=USB
+# USB CDC is the only console backend; DBG_BACKEND=UART0 fails at configure.
 
 cmake_minimum_required(VERSION 3.13)
 
@@ -39,11 +39,24 @@ else()
 endif()
 option(DBG_ENABLE "Debug ring + debug-only drain task (default ON for debug, OFF for release)" ${_dbg_enable_default})
 
-set(DBG_DEFAULT "UART0" CACHE STRING "Default debug console backend (UART0 or USB); seeds DBG_BACKEND on first configure")
-set(DBG_BACKEND "${DBG_DEFAULT}" CACHE STRING "Debug console backend: UART0 or USB")
-set_property(CACHE DBG_BACKEND PROPERTY STRINGS UART0 USB)
-if(NOT DBG_BACKEND MATCHES "^(UART0|USB)$")
-    message(FATAL_ERROR "DBG_BACKEND='${DBG_BACKEND}' is invalid; use UART0 or USB")
+# APP_TEST: every subsystemN_test() runs in a dedicated test task at
+# TASK_PRI_TEST (11, below the debug drain). Results go through the dbg_ ring.
+option(APP_TEST "On-target subsystem self-tests in a lowest-priority test task (needs DBG_ENABLE)" OFF)
+if(APP_TEST AND NOT DBG_ENABLE)
+    message(FATAL_ERROR "APP_TEST=ON needs DBG_ENABLE=ON: test results are printed through the dbg_ ring")
+endif()
+
+# USB CDC is the only console (Week 8 pin map v2, ARCHITECTURE.md D6). The
+# Debug Probe is SWD only. UART0 would drive GP0 against the right encoder.
+set(DBG_DEFAULT "USB" CACHE STRING "Default debug console backend (USB only); seeds DBG_BACKEND on first configure")
+set(DBG_BACKEND "${DBG_DEFAULT}" CACHE STRING "Debug console backend: USB")
+set_property(CACHE DBG_BACKEND PROPERTY STRINGS USB)
+if(DBG_BACKEND STREQUAL "UART0")
+    message(FATAL_ERROR "DBG_BACKEND=UART0 was removed (Week 8 pin map v2): GP0/GP1 are ENC_R_A/ENC_R_B "
+                        "in config/pins.h. USB CDC is the only console (docs/DEBUG.md).")
+endif()
+if(NOT DBG_BACKEND STREQUAL "USB")
+    message(FATAL_ERROR "DBG_BACKEND='${DBG_BACKEND}' is invalid; use USB")
 endif()
 
 option(TEL_BACKEND_WIFI "WiFi/MQTT telemetry backend (cyw43 + lwIP)" OFF)
@@ -52,7 +65,7 @@ if(TEL_BACKEND_WIFI)
 endif()
 # TEL_BACKEND_WIFI=OFF: nothing links cyw43 or lwIP.
 
-message(STATUS "robocar: DBG_ENABLE=${DBG_ENABLE} DBG_BACKEND=${DBG_BACKEND} TEL_BACKEND_WIFI=${TEL_BACKEND_WIFI}")
+message(STATUS "robocar: DBG_ENABLE=${DBG_ENABLE} DBG_BACKEND=${DBG_BACKEND} TEL_BACKEND_WIFI=${TEL_BACKEND_WIFI} APP_TEST=${APP_TEST}")
 
 include(cmake/warnings.cmake)
 include(cmake/mtk3.cmake)
@@ -77,10 +90,11 @@ if(DBG_ENABLE)
 else()
     target_compile_definitions(robocar_options INTERFACE DBG_ENABLE=0)
 endif()
-if(DBG_BACKEND STREQUAL "UART0")
-    target_compile_definitions(robocar_options INTERFACE DBG_BACKEND_UART0=1)
+target_compile_definitions(robocar_options INTERFACE DBG_BACKEND_USB=1)
+if(APP_TEST)
+    target_compile_definitions(robocar_options INTERFACE APP_TEST=1)
 else()
-    target_compile_definitions(robocar_options INTERFACE DBG_BACKEND_USB=1)
+    target_compile_definitions(robocar_options INTERFACE APP_TEST=0)
 endif()
 
 # --- Config header check (pure macros, our warning flags) --------------------
@@ -90,51 +104,89 @@ set_target_properties(config_check PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 robocar_apply_warnings("${PROJECT_SOURCE_DIR}/cmake/config_check.c")
 
 # --- Module source registration ----------------------------------------------
-# Module sources live under src/<module>/ (e.g. src/rtos/port/port_kernel_internal.c).
-# Each module dir may provide src/<module>/sources.cmake that appends ABSOLUTE
-# paths (use "${CMAKE_CURRENT_LIST_DIR}/x.c"):
+# Two source roots:
+#   src/          platform code: common, rtos (port layer in src/rtos/port/),
+#                 debug, app (src/app/main.c = SDK main(), Batch B)
+#   app_program/  team code: app_main.c (usermain), subsystem1..5 (Buddy 1..5)
+# Each directory in ROBOCAR_MODULE_DIRS (repo-relative) may provide a
+# sources.cmake that appends ABSOLUTE paths (use "${CMAKE_CURRENT_LIST_DIR}/x.c"):
 #   ROBOCAR_SOURCES         SDK-side files (may include pico/..., hardware/...)
 #   ROBOCAR_KERNEL_SOURCES  kernel-side files (include <tk/tkernel.h>)
 # A file is in exactly one list. No globbing of sources.
-set(ROBOCAR_SRC_DIR "${PROJECT_SOURCE_DIR}/src")
-set(ROBOCAR_MODULE_DIRS common rtos debug motion vc safety line barcode obstacle imu telemetry app)
+set(ROBOCAR_MODULE_DIRS
+    src/common src/rtos src/debug src/app
+    app_program
+    app_program/subsystem1 app_program/subsystem2 app_program/subsystem3
+    app_program/subsystem4 app_program/subsystem5)
 
 # Fail on any sources.cmake that would be silently ignored: only
-# src/<listed module>/sources.cmake is registered.
+# <listed dir>/sources.cmake is registered. Checked: every top-level
+# */sources.cmake and every sources.cmake anywhere under src/ and app_program/.
 # ProjectTemplate/ (course template, tracked as reference only) is never
 # scanned or built: its matches are dropped before the check.
 set(ROBOCAR_NEVER_SCAN_REGEX "^ProjectTemplate/")
 set(_registered "")
 foreach(_dir IN LISTS ROBOCAR_MODULE_DIRS)
-    list(APPEND _registered "${ROBOCAR_SRC_DIR}/${_dir}/sources.cmake")
+    list(APPEND _registered "${PROJECT_SOURCE_DIR}/${_dir}/sources.cmake")
 endforeach()
 file(GLOB _found_top "${PROJECT_SOURCE_DIR}/*/sources.cmake")
-set(_found_src "")
-if(IS_DIRECTORY "${ROBOCAR_SRC_DIR}")
-    file(GLOB_RECURSE _found_src "${ROBOCAR_SRC_DIR}/sources.cmake")
-endif()
-foreach(_f IN LISTS _found_top _found_src)
+set(_found_tree "")
+foreach(_root IN ITEMS src app_program)
+    if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/${_root}")
+        file(GLOB_RECURSE _found_root "${PROJECT_SOURCE_DIR}/${_root}/sources.cmake")
+        list(APPEND _found_tree ${_found_root})
+    endif()
+endforeach()
+foreach(_f IN LISTS _found_top _found_tree)
     file(RELATIVE_PATH _rel "${PROJECT_SOURCE_DIR}" "${_f}")
     if(_rel MATCHES "${ROBOCAR_NEVER_SCAN_REGEX}")
         continue()
     endif()
     list(FIND _registered "${_f}" _idx)
     if(_idx EQUAL -1)
-        message(FATAL_ERROR "robocar: ${_rel} is not registered. Module sources.cmake files "
-                            "must be src/<module>/sources.cmake with <module> in ROBOCAR_MODULE_DIRS.")
+        message(FATAL_ERROR "robocar: ${_rel} is not registered. sources.cmake files must be in a "
+                            "directory listed in ROBOCAR_MODULE_DIRS (src/common, src/rtos, src/debug, "
+                            "src/app, app_program, app_program/subsystem1..5).")
     endif()
 endforeach()
 
 set(ROBOCAR_SOURCES "")
 set(ROBOCAR_KERNEL_SOURCES "")
 foreach(_dir IN LISTS ROBOCAR_MODULE_DIRS)
-    if(EXISTS "${ROBOCAR_SRC_DIR}/${_dir}/sources.cmake")
-        include("${ROBOCAR_SRC_DIR}/${_dir}/sources.cmake")
+    if(EXISTS "${PROJECT_SOURCE_DIR}/${_dir}/sources.cmake")
+        include("${PROJECT_SOURCE_DIR}/${_dir}/sources.cmake")
     endif()
 endforeach()
 
-if(NOT ROBOCAR_SOURCES)
-    message(STATUS "robocar: no module sources yet (Batch A); firmware target skipped")
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/src/app/main.c")
+    # No SDK main() and no port layer until Batch B, so the firmware cannot
+    # link. Compile every registered source instead, with -Werror, in ALL.
+    message(STATUS "robocar: src/app/main.c not present (Batch B); firmware target skipped, app_program compile-checked")
+    if(ROBOCAR_KERNEL_SOURCES)
+        # Kernel side: kernel include paths only (no SDK include paths).
+        add_library(app_program_check OBJECT ${ROBOCAR_KERNEL_SOURCES})
+        target_link_libraries(app_program_check PRIVATE mtk3_headers robocar_options)
+        set_target_properties(app_program_check PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+        robocar_apply_warnings(${ROBOCAR_KERNEL_SOURCES})
+        add_dependencies(app_program_check check_rules)
+    endif()
+    if(ROBOCAR_SOURCES)
+        # SDK side: hardware_* include paths without pulling the SDK runtime
+        # (crt0, stdio) into a compile-only target.
+        add_library(app_program_check_sdk OBJECT ${ROBOCAR_SOURCES})
+        target_link_libraries(app_program_check_sdk PRIVATE
+            robocar_options
+            hardware_gpio
+            hardware_adc
+            hardware_pwm
+            hardware_i2c
+            hardware_irq
+            hardware_sync
+            hardware_pio)
+        set_target_properties(app_program_check_sdk PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+        robocar_apply_warnings(${ROBOCAR_SOURCES})
+        add_dependencies(app_program_check_sdk check_rules)
+    endif()
 else()
     if(ROBOCAR_KERNEL_SOURCES)
         # OBJECT library: its objects always land on the link line, which avoids
@@ -156,6 +208,7 @@ else()
         hardware_i2c
         hardware_gpio
         hardware_irq
+        hardware_pio
         hardware_uart)
     if(TARGET robocar_kside)
         target_link_libraries(robocar PRIVATE robocar_kside)
@@ -163,13 +216,10 @@ else()
 
     pico_set_linker_script(robocar "${PROJECT_SOURCE_DIR}/cmake/memmap_mtk3.ld")
 
-    if(DBG_BACKEND STREQUAL "UART0")
-        pico_enable_stdio_uart(robocar 1)
-        pico_enable_stdio_usb(robocar 0)
-    else()
-        pico_enable_stdio_uart(robocar 0)
-        pico_enable_stdio_usb(robocar 1)
-    endif()
+    # USB CDC only. stdio UART must never be enabled: it takes GP0/GP1 (pico_w
+    # board default), which are the right wheel encoder.
+    pico_enable_stdio_uart(robocar 0)
+    pico_enable_stdio_usb(robocar 1)
 
     pico_add_extra_outputs(robocar)
     add_dependencies(robocar check_rules)
