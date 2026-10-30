@@ -80,15 +80,20 @@ side never writes to stdio. Its output goes to two separate places in RAM
   `.noinit`, which our linker script zero-fills (`cmake/memmap_mtk3.ld`). No
   linker-script change is needed.
 - Layout: a `uint32_t` magic number first, then the payload, then a CRC-32 over
-  the payload (docs/DATA_REPRESENTATION.md).
+  the payload (docs/DATA_REPRESENTATION.md). The magic is `0x464C5452`; in
+  memory its bytes read "RTLF" (little-endian), so `x/wx` shows `0x464c5452`.
 - The port's HardFault handler writes the record (`src/rtos/port/port_fault.c`).
-  It never writes to stdio.
+  It never writes to stdio. It then resets the whole chip with the watchdog,
+  unless the RAM flag `port_fault_halt` (set from gdb) or the build option
+  `PORT_FAULT_HALT` asks it to halt for the debugger.
 - Read it over SWD at any time: in `arm-none-eabi-gdb`, `print <record symbol>`
   or `x/16wx &<record symbol>`; or OpenOCD `mdw <address> 16`.
-- On the next boot the debug drain prints it through the `dbg_` ring over USB
-  CDC and then clears it, **only if both the magic number and the CRC match**.
-  Otherwise RAM holds random data (power-on, or after flashing), and the record
-  is silently re-initialised.
+- On the next boot the debug drain prints it directly over USB CDC (not through
+  the `dbg_` ring), **only if both the magic number and the CRC match**, and
+  clears it only after printing while a terminal is connected. USB CDC drops
+  output when no host is connected, so the record waits until you open the
+  terminal. If the magic or CRC does not match, RAM holds random data
+  (power-on, or after flashing), and the record is silently re-initialised.
 - TODO(phase 1 batch B, buddy 2): implementation of the ring and the record
   (port layer and drain).
 
