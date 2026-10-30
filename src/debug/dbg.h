@@ -4,8 +4,8 @@
  *  Pure header: <stdint.h> only, no kernel or SDK headers.
  *
  *  Tasks never print (rule R3a).  They write one line at a time into the
- *  dbg_ ring.  The debug drain task (src/debug/dbg_drain.c, priority 10,
- *  stage B4) is the only reader and the only caller of stdio
+ *  dbg_ ring.  The debug drain task (src/debug/dbg_drain.c, priority 10)
+ *  is the only reader and the only caller of stdio
  *  (ARCHITECTURE.md D1).
  *
  *  Rules for callers:
@@ -58,6 +58,12 @@ uint32_t dbg_ring_read(char *p_buf, uint32_t buf_bytes);
 /** Lines dropped because the ring was full, since boot. */
 uint32_t dbg_overflow_count(void);
 
+/**
+ * Start the debug drain task (src/debug/dbg_drain.c, stage B4).  Called by
+ * usermain() right after ipc_init().  Returns 0 or a negative kernel error.
+ */
+int32_t dbg_drain_start(void);
+
 #else /* DBG_ENABLE */
 
 static inline void dbg_puts(char const *p_line)
@@ -86,6 +92,11 @@ static inline uint32_t dbg_ring_read(char *p_buf, uint32_t buf_bytes)
 static inline uint32_t dbg_overflow_count(void)
 {
     return 0U;
+}
+
+static inline int32_t dbg_drain_start(void)
+{
+    return 0;
 }
 
 #endif /* DBG_ENABLE */
