@@ -68,6 +68,7 @@ Rev 6 (30 Oct 2026, after Buddy 2's B0 review; Buddy 2 in chat, 30 Oct: "proceed
 - Kernel stacks: `knl_Imalloc(stksz + DEFAULT_SYS_STKSZ)` rounded to 8, `DEFAULT_SYS_STKSZ` = 128 (`task_manage.c:60-65`, `armv6m/sysdef.h:114,120`); one stack per task, initial frame at `stack + sstksz` (`task_manage.c:93`). The init task stack (1 KB, `include/sys/inittask.h:26-27`) is always kernel-allocated.
 - Linker script (`cmake/memmap_mtk3.ld`, Batch A copy of the SDK 1.5.1 default): `.noinit` (kernel `Noinit()` control blocks, which MUST be zeroed, `USE_NOINIT 0`) is inside crt0's zero-filled `__bss_start__..__bss_end__` range (`:217-231`, `ASSERT` at `:275`). `.data_vector (NOLOAD)` (`:126-137`, before `.data`, not zeroed) holds the kernel's `exchdr_tbl`, which is dead storage because the SDK owns VTOR and we never call `tk_def_int`. `.uninitialized_data` (`:191-194`) is NOLOAD and not zeroed (fault record). **No linker work is needed in Batch B.**
 - Kernel `HardFault_Handler` (`exc_hdr.c:45`) is never installed, because the SDK vector table uses `isr_hardfault`. The port must provide the HardFault handler.
+- `size_t` clash (found in B1): `tk/syslib.h:124-126` typedefs `size_t` as `SZ` (`signed long`) unless `PROHIBIT_DEF_SIZE_T` is defined, which clashes with the C library's `size_t` (`<string.h>`, `<stdio.h>`). With the guard, a C library header that declares `size_t` must come BEFORE `<tk/tkernel.h>`. Since B1, `app.h` includes `<stddef.h>` and sets the guard, so kernel-side files include `app.h` (or `subsystemN.h`) first; platform files that include `<tk/tkernel.h>` directly put the C library headers and the guard first (`dbg_ring.c`).
 - Tasks run on MSP (`config/priorities.h:54`). A task stack overflow can make exception stacking fault and LOCKUP the core, where no handler runs. Known gap: only a watchdog recovers it (open question Q9, §1).
 
 ## 1. Decisions per question
@@ -191,6 +192,11 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
 - **Stop if:**
   - `vsnprintf` pulls in something R3a flags;
   - the `APP_TEST` build needs members' code to change.
+- **B1 result (helper, branch `batchB/b1-platform-code`; SDK 1.5.1 + GCC 10.3.1 in WSL, the same versions as the installer):**
+  - Files: `src/debug/{dbg.h, dbg_ring.c, sources.cmake}`; shared: `app_program/app.h` (`APP_CHECK` → `dbg_put_err`; `size_t` guard), `app_program/test_report.h` (`#error` removed, `[TEST]` lines via `dbg_printf`, file base name in FAIL lines); host tests `tests/CMakeLists.txt`, `tests/host/` (planned for B7; added early, no firmware effect).
+  - Ring: records `[len][text]`, 2 KB, line ≤ 96 B, `DI`/`EI` around every ring access, drop newest + counter, empty lines not stored, `dbg_ring_read()` for the drain. `dbg_ring.c` is built only with `DBG_ENABLE=ON`; with OFF every call is an empty `static inline` (arguments still type-checked).
+  - Gates (fresh `build/b1*`): Debug exit 0, 0 warnings, `check_rules: PASS (45 files)`; self-test PASS; **`APP_TEST=ON` builds** (was stopped at `test_report.h:35`); Release exit 0, 0 warnings, no `dbg_ring.c` object.
+  - Host tests: `test_dbg_ring` 6647 checks, 0 failed (empty ring, order, line ends, cut at 96, printf, `put_err` incl. `INT32_MIN`, full ring drops newest and keeps oldest, exact fit, wrap at every end position, 500-round run, small read buffer); also clean under `-fsanitize=address,undefined`.
 
 #### B2: IPC objects + task start (`src/common`)
 

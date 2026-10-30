@@ -32,18 +32,28 @@
 
 #if APP_TEST
 
-#error "APP_TEST=ON needs the dbg_ ring API: TODO(phase 1 batch B, buddy 2)"
+#include "src/debug/dbg.h"
 
-/*
- * Intended expansion once the dbg_ ring exists (Batch B):
- *   TEST_INIT()               uint32_t test_pass_ = 0U, test_fail_ = 0U
- *   TEST_CHECK(id, cond, d)   pass: test_pass_++,
- *                                   dbg_ line "[TEST] %s PASS  %s" (id, d)
- *                             fail: test_fail_++,
- *                                   dbg_ line "[TEST] %s FAIL  %s   (%s:%d)"
- *                                   (id, d, __FILE__, __LINE__)
- *   TEST_SUMMARY(name)        dbg_ line "[TEST] %s SUMMARY %u passed, %u failed"
- */
+#if !DBG_ENABLE
+#error "APP_TEST=ON needs DBG_ENABLE=ON (the [TEST] lines go through the dbg_ ring)"
+#endif
+
+/* File name without its directories, so a FAIL line keeps its line number
+ * within DBG_LINE_MAX (__FILE__ is an absolute path). */
+static inline char const *test_report_basename_(char const *p_path)
+{
+    char const *p_name = p_path;
+
+    for (char const *p = p_path; *p != '\0'; p++)
+    {
+        if ((*p == '/') || (*p == '\\'))
+        {
+            p_name = p + 1;
+        }
+    }
+    return p_name;
+}
+
 #define TEST_INIT()                 uint32_t test_pass_ = 0U, test_fail_ = 0U
 
 #define TEST_CHECK(id, cond, desc)                                          \
@@ -52,24 +62,19 @@
         if (cond)                                                           \
         {                                                                   \
             test_pass_++;                                                   \
-            (void)(id);                                                     \
-            (void)(desc);                                                   \
+            dbg_printf("[TEST] %s PASS  %s", (id), (desc));                 \
         }                                                                   \
         else                                                                \
         {                                                                   \
             test_fail_++;                                                   \
-            (void)(id);                                                     \
-            (void)(desc);                                                   \
+            dbg_printf("[TEST] %s FAIL  %s   (%s:%d)", (id), (desc),        \
+                       test_report_basename_(__FILE__), __LINE__);          \
         }                                                                   \
     } while (0)
 
 #define TEST_SUMMARY(name)                                                  \
-    do                                                                      \
-    {                                                                       \
-        (void)(name);                                                       \
-        (void)test_pass_;                                                   \
-        (void)test_fail_;                                                   \
-    } while (0)
+    dbg_printf("[TEST] %s SUMMARY %lu passed, %lu failed", (name),          \
+               (unsigned long)test_pass_, (unsigned long)test_fail_)
 
 #endif /* APP_TEST */
 

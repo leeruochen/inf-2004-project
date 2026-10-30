@@ -17,15 +17,26 @@
  *    - task_*.c, subsystemN.c and subsystemN_test.c include kernel headers
  *      only (this header, subsystemN.h, <tk/tkernel.h>).
  *    - subsystemN.h and this header are never included by a drv_*.c.
+ *
+ *  Include this header (or subsystemN.h) FIRST in a kernel-side file.  The
+ *  kernel's tk/syslib.h defines its own size_t, which clashes with the C
+ *  library's (<string.h>, <stdio.h>, ...).  This header takes size_t from
+ *  <stddef.h> and sets PROHIBIT_DEF_SIZE_T before <tk/tkernel.h>, so C
+ *  library headers can follow it.
  */
 
 #ifndef APP_H
 #define APP_H
 
+#include <stddef.h>                 /* size_t from the C library */
 #include <stdint.h>
+#ifndef PROHIBIT_DEF_SIZE_T
+#define PROHIBIT_DEF_SIZE_T         /* tk/syslib.h must not redefine size_t */
+#endif
 #include <tk/tkernel.h>             /* micro T-Kernel API (tk_xxx_yyy) */
 
 #include "config/priorities.h"      /* TASK_PRI_*, TASK_STACK_*_BYTES */
+#include "src/debug/dbg.h"          /* dbg_ log ring (no stdio in tasks) */
 
 /* ---------------------------------------------------------------------------
  * Pins: every pin is defined in config/pins.h and claimed in TEAM.md
@@ -94,6 +105,8 @@ void subsystem5_test(void);
 /*
  * Report a failed kernel call (negative error code).  Evaluates er once.
  * Replaces the template's CHECK(), which called tm_printf from a task.
+ * Logs "[ERR] <p_what> er=<code>" through the dbg_ ring with no formatting
+ * library, so it is safe on the 1 KB init stack (usermain).
  */
 #define APP_CHECK(er, p_what)                                               \
     do                                                                      \
@@ -101,8 +114,7 @@ void subsystem5_test(void);
         int32_t app_check_er_ = (int32_t)(er);                              \
         if (app_check_er_ < (int32_t)E_OK)                                  \
         {                                                                   \
-            (void)(p_what);                                                 \
-            /* TODO(phase 1 batch B, buddy 2): dbg_ log line with p_what */ \
+            dbg_put_err((p_what), app_check_er_);                           \
         }                                                                   \
     } while (0)
 
