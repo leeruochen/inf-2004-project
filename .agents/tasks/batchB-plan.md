@@ -294,6 +294,10 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
 
 ### B4: SDK `main()` + debug drain = first firmware (first flash) → M1-lite
 
+Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on the board before the next:
+- **B4a (branch `batchB/b4-first-firmware`):** `main.c`, the drain, the alive line. Hardware checks 1, 3, 6, 7 below.
+- **B4b:** the `PLATFORM_SELFTEST` option and its checks 2, 4, 5.
+
 - **Goal:** the firmware links, boots on the Pico W and prints over USB CDC.
 - **Files (new):**
   - `src/app/sources.cmake`;
@@ -331,6 +335,20 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
   - no USB COM port: check `pre-kernel ok` first; if absent, the fault is before the kernel;
   - HardFault at first dispatch: check the vector writes, SHPR values and pool bounds (SWD with the team's Debug Probe, `docs/DEBUG.md`);
   - the banner shows up inside the fault record (C3 broken).
+- **B4a result (helper; SDK 1.5.1 + GCC 10.3.1 in WSL):**
+  - Files: `src/app/{main.c, sources.cmake}`, `src/debug/dbg_drain.c`; `src/debug/{dbg.h, sources.cmake}` (`dbg_drain_start()`); shared: `app_program/app_main.c` (`dbg_drain_start()` after `ipc_init()`).
+  - Drain as built: reads nothing while no terminal is connected (USB CDC would drop it), so boot text waits in the rings and appears when the terminal opens; prints the fault record directly and clears it after a connected print; every 10 s prints `[DBG] alive: SDK timer <ms>, kernel time <ms>, difference <ms>` (the difference must stay constant: proves the 1 ms tick). `hal_console_connected()` = `stdio_usb_connected()` in `main.c`.
+  - **The firmware links** (the firmware switch is on): Debug, `APP_TEST=ON`, Release exit 0, 0 warnings, `check_rules: PASS (63 files)`, self-test PASS. Sizes: Debug text 49,780 B, bss 111,472 B; Release text 36,452 B.
+  - Linker checks (`robocar.elf`, map): `.noinit` 6,360 B at `0x20000CD8` = `__bss_start__` = `__noinit_start` (zero-filled with `.bss`, which ends at `__bss_end__` = `0x2001BF64`); `knl_tcb_table`, `knl_tmp_stack` inside it; `.uninitialized_data` 36 B (`s_record`) flags `ALLOC` only (NOLOAD); `.data_vector` 0 B (`exchdr_tbl` removed by `--gc-sections`: never referenced without `tk_def_int`); RAM ends at `0x2001C764` (about 140 KB free). No orphan-section warnings.
+  - Vector table (flash `0x10000100`): HardFault = `0x10000E85` = our `isr_hardfault`; PendSV/SysTick = SDK weak defaults, replaced at run time by `hal_kernel_start()`; initial SP `0x20042000`. Kernel idle `low_pow()` is empty (`pico_rp2040/power_save.c`): no clock changes.
+  - **Hardware (Buddy 2): pending.** Checklist: B4a hardware test below.
+- **B4a hardware test (Buddy 2, Pico W, Debug build):**
+  1. `git switch batchB/b4-first-firmware`, fresh `build/b4` (HANDOVER §5), `& $CM --build build/b4`; expect 0 warnings and `build/b4/robocar.uf2`.
+  2. Hold BOOTSEL, plug in USB, copy `robocar.uf2` to `RPI-RP2`. Open the new COM port (PuTTY, 115200) within 3 s; if later, the boot text still appears when the port opens.
+  3. Expect, in this order: `pre-kernel ok`; `microT-Kernel Version 3.00`; `[IPC] kernel spec version 3.00 OK`; `[IPC] 8 objects created, MBF depth self-check OK`. No `[ERR]` and no `[FAULT]` line. (`pre-kernel ok` is lost if the port opens after the 3 s wait: that is fine.)
+  4. Leave it 2 minutes: an `[DBG] alive` line every 10 s, and the `difference` value never changes by more than 1-2 ms.
+  5. Close and reopen the terminal, then unplug and replug USB: it keeps running (after a replug the board restarts: the boot lines come again).
+  6. Post the console log on the PR. Stop and report if: no COM port, no `pre-kernel ok` (fault before the kernel), banner but no `[IPC]` lines (first dispatch failed), any `[ERR]`/`[FAULT]` line, or the difference drifts.
 
 ### B5: heartbeats + mandatory USB CDC bring-up test (B-baseline acceptance) → M1
 

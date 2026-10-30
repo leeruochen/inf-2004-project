@@ -30,7 +30,12 @@ The firmware enumerates as a USB serial device (a COM port on Windows).
 
 Tasks never print. They write to the `dbg_` ring, and the debug-only drain task
 (priority 10, `DBG_ENABLE` builds only) is the only caller of stdio
-(ARCHITECTURE.md D1).
+(ARCHITECTURE.md D1). The drain prints only while a terminal is connected:
+until then the text waits in the rings (2 KB `dbg_`, 512 B kernel text; once
+full, new text is dropped and counted), so the boot log appears when the
+terminal is opened. Every 10 s it prints
+`[DBG] alive: SDK timer <ms> ms, kernel time <ms> ms, difference <ms> ms`;
+the difference must stay constant (the kernel tick is 1 ms).
 
 ## Flashing over SWD
 

@@ -91,8 +91,11 @@ INT usermain(void)
     /* Measure how deep usermain goes on the 1 KB init stack (O8). */
     stack_mon_paint_init_window();
 
-    /* 1. Every IPC object (design.md 3.3), before any subsystem code runs. */
+    /* 1. Every IPC object (design.md 3.3), before any subsystem code runs.
+     *    Then the debug drain (DBG_ENABLE builds; a no-op otherwise), which
+     *    prints the log of everything after it, including step 1. */
     APP_CHECK(ipc_init(), "ipc_init");
+    APP_CHECK(dbg_drain_start(), "dbg_drain_start");
 
     /* 2. Every subsystem creates its private kernel objects. */
     APP_CHECK(subsystem1_init(), "subsystem1_init");
