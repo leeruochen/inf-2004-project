@@ -49,13 +49,30 @@ For debugging, start OpenOCD without the `program` command and attach
 Alternative without the probe: hold BOOTSEL, plug in USB, copy `robocar.uf2`
 to the RPI-RP2 drive.
 
-## Boot and fault output: the RAM fault record
+## Kernel text and faults: system-message ring and RAM fault record
 
 USB CDC cannot be used from a HardFault or with interrupts masked (TinyUSB
-needs its IRQ and a 1 ms alarm), and there is no UART any more. So boot and
-fault messages from the kernel side go into a fault record in RAM instead of
-a console:
+needs its IRQ and a 1 ms alarm), and there is no UART any more. So the kernel
+side never writes to stdio. Its output goes to two separate places in RAM
+(ARCHITECTURE.md D6, owner decision C3 in `.agents/tasks/batchB-plan.md`).
 
+### System-message ring (kernel text)
+
+- The kernel's own text (the `tm_printf` boot banner, printed on every boot,
+  and any later system message) reaches the port's `tm_snd_dat`, which writes
+  it into a system-message ring in RAM. `tm_snd_dat` never blocks and never
+  writes to stdio.
+- The debug drain empties this ring every cycle and prints it over USB CDC,
+  so kernel text is not lost after boot either. If the ring is full, new
+  bytes are dropped and counted; the drain prints the counter when it changes.
+- Text written during a HardFault is lost with the reset. The fault record
+  below is the authority for crashes.
+- Planned defaults (512 B, single writer and single reader, no lock):
+  `.agents/tasks/batchB-plan.md` O5.
+
+### RAM fault record (faults only)
+
+- The record holds faults only, never boot text.
 - The record lives in the SDK's `.uninitialized_data` section, declared with
   the SDK macro `__uninitialized_ram(...)` (`pico/platform.h`). That section is
   NOLOAD and `crt0` never zeroes it, so its contents are kept across a warm
@@ -63,16 +80,22 @@ a console:
   `.noinit`, which our linker script zero-fills (`cmake/memmap_mtk3.ld`). No
   linker-script change is needed.
 - Layout: a `uint32_t` magic number first, then the payload, then a CRC-32 over
-  the payload (docs/DATA_REPRESENTATION.md).
-- The kernel's `tm_snd_dat` (port layer) writes the record. It never writes to
-  stdio.
+  the payload (docs/DATA_REPRESENTATION.md). The magic is `0x464C5452`; in
+  memory its bytes read "RTLF" (little-endian), so `x/wx` shows `0x464c5452`.
+- The port's HardFault handler writes the record (`src/rtos/port/port_fault.c`).
+  It never writes to stdio. It then resets the whole chip with the watchdog,
+  unless the RAM flag `port_fault_halt` (set from gdb) or the build option
+  `PORT_FAULT_HALT` asks it to halt for the debugger.
 - Read it over SWD at any time: in `arm-none-eabi-gdb`, `print <record symbol>`
   or `x/16wx &<record symbol>`; or OpenOCD `mdw <address> 16`.
-- On the next boot the debug drain prints it through the `dbg_` ring over USB
-  CDC and then clears it, **only if both the magic number and the CRC match**.
-  Otherwise RAM holds random data (power-on, or after flashing), and the record
-  is silently re-initialised.
-- TODO(phase 1 batch B, buddy 2): implementation (port layer and drain).
+- On the next boot the debug drain prints it directly over USB CDC (not through
+  the `dbg_` ring), **only if both the magic number and the CRC match**, and
+  clears it only after printing while a terminal is connected. USB CDC drops
+  output when no host is connected, so the record waits until you open the
+  terminal. If the magic or CRC does not match, RAM holds random data
+  (power-on, or after flashing), and the record is silently re-initialised.
+- TODO(phase 1 batch B, buddy 2): implementation of the ring and the record
+  (port layer and drain).
 
 ## Build options
 
@@ -128,9 +151,9 @@ USB CDC is the only console, so this test is required for Phase 1 acceptance
 (integration report section 14). Build with `DBG_BACKEND=USB` (the only
 backend). Record it in `testing/system/TEST_LOG.md`.
 
-1. Boot, then open the COM port. Expect the boot banner (through the `dbg_`
-   ring) and nine heartbeat lines per period, each with a task ID and a
-   sequence number.
+1. Boot, then open the COM port. Expect the kernel boot banner (through the
+   system-message ring, not the `dbg_` ring) and nine heartbeat lines per
+   period, each with a task ID and a sequence number.
 2. Run for 10 minutes. Pass if there are no sequence gaps, no HardFault, and
    the cyclic period jitter (each task logs `time_us_64()` deltas, max and min)
    is within 1 ms of nominal.
