@@ -185,6 +185,5 @@ runs the tests in a dedicated test task at priority 11, below the debug drain
   in that folder's `TEST_LOG.md` (`testing/README.md`).
 - `APP_TEST=ON` needs `DBG_ENABLE=ON`. A Release build (`DBG_ENABLE=OFF`) with
   `APP_TEST=ON` fails at configure.
-- Deferred to Batch B: the `dbg_` ring does not exist yet, so an `APP_TEST=ON`
-  build configures but stops at the deliberate `#error` in
-  `app_program/test_report.h` (TODO(phase 1 batch B, buddy 2)).
+- `APP_TEST=ON` builds since Batch B stage B1 (the `dbg_` ring exists). The
+  test lines only appear on the console once the debug drain runs (stage B4).

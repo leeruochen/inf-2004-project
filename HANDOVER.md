@@ -184,9 +184,9 @@ commands, stop conditions). It wins over this summary where they differ. Stage s
 | Stage | What | Status |
 |---|---|---|
 | B0 | records and prerequisites (docs only) | official gates passed (Buddy 2's review); review fixes applied; merge after his confirmation |
-| B1 | `dbg_` ring API; `APP_TEST=ON` builds | not started (one PR with B2 and B3) |
-| B2 | IPC objects, task start, stack painting (`src/common`) | not started |
-| B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | not started |
+| B1 | `dbg_` ring API; `APP_TEST=ON` builds | code done on `batchB/b1-platform-code` (one PR with B2 and B3); gates and host tests pass |
+| B2 | IPC objects, task start, stack painting (`src/common`) | code done (same PR); gates pass |
+| B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | code done (same PR); gates, symbol check and host tests pass |
 | B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | not started |
 | B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | not started |
 | B6 | baseline measurement, tag `baseline/week6-unpacked` | not started |

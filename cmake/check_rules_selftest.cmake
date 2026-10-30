@@ -29,6 +29,7 @@ set(expected
     "app_program/subsystem4/r5_core1.c:" "[R5]"
     "app_program/subsystem2/r2_pio_blocking.c:2:" "app_program/subsystem2/r2_pio_blocking.c:3:"
     "app_program/subsystem2/r1_drv_subsystem_hdr.c:3: [R1]"
+    "app_program/subsystem2/r1_drv_ipc_hdr.c:3: [R1]"
     "tools/r2_unlisted_dir.c:2:"
     "r3_root_file.c:2:"
     "app_program/subsystem1/r3_app_program.c:2: [R3b]")

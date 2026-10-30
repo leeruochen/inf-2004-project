@@ -1,6 +1,6 @@
 # Batch B plan: platform (boot, kernel port, debug console, IPC objects)
 
-Status: B0 reviewed by Buddy 2 (`batchB-b0-review-report.md`, 30 Oct 2026). Verdict: "merge after small fixes". The official gates passed on `fae43bf`. Rev 6 applies the fixes and the review's recommendations; B0 merges after Buddy 2 confirms on the PR. No code is implemented.
+Status: B0 reviewed by Buddy 2 (`batchB-b0-review-report.md`); Rev 6 fixes pushed (`af53004`), merge after his confirmation. B1-B3 code written on `batchB/b1-platform-code`, all compile gates and host tests pass (results in each stage). Next: B4 (first firmware, first flash).
 Written 29 Oct 2026 for the Batch B helper (Buddy 3, Jin Yong), with Buddy 2's go-ahead.
 
 Rev 2 (29 Oct 2026, after review):
@@ -68,6 +68,7 @@ Rev 6 (30 Oct 2026, after Buddy 2's B0 review; Buddy 2 in chat, 30 Oct: "proceed
 - Kernel stacks: `knl_Imalloc(stksz + DEFAULT_SYS_STKSZ)` rounded to 8, `DEFAULT_SYS_STKSZ` = 128 (`task_manage.c:60-65`, `armv6m/sysdef.h:114,120`); one stack per task, initial frame at `stack + sstksz` (`task_manage.c:93`). The init task stack (1 KB, `include/sys/inittask.h:26-27`) is always kernel-allocated.
 - Linker script (`cmake/memmap_mtk3.ld`, Batch A copy of the SDK 1.5.1 default): `.noinit` (kernel `Noinit()` control blocks, which MUST be zeroed, `USE_NOINIT 0`) is inside crt0's zero-filled `__bss_start__..__bss_end__` range (`:217-231`, `ASSERT` at `:275`). `.data_vector (NOLOAD)` (`:126-137`, before `.data`, not zeroed) holds the kernel's `exchdr_tbl`, which is dead storage because the SDK owns VTOR and we never call `tk_def_int`. `.uninitialized_data` (`:191-194`) is NOLOAD and not zeroed (fault record). **No linker work is needed in Batch B.**
 - Kernel `HardFault_Handler` (`exc_hdr.c:45`) is never installed, because the SDK vector table uses `isr_hardfault`. The port must provide the HardFault handler.
+- `size_t` clash (found in B1): `tk/syslib.h:124-126` typedefs `size_t` as `SZ` (`signed long`) unless `PROHIBIT_DEF_SIZE_T` is defined, which clashes with the C library's `size_t` (`<string.h>`, `<stdio.h>`). With the guard, a C library header that declares `size_t` must come BEFORE `<tk/tkernel.h>`. Since B1, `app.h` includes `<stddef.h>` and sets the guard, so kernel-side files include `app.h` (or `subsystemN.h`) first; platform files that include `<tk/tkernel.h>` directly put the C library headers and the guard first (`dbg_ring.c`).
 - Tasks run on MSP (`config/priorities.h:54`). A task stack overflow can make exception stacking fault and LOCKUP the core, where no handler runs. Known gap: only a watchdog recovers it (open question Q9, §1).
 
 ## 1. Decisions per question
@@ -191,6 +192,11 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
 - **Stop if:**
   - `vsnprintf` pulls in something R3a flags;
   - the `APP_TEST` build needs members' code to change.
+- **B1 result (helper, branch `batchB/b1-platform-code`; SDK 1.5.1 + GCC 10.3.1 in WSL, the same versions as the installer):**
+  - Files: `src/debug/{dbg.h, dbg_ring.c, sources.cmake}`; shared: `app_program/app.h` (`APP_CHECK` → `dbg_put_err`; `size_t` guard), `app_program/test_report.h` (`#error` removed, `[TEST]` lines via `dbg_printf`, file base name in FAIL lines); host tests `tests/CMakeLists.txt`, `tests/host/` (planned for B7; added early, no firmware effect).
+  - Ring: records `[len][text]`, 2 KB, line ≤ 96 B, `DI`/`EI` around every ring access, drop newest + counter, empty lines not stored, `dbg_ring_read()` for the drain. `dbg_ring.c` is built only with `DBG_ENABLE=ON`; with OFF every call is an empty `static inline` (arguments still type-checked).
+  - Gates (fresh `build/b1*`): Debug exit 0, 0 warnings, `check_rules: PASS (45 files)`; self-test PASS; **`APP_TEST=ON` builds** (was stopped at `test_report.h:35`); Release exit 0, 0 warnings, no `dbg_ring.c` object.
+  - Host tests: `test_dbg_ring` 6647 checks, 0 failed (empty ring, order, line ends, cut at 96, printf, `put_err` incl. `INT32_MIN`, full ring drops newest and keeps oldest, exact fit, wrap at every end position, 500-round run, small read buffer); also clean under `-fsanitize=address,undefined`.
 
 #### B2: IPC objects + task start (`src/common`)
 
@@ -228,7 +234,7 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
      - drain.
 
      Keep it stack-light: one local of the largest type, no more than 20 B.
-  3. Kernel version self-test: `tk_ref_ver`, `spver == TK_SPECVER` (`0x0300`, `include/sys/profile.h:47`), logged.
+  3. Kernel version self-test: `tk_ref_ver`, `spver == (TK_SPECVER_MAGIC << 12) | TK_SPECVER` = `0x6300`, logged. (Corrected in B2: `tk_ref_ver` reports `0x6000 | (major << 8) | minor`, `sys/knldef.h:230`, `misc_calls.c:67`; comparing with `TK_SPECVER` = `0x0300` alone would fail on every boot.)
   4. EVF_SAFETY bit positions stay as proposed (fixed in B7).
   5. Stack painting via the O8 trampoline. Painting happens here; reporting is in B6.
 - **Verify:**
@@ -239,6 +245,14 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
 - **Stop if:**
   - an IF owner disputes a type;
   - the self-check grows `usermain`'s stack use past about 256 B.
+- **B2 result (helper, same branch and toolchain as B1):**
+  - Files: `src/common/{ipc_types.h, mbf_size.h, ipc.h, ipc.c, stack_mon.h, stack_mon.c, sources.cmake}`; shared: `app_program/app.h` (includes `ipc.h`, so every subsystem sees `MBF_NAV_IN` ... `MTX_MOTION`, the message types and the PROVISIONAL `EVF_*` bit masks), `app_program/app_main.c` (`app_start_task()`, `ipc_init()` in step 1, init-stack window), `cmake/check_rules.cmake` + `cmake/check_rules_selftest.cmake` + fixture `tests/rules_fixtures/app_program/subsystem2/r1_drv_ipc_hdr.c` (O9: `ipc` and `stack_mon` count as kernel-side headers).
+  - Object names: `ipc.h` defines `MBF_NAV_IN` etc. as macros for runtime IDs (`ipc_mbf_nav_in` ...), so code uses the TEAM.md names directly. Attributes: MBFs `TA_TFIFO`; `SEM_ECHO` count 0, max 1 (TODO buddy 5); `EVF_SAFETY` `TA_WSGL`; `EVF_NAV` `TA_WMUL` (polling readers never get `E_OBJ`); `MTX_MOTION` `TA_INHERIT`.
+  - `ipc_init()` tries every object, logs each failure through `dbg_put_err`, returns the first error. Depth self-check per MBF as in work item 2 (16-byte dummy + one `T_RMBF` on the init stack).
+  - O8 as built: `stack_mon_trampoline` is naked (`mov r2, sp; bl stack_mon_task_start`), checked in the disassembly; bottom = top − `round8(stksz + 128)`. Init task: a 512 B window below `usermain`'s frame (`stack_mon_paint_init_window()`), because its top is unknown; safe while the kernel frames above `usermain` stay under 640 B of the 1152 B init stack. Table: 16 entries.
+  - Sizes: `_Static_assert`s on the baseline sizes (4, 10, 16, 16, 20 B; edge 8 B) and on `MBF_BUFSZ` (64, 64, 40, 640 B) all hold.
+  - Gates (fresh `~/robocar-build/b2*`): Debug, `APP_TEST=ON` and Release exit 0, 0 warnings, `check_rules: PASS (52 files)`, self-test PASS (new fixture fires). `config/priorities.h` unchanged.
+  - Build note: fresh configures on the Windows drive from WSL (`/mnt/d`, DrvFs) intermittently lose files; WSL builds go to the Linux disk. Windows builds (PowerShell) are unaffected.
 
 #### B3: kernel port layer (`src/rtos/port`)
 
@@ -267,6 +281,16 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
 - **Stop if:**
   - any port file needs both kernel and SDK headers (split it instead);
   - a needed kernel symbol is `static` or `Inline`, so it can't be linked.
+- **B3 result (helper, same branch and toolchain):**
+  - Files: `src/rtos/sources.cmake`; `src/rtos/port/{hal.h, port.h, port_kernel_internal.c, port_boot.c, port_fault.c, port_irq.c}`; `src/common/crc32.h`; shared: `CMakeLists.txt` adds `hardware_exception`, `hardware_clocks`, `hardware_timer`, `hardware_watchdog` to `app_program_check_sdk` and to the `robocar` link list. `port.h` (pure) carries the port's own calls across the kernel/SDK split (`port_isr_enter/leave`, `port_fault_boot/shutdown`, `port_sysmsg_puts`). `hal_console_connected()` is declared in `hal.h` and defined in B4 (`src/app/main.c`, the only file with `pico/stdio_usb.h`).
+  - Start: `hal_kernel_start()` checks `clk_sys` = 125 MHz (the kernel's `TMCLK_KHz`; a mismatch is reported in the system-message ring), counts resets for a valid fault record, writes SHPR2 = 0 and SHPR3 = `0x00C00000` (SVC 0, SysTick 0, PendSV 3) at `PPB_BASE + M0PLUS_SHPRn_OFFSET` (SDK 1.5.1 has no exception-priority API), installs PendSV/SysTick with `exception_set_exclusive_handler()` (RAM vector table), calls `mtk3_kernel_main()`.
+  - Pool: `static uint64_t s_kernel_pool[KERNEL_POOL_BYTES / 8]`; `knl_lowmem_top/limit` are static initialisers (no runtime code). `knl_shutdown_hw` records a SHUTDOWN fault, then resets or halts (O7); `knl_restart_hw` returns `E_NOSPT`.
+  - System-message ring: 512 B, free-running `head` (writer) / `tail` (reader), compiler barriers, drop-and-count when full; `tm_rcv_dat` returns NUL bytes.
+  - Fault record: 9 words in `.uninitialized_data.s_record` (O4); naked `isr_hardfault` picks MSP/PSP from EXC_RETURN and `bl`s the C part (checked in the disassembly); the stacked frame is read only if it lies in SRAM and is aligned; reset = `watchdog_reboot(0, 0, 10)`; halt = `bkpt` only with `port_fault_halt` (RAM, set from gdb) or `PORT_FAULT_HALT=1`. `boot_count` counts resets since the fault (incremented in `hal_kernel_start`).
+  - IRQs: 8 fixed wrapper slots (`port_isr_enter(); fn(); port_isr_leave();`); `hal_irq_register` refuses `IO_IRQ_BANK0`, priority = level << 6; `hal_gpio_irq_register` uses `gpio_add_raw_irq_handler_masked` (handler acknowledges its own pin). Return codes match `E_PAR`/`E_LIMIT`.
+  - Gates (fresh `~/robocar-build/b3*`): Debug, `APP_TEST=ON`, Release exit 0, 0 warnings, `check_rules: PASS (60 files)`, no R1 hit on any port file; self-test PASS.
+  - Symbol check: every symbol `libmtk3.a` needs from outside is defined by our objects (`knl_lowmem_top/limit`, `knl_shutdown_hw`, `knl_restart_hw`, `tm_com_init`, `tm_snd_dat`, `tm_rcv_dat`; `usermain` in `app_main.c`), except `__aeabi_*` and `memcpy`, which the SDK/newlib provide at link.
+  - Host tests: `test_crc32` (check value `0xCBF43926`, empty input, zeros, every single-bit flip of a payload changes the CRC) and `test_dbg_ring`: 2/2 pass.
 
 ### B4: SDK `main()` + debug drain = first firmware (first flash) → M1-lite
 
