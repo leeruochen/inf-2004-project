@@ -3,9 +3,9 @@
 Agreed field table for every inter-task message, shared word, state machine,
 eventflag bit and the MQTT wire format (ARCHITECTURE.md D8, D9, D10). It is
 **language-neutral**: the dashboard language is not decided, and no decoder
-exists. Nothing here is implemented yet. Batch B-baseline builds the unpacked
-Week 6 types and measures them; Batch B-packed adds the shared header and host
-tests (section 10).
+exists. The unpacked Week 6 types are built and measured (Batch B stage B6,
+`docs/measurements/week6-baseline.txt`); Batch B-packed adds the shared header
+and host tests (section 10).
 
 ## 1. General rules
 
@@ -24,8 +24,9 @@ tests (section 10).
 - Every multi-byte wire field is little-endian.
 - Single writer per field; the writer is named in every table row.
 
-"Baseline" = the Week 6 natural `<stdint.h>` struct (ARM EABI alignment),
-estimated; B-baseline measures it. "MBF slot" = message-buffer bytes per
+"Baseline" = the Week 6 natural `<stdint.h>` struct (ARM EABI alignment).
+Measured in stage B6 (`cmake/size_report.c`): every "Baseline bytes" value
+below matches the build. "MBF slot" = message-buffer bytes per
 message: 4-byte header + size rounded up to 4 (`messagebuf.h:58-62`,
 `messagebuf.c:65`).
 
@@ -227,9 +228,11 @@ record is silently re-initialised (docs/DEBUG.md, ARCHITECTURE.md D6).
 Bit-packing barely changes RAM: message-buffer slots round up to whole words
 plus a 4-byte header, and the buffers live inside the fixed 96 KB kernel pool.
 
-Only what the map file shows is reported. No firmware map exists yet (firmware
-target skipped until Batch B), so no RAM figures are reported now. Expected
-from the arithmetic above, for planning only: MBF_NAV_IN 64 → 64 B,
+Only what the map file shows is reported. Baseline (stage B6,
+`docs/measurements/week6-baseline.txt`): the 96 KB kernel pool, the 2 KB
+`dbg_` ring and the 3.3 KB task table are the large RAM items; the message
+buffers live inside the pool. Expected from the arithmetic above, for
+planning only: MBF_NAV_IN 64 → 64 B,
 MBF_MOTION_CMD 64 → 32 B, MBF_OBSTACLE 40 → 24 B, MBF_TELEMETRY 640 → 384 B
 (all inside the pool, so the map does not move); edge ring 512 → 160 B (a
 static array, visible in the map).
@@ -304,5 +307,5 @@ against the shared header once both exist.
 
 ## 10. Status
 
-Documentation only. No packed types, pack/unpack code or encoder code exist
-yet (Batch B).
+Baseline measured (stage B6). No packed types, pack/unpack code or encoder
+code exist yet (stage B7).

@@ -155,7 +155,7 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 | Interfaces | sends steering (TMO_POL) and barcode commands (5 ms) into IF-01; sets LINE_FOUND in IF-07 EVF_NAV; reads IF-08; owns IF-09 edge ring (20-bit gaps, D8) |
 | Already there | `drv_ir.h/.c` with the `hal_adc_sanity_check()` stub, limits `ADC_*` in `config/thresholds.h` |
 | Decisions open for you | steering sign for CENTRE + RIGHT sensors (proposal `steer_err > 0` = line to the right, D11); `BC_CAPTURE_TIMEOUT_MS`; ADC sanity limits; tape the Grove 6 GP26 lead (TEAM.md hardware checklist) |
-| Also | Batch B helper for Buddy 2 (C1, section 4): B0 reviewed, fixes applied; next B1-B3. Needs the SDK 1.5.1 installer (section 5) to run the official compile gates (C7, plan O11) |
+| Also | Batch B helper for Buddy 2 (C1, section 4): B0-B4 merged (M1-lite); B5 and B6 written, waiting for Buddy 2's runs; then B7. Runs the official compile gates on SDK 1.5.1 + GCC 10.3.1 (C7, plan O11) |
 | Status | subsystem not started |
 
 ### Buddy 4: Vincent (2500709, Vincent6430), IMU + safety, `app_program/subsystem4/`
@@ -195,7 +195,7 @@ commands, stop conditions). It wins over this summary where they differ. Stage s
 | B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | done, merged (PR #2) |
 | B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | done: B4a and B4b passed on the board, merged (PRs #3, #4). **M1-lite reached, 31 Oct 2026.** B4b found and fixed a task-exit fault (rule R6) |
 | B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | code done (`PLATFORM_BRINGUP` build, `app_period_wait()`, log checker); gates pass; waiting for Buddy 2's bring-up run (`.agents/tasks/batchB-b5-test.md`) |
-| B6 | baseline measurement, tag `baseline/week6-unpacked` | not started |
+| B6 | baseline measurement, tag `baseline/week6-unpacked` | code done (`size_report`, whole-init-stack and `[STACK]`/`[MBF]` report, compile-time numbers in `docs/measurements/week6-baseline.txt`); gates pass; waiting for Buddy 2's run (`.agents/tasks/batchB-b6-test.md`) |
 | B7 | B-packed types + host tests: **milestone M2** (messages final) | not started |
 
 Since B4 (M1-lite) members can run their own tasks on the car. Planned as two

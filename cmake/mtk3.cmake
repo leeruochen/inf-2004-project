@@ -149,6 +149,10 @@ target_include_directories(mtk3 PRIVATE
 
 target_compile_definitions(mtk3 PRIVATE _PICO_RP2040_)
 
+# Our one file that needs kernel internals (the TCB): compiled with the
+# kernel's private include paths and flags, inside the library (stage B6).
+target_sources(mtk3 PRIVATE "${PROJECT_SOURCE_DIR}/src/rtos/port/port_knl_view.c")
+
 # No -Werror on vendored code. The -Wno-* flags silence known kernel warnings
 # (report section 11) on mtk3 only.
 target_compile_options(mtk3 PRIVATE

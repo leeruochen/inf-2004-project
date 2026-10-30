@@ -10,6 +10,14 @@
 
 #include "src/common/stack_mon.h"
 
+#include <sys/inittask.h>           /* INITTASK_STKSZ */
+
+#include "config/priorities.h"
+#include "src/rtos/port/hal.h"
+
+_Static_assert(KERNEL_INIT_TASK_STACK_BYTES == INITTASK_STKSZ,
+               "config/priorities.h KERNEL_INIT_TASK_STACK_BYTES != kernel INITTASK_STKSZ");
+
 /* Never paint closer than this to the painting function's own frame. */
 #define STACK_MON_GUARD_BYTES   (64U)
 
@@ -29,6 +37,9 @@
 
 static stack_mon_entry_t s_entries[STACK_MON_MAX_ENTRIES];
 static uint32_t          s_count;
+/* Tasks whose kernel stack top (hal_task_stack_top) differed from SP at
+ * their first instruction: must stay 0, or the init-stack bounds are wrong. */
+static uint32_t          s_top_mismatches;
 
 /* Defined below; reached from the trampoline's assembly only. */
 void stack_mon_task_start(INT stacd, void *p_exinf, uint32_t *p_top)
@@ -117,6 +128,10 @@ void stack_mon_task_start(INT stacd, void *p_exinf, uint32_t *p_top)
 
     p_ent->p_top = p_top;
     p_ent->p_bottom = (uint32_t *)(uintptr_t)((uint32_t)(uintptr_t)p_top - alloc_bytes);
+    if (hal_task_stack_top() != (void *)p_top)
+    {
+        s_top_mismatches++;
+    }
     paint_below_here(p_ent->p_bottom);
 
     p_ent->p_entry(stacd, NULL);
@@ -128,7 +143,11 @@ void stack_mon_task_start(INT stacd, void *p_exinf, uint32_t *p_top)
 void stack_mon_paint_init_window(void)
 {
     uint32_t           marker = 0U;
-    uint32_t const     top = (uint32_t)(uintptr_t)&marker & ~3UL;
+    uint32_t const     here = (uint32_t)(uintptr_t)&marker & ~3UL;
+    /* The kernel allocated the init stack like any task's:
+     * round8(INITTASK_STKSZ + DEFAULT_SYS_STKSZ) below tcb->isstack. */
+    uint32_t const     alloc_bytes = (KERNEL_INIT_TASK_STACK_BYTES + (uint32_t)DEFAULT_SYS_STKSZ + 7U) & ~7UL;
+    uint32_t const     top = (uint32_t)(uintptr_t)hal_task_stack_top();
     stack_mon_entry_t *p_ent;
 
     if (s_count >= STACK_MON_MAX_ENTRIES)
@@ -137,13 +156,30 @@ void stack_mon_paint_init_window(void)
     }
     p_ent = &s_entries[s_count];
     s_count++;
-
     p_ent->p_entry = NULL;
-    p_ent->p_name = "init (usermain window)";
-    p_ent->stack_bytes = STACK_MON_INIT_WINDOW_BYTES;
-    p_ent->p_top = (uint32_t *)(uintptr_t)top;
-    p_ent->p_bottom = (uint32_t *)(uintptr_t)(top - STACK_MON_INIT_WINDOW_BYTES);
+
+    if ((top > here) && ((top - here) < alloc_bytes))
+    {
+        /* The whole init stack (stage B6). */
+        p_ent->p_name = "init";
+        p_ent->stack_bytes = KERNEL_INIT_TASK_STACK_BYTES;
+        p_ent->p_top = (uint32_t *)(uintptr_t)top;
+        p_ent->p_bottom = (uint32_t *)(uintptr_t)(top - alloc_bytes);
+    }
+    else
+    {
+        /* Top not plausible: only a window below usermain's frame. */
+        p_ent->p_name = "init (usermain window)";
+        p_ent->stack_bytes = STACK_MON_INIT_WINDOW_BYTES;
+        p_ent->p_top = (uint32_t *)(uintptr_t)here;
+        p_ent->p_bottom = (uint32_t *)(uintptr_t)(here - STACK_MON_INIT_WINDOW_BYTES);
+    }
     paint_below_here(p_ent->p_bottom);
+}
+
+uint32_t stack_mon_top_mismatches(void)
+{
+    return s_top_mismatches;
 }
 
 uint32_t stack_mon_count(void)

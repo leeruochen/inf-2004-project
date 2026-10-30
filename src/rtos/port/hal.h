@@ -38,6 +38,13 @@ uint32_t hal_time_us(void);
 /** True while a USB CDC host has the console open (stage B4, src/app/main.c). */
 bool hal_console_connected(void);
 
+/**
+ * Top of the calling task's stack (the kernel's tcb->isstack), or NULL
+ * outside a task.  Task context only.  src/rtos/port/port_knl_view.c,
+ * compiled inside the kernel library (stage B6, stack high-water report).
+ */
+void *hal_task_stack_top(void);
+
 /* ---------------------------------------------------------------------------
  * Interrupts.  Every ISR goes through these, never irq_set_exclusive_handler
  * or tk_def_int directly: the port wraps each handler so kernel calls from

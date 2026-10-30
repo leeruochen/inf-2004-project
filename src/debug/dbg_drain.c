@@ -13,7 +13,13 @@
  *    5. every DRAIN_ALIVE_PERIOD_S, an alive line with the SDK timer and the
  *       kernel's operating time side by side.  The kernel clock starts later
  *       (after the USB wait), so the DIFFERENCE must stay constant: that
- *       shows the kernel tick is 1 ms (SysTick set for clk_sys = 125 MHz).
+ *       shows the kernel tick is 1 ms (SysTick set for clk_sys = 125 MHz);
+ *    6. every DRAIN_REPORT_PERIOD_S (stage B6), the stack high-water report
+ *       (every task started by app_start_task, and the init task) and the
+ *       message-buffer free space.  Printed directly, not through the ring,
+ *       so it never makes the ring overflow:
+ *         [STACK] <name>: <used> of <size> B used, <free> never used
+ *         [MBF] <name>: <size> B buffer, <free> B free
  *  With no terminal connected nothing is read: USB CDC would drop the text,
  *  so it waits in the rings (they keep the oldest text and count what does
  *  not fit) and appears when the terminal is opened.  The fault record is
@@ -30,6 +36,8 @@
 
 #include "app_program/app.h"
 #include "config/timing.h"
+#include "src/common/mbf_size.h"
+#include "src/common/stack_mon.h"
 #include "src/debug/dbg.h"
 #include "src/rtos/port/hal.h"
 
@@ -37,6 +45,13 @@
 #define DRAIN_SYSMSG_CHUNK  (64U)
 /* Alive line period. */
 #define DRAIN_ALIVE_PERIOD_S (10U)
+/* Stack and message-buffer report period (a multiple of the alive period). */
+#define DRAIN_REPORT_PERIOD_S (60U)
+/* A stack with less never-used space than this is flagged (B6 stop rule). */
+#define DRAIN_STACK_LOW_BYTES (128U)
+
+_Static_assert((DRAIN_REPORT_PERIOD_S % DRAIN_ALIVE_PERIOD_S) == 0U,
+               "DRAIN_REPORT_PERIOD_S must be a multiple of DRAIN_ALIVE_PERIOD_S");
 
 static char const *fault_type_name(uint32_t type)
 {
@@ -60,6 +75,49 @@ static void drain_alive(void)
     (void)tk_get_otm(&otm);
     printf("[DBG] alive: SDK timer %lu ms, kernel time %lu ms, difference %ld ms\n",
            (unsigned long)sdk_ms, (unsigned long)otm.lo, (long)(sdk_ms - (uint32_t)otm.lo));
+}
+
+static void drain_mbf(char const *p_name, ID mbfid, uint32_t buf_bytes)
+{
+    T_RMBF    rmbf;
+    ER const  er = tk_ref_mbf(mbfid, &rmbf);
+
+    if (er < E_OK)
+    {
+        printf("[MBF] %s: tk_ref_mbf error %ld\n", p_name, (long)er);
+        return;
+    }
+    printf("[MBF] %s: %lu B buffer, %ld B free\n",
+           p_name, (unsigned long)buf_bytes, (long)rmbf.frbufsz);
+}
+
+/* Stack high-water marks (O8 painting) and message-buffer space (stage B6). */
+static void drain_report(void)
+{
+    uint32_t i;
+
+    for (i = 0U; i < stack_mon_count(); i++)
+    {
+        stack_mon_entry_t const *p_ent = stack_mon_entry(i);
+        uint32_t                 size;
+        uint32_t                 unused;
+
+        if ((p_ent == NULL) || (p_ent->p_bottom == NULL))
+        {
+            continue;   /* registered, not started yet */
+        }
+        size = (uint32_t)(uintptr_t)p_ent->p_top - (uint32_t)(uintptr_t)p_ent->p_bottom;
+        unused = stack_mon_unused_bytes(p_ent);
+        printf("[STACK] %s: %lu of %lu B used, %lu never used%s\n",
+               (p_ent->p_name != NULL) ? p_ent->p_name : "?", (unsigned long)(size - unused),
+               (unsigned long)size, (unsigned long)unused,
+               (unused < DRAIN_STACK_LOW_BYTES) ? " LOW" : "");
+    }
+    printf("[STACK] stack top check: %lu mismatches\n", (unsigned long)stack_mon_top_mismatches());
+    drain_mbf("nav_in", MBF_NAV_IN, MBF_BUFSZ(MBF_NAV_IN_DEPTH, nav_input_t));
+    drain_mbf("motion_cmd", MBF_MOTION_CMD, MBF_BUFSZ(MBF_MOTION_CMD_DEPTH, motion_cmd_t));
+    drain_mbf("obstacle", MBF_OBSTACLE, MBF_BUFSZ(MBF_OBSTACLE_DEPTH, obstacle_profile_t));
+    drain_mbf("telemetry", MBF_TELEMETRY, MBF_BUFSZ(MBF_TELEMETRY_DEPTH, tel_evt_t));
 }
 
 /* Print and clear a valid fault record.  Returns true when nothing is left
@@ -87,6 +145,7 @@ static void dbg_drain_task(INT stacd, void *p_exinf)
     uint32_t    shown_dbg_drops = 0U;
     uint32_t    shown_sys_drops = 0U;
     uint32_t    last_alive_us = hal_time_us();
+    uint32_t    alive_count = 0U;
 
     (void)stacd;
     (void)p_exinf;
@@ -125,6 +184,11 @@ static void dbg_drain_task(INT stacd, void *p_exinf)
             {
                 last_alive_us = hal_time_us();
                 drain_alive();
+                alive_count++;
+                if ((alive_count % (DRAIN_REPORT_PERIOD_S / DRAIN_ALIVE_PERIOD_S)) == 0U)
+                {
+                    drain_report();
+                }
             }
         }
         (void)tk_dly_tsk((TMO)DBG_DRAIN_PERIOD_MS);
