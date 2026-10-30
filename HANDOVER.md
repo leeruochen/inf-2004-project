@@ -45,9 +45,9 @@ the Batch B helper. Previous update: 29 Oct 2026, Batch B stage B0, by Buddy 3.
 | Template merge (Option C): `app_program/`, `TEAM.md`, `testing/`, `videos/` | Done, verified (`merge-verify.md`) |
 | Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
 | Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
-| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Milestone M1-lite reached (31 Oct 2026): the firmware boots on the Pico W; members can run their own tasks** (section 3). B0-B4 merged on `main` (PRs #1-#4); B4a and B4b passed on the board (Buddy 2). Next: B5, the USB CDC bring-up test (milestone M1). Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
+| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Milestone M1 reached (31 Oct 2026): the platform passed the Phase 1 USB CDC bring-up test (SYS-01); members can run their own tasks** (section 3). B0-B5 merged on `main` (PRs #1-#5); every hardware stage passed on Buddy 2's board. Next: B6 (baseline measurement), then B7 (packed messages, milestone M2). Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
 | Subsystem code (all five buddies) | Not started. Every subsystem is a compile-checked stub |
-| Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026, Buddy 2's Pico W; logs on PRs #3 and #4 |
+| Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026; B5 bring-up test (SYS-01, 13 min with stress, replug) passed, 31 Oct 2026. Buddy 2's Pico W; logs on PRs #3-#5 and in `testing/system/logs/` |
 
 **Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
 `8d083ca` = `origin/main`), so every member can see `app_program/`, `TEAM.md` and the new pin
@@ -194,7 +194,7 @@ commands, stop conditions). It wins over this summary where they differ. Stage s
 | B2 | IPC objects, task start, stack painting (`src/common`) | done, merged (PR #2) |
 | B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | done, merged (PR #2) |
 | B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | done: B4a and B4b passed on the board, merged (PRs #3, #4). **M1-lite reached, 31 Oct 2026.** B4b found and fixed a task-exit fault (rule R6) |
-| B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | code done (`PLATFORM_BRINGUP` build, `app_period_wait()`, log checker); gates pass; waiting for Buddy 2's bring-up run (`.agents/tasks/batchB-b5-test.md`) |
+| B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | done: passed on the board 31 Oct 2026 (SYS-01, `testing/system/TEST_LOG.md`; worst jitter 566 µs of the 1000 µs limit), merged (PR #5). **M1 reached** |
 | B6 | baseline measurement, tag `baseline/week6-unpacked` | not started |
 | B7 | B-packed types + host tests: **milestone M2** (messages final) | not started |
 

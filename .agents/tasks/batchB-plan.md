@@ -384,6 +384,7 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
   - Gates: Debug, `APP_TEST=ON`, Release, `PLATFORM_SELFTEST=ON`, `PLATFORM_BRINGUP=ON` exit 0, 0 warnings, `check_rules: PASS (67 files)`; the four refused combinations are refused; host tests 3/3, also under ASan/UBSan. The normal firmware contains no bring-up symbol.
   - Logs and the SYS-01 result row: committed to this PR after Buddy 2's run (§2 step 4: docs-only follow-up), then merged (C7 amendment).
   - Hardware test for Buddy 2: `.agents/tasks/batchB-b5-test.md`.
+  - **Hardware run (Buddy 2, 31 Oct 2026, `a7393a7`): PASS** (report on PR #5; logs in `testing/system/logs/2026-10-31_b5-bringup-*.txt`; SYS-01 row in `testing/system/TEST_LOG.md`). 798 s of heartbeats from all nine tasks, no gaps, no faults. Worst |dt − period|: safety 10, vc 126, motion 192, lf 271, bc 336, obs_scan 372, obs_avoid 435, imu 522, tel 566 µs (limit 1000; it grows with lower priority, as the shared 1 s release puts every task behind the ones above it). Stress dropped 633 lines, all inside the window, no heartbeat line lost. Alive difference constant at 1026 ms. Replug: kept running while closed, restarted after the replug. The helper re-ran `bringup_check` on both logs: PASS. **Milestone M1.**
 
 ### B6: B-baseline measurement + tag
 

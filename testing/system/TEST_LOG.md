@@ -21,3 +21,4 @@ Add a new row for every run. Never edit or delete old rows.
 
 | Date | Test ID | Commit | Tester | Result | Log / evidence | Notes |
 |---|---|---|---|---|---|---|
+| 2026-10-31 | SYS-01 | `a7393a7` | Buddy 2 (Ruo Chen) | PASS | `logs/2026-10-31_b5-bringup-run.txt`, `logs/2026-10-31_b5-bringup-replug.txt`; report on PR #5 | Batch B stage B5, milestone M1. 798 s, nine tasks, no gaps, no faults; worst \|dt − period\| 10 µs (safety) to 566 µs (tel), limit 1000 µs; stress dropped 633 lines, all inside 660-720 s, no heartbeat lost; alive difference constant (1026 ms, 79 lines); kept running with the terminal closed; restarted after replug. `bringup_check` PASS on both logs (Buddy 2, re-run by the helper) |
