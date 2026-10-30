@@ -75,7 +75,18 @@ if(PLATFORM_SELFTEST AND APP_TEST)
     message(FATAL_ERROR "PLATFORM_SELFTEST=ON and APP_TEST=ON cannot be combined (one extra task fits the budget, config/priorities.h)")
 endif()
 
-message(STATUS "robocar: DBG_ENABLE=${DBG_ENABLE} DBG_BACKEND=${DBG_BACKEND} TEL_BACKEND_WIFI=${TEL_BACKEND_WIFI} APP_TEST=${APP_TEST} PLATFORM_SELFTEST=${PLATFORM_SELFTEST}")
+# Platform bring-up build (Batch B stage B5, batchB-plan O1): nine heartbeat
+# tasks INSTEAD of the subsystems' tasks, for the USB CDC bring-up test
+# (docs/DEBUG.md).  Never in a normal build.
+option(PLATFORM_BRINGUP "Bring-up heartbeat tasks instead of the subsystems (debug builds only)" OFF)
+if(PLATFORM_BRINGUP AND NOT DBG_ENABLE)
+    message(FATAL_ERROR "PLATFORM_BRINGUP=ON needs DBG_ENABLE=ON (the heartbeats go through the dbg_ ring)")
+endif()
+if(PLATFORM_BRINGUP AND (APP_TEST OR PLATFORM_SELFTEST))
+    message(FATAL_ERROR "PLATFORM_BRINGUP=ON cannot be combined with APP_TEST or PLATFORM_SELFTEST (the test measures the platform alone)")
+endif()
+
+message(STATUS "robocar: DBG_ENABLE=${DBG_ENABLE} DBG_BACKEND=${DBG_BACKEND} TEL_BACKEND_WIFI=${TEL_BACKEND_WIFI} APP_TEST=${APP_TEST} PLATFORM_SELFTEST=${PLATFORM_SELFTEST} PLATFORM_BRINGUP=${PLATFORM_BRINGUP}")
 
 include(cmake/warnings.cmake)
 include(cmake/mtk3.cmake)
@@ -110,6 +121,11 @@ if(PLATFORM_SELFTEST)
     target_compile_definitions(robocar_options INTERFACE PLATFORM_SELFTEST=1)
 else()
     target_compile_definitions(robocar_options INTERFACE PLATFORM_SELFTEST=0)
+endif()
+if(PLATFORM_BRINGUP)
+    target_compile_definitions(robocar_options INTERFACE PLATFORM_BRINGUP=1)
+else()
+    target_compile_definitions(robocar_options INTERFACE PLATFORM_BRINGUP=0)
 endif()
 
 # --- Config header check (pure macros, our warning flags) --------------------

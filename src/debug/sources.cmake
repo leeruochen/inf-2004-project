@@ -10,3 +10,7 @@ endif()
 if(PLATFORM_SELFTEST)
     list(APPEND ROBOCAR_KERNEL_SOURCES "${CMAKE_CURRENT_LIST_DIR}/dbg_selftest.c")
 endif()
+# Bring-up heartbeat tasks (stage B5), PLATFORM_BRINGUP=ON builds only.
+if(PLATFORM_BRINGUP)
+    list(APPEND ROBOCAR_KERNEL_SOURCES "${CMAKE_CURRENT_LIST_DIR}/dbg_bringup.c")
+endif()

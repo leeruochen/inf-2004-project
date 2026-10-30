@@ -161,6 +161,11 @@ checked automatically.
   kernel needs. Called from a shallow stack, `tk_ext_tsk` overwrites its own
   return address and faults with `pc=0xfffffff8`. This happened in B4b, 30 Oct 2026.
 
+Not checked by the build, but required: a periodic task waits with
+`app_period_wait()` (`src/common/period.h`), not a `tk_dly_tsk(P)` loop. The
+kernel wakes `tk_dly_tsk(d)` one tick late, so such a loop runs every P + 1 ms
+(`docs/DEBUG.md`, "Periodic tasks").
+
 The build also separates the two sides: kernel include paths reach only the
 kernel-side OBJECT libraries (`robocar_kside` with the firmware,
 `app_program_check` before Batch B), and `mtk3` never sees SDK headers.
