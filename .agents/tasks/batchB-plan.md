@@ -1,6 +1,6 @@
 # Batch B plan: platform (boot, kernel port, debug console, IPC objects)
 
-Status: B0 reviewed by Buddy 2 (`batchB-b0-review-report.md`, 30 Oct 2026). Verdict: "merge after small fixes". The official gates passed on `fae43bf`. Rev 6 applies the fixes and the review's recommendations; B0 merges after Buddy 2 confirms on the PR. No code is implemented.
+Status: B0 reviewed by Buddy 2 (`batchB-b0-review-report.md`); Rev 6 fixes pushed (`af53004`), merge after his confirmation. B1-B3 code written on `batchB/b1-platform-code`, all compile gates and host tests pass (results in each stage). Next: B4 (first firmware, first flash).
 Written 29 Oct 2026 for the Batch B helper (Buddy 3, Jin Yong), with Buddy 2's go-ahead.
 
 Rev 2 (29 Oct 2026, after review):
@@ -281,6 +281,16 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
 - **Stop if:**
   - any port file needs both kernel and SDK headers (split it instead);
   - a needed kernel symbol is `static` or `Inline`, so it can't be linked.
+- **B3 result (helper, same branch and toolchain):**
+  - Files: `src/rtos/sources.cmake`; `src/rtos/port/{hal.h, port.h, port_kernel_internal.c, port_boot.c, port_fault.c, port_irq.c}`; `src/common/crc32.h`; shared: `CMakeLists.txt` adds `hardware_exception`, `hardware_clocks`, `hardware_timer`, `hardware_watchdog` to `app_program_check_sdk` and to the `robocar` link list. `port.h` (pure) carries the port's own calls across the kernel/SDK split (`port_isr_enter/leave`, `port_fault_boot/shutdown`, `port_sysmsg_puts`). `hal_console_connected()` is declared in `hal.h` and defined in B4 (`src/app/main.c`, the only file with `pico/stdio_usb.h`).
+  - Start: `hal_kernel_start()` checks `clk_sys` = 125 MHz (the kernel's `TMCLK_KHz`; a mismatch is reported in the system-message ring), counts resets for a valid fault record, writes SHPR2 = 0 and SHPR3 = `0x00C00000` (SVC 0, SysTick 0, PendSV 3) at `PPB_BASE + M0PLUS_SHPRn_OFFSET` (SDK 1.5.1 has no exception-priority API), installs PendSV/SysTick with `exception_set_exclusive_handler()` (RAM vector table), calls `mtk3_kernel_main()`.
+  - Pool: `static uint64_t s_kernel_pool[KERNEL_POOL_BYTES / 8]`; `knl_lowmem_top/limit` are static initialisers (no runtime code). `knl_shutdown_hw` records a SHUTDOWN fault, then resets or halts (O7); `knl_restart_hw` returns `E_NOSPT`.
+  - System-message ring: 512 B, free-running `head` (writer) / `tail` (reader), compiler barriers, drop-and-count when full; `tm_rcv_dat` returns NUL bytes.
+  - Fault record: 9 words in `.uninitialized_data.s_record` (O4); naked `isr_hardfault` picks MSP/PSP from EXC_RETURN and `bl`s the C part (checked in the disassembly); the stacked frame is read only if it lies in SRAM and is aligned; reset = `watchdog_reboot(0, 0, 10)`; halt = `bkpt` only with `port_fault_halt` (RAM, set from gdb) or `PORT_FAULT_HALT=1`. `boot_count` counts resets since the fault (incremented in `hal_kernel_start`).
+  - IRQs: 8 fixed wrapper slots (`port_isr_enter(); fn(); port_isr_leave();`); `hal_irq_register` refuses `IO_IRQ_BANK0`, priority = level << 6; `hal_gpio_irq_register` uses `gpio_add_raw_irq_handler_masked` (handler acknowledges its own pin). Return codes match `E_PAR`/`E_LIMIT`.
+  - Gates (fresh `~/robocar-build/b3*`): Debug, `APP_TEST=ON`, Release exit 0, 0 warnings, `check_rules: PASS (60 files)`, no R1 hit on any port file; self-test PASS.
+  - Symbol check: every symbol `libmtk3.a` needs from outside is defined by our objects (`knl_lowmem_top/limit`, `knl_shutdown_hw`, `knl_restart_hw`, `tm_com_init`, `tm_snd_dat`, `tm_rcv_dat`; `usermain` in `app_main.c`), except `__aeabi_*` and `memcpy`, which the SDK/newlib provide at link.
+  - Host tests: `test_crc32` (check value `0xCBF43926`, empty input, zeros, every single-bit flip of a payload changes the CRC) and `test_dbg_ring`: 2/2 pass.
 
 ### B4: SDK `main()` + debug drain = first firmware (first flash) → M1-lite
 

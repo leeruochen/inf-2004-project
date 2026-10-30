@@ -182,7 +182,11 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/src/app/main.c")
             hardware_i2c
             hardware_irq
             hardware_sync
-            hardware_pio)
+            hardware_pio
+            hardware_exception
+            hardware_clocks
+            hardware_timer
+            hardware_watchdog)
         set_target_properties(app_program_check_sdk PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
         robocar_apply_warnings(${ROBOCAR_SOURCES})
         add_dependencies(app_program_check_sdk check_rules)
@@ -209,7 +213,11 @@ else()
         hardware_gpio
         hardware_irq
         hardware_pio
-        hardware_uart)
+        hardware_uart
+        hardware_exception
+        hardware_clocks
+        hardware_timer
+        hardware_watchdog)
     if(TARGET robocar_kside)
         target_link_libraries(robocar PRIVATE robocar_kside)
     endif()
