@@ -23,6 +23,9 @@
 #   R4  Any reference to libbsp_pwm, unless the line is marked
 #       "RULE-ALLOW: exclusion-note".
 #   R5  Core 1 / SMP: multicore_launch_core1* calls, or pico_multicore in CMake.
+#   R6  tk_ext_tsk / tk_exd_tsk calls. A task ends by returning from its
+#       function; only src/common/stack_mon.c calls tk_ext_tsk (with stack
+#       headroom the kernel needs, see there).
 #
 # Scans every C/C++/asm and CMake file in the tree (src/, app_program/, config/,
 # cmake/, tools/, ...), so a new directory is checked automatically. Skips only
@@ -37,6 +40,7 @@ cmake_minimum_required(VERSION 3.13)
 set(RULES_STDIO_ALLOWED_FILES   "src/debug/dbg_drain.c")
 set(RULES_TM_ALLOWED_FILES      "src/rtos/port/port_boot.c" "src/rtos/port/port_fault.c")
 set(RULES_PREKERNEL_FILE        "src/app/main.c")
+set(RULES_TASK_EXIT_FILE        "src/common/stack_mon.c")
 set(RULES_PORT_DIR_REGEX        "^src/rtos/port/")
 set(RULES_MARK_PREKERNEL        "RULE-ALLOW: pre-kernel")
 set(RULES_MARK_BOOTCONSOLE      "RULE-ALLOW: boot-console")
@@ -65,6 +69,7 @@ set(_RE_R2   "${_B}(sleep_(ms|us|until)|busy_wait[A-Za-z0-9_]*|mutex_enter_[A-Za
 set(_RE_R3A  "${_B}(printf|vprintf|puts|putchar|putchar_raw|puts_raw|fputs|fputc|fprintf|getchar|getchar_timeout_us|stdio_flush)[ \t]*\\(")
 set(_RE_R3B  "${_B}(tm_printf|tm_putstring|tm_putchar|tm_sprintf)[ \t]*\\(")
 set(_RE_R5   "${_B}multicore_launch_core1[A-Za-z0-9_]*[ \t]*\\(")
+set(_RE_R6   "${_B}(tk_ext_tsk|tk_exd_tsk)[ \t]*\\(")
 set(_RE_BLOCK "/\\*([^*]|\\*+[^*/])*\\*+/")
 
 set(_violations 0)
@@ -228,6 +233,11 @@ foreach(_f IN LISTS _sources)
         # R5
         if(_code MATCHES "${_RE_R5}")
             _rules_report("${_rel}" ${_n} "R5" "core 1 must stay unused (no SMP)" "${_raw}")
+        endif()
+
+        # R6
+        if(_code MATCHES "${_RE_R6}" AND NOT _rel STREQUAL RULES_TASK_EXIT_FILE)
+            _rules_report("${_rel}" ${_n} "R6" "task exit call (return from the task function instead)" "${_raw}")
         endif()
     endforeach()
 

@@ -8,7 +8,8 @@
  *  (hal_selftest_stage(), watchdog scratch register):
  *    START        no fault record at boot (power-on RAM rejected); CRC-32
  *                 check value; stack painting bounds (O8) and unused bytes
- *                 per task; late kernel text through tm_printf (C3); then a
+ *                 per task; a task that returns ends cleanly (rule R6);
+ *                 late kernel text through tm_printf (C3); then a
  *                 forced HardFault -> watchdog reset.
  *    AFTER_FAULT  the fault record was there at boot (the drain prints it
  *                 once, with the PC inside hal_selftest_force_fault); then a
@@ -34,6 +35,9 @@
 #define SELFTEST_SETTLE_MS          (1500)
 /* Time for the drain to deliver the results before a reset. */
 #define SELFTEST_FLUSH_MS           (3000)
+/* Exit probe task: stack (plus the kernel's 128 B), and time to end. */
+#define SELFTEST_PROBE_STACK_BYTES  (256U)
+#define SELFTEST_PROBE_WAIT_MS      (50)
 
 static uint32_t s_pass;
 static uint32_t s_fail;
@@ -96,6 +100,28 @@ static void check_stacks(void)
     check(all_painted, "every started stack still has unused pattern at the bottom");
 }
 
+/* A task that returns at once: it must end DORMANT, with no fault (R6). */
+static void exit_probe_task(INT stacd, void *p_exinf)
+{
+    (void)stacd;
+    (void)p_exinf;
+}
+
+static void check_task_exit(void)
+{
+    int32_t const tskid = app_start_task(exit_probe_task, TASK_PRI_TEST,
+                                         SELFTEST_PROBE_STACK_BYTES, "exit_probe");
+    T_RTSK        rtsk;
+    bool          dormant = false;
+
+    if (tskid >= 0)
+    {
+        (void)tk_dly_tsk(SELFTEST_PROBE_WAIT_MS);
+        dormant = (tk_ref_tsk((ID)tskid, &rtsk) == E_OK) && (rtsk.tskstat == TTS_DMT);
+    }
+    check(dormant, "a task that returns from its function ends cleanly (DORMANT)");
+}
+
 static void stage_start(void)
 {
     uint32_t fault_fn;
@@ -103,6 +129,7 @@ static void stage_start(void)
     dbg_puts("[SELFTEST] stage 1 of 3: checks, then a forced HardFault");
     check(!hal_fault_seen_at_boot(), "no fault record at power-up (random RAM rejected)");
     check(crc32_ieee("123456789", 9U) == CRC32_CHECK_VALUE, "CRC-32 check value 0xCBF43926");
+    check_task_exit();
     check_stacks();
     hal_selftest_late_sysmsg();
     dbg_printf("[SELFTEST] summary: %lu passed, %lu failed",
@@ -163,7 +190,7 @@ static void dbg_selftest_task(INT stacd, void *p_exinf)
             dbg_puts("[SELFTEST] done earlier in this power-up; unplug and replug to run again");
             break;
     }
-    tk_ext_tsk();
+    /* Returning ends the task (rule R6). */
 }
 
 int32_t dbg_selftest_start(void)

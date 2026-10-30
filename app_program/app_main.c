@@ -43,7 +43,7 @@ static void app_test_task(INT stacd, void *p_exinf)
     subsystem4_test();
     subsystem5_test();
 
-    tk_ext_tsk();
+    /* Returning ends the task (rule R6: never call tk_ext_tsk directly). */
 }
 #endif /* APP_TEST */
 
@@ -53,20 +53,27 @@ int32_t app_start_task(void (*p_entry)(INT stacd, void *p_exinf),
                        char const *p_name)
 {
     /* The kernel allocates the stack (stksz = stack_bytes, plus its own
-     * 128 B).  Registered tasks start through the stack monitor, which paints
-     * the stack for the high-water report (batchB-plan O8). */
+     * 128 B).  Every task starts through the stack monitor, which paints
+     * the stack for the high-water report (batchB-plan O8) and ends the task
+     * safely when its function returns (rule R6). */
     void         *p_mon = stack_mon_register(p_entry, stack_bytes, p_name);
     T_CTSK const  ctsk =
     {
         .exinf   = p_mon,
         .tskatr  = TA_HLNG | TA_RNG0,
-        .task    = (p_mon != NULL) ? (FP)stack_mon_trampoline : (FP)p_entry,
+        .task    = (FP)stack_mon_trampoline,
         .itskpri = (PRI)priority,
         .stksz   = (SZ)stack_bytes,
         .bufptr  = NULL,
     };
     ID tskid;
     ER er;
+
+    if (p_mon == NULL)
+    {
+        APP_CHECK(E_LIMIT, p_name);
+        return (int32_t)E_LIMIT;
+    }
 
     tskid = tk_cre_tsk(&ctsk);
     if (tskid < E_OK)

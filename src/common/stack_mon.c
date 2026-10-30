@@ -13,12 +13,42 @@
 /* Never paint closer than this to the painting function's own frame. */
 #define STACK_MON_GUARD_BYTES   (64U)
 
+/*
+ * Stack kept free below stack_mon_task_start() before tk_ext_tsk() runs.
+ * tk_ext_tsk() -> knl_make_dormant() rebuilds the first context of the task
+ * on the stack it is still running on: it writes the word at isstack - 68
+ * (SStackFrame.exp_ret, armv6m/cpu_task.h knl_setup_context()).  The kernel
+ * reserves only DORMANT_STACK_SIZE (28 B) in tk_ext_tsk(), which is enough
+ * only when tk_ext_tsk() is called from the very top of the stack.  Called
+ * 24 B below the top (stack_mon_task_start 16 B + an 8 B task function),
+ * the write lands on knl_make_dormant()'s saved LR, and its return jumps to
+ * 0xFFFFFFF8: HardFault (B4b stage 3, 30 Oct 2026).  64 B more puts every
+ * live frame of the exit path below isstack - 68.
+ */
+#define STACK_MON_EXIT_PAD_WORDS (16U)
+
 static stack_mon_entry_t s_entries[STACK_MON_MAX_ENTRIES];
 static uint32_t          s_count;
 
 /* Defined below; reached from the trampoline's assembly only. */
 void stack_mon_task_start(INT stacd, void *p_exinf, uint32_t *p_top)
     __attribute__((noreturn, used));
+
+/* Ends the calling task with STACK_MON_EXIT_PAD_WORDS of headroom. */
+static void __attribute__((noinline, noreturn)) exit_task_with_headroom(void)
+{
+    volatile uint32_t pad[STACK_MON_EXIT_PAD_WORDS];
+
+    pad[0] = 0U;
+    tk_ext_tsk();
+
+    for (;;)
+    {
+        /* tk_ext_tsk() does not return.  Reading pad keeps the frame alive
+         * across the call (no tail call that would drop the headroom). */
+        (void)pad[0];
+    }
+}
 
 /* Fill [p_bottom, p_limit) with the pattern, word by word. */
 static void __attribute__((noinline)) paint_words(uint32_t *p_bottom, uint32_t *p_limit)
@@ -90,12 +120,9 @@ void stack_mon_task_start(INT stacd, void *p_exinf, uint32_t *p_top)
     paint_below_here(p_ent->p_bottom);
 
     p_ent->p_entry(stacd, NULL);
-    tk_ext_tsk();
 
-    for (;;)
-    {
-        /* tk_ext_tsk() does not return. */
-    }
+    /* The task function returned: the only way a task ends (rule R6). */
+    exit_task_with_headroom();
 }
 
 void stack_mon_paint_init_window(void)

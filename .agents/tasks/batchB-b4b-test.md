@@ -3,12 +3,24 @@
 Written 30 Oct 2026 by the Batch B helper (Buddy 3). Plan: `.agents/tasks/batchB-plan.md`, section B4.
 **Run this only after B4a passed** (`.agents/tasks/batchB-b4a-test.md`).
 
+**Rerun (fix after the first run, 30 Oct 2026).** The first run (commit `4cc560d`) passed stages 1 and 2. It then went into a reset loop with `[FAULT] pc=0xfffffff8 lr=0x1000887d`:
+- The self-test task called `tk_ext_tsk()` 24 B below the top of its stack.
+- At that depth, the kernel's `knl_make_dormant()` rebuilds the task's first context right on top of its own saved return address.
+
+The fix:
+- A task now ends by returning from its function. `stack_mon_task_start()` then calls `tk_ext_tsk()` with 64 B of headroom.
+- New rule R6 forbids calling `tk_ext_tsk`/`tk_exd_tsk` anywhere else.
+- Stage 1 has a new check: a task that returns must end DORMANT.
+
+Run the whole test again from step 1, on the new top commit.
+
 ## What this is
 
 B4b adds the CMake option `PLATFORM_SELFTEST` (default OFF; Debug builds only). A self-test task then runs once per power-up, in three stages:
 1. Checks:
    - no fault record at power-up;
    - the CRC-32 check value;
+   - a task that returns from its function ends cleanly (rule R6);
    - the stack painting bounds;
    - late kernel text through `tm_printf`.
 
@@ -92,8 +104,8 @@ Expected, in this order (boot lines of B4a repeat after every reset and are not 
 |---|---|---|
 | 1 | `[SELFTEST] stage 1 of 3: checks, then a forced HardFault` | present |
 | 2 | `[SELFTEST] PASS no fault record at power-up (random RAM rejected)` | PASS |
-| 3 | `[SELFTEST] PASS CRC-32 check value 0xCBF43926` | PASS |
-| 4 | `[SELFTEST] stack <name>: <n> of <m> B never used (...)` | one line each for `dbg_drain`, `selftest`, `init (usermain window)`; every `<n>` > 0 |
+| 3 | `[SELFTEST] PASS CRC-32 check value 0xCBF43926` and `[SELFTEST] PASS a task that returns from its function ends cleanly (DORMANT)` | both PASS |
+| 4 | `[SELFTEST] stack <name>: <n> of <m> B never used (...)` | one line each for `dbg_drain`, `selftest`, `exit_probe`, `init (usermain window)`; every `<n>` > 0 |
 | 5 | `[SELFTEST] PASS own stack pointer inside its painted bounds, ...` and `[SELFTEST] PASS every started stack ...` | both PASS |
 | 6 | `[SELFTEST] late kernel text via tm_printf` | present (kernel text after boot reaches the console) |
 | 7 | `[SELFTEST] summary: <p> passed, 0 failed` | 0 failed |
@@ -130,6 +142,7 @@ Select-String build/b4b-console.txt -Pattern '\[SELFTEST\]|\[FAULT\]|\[ERR\]|por
 | `[FAULT]` pc outside the expected range | the HardFault entry read the wrong stack | the full `[FAULT]` line, and `addr2line` of the pc |
 | More than one `[FAULT]` line | the record is not cleared after printing | the whole log |
 | Keeps resetting (more than 2 resets) | a fault loop, not the self-test | the whole log; then flash the B4a firmware again to recover |
+| `[FAULT] pc=0xfffffff8` | a task ended with `tk_ext_tsk()` from a shallow stack (rule R6, fixed in the rerun commit) | the whole log, and `git log --oneline -1` (an old commit?) |
 | Stage 1 shows `FAIL no fault record at power-up` | random RAM passed the CRC (very unlikely) or the record survived a power cycle | the whole log |
 | A `stack ... 0 of` line | the stack was used to the bottom, or painting missed it | the line |
 

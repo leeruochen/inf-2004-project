@@ -155,6 +155,11 @@ checked automatically.
   `src/rtos/port/port_fault.c`.
 - R4: `libbsp_pwm.c` is never linked or referenced.
 - R5: no core 1 launch, no `pico_multicore`.
+- R6: no `tk_ext_tsk` / `tk_exd_tsk`. A task ends by returning from its
+  function. Every task starts through `app_start_task()`, and only
+  `src/common/stack_mon.c` calls `tk_ext_tsk`, with the stack headroom the
+  kernel needs. Called from a shallow stack, `tk_ext_tsk` overwrites its own
+  return address and faults with `pc=0xfffffff8`. This happened in B4b, 30 Oct 2026.
 
 The build also separates the two sides: kernel include paths reach only the
 kernel-side OBJECT libraries (`robocar_kside` with the firmware,
