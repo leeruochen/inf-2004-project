@@ -4,7 +4,9 @@ Read this first. Section 3 is for every team member (where to continue on your
 own subsystem). Section 0 is for whoever continues on another device or with an
 AI agent. The detailed evidence is in `.agents/tasks/` (index in section 9).
 
-Last updated: 29 Oct 2026, by Buddy 2 (Ruo Chen) on `C:\Users\asus\Downloads\inf-2004-project`.
+Last updated: 29 Oct 2026, Batch B stage B0 (records only), by Buddy 3 (Jin Yong) as the
+Batch B helper. Previous update: 29 Oct 2026, by Buddy 2 (Ruo Chen) on
+`C:\Users\asus\Downloads\inf-2004-project`.
 
 ---
 
@@ -15,11 +17,16 @@ Last updated: 29 Oct 2026, by Buddy 2 (Ruo Chen) on `C:\Users\asus\Downloads\inf
 2. **Set up** as in section 5 (SDK 1.5.1 at the default path, submodule at `15ed232`). If
    `git submodule status` starts with `-`, run `git submodule update --init`.
 3. **Check the state:**
-   - `git log --oneline -n 3`. The template merge + Week 8 work must be committed on `main`
-     (see section 1, "Commit status"). If `app_program/` is missing, pull first.
+   - `git log --oneline -n 3`. The template merge + Week 8 work is committed on `main`
+     (`559f479`, `8d083ca`; section 1, "Commit status"). If `app_program/` is missing, pull first.
    - Sanity build (section 5, step 4) must pass: 0 warnings, `check_rules: PASS`.
-4. **What is next for the platform** is Batch B (section 4). It is owned by Buddy 2. Do not
-   start it unless Buddy 2 (the owner of this repo) says so explicitly.
+4. **What is next for the platform** is Batch B (section 4). It is owned by Buddy 2. Buddy 2
+   has approved Buddy 3 (Jin Yong) as the Batch B helper (decision C1, section 7). Batch B
+   follows `.agents/tasks/batchB-plan.md` one stage at a time. The helper writes and pushes
+   each stage; Buddy 2 runs the official build and checks (section 5 environment) and, from
+   stage B4 on, flashes the Pico W and runs the hardware tests. **A stage passes only after
+   Buddy 2's verification** (C7, section 7); the next stage starts from a passed one. Nobody
+   else starts Batch B work.
 5. **Do not write another member's subsystem code.** Each member writes and tests their own
    folder (section 3). An agent working for one member only edits that member's folder, plus
    shared files when the team has agreed.
@@ -39,20 +46,13 @@ Last updated: 29 Oct 2026, by Buddy 2 (Ruo Chen) on `C:\Users\asus\Downloads\inf
 | Template merge (Option C): `app_program/`, `TEAM.md`, `testing/`, `videos/` | Done, verified (`merge-verify.md`) |
 | Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
 | Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
-| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Not started.** Owner: Buddy 2. Blocks running anything on the car (section 4) |
+| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **In progress.** Stage B0 (records, docs only) written, waiting for Buddy 2's review and official run; B1 is next once B0 passes. No platform code yet. Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`. Blocks running anything on the car (section 4) |
 | Subsystem code (all five buddies) | Not started. Every subsystem is a compile-checked stub |
 | Hardware runs | None yet. Nothing has been flashed |
 
-**Commit status.** The merge + Week 8 work was left uncommitted in the working tree on this
-device (the five fixture renames are staged). It must be committed and pushed from this
-device before anyone else can see `app_program/`, `TEAM.md` or the new pin map:
-
-```powershell
-git add -A
-git status        # ProjectTemplate/ must show nothing; config/secrets.h must not be listed
-git commit -m "Template merge + Week 8 pin map v2, USB console, docs"
-git push
-```
+**Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
+`8d083ca` = `origin/main`), so every member can see `app_program/`, `TEAM.md` and the new pin
+map. Batch B work goes on one branch and one pull request per stage (`batchB/bN-<name>`).
 
 **Rough completion estimate** (judgement, not a measurement):
 
@@ -68,9 +68,11 @@ Batch B (platform code in `src/`), which everyone's on-target tests depend on.
 
 - Now: write your drivers (`drv_*.c/.h`), task skeletons and test cases. Everything you
   register in your `sources.cmake` is compiled with `-Werror` and rule-checked on every build.
-- After Batch B lands: flash the firmware, run your tasks, see `[TEST]` lines on USB CDC.
-  Until then the firmware cannot link (no `main()`, no kernel port), so nothing runs on the
-  car from this repo.
+- After Batch B milestone M1 (stage B5, plan section 3): flash the firmware, run your tasks,
+  see `[TEST]` lines on USB CDC. Until then the firmware cannot link (no `main()`, no kernel
+  port), so nothing runs on the car from this repo. The message types stay provisional until
+  milestone M2 (stage B7), so code that reads or writes message fields may need edits between
+  M1 and M2.
 
 ---
 
@@ -135,7 +137,7 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 | Start with (motors) | 1. `drv_motor.c/.h`: PWM slices 4 and 5 at `MOTOR_PWM_FREQ_HZ`, duty capped at `MOTOR_DUTY_MAX_PCT`, `MOTOR_x_DIR_INVERT`, brake = both inputs LOW, coast = both HIGH. 2. `motion_emergency_brake()` (declared in `subsystem2.h`): all four channels LOW inside a critical section. 3. `drv_encoder.c`: copy pico-examples `quadrature_encoder.pio` (tag `sdk-1.5.1`, keep its header; notice already in `NOTICE.md`), load at offset 0 on PIO0, SM0 right / SM1 left, non-blocking `enc_get_count()` (prototype in `drv_encoder.h`), add `pico_generate_pio_header` in `CMakeLists.txt` (shared file: tell the team). 4. Motion task: 20 ms PID per wheel, `MOTION_T_HOLD_MS`. 5. VC task |
 | Bring-up order | motor direction first (`MOTOR_x_DIR_INVERT`), then encoder sign (`ENC_x_DIR_INVERT`) by hand-spin and forward-drive tests |
 | Values to measure | `ENC_CPR`, `WHEEL_CIRC_MM` (0 = not measured; code using them must `#error` while 0), `MOTOR_DUTY_MAX_PCT`, `POWER_GROVE_3V3_BUDGET_MA` |
-| Also yours | Batch B platform work (section 4), labelled `TODO(phase 1 batch B, buddy 2)` across the repo; it unblocks everyone's hardware tests. NFR2 wording test: drive a measured distance at 50 cm/s and compare counts, both wheels (ARCHITECTURE.md D7) |
+| Also yours | Batch B platform work (section 4), labelled `TODO(phase 1 batch B, buddy 2)` across the repo; it unblocks everyone's hardware tests. Buddy 3 writes it as the helper (C1). You own the decisions, and your run is the official gate for every stage: pull the stage branch, run section 5 step 4 plus the plan's gate commands, and from B4 flash the Pico W and run the hardware/USB tests (C7). NFR2 wording test: drive a measured distance at 50 cm/s and compare counts, both wheels (ARCHITECTURE.md D7) |
 | Status | not started |
 
 ### Buddy 3: Jin Yong (2503319, jyong1101), line following + barcode, `app_program/subsystem3/`
@@ -147,7 +149,8 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 | Interfaces | sends steering (TMO_POL) and barcode commands (5 ms) into IF-01; sets LINE_FOUND in IF-07 EVF_NAV; reads IF-08; owns IF-09 edge ring (20-bit gaps, D8) |
 | Already there | `drv_ir.h/.c` with the `hal_adc_sanity_check()` stub, limits `ADC_*` in `config/thresholds.h` |
 | Decisions open for you | steering sign for CENTRE + RIGHT sensors (proposal `steer_err > 0` = line to the right, D11); `BC_CAPTURE_TIMEOUT_MS`; ADC sanity limits; tape the Grove 6 GP26 lead (TEAM.md hardware checklist) |
-| Status | not started |
+| Also | Batch B helper for Buddy 2 (C1, section 4): B0 written (docs only), waiting for Buddy 2's review and official run. Local SDK 2.3.1 builds are feedback only (C7) |
+| Status | subsystem not started |
 
 ### Buddy 4: Vincent (2500709, Vincent6430), IMU + safety, `app_program/subsystem4/`
 
@@ -173,19 +176,42 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 
 ---
 
-## 4. Batch B: platform work still to do (Buddy 2)
+## 4. Batch B: platform work still to do (Buddy 2, helper Buddy 3)
 
-Nothing in it is started. Until it exists the firmware does not link, so no member can run
-code on the car. Planned as two parts (owner decision): **B-baseline** (unpacked Week 6 types,
-measured, tagged `baseline/week6-unpacked`) then **B-packed** (shared header + host tests).
+**The plan is `.agents/tasks/batchB-plan.md`** (stages, decisions, open questions, gate
+commands, stop conditions). It wins over this summary where they differ. Stage status:
 
-B-baseline contents, with file names already fixed by the `check_rules` allow-lists:
+| Stage | What | Status |
+|---|---|---|
+| B0 | records and prerequisites (docs only) | written, waiting for Buddy 2's official run |
+| BM | SDK/toolchain migration | deferred: the toolchain stays as in section 5 (C8) |
+| B1 | `dbg_` ring API; `APP_TEST=ON` builds | not started |
+| B2 | IPC objects, task start, stack arena (`src/common`) | not started |
+| B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring, linker overrides | not started |
+| B4 | SDK `main()` + debug drain: first firmware, first flash | not started |
+| B5 | heartbeats + USB CDC bring-up test: **milestone M1** (platform works) | not started |
+| B6 | baseline measurement, tag `baseline/week6-unpacked` | not started |
+| B7 | B-packed types + host tests: **milestone M2** (messages final) | not started |
+
+Until B4 the firmware does not link, so no member can run code on the car. Planned as two
+parts (owner decision C4): **B-baseline** (unpacked Week 6 types, measured, tagged
+`baseline/week6-unpacked`) then **B-packed** (shared header + host tests). The toolchain does
+not change: section 5 (SDK 1.5.1 + GCC 10.3.1) is the official environment for every gate.
+
+**Workflow (C7).** For each stage: the helper pushes `batchB/bN-<name>`; Buddy 2 pulls that
+commit, runs the gates in fresh build directories (from B4 also flashing and the hardware/USB
+tests) and posts the result on the PR; the stage passes, is merged and is marked done here
+only then. The helper's own builds (SDK 2.3.1 + GCC 15.2) are feedback only. Details: plan
+section 2.
+
+B-baseline contents, with file names already fixed by the `check_rules` allow-lists (full
+file list per stage in the plan):
 
 | File | What it does |
 |---|---|
 | `src/app/main.c` | SDK `main()`: SDK init, wait up to `DBG_USB_CONNECT_WAIT_MS` for USB CDC (line marked `RULE-ALLOW: pre-kernel`), then `hal_kernel_start()` |
-| `src/rtos/port/` (`port_kernel_internal.c`, `port_boot.c`, `port_fault.c`) | kernel pool, SHPR priorities, PendSV/SysTick vectors, `knl_lowmem_top/limit`, `knl_shutdown_hw`, `knl_restart_hw`, `tm_com_init/tm_snd_dat/tm_rcv_dat` (to the RAM fault record, never stdio), `hal_irq_register()` / `hal_gpio_irq_register()` with the `knl_taskindp` wrapper (integration report section 16) |
-| `src/debug/dbg_drain.c` (+ ring) | `dbg_` ring and the drain task (priority 10), the only stdio caller; prints and clears the RAM fault record only if magic and CRC-32 match |
+| `src/rtos/port/` (`port_kernel_internal.c`, `port_boot.c`, `port_fault.c`, `port_irq.c`) | kernel pool, SHPR priorities, PendSV/SysTick vectors, `knl_lowmem_top/limit`, `knl_shutdown_hw`, `knl_restart_hw`, `tm_com_init/tm_snd_dat/tm_rcv_dat` (into the system-message ring, never stdio, C3), the RAM fault record and HardFault handler, `hal_irq_register()` / `hal_gpio_irq_register()` with the `knl_taskindp` wrapper (integration report section 16) |
+| `src/debug/dbg_drain.c` (+ ring) | `dbg_` ring and the drain task (priority 10), the only stdio caller; empties the system-message ring every cycle; prints and clears the RAM fault record only if magic and CRC-32 match |
 | `src/common/` | `ipc_init()`: every IPC object at its design.md 3.3 depth; message-buffer size macro; kernel version self-test; stack painting |
 | `app_program/app_main.c` | replace the `ipc_init()` TODO and the `app_start_task()` stub (shared file) |
 | `app_program/test_report.h` | replace the deliberate `#error` with `dbg_` output, so `APP_TEST=ON` builds |
@@ -193,7 +219,8 @@ B-baseline contents, with file names already fixed by the `check_rules` allow-li
 Acceptance: boots, creates every object, nine heartbeat lines on USB CDC, the mandatory USB
 CDC bring-up test in `docs/DEBUG.md` (10 minutes, no gaps, jitter within 1 ms).
 
-Details: `.agents/tasks/mtk3-rp2040-integration-report.md` sections 10, 14, 16;
+Details: `.agents/tasks/batchB-plan.md` first (its section 5 lists the stale parts of the
+reports below); `.agents/tasks/mtk3-rp2040-integration-report.md` sections 10, 14, 16;
 `.agents/tasks/week8-impact-report.md` section D (baseline plan);
 `docs/DATA_REPRESENTATION.md` sections 5-7.
 
@@ -267,8 +294,10 @@ brief `.agents/tasks/merge-week8-brief.md`.
   `TEAM.md`, `testing/`, `videos/` layout. Deviations T1-T7 in `ARCHITECTURE.md`.
 - Pin map v2 (`config/pins.h`, ARCHITECTURE.md D5). Servo on GP15. Encoders on PIO0, one state
   machine per wheel, API `enc_get_count()` (D7).
-- USB CDC is the only console; boot/fault output goes to a RAM fault record in
-  `.uninitialized_data` with a magic number and a CRC (D6). Implemented in Batch B.
+- USB CDC is the only console (D6). Kernel text from `tm_snd_dat` (boot banner, system
+  messages) goes into a system-message ring that the debug drain empties every cycle (C3
+  below). Faults go to a separate RAM fault record in `.uninitialized_data` with a magic
+  number and a CRC. Both implemented in Batch B.
 - NFR2: no team document is edited; the proposed wording waits in D7 for the team, after a
   top-speed zero-missed-counts test.
 - Data representation (D8, `docs/DATA_REPRESENTATION.md`): pitch ±45° at 0.5° in 8 bits;
@@ -278,6 +307,34 @@ brief `.agents/tasks/merge-week8-brief.md`.
 - **D2 (20 ms telemetry wake) is NOT approved.**
 - `BC_CAPTURE_TIMEOUT_MS = 1000` stays provisional with a static assert. `ENC_CPR` and
   `WHEEL_CIRC_MM` are 0 until measured.
+
+**Batch B decisions** (recorded in stage B0; full text and reasons in
+`.agents/tasks/batchB-plan.md` sections 0 and 1):
+
+- **C1:** Buddy 2 approves Batch B work by the helper, Buddy 3 (Jin Yong). Given verbally,
+  recorded here. Buddy 2 still owns Batch B and reviews every stage.
+- **C2:** each member writes the tests for their own subsystem (`subsystemN_test.c`).
+- **C3:** the kernel's own text (the `tm_printf` boot banner, system messages) is kept
+  **separate** from the RAM fault record. It goes into a system-message ring that the drain
+  empties every cycle, so no `tm_*` output is lost after boot either. The fault record holds
+  faults only.
+- C4 (B-baseline then B-packed), C5 (approach (a)) and C6 (`ipc_init()` creates every object
+  first, T5) restate earlier decisions.
+- **C7 (proposed by the helper, Buddy 2 confirms in the B0 review):** the helper writes and
+  pushes each stage; Buddy 2 runs the official gates in the section 5 environment and, from
+  B4 on, flashes the Pico W and runs the hardware/USB tests. A stage passes only after his
+  verification. The helper's local builds are feedback only, never acceptance evidence.
+- **C8 (same):** the toolchain stays Pico SDK 1.5.1 + GCC 10.3.1 (section 5). The plan's earlier
+  move to SDK 2.3.1 (Rev 4, stage BM) is withdrawn and BM is deferred. If Buddy 2 has already
+  moved to 2.3.1, he says so and BM comes back.
+- Accepted as proposed in the plan: O1 (temporary bring-up heartbeat tasks behind
+  `PLATFORM_BRINGUP`, default OFF), O2 (platform writes the Week 6 types in
+  `src/common/ipc_types.h`, each marked for its IF owner), O4 (fault record: magic
+  `0x464C5452`, 7 payload words, CRC-32 IEEE), O7 (after a HardFault: record, then reset; halt
+  if a debugger is attached), O8 (`TA_USERBUF` stacks from one static, painted arena), O9
+  (`ipc` added to the R1 project-header check). O5 and O6 take the plan's defaults unless
+  changed in review. Still open: O3 (default: out of Batch B), O10 (B7), and how to measure
+  the init task stack (B6).
 
 ---
 
@@ -302,6 +359,7 @@ brief `.agents/tasks/merge-week8-brief.md`.
 
 | File | What it is |
 |---|---|
+| `batchB-plan.md` | **Batch B plan** (stages B0-B7, BM deferred, decisions C1-C8, open questions O1-O11, gate commands); section 5 lists the stale parts of the reports below |
 | `merge-week8-summary.md` | Latest summary: files changed, assumptions, full verification table, owner questions |
 | `merge-week8-diffs.patch` | Diff of the merge + Week 8 work (before commit) |
 | `merge-verify.md`, `week8-verify.md`, `*-review.md/.json` | Stage evidence and review gates |
