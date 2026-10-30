@@ -6,3 +6,7 @@ if(DBG_ENABLE)
         "${CMAKE_CURRENT_LIST_DIR}/dbg_ring.c"
         "${CMAKE_CURRENT_LIST_DIR}/dbg_drain.c")
 endif()
+# Platform self-test task (stage B4b), PLATFORM_SELFTEST=ON builds only.
+if(PLATFORM_SELFTEST)
+    list(APPEND ROBOCAR_KERNEL_SOURCES "${CMAKE_CURRENT_LIST_DIR}/dbg_selftest.c")
+endif()

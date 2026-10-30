@@ -190,3 +190,15 @@ void hal_kernel_start(void)
      * knl_shutdown_hw() already handled (record, reset or halt). */
     port_fault_shutdown();
 }
+
+#if PLATFORM_SELFTEST
+/* include/tm/tmonitor.h:36  IMPORT INT tm_printf( const UB *format, ... );
+ * Allowed here only (rule R3b).  Self-test (stage B4b): kernel text written
+ * after the drain started must still reach the console (C3). */
+extern int tm_printf(const unsigned char *format, ...);
+
+void hal_selftest_late_sysmsg(void)
+{
+    (void)tm_printf((const unsigned char *)"[SELFTEST] late kernel text via tm_printf\n");
+}
+#endif /* PLATFORM_SELFTEST */

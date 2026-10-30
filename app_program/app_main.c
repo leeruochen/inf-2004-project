@@ -111,6 +111,9 @@ INT usermain(void)
     APP_CHECK(subsystem4_start(), "subsystem4_start");
     APP_CHECK(subsystem5_start(), "subsystem5_start");
 
+    /* 3b. PLATFORM_SELFTEST builds only (stage B4b); a no-op otherwise. */
+    APP_CHECK(dbg_selftest_start(), "dbg_selftest_start");
+
 #if APP_TEST
     /* 4. Test build only: the tests run in their own lowest-priority task. */
     APP_CHECK(app_start_task(app_test_task, TASK_PRI_TEST, TASK_STACK_TEST_BYTES, "app_test"),

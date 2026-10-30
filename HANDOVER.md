@@ -187,7 +187,7 @@ commands, stop conditions). It wins over this summary where they differ. Stage s
 | B1 | `dbg_` ring API; `APP_TEST=ON` builds | code done on `batchB/b1-platform-code` (one PR with B2 and B3); gates and host tests pass |
 | B2 | IPC objects, task start, stack painting (`src/common`) | code done (same PR); gates pass |
 | B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | code done (same PR); gates, symbol check and host tests pass |
-| B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | B4a (boot, drain, alive line) builds and links; waiting for Buddy 2's flash test (plan B4). B4b (self-tests) next |
+| B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | B4a (boot, drain, alive line) builds and links; waiting for Buddy 2's flash test (`.agents/tasks/batchB-b4a-test.md`). B4b (self-test build, `PLATFORM_SELFTEST`) written and builds; tested after B4a (`batchB-b4b-test.md`) |
 | B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | not started |
 | B6 | baseline measurement, tag `baseline/week6-unpacked` | not started |
 | B7 | B-packed types + host tests: **milestone M2** (messages final) | not started |

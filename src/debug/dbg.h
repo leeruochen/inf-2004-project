@@ -101,4 +101,14 @@ static inline int32_t dbg_drain_start(void)
 
 #endif /* DBG_ENABLE */
 
+#if defined(PLATFORM_SELFTEST) && PLATFORM_SELFTEST
+/** Start the platform self-test task (src/debug/dbg_selftest.c, stage B4b). */
+int32_t dbg_selftest_start(void);
+#else
+static inline int32_t dbg_selftest_start(void)
+{
+    return 0;
+}
+#endif /* PLATFORM_SELFTEST */
+
 #endif /* DBG_H */
