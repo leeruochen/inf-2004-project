@@ -102,7 +102,7 @@ Close any terminal that has the Pico's COM port open (PuTTY, Arduino, VS Code se
 
 B0 is documents only: it records decisions and the Batch B plan. Your earlier review (`.agents/tasks/batchB-b0-review-report.md`) passed the build and asked for fixes. Those fixes are in commit `af53004` (plan Rev 6).
 
-B1. On GitHub, open the PR for branch `batchB/b0-records` → `main`. If there is no PR yet, create one (base `main`, compare `batchB/b0-records`).
+B1. On GitHub, open the PR for branch `batchB/b0-records` → `main` (title starts with "Batch B B0").
 
 B2. **DECISION.** Confirm or change each item below, in a PR comment. The full text is in `.agents/tasks/batchB-plan.md` sections 0 and 1. Recommended answer: confirm all.
 
@@ -166,10 +166,12 @@ E2. **Only if the tests passed**, merge the code PRs, **in this order**, each wi
 | Order | PR | Base | Contents | Review focus |
 |---|---|---|---|---|
 | 1 | `batchB/b1-platform-code` | `main` | B1 debug log ring, B2 IPC objects + task start, B3 kernel port layer (3 commits) | shared files changed: `app_program/app.h`, `app_main.c`, `test_report.h`, `CMakeLists.txt`, `cmake/check_rules*.cmake` |
-| 2 | `batchB/b4-first-firmware` | `batchB/b1-platform-code` (GitHub retargets it to `main` after PR 1 merges) | B4a: `src/app/main.c`, debug drain, test guide, capture script | `main.c`, `dbg_drain.c` |
-| 3 | `batchB/b4b-selftest` | `batchB/b4-first-firmware` | B4b: `PLATFORM_SELFTEST` option | default OFF; normal firmware unchanged |
+| 2 | `batchB/b4-first-firmware` | `batchB/b1-platform-code` until PR 1 is merged, then **`main`** | B4a: `src/app/main.c`, debug drain, test guide, capture script | `main.c`, `dbg_drain.c` |
+| 3 | `batchB/b4b-selftest` | `batchB/b4-first-firmware` until PR 2 is merged, then **`main`** | B4b: `PLATFORM_SELFTEST` option, this guide | default OFF; normal firmware unchanged |
 
-If a PR does not exist yet, create it with the base shown. Each PR description and commit message lists what changed. The plan has the full result of every stage: `.agents/tasks/batchB-plan.md`, section 3, "B1 result" to "B4b result".
+**Before merging PR 2 and PR 3, change their base to `main`:** on the PR page, click **Edit** next to the title, set **base** to `main`, and confirm. The diff then shows only that PR's own commits. Without this step, the merge would go into the previous branch instead of `main`. (GitHub only does it automatically if you delete the previous branch after merging.)
+
+The four PRs already exist (B0, PR 1, PR 2, PR 3), created by Jin Yong. Each PR description and commit message lists what changed. The plan has the full result of every stage: `.agents/tasks/batchB-plan.md`, section 3, "B1 result" to "B4b result".
 
 E3. If you have review comments, write them on the PR instead of merging; Jin Yong fixes them on the same branch and the tests do not need to be repeated unless the firmware code changed.
 
