@@ -1,6 +1,6 @@
 # Batch B plan: platform (boot, kernel port, debug console, IPC objects)
 
-Status (31 Oct 2026): B0-B4 merged on `main` (PRs #1-#4); B4a and B4b passed on Buddy 2's Pico W: **milestone M1-lite**. B5 code on `batchB/b5-bringup` (PR #5) and B6 code on `batchB/b6-baseline` (on top of B5); gates pass; waiting for Buddy 2's runs. Next: B7 (proposed owner defaults as placeholders, after the baseline tag).
+Status (31 Oct 2026): B0-B5 merged on `main` (PRs #1-#5); every hardware stage passed on Buddy 2's Pico W: **milestone M1** (SYS-01). B6 code on `batchB/b6-baseline` (PR #6); gates pass; waiting for Buddy 2's run. Next: B7 (proposed owner defaults as placeholders, after the baseline tag).
 Written 29 Oct 2026 for the Batch B helper (Buddy 3, Jin Yong), with Buddy 2's go-ahead.
 
 Rev 2 (29 Oct 2026, after review):
@@ -384,6 +384,7 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
   - Gates: Debug, `APP_TEST=ON`, Release, `PLATFORM_SELFTEST=ON`, `PLATFORM_BRINGUP=ON` exit 0, 0 warnings, `check_rules: PASS (67 files)`; the four refused combinations are refused; host tests 3/3, also under ASan/UBSan. The normal firmware contains no bring-up symbol.
   - Logs and the SYS-01 result row: committed to this PR after Buddy 2's run (§2 step 4: docs-only follow-up), then merged (C7 amendment).
   - Hardware test for Buddy 2: `.agents/tasks/batchB-b5-test.md`.
+  - **Hardware run (Buddy 2, 31 Oct 2026, `a7393a7`): PASS** (report on PR #5; logs in `testing/system/logs/2026-10-31_b5-bringup-*.txt`; SYS-01 row in `testing/system/TEST_LOG.md`). 798 s of heartbeats from all nine tasks, no gaps, no faults. Worst |dt − period|: safety 10, vc 126, motion 192, lf 271, bc 336, obs_scan 372, obs_avoid 435, imu 522, tel 566 µs (limit 1000; it grows with lower priority, as the shared 1 s release puts every task behind the ones above it). Stress dropped 633 lines, all inside the window, no heartbeat line lost. Alive difference constant at 1026 ms. Replug: kept running while closed, restarted after the replug. The helper re-ran `bringup_check` on both logs: PASS. **Milestone M1.**
 
 ### B6: B-baseline measurement + tag
 
