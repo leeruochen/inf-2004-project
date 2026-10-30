@@ -121,6 +121,7 @@ The backend is a configure-time option. Only `USB` is accepted.
 | `DBG_ENABLE` | `ON` (debug), `OFF` (release) | `OFF` for `Release`/`MinSizeRel`, `ON` otherwise |
 | `APP_TEST` | `ON`, `OFF` | `OFF` |
 | `PLATFORM_SELFTEST` | `ON` (Debug only, not with `APP_TEST`), `OFF` | `OFF` |
+| `PLATFORM_BRINGUP` | `ON` (Debug only, not with `APP_TEST` or `PLATFORM_SELFTEST`), `OFF` | `OFF` |
 
 `-DDBG_BACKEND=UART0` stops configure with "DBG_BACKEND=UART0 was removed
 (Week 8 pin map v2): GP0/GP1 are ENC_R_A/ENC_R_B in config/pins.h". As a
@@ -179,6 +180,37 @@ backend). Record it in `testing/system/TEST_LOG.md`.
 
 The integration report's step 5 (repeat on UART0 as a baseline) no longer
 applies: there is no UART0 console.
+
+How the test is built (stage B5): `-DPLATFORM_BRINGUP=ON` replaces the
+subsystems' tasks with nine heartbeat tasks (`src/debug/dbg_bringup.c`) at the
+design priorities, periods and stacks. Each prints once a second:
+
+    [HB] id=4 lf seq=12 cycles=200 period=5000 dt_min=4990 dt_max=5012 missed=0
+
+`dt_min`/`dt_max` are the shortest and longest times between two releases
+(µs, SDK timer) over that second; `seq` counts the task's lines, so a gap is
+a lost line. Step 3 runs by itself: from 660 s to 720 s of kernel time every
+task adds 9 filler lines per report (10x the line rate, between
+`[BRINGUP] stress ON` and `OFF`), so the ring overflows. Event-driven tasks
+use a stand-in period: VC 20 ms, Obstacle Avoidance 100 ms; Barcode uses its
+2 ms poll period. `tools/bringup_check.ps1` checks a log against the pass
+rules. Step by step: `.agents/tasks/batchB-b5-test.md`.
+
+## Periodic tasks: `app_period_wait()`, not `tk_dly_tsk(P)`
+
+`tk_dly_tsk(d)` wakes at kernel tick now + d + 1 (the kernel adds one tick so
+a wait is never shorter than asked). A loop of `work; tk_dly_tsk(5);` runs
+every 6 ms, not 5, plus its own run time. Use `app_period_wait()`
+(`src/common/period.h`, included by `app.h`), which releases the task on a
+fixed grid of 1 ms ticks and returns how many releases a long cycle missed:
+
+    app_period_t per;
+    app_period_init(&per, LF_SAMPLE_PERIOD_MS);
+    for (;;)
+    {
+        (void)app_period_wait(&per);
+        /* one cycle of work */
+    }
 
 ## On-target tests (APP_TEST)
 

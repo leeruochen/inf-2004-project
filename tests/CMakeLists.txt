@@ -31,3 +31,10 @@ target_include_directories(test_crc32 PRIVATE "${ROBOCAR_ROOT}")
 target_compile_options(test_crc32 PRIVATE -Wall -Wextra -Werror)
 set_target_properties(test_crc32 PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME crc32 COMMAND test_crc32)
+
+# Periodic wait (src/common/period.c), against a simulated kernel tick.
+add_executable(test_period host/test_period.c "${ROBOCAR_ROOT}/src/common/period.c")
+target_include_directories(test_period PRIVATE host/stubs "${ROBOCAR_ROOT}")
+target_compile_options(test_period PRIVATE -Wall -Wextra -Werror)
+set_target_properties(test_period PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME period COMMAND test_period)

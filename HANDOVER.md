@@ -4,9 +4,8 @@ Read this first. Section 3 is for every team member (where to continue on your
 own subsystem). Section 0 is for whoever continues on another device or with an
 AI agent. The detailed evidence is in `.agents/tasks/` (index in section 9).
 
-Last updated: 29 Oct 2026, Batch B stage B0 (records only), by Buddy 3 (Jin Yong) as the
-Batch B helper. Previous update: 29 Oct 2026, by Buddy 2 (Ruo Chen) on
-`C:\Users\asus\Downloads\inf-2004-project`.
+Last updated: 31 Oct 2026, Batch B stage B5 (bring-up test build), by Buddy 3 (Jin Yong) as
+the Batch B helper. Previous update: 29 Oct 2026, Batch B stage B0, by Buddy 3.
 
 ---
 
@@ -46,9 +45,9 @@ Batch B helper. Previous update: 29 Oct 2026, by Buddy 2 (Ruo Chen) on
 | Template merge (Option C): `app_program/`, `TEAM.md`, `testing/`, `videos/` | Done, verified (`merge-verify.md`) |
 | Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
 | Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
-| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **In progress.** Stage B0 (records, docs only): Buddy 2's review passed the official gates (`batchB-b0-review-report.md`); the review fixes are applied, and B0 merges after his confirmation on the PR. Next: B1-B3 as one PR. No platform code yet. Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`. Blocks running anything on the car (section 4) |
+| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Milestone M1-lite reached (31 Oct 2026): the firmware boots on the Pico W; members can run their own tasks** (section 3). B0-B4 merged on `main` (PRs #1-#4); B4a and B4b passed on the board (Buddy 2). Next: B5, the USB CDC bring-up test (milestone M1). Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
 | Subsystem code (all five buddies) | Not started. Every subsystem is a compile-checked stub |
-| Hardware runs | None yet. Nothing has been flashed |
+| Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026, Buddy 2's Pico W; logs on PRs #3 and #4 |
 
 **Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
 `8d083ca` = `origin/main`), so every member can see `app_program/`, `TEAM.md` and the new pin
@@ -110,6 +109,13 @@ General workflow for everyone:
    Batch B.
 5. Build before every push (section 5). The build fails on any warning or rule violation.
 6. When you finish a step, update your row below.
+7. **Running on the car (since M1-lite, 31 Oct 2026):** start each task with
+   `app_start_task(entry, TASK_PRI_x, TASK_STACK_x_BYTES, "name")` in `subsystemN_start()`.
+   A periodic task waits with `app_period_wait()` (`src/common/period.h`), never with a
+   plain `tk_dly_tsk(P)` loop: that runs every P + 1 ms. A task ends by returning from its
+   function, never with `tk_ext_tsk` (rule R6). Log with `dbg_puts` / `dbg_printf`; the
+   console and debugging are in `docs/DEBUG.md`. The message structs in
+   `src/common/ipc_types.h` are PROVISIONAL until milestone M2 (stage B7).
 
 Every subsystem today has `subsystemN.c` (init/start stubs), `subsystemN.h` (its interfaces as
 comments), `subsystemN_test.c` (empty test) and `sources.cmake`. Interfaces between
@@ -183,22 +189,23 @@ commands, stop conditions). It wins over this summary where they differ. Stage s
 
 | Stage | What | Status |
 |---|---|---|
-| B0 | records and prerequisites (docs only) | official gates passed (Buddy 2's review); review fixes applied; merge after his confirmation |
-| B1 | `dbg_` ring API; `APP_TEST=ON` builds | code done on `batchB/b1-platform-code` (one PR with B2 and B3); gates and host tests pass |
-| B2 | IPC objects, task start, stack painting (`src/common`) | code done (same PR); gates pass |
-| B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | code done (same PR); gates, symbol check and host tests pass |
-| B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | B4a (boot, drain, alive line) builds and links; waiting for Buddy 2's flash test (`.agents/tasks/batchB-b4a-test.md`). B4b (self-test build, `PLATFORM_SELFTEST`) written and builds; tested after B4a (`batchB-b4b-test.md`) |
-| B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | not started |
+| B0 | records and prerequisites (docs only) | done, merged (PR #1) |
+| B1 | `dbg_` ring API; `APP_TEST=ON` builds | done, merged (PR #2, with B2 and B3) |
+| B2 | IPC objects, task start, stack painting (`src/common`) | done, merged (PR #2) |
+| B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | done, merged (PR #2) |
+| B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | done: B4a and B4b passed on the board, merged (PRs #3, #4). **M1-lite reached, 31 Oct 2026.** B4b found and fixed a task-exit fault (rule R6) |
+| B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | code done (`PLATFORM_BRINGUP` build, `app_period_wait()`, log checker); gates pass; waiting for Buddy 2's bring-up run (`.agents/tasks/batchB-b5-test.md`) |
 | B6 | baseline measurement, tag `baseline/week6-unpacked` | not started |
 | B7 | B-packed types + host tests: **milestone M2** (messages final) | not started |
 
-Until B4 the firmware does not link, so no member can run code on the car. Planned as two
+Since B4 (M1-lite) members can run their own tasks on the car. Planned as two
 parts (owner decision C4): **B-baseline** (unpacked Week 6 types, measured, tagged
 `baseline/week6-unpacked`) then **B-packed** (shared header + host tests). The toolchain does
 not change: section 5 (SDK 1.5.1 + GCC 10.3.1) is the official environment for every gate.
 
 **Workflow (C7).** For each stage the helper pushes a branch and posts the official compile
-gates (SDK 1.5.1, fresh build directories) on the PR. Buddy 2 reviews and merges. For hardware
+gates (SDK 1.5.1, fresh build directories) on the PR. Buddy 2 reviews and merges (since 31 Oct
+2026 the helper may merge a stage PR after Buddy 2's test PASS is on it, with his OK). For hardware
 stages (B4 on) he builds the `.uf2` from that commit, flashes it, runs the checks and posts the
 logs. The stage is marked done here only after that. Critical path to members adding tasks:
 B0 merge → B1-B3 PR → B4 flash (M1-lite). Details: plan section 2.

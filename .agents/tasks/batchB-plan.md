@@ -1,6 +1,6 @@
 # Batch B plan: platform (boot, kernel port, debug console, IPC objects)
 
-Status: B0 reviewed by Buddy 2 (`batchB-b0-review-report.md`); Rev 6 fixes pushed (`af53004`), merge after his confirmation. B1-B3 code written on `batchB/b1-platform-code`, all compile gates and host tests pass (results in each stage). Next: B4 (first firmware, first flash).
+Status (31 Oct 2026): B0-B4 merged on `main` (PRs #1-#4); B4a and B4b passed on Buddy 2's Pico W: **milestone M1-lite**. B5 code written on `batchB/b5-bringup` (gates pass); waiting for Buddy 2's bring-up run. Next after M1: B6.
 Written 29 Oct 2026 for the Batch B helper (Buddy 3, Jin Yong), with Buddy 2's go-ahead.
 
 Rev 2 (29 Oct 2026, after review):
@@ -40,7 +40,7 @@ Rev 6 (30 Oct 2026, after Buddy 2's B0 review; Buddy 2 in chat, 30 Oct: "proceed
 | C4 | Two parts: B-baseline (Week 6 unpacked types, measured, tagged) then B-packed | HANDOVER §4 |
 | C5 | Approach (a): the SDK owns startup; the kernel is the `mtk3` library behind `src/rtos/port/` | ARCHITECTURE.md |
 | C6 | `ipc_init()` creates every IPC object centrally, before any `subsystemN_init()` (T5) | ARCHITECTURE.md T5 |
-| C7 | Workflow, §2: the helper writes each stage and runs the official compile gates on their own SDK 1.5.1 install; Buddy 2 reviews and merges, and runs every hardware stage (flash, USB, measurements). A stage passes only with official-toolchain evidence, and hardware stages only with Buddy 2's run | chat, 30 Oct 2026 (review §2a) |
+| C7 | Workflow, §2: the helper writes each stage and runs the official compile gates on their own SDK 1.5.1 install; Buddy 2 reviews and merges, and runs every hardware stage (flash, USB, measurements). A stage passes only with official-toolchain evidence, and hardware stages only with Buddy 2's run. **Amended 31 Oct 2026 (Buddy 2, chat):** the helper may merge a stage PR once Buddy 2's test PASS is on it (merge commit, PR base `main`) | chat, 30 Oct 2026 (review §2a); amendment chat, 31 Oct 2026 |
 | C8 | Toolchain: SDK 1.5.1 + GCC 10.3.1 only. No SDK migration stage | chat, 30 Oct 2026 |
 
 **Binding rules** (HANDOVER §6, ARCHITECTURE.md "Rules enforced by the build"), enforced in every stage:
@@ -341,12 +341,16 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
   - **The firmware links** (the firmware switch is on): Debug, `APP_TEST=ON`, Release exit 0, 0 warnings, `check_rules: PASS (63 files)`, self-test PASS. Sizes: Debug text 49,780 B, bss 111,472 B; Release text 36,452 B.
   - Linker checks (`robocar.elf`, map): `.noinit` 6,360 B at `0x20000CD8` = `__bss_start__` = `__noinit_start` (zero-filled with `.bss`, which ends at `__bss_end__` = `0x2001BF64`); `knl_tcb_table`, `knl_tmp_stack` inside it; `.uninitialized_data` 36 B (`s_record`) flags `ALLOC` only (NOLOAD); `.data_vector` 0 B (`exchdr_tbl` removed by `--gc-sections`: never referenced without `tk_def_int`); RAM ends at `0x2001C764` (about 140 KB free). No orphan-section warnings.
   - Vector table (flash `0x10000100`): HardFault = `0x10000E85` = our `isr_hardfault`; PendSV/SysTick = SDK weak defaults, replaced at run time by `hal_kernel_start()`; initial SP `0x20042000`. Kernel idle `low_pow()` is empty (`pico_rp2040/power_save.c`): no clock changes.
-  - **Hardware (Buddy 2): pending.** Checklist: B4a hardware test below.
+  - **Hardware (Buddy 2, 30 Oct 2026): PASS** at `1068d29` (report and logs on PR #3): boot lines, 15 alive lines in 150 s with the difference constant at 3136 ms, no `[ERR]`/`[FAULT]`/drops, replug OK.
 - **B4b result (helper, branch `batchB/b4b-selftest`, on top of B4a):**
   - Files: `src/debug/dbg_selftest.c` (task at `TASK_PRI_TEST`, `TASK_STACK_TEST_BYTES`); `src/rtos/port/{hal.h, port_fault.c, port_boot.c}` (self-test hooks; `hal_fault_seen_at_boot()` in every build); `src/debug/{dbg.h, sources.cmake}`; shared: `CMakeLists.txt` (option `PLATFORM_SELFTEST`, default OFF; refused with Release or with `APP_TEST`, so the 12-task budget holds), `app_program/app_main.c` (`dbg_selftest_start()`, a no-op unless the option is ON).
   - Sequence once per power-up, stage in watchdog scratch 0 (kept through watchdog resets, cleared by power-on): checks (no record at power-up, CRC check value, own stack bounds = round8(stksz + 128), every started stack has unused pattern, per-task unused bytes, late `tm_printf`) then a forced HardFault (`udf #0`, the first instruction of `hal_selftest_force_fault`); after the reset the record must have been there (the drain prints it once); then a plain watchdog reset; after it the record must be gone.
   - Gates: Debug, `APP_TEST=ON`, Release and Debug + `PLATFORM_SELFTEST=ON` exit 0, 0 warnings, `check_rules: PASS (64 files)`; Release + self-test and `APP_TEST` + self-test are refused at configure. The normal firmware contains no self-test symbol.
-  - Hardware test for Buddy 2: `.agents/tasks/batchB-b4b-test.md` (after B4a passes). Not pushed until B4a passes on the board.
+  - Hardware test for Buddy 2: `.agents/tasks/batchB-b4b-test.md` (after B4a passes).
+  - **Hardware run 1 (Buddy 2, 30 Oct 2026, `4cc560d`): FAIL in stage 3.** Stages 1-2 passed (record PC `0x100012bc` = `hal_selftest_force_fault`), then a reset loop with `[FAULT] pc=0xfffffff8 lr=0x1000887d`. Cause: the self-test task called `tk_ext_tsk()` 24 B below its stack top; `knl_make_dormant()` writes the new first context (`exp_ret` = `0xFFFFFFF9`) at `isstack - 68`, which at that depth is its own saved LR. The kernel's `DORMANT_STACK_SIZE` (28 B) only covers a call from the stack top. `app_test_task` had the same frame size.
+  - **Fix `2de35de`:** tasks end by returning; `stack_mon_task_start()` calls `tk_ext_tsk()` from `exit_task_with_headroom()` (64 B pad, 88 B below the top, checked in the disassembly); `app_start_task()` refuses a task it cannot register; new rule R6 (`tk_ext_tsk`/`tk_exd_tsk` only in `src/common/stack_mon.c`); stage 1 checks that a returning task ends DORMANT.
+  - **Hardware run 2 (Buddy 2, 31 Oct 2026, `2de35de`): PASS**, including the power-cycle test (logs on PR #4). Record PC `0x10001328` inside the expected range, printed once. Merged (PRs #2-#4, merge commits; `main` = `d73fc7a`, tree identical to `2de35de`). **M1-lite.**
+  - Watch for B6: the `init (usermain window)` stack line showed 316, 160 and 64 B unused of 512 B in three runs (USB interrupts land on whatever stack is running). Measure the full 1 KB init stack in B6.
 - **B4a hardware test (Buddy 2, Pico W, Debug build):** step by step for an AI agent in `.agents/tasks/batchB-b4a-test.md` (capture with `tools/serial_capture.ps1`).
   1. `git switch batchB/b4-first-firmware`, fresh `build/b4` (HANDOVER §5), `& $CM --build build/b4`; expect 0 warnings and `build/b4/robocar.uf2`.
   2. Hold BOOTSEL, plug in USB, copy `robocar.uf2` to `RPI-RP2`. Open the new COM port (PuTTY, 115200) within 3 s; if later, the boot text still appears when the port opens.
@@ -361,7 +365,7 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
 - **Files:**
   - per O1: `src/debug/dbg_bringup.c` + `PLATFORM_BRINGUP` option in `CMakeLists.txt` (shared);
   - `testing/system/TEST_LOG.md` (test entry);
-  - `testing/system/logs/` (saved console log, Buddy 2's commit on `main`, §2 step 3).
+  - `testing/system/logs/` (saved console logs; since the C7 amendment the helper commits them to the B5 PR after Buddy 2's run, before merging).
 - **Depends on:** B4.
 - **Work:**
   1. Nine tasks at the design priorities and periods. Each logs `id, seq, dt_min/max` (µs, from `hal_time_us()`).
@@ -372,6 +376,14 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
      - unplug/replug and open/close the terminal.
 - **Verify:** pass criteria exactly as in DEBUG.md: no sequence gaps, no HardFault, jitter within 1 ms. Log referenced in TEST_LOG.md. Then declare **M1**.
 - **Stop if:** jitter exceeds 1 ms or sequence gaps appear. Investigate PRIMASK time (SysTick timer queue, `tm_putstring`) before changing priorities.
+- **B5 result (helper, branch `batchB/b5-bringup`, 31 Oct 2026):**
+  - Found while writing it: `tk_dly_tsk(d)` wakes at tick now + d + 1 (`knl_timer_insert_reltim()` adds one `TIMER_PERIOD`), so a `tk_dly_tsk(P)` loop runs every P + 1 ms (6 ms for the 5 ms line sampler, NFR7). New `src/common/period.{h,c}`: `app_period_wait()` releases on a fixed tick grid, skips and counts overrun periods; included by `app.h`; host test `tests/host/test_period.c` (27 checks against a simulated tick with the +1 rule, including the 32-bit wrap).
+  - `src/debug/dbg_bringup.c` (`PLATFORM_BRINGUP=ON`, Debug only; refused with Release, `APP_TEST`, `PLATFORM_SELFTEST`): nine tasks at the design priorities and stacks, periods from `config/timing.h` (stand-ins: VC 20 ms, ObsAvoid 100 ms; BC its 2 ms poll), one shared release grid. Each prints `[HB] id seq cycles period dt_min dt_max missed` once a second. Stress at 660-720 s of kernel time: 9 filler lines (about 90 B) per report, one cycle after the heartbeat line, so the heartbeat lines survive while vc + motion + tel (same 20 ms tick, all above the drain) write about 2.4 KB at once into the 2 KB ring.
+  - `usermain()` (shared `app_main.c`): with `PLATFORM_BRINGUP` it starts the heartbeats instead of steps 2-3 (subsystem init/start), so the test measures the platform alone.
+  - `tools/bringup_check.ps1`: pass rules F1-F8 (DEBUG.md criteria as code); tested in Windows PowerShell 5.1 on synthetic logs (clean, gap, control-task jitter, stress jitter on a low task = WARN, overflow outside stress, fault + reboot, short run, replug, alive drift, missing file).
+  - Gates: Debug, `APP_TEST=ON`, Release, `PLATFORM_SELFTEST=ON`, `PLATFORM_BRINGUP=ON` exit 0, 0 warnings, `check_rules: PASS (67 files)`; the four refused combinations are refused; host tests 3/3, also under ASan/UBSan. The normal firmware contains no bring-up symbol.
+  - Logs and the SYS-01 result row: committed to this PR after Buddy 2's run (§2 step 4: docs-only follow-up), then merged (C7 amendment).
+  - Hardware test for Buddy 2: `.agents/tasks/batchB-b5-test.md`.
 
 ### B6: B-baseline measurement + tag
 

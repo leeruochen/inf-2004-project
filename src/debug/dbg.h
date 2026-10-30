@@ -111,4 +111,14 @@ static inline int32_t dbg_selftest_start(void)
 }
 #endif /* PLATFORM_SELFTEST */
 
+#if defined(PLATFORM_BRINGUP) && PLATFORM_BRINGUP
+/** Start the nine bring-up heartbeat tasks (src/debug/dbg_bringup.c, stage B5). */
+int32_t dbg_bringup_start(void);
+#else
+static inline int32_t dbg_bringup_start(void)
+{
+    return 0;
+}
+#endif /* PLATFORM_BRINGUP */
+
 #endif /* DBG_H */

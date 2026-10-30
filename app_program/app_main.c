@@ -17,6 +17,8 @@
  *    2. every subsystemN_init()
  *    3. every subsystemN_start()
  *    4. APP_TEST builds only: start the test task (TASK_PRI_TEST, 11)
+ *       (PLATFORM_BRINGUP builds replace steps 2-3 with the nine bring-up
+ *       heartbeat tasks, src/debug/dbg_bringup.c)
  *    5. tk_slp_tsk(TMO_FEVR); returning from usermain() shuts the kernel down
  *
  *  usermain() runs on the 1 KB init stack with interrupts live: no large
@@ -104,6 +106,11 @@ INT usermain(void)
     APP_CHECK(ipc_init(), "ipc_init");
     APP_CHECK(dbg_drain_start(), "dbg_drain_start");
 
+#if PLATFORM_BRINGUP
+    /* PLATFORM_BRINGUP builds only (stage B5): nine heartbeat tasks stand in
+     * for the subsystems' tasks, so steps 2-3 are skipped. */
+    APP_CHECK(dbg_bringup_start(), "dbg_bringup_start");
+#else
     /* 2. Every subsystem creates its private kernel objects. */
     APP_CHECK(subsystem1_init(), "subsystem1_init");
     APP_CHECK(subsystem2_init(), "subsystem2_init");
@@ -117,6 +124,7 @@ INT usermain(void)
     APP_CHECK(subsystem3_start(), "subsystem3_start");
     APP_CHECK(subsystem4_start(), "subsystem4_start");
     APP_CHECK(subsystem5_start(), "subsystem5_start");
+#endif /* PLATFORM_BRINGUP */
 
     /* 3b. PLATFORM_SELFTEST builds only (stage B4b); a no-op otherwise. */
     APP_CHECK(dbg_selftest_start(), "dbg_selftest_start");

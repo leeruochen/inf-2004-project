@@ -38,6 +38,7 @@
 #include "config/priorities.h"      /* TASK_PRI_*, TASK_STACK_*_BYTES */
 #include "src/debug/dbg.h"          /* dbg_ log ring (no stdio in tasks) */
 #include "src/common/ipc.h"         /* MBF_NAV_IN ... MTX_MOTION, message types */
+#include "src/common/period.h"      /* app_period_wait(): drift-free cyclic tasks */
 
 /* ---------------------------------------------------------------------------
  * Pins: every pin is defined in config/pins.h and claimed in TEAM.md
