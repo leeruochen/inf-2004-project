@@ -234,7 +234,7 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
      - drain.
 
      Keep it stack-light: one local of the largest type, no more than 20 B.
-  3. Kernel version self-test: `tk_ref_ver`, `spver == TK_SPECVER` (`0x0300`, `include/sys/profile.h:47`), logged.
+  3. Kernel version self-test: `tk_ref_ver`, `spver == (TK_SPECVER_MAGIC << 12) | TK_SPECVER` = `0x6300`, logged. (Corrected in B2: `tk_ref_ver` reports `0x6000 | (major << 8) | minor`, `sys/knldef.h:230`, `misc_calls.c:67`; comparing with `TK_SPECVER` = `0x0300` alone would fail on every boot.)
   4. EVF_SAFETY bit positions stay as proposed (fixed in B7).
   5. Stack painting via the O8 trampoline. Painting happens here; reporting is in B6.
 - **Verify:**
@@ -245,6 +245,14 @@ All three are compile-only (nothing runs until B4) and use the same gate, so the
 - **Stop if:**
   - an IF owner disputes a type;
   - the self-check grows `usermain`'s stack use past about 256 B.
+- **B2 result (helper, same branch and toolchain as B1):**
+  - Files: `src/common/{ipc_types.h, mbf_size.h, ipc.h, ipc.c, stack_mon.h, stack_mon.c, sources.cmake}`; shared: `app_program/app.h` (includes `ipc.h`, so every subsystem sees `MBF_NAV_IN` ... `MTX_MOTION`, the message types and the PROVISIONAL `EVF_*` bit masks), `app_program/app_main.c` (`app_start_task()`, `ipc_init()` in step 1, init-stack window), `cmake/check_rules.cmake` + `cmake/check_rules_selftest.cmake` + fixture `tests/rules_fixtures/app_program/subsystem2/r1_drv_ipc_hdr.c` (O9: `ipc` and `stack_mon` count as kernel-side headers).
+  - Object names: `ipc.h` defines `MBF_NAV_IN` etc. as macros for runtime IDs (`ipc_mbf_nav_in` ...), so code uses the TEAM.md names directly. Attributes: MBFs `TA_TFIFO`; `SEM_ECHO` count 0, max 1 (TODO buddy 5); `EVF_SAFETY` `TA_WSGL`; `EVF_NAV` `TA_WMUL` (polling readers never get `E_OBJ`); `MTX_MOTION` `TA_INHERIT`.
+  - `ipc_init()` tries every object, logs each failure through `dbg_put_err`, returns the first error. Depth self-check per MBF as in work item 2 (16-byte dummy + one `T_RMBF` on the init stack).
+  - O8 as built: `stack_mon_trampoline` is naked (`mov r2, sp; bl stack_mon_task_start`), checked in the disassembly; bottom = top − `round8(stksz + 128)`. Init task: a 512 B window below `usermain`'s frame (`stack_mon_paint_init_window()`), because its top is unknown; safe while the kernel frames above `usermain` stay under 640 B of the 1152 B init stack. Table: 16 entries.
+  - Sizes: `_Static_assert`s on the baseline sizes (4, 10, 16, 16, 20 B; edge 8 B) and on `MBF_BUFSZ` (64, 64, 40, 640 B) all hold.
+  - Gates (fresh `~/robocar-build/b2*`): Debug, `APP_TEST=ON` and Release exit 0, 0 warnings, `check_rules: PASS (52 files)`, self-test PASS (new fixture fires). `config/priorities.h` unchanged.
+  - Build note: fresh configures on the Windows drive from WSL (`/mnt/d`, DrvFs) intermittently lose files; WSL builds go to the Linux disk. Windows builds (PowerShell) are unaffected.
 
 #### B3: kernel port layer (`src/rtos/port`)
 

@@ -24,6 +24,7 @@
  */
 
 #include "app.h"
+#include "src/common/stack_mon.h"
 
 #if APP_TEST
 /*
@@ -51,22 +52,47 @@ int32_t app_start_task(void (*p_entry)(INT stacd, void *p_exinf),
                        uint32_t stack_bytes,
                        char const *p_name)
 {
-    /* TODO(phase 1 batch B, buddy 2): T_CTSK (TA_HLNG, itskpri = priority,
-     * stksz = stack_bytes from config/priorities.h) + tk_cre_tsk +
-     * tk_sta_tsk; report failures with APP_CHECK(er, p_name). */
-    (void)p_entry;
-    (void)priority;
-    (void)stack_bytes;
-    (void)p_name;
+    /* The kernel allocates the stack (stksz = stack_bytes, plus its own
+     * 128 B).  Registered tasks start through the stack monitor, which paints
+     * the stack for the high-water report (batchB-plan O8). */
+    void         *p_mon = stack_mon_register(p_entry, stack_bytes, p_name);
+    T_CTSK const  ctsk =
+    {
+        .exinf   = p_mon,
+        .tskatr  = TA_HLNG | TA_RNG0,
+        .task    = (p_mon != NULL) ? (FP)stack_mon_trampoline : (FP)p_entry,
+        .itskpri = (PRI)priority,
+        .stksz   = (SZ)stack_bytes,
+        .bufptr  = NULL,
+    };
+    ID tskid;
+    ER er;
 
-    return (int32_t)E_NOSPT;
+    tskid = tk_cre_tsk(&ctsk);
+    if (tskid < E_OK)
+    {
+        APP_CHECK(tskid, p_name);
+        return (int32_t)tskid;
+    }
+
+    er = tk_sta_tsk(tskid, 0);
+    if (er < E_OK)
+    {
+        APP_CHECK(er, p_name);
+        (void)tk_del_tsk(tskid);
+        return (int32_t)er;
+    }
+
+    return (int32_t)tskid;
 }
 
 INT usermain(void)
 {
-    /* 1. TODO(phase 1 batch B, buddy 2): ipc_init() - create every IPC
-     *    object (MBF_NAV_IN, MBF_MOTION_CMD, MBF_OBSTACLE, MBF_TELEMETRY,
-     *    SEM_ECHO, EVF_SAFETY, EVF_NAV, MTX_MOTION); module not created yet. */
+    /* Measure how deep usermain goes on the 1 KB init stack (O8). */
+    stack_mon_paint_init_window();
+
+    /* 1. Every IPC object (design.md 3.3), before any subsystem code runs. */
+    APP_CHECK(ipc_init(), "ipc_init");
 
     /* 2. Every subsystem creates its private kernel objects. */
     APP_CHECK(subsystem1_init(), "subsystem1_init");

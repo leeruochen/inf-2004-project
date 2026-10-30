@@ -9,7 +9,8 @@
 #   R1  A file includes both a kernel header (<tk/..>, <tm/..>, <bsp/..>,
 #       <sys/{inittask,knldef,machine,profile,queue,sysdef}.h>, <sys/sysdepend/..>,
 #       config/mtk3/.., or our kernel-side project headers "app.h",
-#       "test_report.h", "subsystemN.h" with any relative path) and an SDK header
+#       "test_report.h", "subsystemN.h", "ipc.h", "stack_mon.h" with any relative
+#       path) and an SDK header
 #       (pico/.., pico.h, hardware/.., boards/.., tusb.., lwip/.., cyw43..).
 #       So a drv_*.c that includes subsystemN.h plus an SDK header fails.
 #   R2  Blocking SDK waits in tasks: sleep_ms/us/until, busy_wait*, mutex_enter_*,
@@ -57,8 +58,8 @@ set(_B "(^|[^A-Za-z0-9_])")
 set(_RE_KINC "^[ \t]*#[ \t]*include[ \t]*[<\"](tk/|tm/|bsp/|config/mtk3/|sys/(inittask|knldef|machine|profile|queue|sysdef)\\.h|sys/sysdepend/)")
 # Our kernel-side project headers (they include <tk/tkernel.h>), with any
 # relative path: "app.h", "../app.h", "../test_report.h", "subsystem2.h",
-# "../subsystem2/subsystem2.h".
-set(_RE_KINC_PROJ "^[ \t]*#[ \t]*include[ \t]*\"([^\"]*/)?(app|test_report|subsystem[0-9]+)\\.h\"")
+# "../subsystem2/subsystem2.h", "src/common/ipc.h", "src/common/stack_mon.h".
+set(_RE_KINC_PROJ "^[ \t]*#[ \t]*include[ \t]*\"([^\"]*/)?(app|test_report|subsystem[0-9]+|ipc|stack_mon)\\.h\"")
 set(_RE_SINC "^[ \t]*#[ \t]*include[ \t]*[<\"](pico/|pico\\.h|hardware/|boards/|tusb|lwip/|cyw43)")
 set(_RE_R2   "${_B}(sleep_(ms|us|until)|busy_wait[A-Za-z0-9_]*|mutex_enter_[A-Za-z0-9_]*|sem_acquire[A-Za-z0-9_]*|pio_sm_get_blocking|pio_sm_put_blocking)[ \t]*\\(")
 set(_RE_R3A  "${_B}(printf|vprintf|puts|putchar|putchar_raw|puts_raw|fputs|fputc|fprintf|getchar|getchar_timeout_us|stdio_flush)[ \t]*\\(")
