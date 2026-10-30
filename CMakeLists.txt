@@ -65,7 +65,17 @@ if(TEL_BACKEND_WIFI)
 endif()
 # TEL_BACKEND_WIFI=OFF: nothing links cyw43 or lwIP.
 
-message(STATUS "robocar: DBG_ENABLE=${DBG_ENABLE} DBG_BACKEND=${DBG_BACKEND} TEL_BACKEND_WIFI=${TEL_BACKEND_WIFI} APP_TEST=${APP_TEST}")
+# Platform self-test build (Batch B stage B4b, batchB-plan B4): forced fault,
+# fault record, CRC and stack checks.  Never in a normal build.
+option(PLATFORM_SELFTEST "Platform self-test task (debug builds only; forces a HardFault once per power-up)" OFF)
+if(PLATFORM_SELFTEST AND NOT DBG_ENABLE)
+    message(FATAL_ERROR "PLATFORM_SELFTEST=ON needs DBG_ENABLE=ON (its results go through the dbg_ ring)")
+endif()
+if(PLATFORM_SELFTEST AND APP_TEST)
+    message(FATAL_ERROR "PLATFORM_SELFTEST=ON and APP_TEST=ON cannot be combined (one extra task fits the budget, config/priorities.h)")
+endif()
+
+message(STATUS "robocar: DBG_ENABLE=${DBG_ENABLE} DBG_BACKEND=${DBG_BACKEND} TEL_BACKEND_WIFI=${TEL_BACKEND_WIFI} APP_TEST=${APP_TEST} PLATFORM_SELFTEST=${PLATFORM_SELFTEST}")
 
 include(cmake/warnings.cmake)
 include(cmake/mtk3.cmake)
@@ -95,6 +105,11 @@ if(APP_TEST)
     target_compile_definitions(robocar_options INTERFACE APP_TEST=1)
 else()
     target_compile_definitions(robocar_options INTERFACE APP_TEST=0)
+endif()
+if(PLATFORM_SELFTEST)
+    target_compile_definitions(robocar_options INTERFACE PLATFORM_SELFTEST=1)
+else()
+    target_compile_definitions(robocar_options INTERFACE PLATFORM_SELFTEST=0)
 endif()
 
 # --- Config header check (pure macros, our warning flags) --------------------

@@ -52,6 +52,9 @@ static port_fault_record_t __uninitialized_ram(s_record);
 /* Set to 1 from a debugger to halt on a fault instead of resetting. */
 volatile uint32_t port_fault_halt;
 
+/* A valid record was there when this boot started (port_fault_boot). */
+static bool s_seen_at_boot;
+
 /* Reached from isr_hardfault's assembly only. */
 void port_fault_from_handler(uint32_t const *p_frame) __attribute__((noreturn, used));
 
@@ -143,11 +146,17 @@ void port_fault_shutdown(void)
 
 void port_fault_boot(void)
 {
-    if (record_valid())
+    s_seen_at_boot = record_valid();
+    if (s_seen_at_boot)
     {
         s_record.payload.boot_count++;
         s_record.crc = payload_crc(&s_record.payload);
     }
+}
+
+bool hal_fault_seen_at_boot(void)
+{
+    return s_seen_at_boot;
 }
 
 bool hal_fault_get(hal_fault_payload_t *p_out)
@@ -164,3 +173,46 @@ void hal_fault_clear(void)
 {
     s_record.magic = 0U;
 }
+
+#if PLATFORM_SELFTEST
+/* ---------------------------------------------------------------------------
+ * Self-test hooks (stage B4b).  The stage lives in watchdog scratch register
+ * 0, which keeps its value through a watchdog reset and is cleared by a power
+ * cycle (the bootrom uses scratch 4-7 only).
+ * ------------------------------------------------------------------------- */
+
+#define SELFTEST_STAGE_MAGIC    (0x5E1F0000UL)
+#define SELFTEST_STAGE_MASK     (0x0000FFFFUL)
+
+uint32_t hal_selftest_stage(void)
+{
+    uint32_t const raw = watchdog_hw->scratch[0];
+
+    return ((raw & ~SELFTEST_STAGE_MASK) == SELFTEST_STAGE_MAGIC)
+         ? (raw & SELFTEST_STAGE_MASK) : HAL_SELFTEST_STAGE_START;
+}
+
+void hal_selftest_set_stage(uint32_t stage)
+{
+    watchdog_hw->scratch[0] = SELFTEST_STAGE_MAGIC | (stage & SELFTEST_STAGE_MASK);
+}
+
+/* The recorded PC must be inside this function (the udf instruction). */
+void __attribute__((noinline)) hal_selftest_force_fault(void)
+{
+    __asm volatile("udf #0");
+    for (;;)
+    {
+        /* Not reached: the HardFault handler resets the chip. */
+    }
+}
+
+void hal_selftest_warm_reboot(void)
+{
+    watchdog_reboot(0U, 0U, PORT_FAULT_RESET_DELAY_MS);
+    for (;;)
+    {
+        /* Wait for the watchdog. */
+    }
+}
+#endif /* PLATFORM_SELFTEST */

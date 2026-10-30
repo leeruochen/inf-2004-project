@@ -15,6 +15,10 @@
  *  is round8(stksz + DEFAULT_SYS_STKSZ) bytes below it
  *  (kernel/tkernel/task_manage.c:62-65, 93).
  *
+ *  A task ends by returning from its function: stack_mon_task_start() then
+ *  calls tk_ext_tsk() with enough stack headroom (see stack_mon.c).  Calling
+ *  tk_ext_tsk() or tk_exd_tsk() anywhere else is rule R6.
+ *
  *  The 1 KB kernel init task (usermain) has no known top, so only a window
  *  of STACK_MON_INIT_WINDOW_BYTES below usermain's frame is painted
  *  (stack_mon_paint_init_window()): it measures how deep usermain goes
@@ -49,7 +53,7 @@ typedef struct
 /**
  * Reserve an entry for a task before tk_cre_tsk.  Returns the pointer to
  * pass as exinf (with task = stack_mon_trampoline), or NULL if the table
- * is full; then start the task directly, without painting.
+ * is full; app_start_task() then refuses the task.
  */
 void *stack_mon_register(void (*p_entry)(INT stacd, void *p_exinf),
                          uint32_t stack_bytes, char const *p_name);

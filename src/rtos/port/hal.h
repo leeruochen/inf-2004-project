@@ -109,4 +109,27 @@ bool hal_fault_get(hal_fault_payload_t *p_out);
 /** Invalidate the record (the drain calls it after a delivered print). */
 void hal_fault_clear(void);
 
+/** True if a valid record was already there when this boot started. */
+bool hal_fault_seen_at_boot(void);
+
+/* ---------------------------------------------------------------------------
+ * Platform self-test hooks (PLATFORM_SELFTEST builds only, stage B4b).
+ * The stage survives watchdog resets (watchdog scratch register 0) and is
+ * cleared by a power cycle, so the sequence runs once per power-up.
+ * ------------------------------------------------------------------------- */
+
+#define HAL_SELFTEST_STAGE_START        (0UL)   /**< after power-up */
+#define HAL_SELFTEST_STAGE_AFTER_FAULT  (1UL)   /**< after the forced HardFault */
+#define HAL_SELFTEST_STAGE_AFTER_WARM   (2UL)   /**< after the plain watchdog reset */
+#define HAL_SELFTEST_STAGE_DONE         (3UL)
+
+uint32_t hal_selftest_stage(void);
+void     hal_selftest_set_stage(uint32_t stage);
+/** Execute an undefined instruction inside this function: a HardFault. */
+void     hal_selftest_force_fault(void) __attribute__((noreturn));
+/** Plain watchdog reset (no fault). */
+void     hal_selftest_warm_reboot(void) __attribute__((noreturn));
+/** One line of kernel text through tm_printf, after the drain is running. */
+void     hal_selftest_late_sysmsg(void);
+
 #endif /* HAL_H */

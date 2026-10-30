@@ -27,6 +27,7 @@ set(expected
     "app_program/subsystem3/r3_stdio.c:2:" "app_program/subsystem3/r3_stdio.c:4:" "[R3a]" "[R3b]"
     "app_program/subsystem2/r4_libbsp.c:" "[R4]"
     "app_program/subsystem4/r5_core1.c:" "[R5]"
+    "app_program/subsystem4/r6_task_exit.c:2: [R6]" "app_program/subsystem4/r6_task_exit.c:3: [R6]"
     "app_program/subsystem2/r2_pio_blocking.c:2:" "app_program/subsystem2/r2_pio_blocking.c:3:"
     "app_program/subsystem2/r1_drv_subsystem_hdr.c:3: [R1]"
     "app_program/subsystem2/r1_drv_ipc_hdr.c:3: [R1]"
@@ -41,6 +42,7 @@ foreach(e IN LISTS expected)
 endforeach()
 
 set(unexpected "src/app/main.c" "snprintf" "app_program/subsystem3/r3_stdio.c:3:" "docs/excluded.c"
+    "app_program/subsystem4/r6_task_exit.c:4:"
     "ProjectTemplate/")
 foreach(u IN LISTS unexpected)
     string(FIND "${all}" "${u}" pos)

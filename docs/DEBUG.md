@@ -102,6 +102,14 @@ side never writes to stdio. Its output goes to two separate places in RAM
 - TODO(phase 1 batch B, buddy 2): implementation of the ring and the record
   (port layer and drain).
 
+## Platform self-test (`PLATFORM_SELFTEST`)
+
+`-DPLATFORM_SELFTEST=ON` (Debug builds only; not with `APP_TEST`) adds a task
+that checks the platform once per power-up and forces a HardFault on purpose,
+so the board resets twice by itself: the fault record must then print exactly
+once with the right PC, and not again after a plain reset. Never flash it on
+the car for normal work. Step by step: `.agents/tasks/batchB-b4b-test.md`.
+
 ## Build options
 
 The backend is a configure-time option. Only `USB` is accepted.
@@ -112,6 +120,7 @@ The backend is a configure-time option. Only `USB` is accepted.
 | `DBG_DEFAULT` | `USB` | `USB` |
 | `DBG_ENABLE` | `ON` (debug), `OFF` (release) | `OFF` for `Release`/`MinSizeRel`, `ON` otherwise |
 | `APP_TEST` | `ON`, `OFF` | `OFF` |
+| `PLATFORM_SELFTEST` | `ON` (Debug only, not with `APP_TEST`), `OFF` | `OFF` |
 
 `-DDBG_BACKEND=UART0` stops configure with "DBG_BACKEND=UART0 was removed
 (Week 8 pin map v2): GP0/GP1 are ENC_R_A/ENC_R_B in config/pins.h". As a
