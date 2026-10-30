@@ -2,8 +2,10 @@ Week 6 baseline (Batch B stage B6): the UNPACKED Week 6 types, measured
 ================================================================================
 Tag: baseline/week6-unpacked (on the B6 merge commit; Buddy 2 pushes it).
 Toolchain: Pico SDK 1.5.1, GCC 10.3.1 (arm-none-eabi 10.3-2021.10), CMake Ninja.
-Part A (compile time) was measured by the helper (WSL, same toolchain) and is
-re-checked by Buddy 2; part B (run time) comes from Buddy 2's Pico W.
+Part A (compile time) was measured by the helper (WSL, same toolchain) and
+re-checked by Buddy 2 (Windows, 31 Oct 2026, commit 957c4ff): every number is
+equal except .rodata, see the note in A2. Part B (run time) is from Buddy 2's
+Pico W, same day and commit; log: testing/system/logs/2026-10-31_b6-baseline-run.txt.
 Every number below is reproducible with the command above it, from a fresh
 build directory (.agents/tasks/batchB-b6-test.md).
 
@@ -52,6 +54,14 @@ A2. Firmware sections, Debug build (DBG_ENABLE=ON, normal: no test options)
        36604      0   109252  Release
        51304      0   111480  Debug + PLATFORM_BRINGUP
 
+    Note: .rodata depends on WHERE the SDK is installed. 18 SDK files put their
+    __FILE__ path into .rodata (assert/panic messages; none of our own files
+    do). Buddy 2's SDK path (C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/)
+    is longer than the helper's (/home/jy/pico-1.5.1/): +468 B of text, +476 B
+    with string alignment, exactly the difference he measured. Code and data
+    are identical. Buddy 2's build (official SDK installer path):
+    .rodata 8420 B; Debug text 50900 B. Compare B7 against the SAME machine.
+
 A3. Largest RAM objects (Debug)
     arm-none-eabi-nm -S --size-sort build/b6/robocar.elf   (selected)
 
@@ -68,13 +78,34 @@ A3. Largest RAM objects (Debug)
 
 B. Run time (Buddy 2's Pico W, Debug + PLATFORM_BRINGUP, 800 s with the
    stress window; the drain prints the report every 60 s; the LAST report
-   of the run is the baseline)
+   of the run is the baseline).  bringup_check PASS (Buddy 2; re-run by the
+   helper).
 
-B1. Stack high-water marks: [STACK] lines
-    PENDING (Buddy 2 run)
+B1. Stack high-water marks: [STACK] lines (size = round8(stksz + 128))
+
+    task        used    size   never used
+    init         360    1152      792   kernel init task (usermain), whole stack
+    dbg_drain    784    1664      880
+    safety       676    1664      988   } bring-up stand-ins: same code in all
+    vc           676    1664      988   } nine tasks (heartbeat loop + vsnprintf),
+    motion       676    1664      988   } so the same use; the subsystems' real
+    lf           676    1664      988   } tasks replace them, and the same
+    bc           676    1664      988   } report then measures those
+    obs_scan     676    1664      988   }
+    obs_avoid    676    1664      988   }
+    imu          676    2176     1500   }
+    tel          676    4736     4060   }
+
+    No stack within 128 B of its size (the B6 stop rule).  The init stack
+    used 360 B with usermain's start-up work (ipc_init, 11 task starts).
+    dbg_drain reached its peak (784) within 4 minutes and stayed there.
 
 B2. Message-buffer free space: [MBF] lines
-    PENDING (Buddy 2 run)
 
-B3. Stack top check: [STACK] stack top check: <n> mismatches   (must be 0)
-    PENDING (Buddy 2 run)
+    nav_in        64 B buffer, 64 B free
+    motion_cmd    64 B buffer, 64 B free
+    obstacle      40 B buffer, 40 B free
+    telemetry    640 B buffer, 640 B free
+    (Buffer sizes equal A1; nothing sends in the bring-up build.)
+
+B3. Stack top check: 0 mismatches in all 13 reports of the run.

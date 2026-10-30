@@ -1,6 +1,6 @@
 # Batch B plan: platform (boot, kernel port, debug console, IPC objects)
 
-Status (31 Oct 2026): B0-B5 merged on `main` (PRs #1-#5); every hardware stage passed on Buddy 2's Pico W: **milestone M1** (SYS-01). B6 code on `batchB/b6-baseline` (PR #6); gates pass; waiting for Buddy 2's run. Next: B7 (proposed owner defaults as placeholders, after the baseline tag).
+Status (31 Oct 2026): B0-B6 merged on `main` (PRs #1-#6); every hardware stage passed on Buddy 2's Pico W: **milestone M1** (SYS-01), Week 6 baseline measured (tag `baseline/week6-unpacked`, pushed by Buddy 2 on the B6 merge commit). Next: B7 (proposed owner defaults as placeholders).
 Written 29 Oct 2026 for the Batch B helper (Buddy 3, Jin Yong), with Buddy 2's go-ahead.
 
 Rev 2 (29 Oct 2026, after review):
@@ -410,6 +410,7 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
   - The drain prints `[STACK]` (used / size / never used, ` LOW` under 128 B) and `[MBF]` (`tk_ref_mbf` free bytes) every 60 s in every debug build, directly (not through the ring). Members get their real tasks' high-water marks the same way later.
   - `docs/measurements/week6-baseline.txt`: part A (compile time) filled; part B (run time) pending Buddy 2's run (`.agents/tasks/batchB-b6-test.md`).
   - Gates: all five configurations exit 0, 0 warnings, `check_rules: PASS (69 files)`; refused combinations refused; host tests pass.
+  - **Hardware run (Buddy 2, 31 Oct 2026, `957c4ff`): PASS** (report on PR #6; log `testing/system/logs/2026-10-31_b6-baseline-run.txt`; numbers in `docs/measurements/week6-baseline.txt` part B). Stacks: init 360 / 1152 B, drain 784 / 1664, each heartbeat 676; none within 128 B; stack-top check 0 mismatches. Part A equal except `.rodata` +476 B: the SDK's `__FILE__` assert strings carry the SDK install path, longer on his machine (+468 B text, +8 B alignment); code identical. The helper re-ran `bringup_check` on the log: PASS.
 
 ### B7: B-packed → M2
 
