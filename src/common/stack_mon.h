@@ -19,10 +19,14 @@
  *  calls tk_ext_tsk() with enough stack headroom (see stack_mon.c).  Calling
  *  tk_ext_tsk() or tk_exd_tsk() anywhere else is rule R6.
  *
- *  The 1 KB kernel init task (usermain) has no known top, so only a window
- *  of STACK_MON_INIT_WINDOW_BYTES below usermain's frame is painted
- *  (stack_mon_paint_init_window()): it measures how deep usermain goes
- *  below its entry, and never touches memory outside the init stack.
+ *  The 1 KB kernel init task (usermain) is not started through the
+ *  trampoline.  Since stage B6 its top comes from the kernel's TCB
+ *  (hal_task_stack_top()), and the whole init stack below usermain's frame
+ *  is painted.  If that top is not plausible, only a window of
+ *  STACK_MON_INIT_WINDOW_BYTES below usermain's frame is painted (the B4
+ *  behaviour).  Every registered task also checks hal_task_stack_top()
+ *  against its own SP at its first instruction (stack_mon_top_mismatches(),
+ *  must be 0).
  */
 
 #ifndef STACK_MON_H
@@ -63,6 +67,9 @@ void stack_mon_trampoline(INT stacd, void *p_exinf);
 
 /** Called once at the start of usermain(), on the init stack. */
 void stack_mon_paint_init_window(void);
+
+/** Tasks whose kernel stack top differed from their first SP (must be 0). */
+uint32_t stack_mon_top_mismatches(void);
 
 /** Entries in use, and read access for the report. */
 uint32_t stack_mon_count(void);

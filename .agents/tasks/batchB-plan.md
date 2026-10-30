@@ -1,6 +1,6 @@
 # Batch B plan: platform (boot, kernel port, debug console, IPC objects)
 
-Status (31 Oct 2026): B0-B4 merged on `main` (PRs #1-#4); B4a and B4b passed on Buddy 2's Pico W: **milestone M1-lite**. B5 code written on `batchB/b5-bringup` (gates pass); waiting for Buddy 2's bring-up run. Next after M1: B6.
+Status (31 Oct 2026): B0-B6 merged on `main` (PRs #1-#6); every hardware stage passed on Buddy 2's Pico W: **milestone M1** (SYS-01), Week 6 baseline measured (tag `baseline/week6-unpacked`, pushed by Buddy 2 on the B6 merge commit). Next: B7 (proposed owner defaults as placeholders).
 Written 29 Oct 2026 for the Batch B helper (Buddy 3, Jin Yong), with Buddy 2's go-ahead.
 
 Rev 2 (29 Oct 2026, after review):
@@ -404,6 +404,13 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
   - then the local annotated tag `baseline/week6-unpacked`. **Buddy 2 pushes it.**
 - **Verify:** numbers reproducible from a fresh build dir; every stack high-water below its size with margin.
 - **Stop if:** any stack high-water is within 128 B of its size, or the init task overflows.
+- **B6 result (helper, branch `batchB/b6-baseline`, on top of B5, 31 Oct 2026):**
+  - `cmake/size_report.c` (OBJECT library `size_report`, never linked): one symbol per measured quantity, its size = the number (`sizeof_*`, `slot_*`, `mbf_*`, `edge_ring`). Measured: nav_input_t 4, motion_cmd_t 10 (slot 16), obstacle_profile_t 16 (slot 20), tel_evt_t 16 (slot 20), motion_state_t 20, bc_edge_t 8; MBFs 64/64/40/640; edge ring 512. All equal the DATA_REPRESENTATION.md "Baseline bytes" estimates.
+  - Whole init stack measured (the B4b runs showed the 512 B usermain window down to 64 B free): `src/rtos/port/port_knl_view.c`, compiled inside the mtk3 library with the kernel's internal headers, returns `knl_ctxtsk->isstack` (`hal_task_stack_top()`; the generated load is `[r0, #96]`, the same offset `knl_make_dormant` uses). `stack_mon_paint_init_window()` paints the whole round8(1024 + 128) = 1152 B init stack, with the old 512 B window as fallback. Every registered task cross-checks `hal_task_stack_top()` against its first SP (`stack_mon_top_mismatches()`, must be 0).
+  - The drain prints `[STACK]` (used / size / never used, ` LOW` under 128 B) and `[MBF]` (`tk_ref_mbf` free bytes) every 60 s in every debug build, directly (not through the ring). Members get their real tasks' high-water marks the same way later.
+  - `docs/measurements/week6-baseline.txt`: part A (compile time) filled; part B (run time) pending Buddy 2's run (`.agents/tasks/batchB-b6-test.md`).
+  - Gates: all five configurations exit 0, 0 warnings, `check_rules: PASS (69 files)`; refused combinations refused; host tests pass.
+  - **Hardware run (Buddy 2, 31 Oct 2026, `957c4ff`): PASS** (report on PR #6; log `testing/system/logs/2026-10-31_b6-baseline-run.txt`; numbers in `docs/measurements/week6-baseline.txt` part B). Stacks: init 360 / 1152 B, drain 784 / 1664, each heartbeat 676; none within 128 B; stack-top check 0 mismatches. Part A equal except `.rodata` +476 B: the SDK's `__FILE__` assert strings carry the SDK install path, longer on his machine (+468 B text, +8 B alignment); code identical. The helper re-ran `bringup_check` on the log: PASS.
 
 ### B7: B-packed → M2
 

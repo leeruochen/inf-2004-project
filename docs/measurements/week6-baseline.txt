@@ -1,0 +1,111 @@
+Week 6 baseline (Batch B stage B6): the UNPACKED Week 6 types, measured
+================================================================================
+Tag: baseline/week6-unpacked (on the B6 merge commit; Buddy 2 pushes it).
+Toolchain: Pico SDK 1.5.1, GCC 10.3.1 (arm-none-eabi 10.3-2021.10), CMake Ninja.
+Part A (compile time) was measured by the helper (WSL, same toolchain) and
+re-checked by Buddy 2 (Windows, 31 Oct 2026, commit 957c4ff): every number is
+equal except .rodata, see the note in A2. Part B (run time) is from Buddy 2's
+Pico W, same day and commit; log: testing/system/logs/2026-10-31_b6-baseline-run.txt.
+Every number below is reproducible with the command above it, from a fresh
+build directory (.agents/tasks/batchB-b6-test.md).
+
+A1. Message types and buffers
+    arm-none-eabi-nm -S --size-sort build/b6/CMakeFiles/size_report.dir/cmake/size_report.c.obj
+    (cmake/size_report.c: each symbol's size IS the number; hex in nm, decimal here)
+
+    sizeof_nav_input_t               4 B
+    sizeof_bc_edge_t                 8 B
+    slot_nav_input_t                 8 B
+    sizeof_motion_cmd_t             10 B
+    sizeof_obstacle_profile_t       16 B
+    sizeof_tel_evt_t                16 B
+    slot_motion_cmd_t               16 B
+    sizeof_motion_state_t           20 B
+    slot_obstacle_profile_t         20 B
+    slot_tel_evt_t                  20 B
+    mbf_obstacle                    40 B
+    mbf_motion_cmd                  64 B
+    mbf_nav_in                      64 B
+    edge_ring                      512 B
+    mbf_telemetry                  640 B
+
+    All six sizeof values equal the "Baseline bytes" column of
+    docs/DATA_REPRESENTATION.md (estimated before; now measured).
+
+A2. Firmware sections, Debug build (DBG_ENABLE=ON, normal: no test options)
+    arm-none-eabi-size -A build/b6/robocar.elf   (sections with a RAM or flash footprint)
+
+    .boot2                     256 B
+    .text                    39136 B
+    .rodata                   7944 B
+    .binary_info                32 B
+    .ram_vector_table          192 B
+    .data                     3056 B
+    .uninitialized_data         36 B
+    .noinit                   6360 B
+    .bss                    104888 B
+    .heap                     2048 B
+    .stack_dummy              2048 B
+
+    arm-none-eabi-size build/b6/robocar.elf build/b6-rel/robocar.elf build/b6-bu/robocar.elf
+
+        text   data      bss  build
+       50424      0   111476  Debug
+       36604      0   109252  Release
+       51304      0   111480  Debug + PLATFORM_BRINGUP
+
+    Note: .rodata depends on WHERE the SDK is installed. 18 SDK files put their
+    __FILE__ path into .rodata (assert/panic messages; none of our own files
+    do). Buddy 2's SDK path (C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/)
+    is longer than the helper's (/home/jy/pico-1.5.1/): +468 B of text, +476 B
+    with string alignment, exactly the difference he measured. Code and data
+    are identical. Buddy 2's build (official SDK installer path):
+    .rodata 8420 B; Debug text 50900 B. Compare B7 against the SAME machine.
+
+A3. Largest RAM objects (Debug)
+    arm-none-eabi-nm -S --size-sort build/b6/robocar.elf   (selected)
+
+    s_record             36 B   RAM fault record (.uninitialized_data)
+    s_entries           320 B   stack monitor table
+    s_sysmsg            512 B   system-message ring (kernel text)
+    s_ring             2048 B   dbg_ log ring
+    knl_tcb_table      3328 B   kernel task control blocks (CNF_MAX_TSKID = 32)
+    s_kernel_pool     98304 B   kernel pool (task stacks, message buffers): KERNEL_POOL_BYTES
+
+    The message buffers (A1, 808 B in all) are allocated inside the kernel
+    pool, so packing them (B7) does not move the map; B2 shows them.  The edge ring (512 B) is not in the firmware yet: it belongs to
+    subsystem 3, which has not started.
+
+B. Run time (Buddy 2's Pico W, Debug + PLATFORM_BRINGUP, 800 s with the
+   stress window; the drain prints the report every 60 s; the LAST report
+   of the run is the baseline).  bringup_check PASS (Buddy 2; re-run by the
+   helper).
+
+B1. Stack high-water marks: [STACK] lines (size = round8(stksz + 128))
+
+    task        used    size   never used
+    init         360    1152      792   kernel init task (usermain), whole stack
+    dbg_drain    784    1664      880
+    safety       676    1664      988   } bring-up stand-ins: same code in all
+    vc           676    1664      988   } nine tasks (heartbeat loop + vsnprintf),
+    motion       676    1664      988   } so the same use; the subsystems' real
+    lf           676    1664      988   } tasks replace them, and the same
+    bc           676    1664      988   } report then measures those
+    obs_scan     676    1664      988   }
+    obs_avoid    676    1664      988   }
+    imu          676    2176     1500   }
+    tel          676    4736     4060   }
+
+    No stack within 128 B of its size (the B6 stop rule).  The init stack
+    used 360 B with usermain's start-up work (ipc_init, 11 task starts).
+    dbg_drain reached its peak (784) within 4 minutes and stayed there.
+
+B2. Message-buffer free space: [MBF] lines
+
+    nav_in        64 B buffer, 64 B free
+    motion_cmd    64 B buffer, 64 B free
+    obstacle      40 B buffer, 40 B free
+    telemetry    640 B buffer, 640 B free
+    (Buffer sizes equal A1; nothing sends in the bring-up build.)
+
+B3. Stack top check: 0 mismatches in all 13 reports of the run.

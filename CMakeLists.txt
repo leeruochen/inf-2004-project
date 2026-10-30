@@ -134,6 +134,13 @@ target_link_libraries(config_check PRIVATE robocar_options)
 set_target_properties(config_check PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 robocar_apply_warnings("${PROJECT_SOURCE_DIR}/cmake/config_check.c")
 
+# --- Size report (stage B6): message-type and buffer sizes as symbol sizes ---
+# Never linked. Read with arm-none-eabi-nm -S --size-sort (cmake/size_report.c).
+add_library(size_report OBJECT "${PROJECT_SOURCE_DIR}/cmake/size_report.c")
+target_link_libraries(size_report PRIVATE robocar_options)
+set_target_properties(size_report PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+robocar_apply_warnings("${PROJECT_SOURCE_DIR}/cmake/size_report.c")
+
 # --- Module source registration ----------------------------------------------
 # Two source roots:
 #   src/          platform code: common, rtos (port layer in src/rtos/port/),
