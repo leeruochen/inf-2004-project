@@ -27,8 +27,12 @@ Stop at the first part that fails and send the result to Jin Yong (part E explai
 You can give this whole guide to your AI agent. Paste this prompt:
 
 ```text
-Read .agents/tasks/batchB-ruochen-guide.md (on branch batchB/b4b-selftest of this repo) and carry
-it out with me, part by part, in order. Rules:
+In this repo, run `git fetch origin`, then read the guide with
+  git show origin/batchB/b4b-selftest:.agents/tasks/batchB-ruochen-guide.md
+and carry it out with me, part by part, in order. The tests switch branches, so always read the
+guides with `git show origin/batchB/b4b-selftest:<path>`, never from the working tree:
+  .agents/tasks/batchB-b4a-test.md, .agents/tasks/batchB-b4b-test.md, .agents/tasks/batchB-plan.md
+Rules:
 - Never edit, commit or push any file in the repo.
 - For steps marked PERSON, tell me exactly what to do and wait for me to say "done".
 - For steps marked DECISION, show me the question and the recommended answer, and wait for my answer.
@@ -37,7 +41,7 @@ it out with me, part by part, in order. Rules:
 - Stop at the first failure and help me write the report from part E.
 ```
 
-To read the guide before switching branches: open it on GitHub, branch `batchB/b4b-selftest`, file `.agents/tasks/batchB-ruochen-guide.md`.
+To read it yourself: open it on GitHub, branch `batchB/b4b-selftest`, file `.agents/tasks/batchB-ruochen-guide.md`. The B4a and B4b test guides are on that branch too (the B4a guide is also on `batchB/b4-first-firmware`).
 
 ---
 
@@ -127,7 +131,7 @@ B3. **Merge B0.** On the PR, choose **"Create a merge commit"**. **Do NOT use "S
 
 ## Part C: hardware test B4a (the first firmware)
 
-C1. **Follow `.agents/tasks/batchB-b4a-test.md` from top to bottom.** It is on branch `batchB/b4-first-firmware` and covers:
+C1. **Follow `.agents/tasks/batchB-b4a-test.md` from top to bottom** (agent: `git show origin/batchB/b4b-selftest:.agents/tasks/batchB-b4a-test.md`). Its step 1 switches to branch `batchB/b4-first-firmware`, where the B4a firmware is. It covers:
 - getting the code;
 - the build;
 - flashing (**PERSON**: BOOTSEL);
@@ -144,7 +148,7 @@ C3. If B4a FAILS: stop here, go to part E and send the report. Do not run part D
 
 ## Part D: hardware test B4b (the self-test), only if B4a passed
 
-D1. **Follow `.agents/tasks/batchB-b4b-test.md` from top to bottom.** It is on branch `batchB/b4b-selftest`. The board resets **twice by itself** in this test: that is the point (a forced crash, then a plain reset). Exactly one `[FAULT]` line must appear.
+D1. **Follow `.agents/tasks/batchB-b4b-test.md` from top to bottom** (agent: `git show origin/batchB/b4b-selftest:.agents/tasks/batchB-b4b-test.md`). Its step 1 switches to branch `batchB/b4b-selftest`. The board resets **twice by itself** in this test: that is the point (a forced crash, then a plain reset). Exactly one `[FAULT]` line must appear.
 
 D2. After the test, put normal firmware back on the board so nobody is surprised by the self-test later: flash `build/b4a/robocar.uf2` from part C again (**PERSON**: BOOTSEL, then copy the file to `RPI-RP2`).
 
