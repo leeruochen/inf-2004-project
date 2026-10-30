@@ -47,8 +47,22 @@ A2. Firmware sections: UNCHANGED
 
 B. Run time (Buddy 2's Pico W, Debug + PLATFORM_BRINGUP, 2-minute re-run)
 
-B1. [MBF] lines: buffer sizes 64 / 32 / 24 / 384 B expected (A1)
-    PENDING (Buddy 2 run)
+Buddy 2, 31 Oct 2026, commit 842dc03; bringup_check -MinMinutes 2 -NoStress
+PASS (re-run by the helper); A1 re-checked on his build: equal.
+Log: testing/system/logs/2026-10-31_b7-packed-rerun.txt
 
-B2. [STACK] lines: expected equal to the Week 6 baseline (same code runs)
-    PENDING (Buddy 2 run)
+B1. [MBF] lines (Week 6 -> Week 8)
+
+    nav_in        64 ->  64 B buffer, all free
+    motion_cmd    64 ->  32 B buffer, all free
+    obstacle      40 ->  24 B buffer, all free
+    telemetry    640 -> 384 B buffer, all free
+
+B2. [STACK] lines: equal to the Week 6 baseline except the drain (772 here,
+    784 in the 800 s baseline run, which includes the stress window)
+
+    task        used    size   never used
+    init         360    1152      792
+    dbg_drain    772    1664      892
+    safety ... tel (nine heartbeat tasks): 676 used each; sizes as B6
+    stack top check: 0 mismatches

@@ -45,7 +45,7 @@ the Batch B helper. Previous update: 29 Oct 2026, Batch B stage B0, by Buddy 3.
 | Template merge (Option C): `app_program/`, `TEAM.md`, `testing/`, `videos/` | Done, verified (`merge-verify.md`) |
 | Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
 | Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
-| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Milestone M1 reached (31 Oct 2026): the platform passed the Phase 1 USB CDC bring-up test (SYS-01); members can run their own tasks** (section 3). B0-B5 merged on `main` (PRs #1-#5); every hardware stage passed on Buddy 2's board. B6 baseline measured (tag `baseline/week6-unpacked`). Next: B7 (packed messages, milestone M2). Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
+| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Complete (31 Oct 2026): milestones M1 (Phase 1 USB CDC bring-up test, SYS-01) and M2 (message formats final, `src/common/data_repr.h`).** B0-B7 merged on `main` (PRs #1-#7); every hardware stage passed on Buddy 2's board; Week 6 baseline tagged `baseline/week6-unpacked`. Members build their subsystems on it (section 3). Open owner items: the placeholders in `docs/DATA_REPRESENTATION.md` section 10 Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
 | Subsystem code (all five buddies) | Not started. Every subsystem is a compile-checked stub |
 | Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026; B5 bring-up test (SYS-01, 13 min with stress, replug) passed, 31 Oct 2026. Buddy 2's Pico W; logs on PRs #3-#5 and in `testing/system/logs/` |
 
@@ -198,7 +198,7 @@ commands, stop conditions). It wins over this summary where they differ. Stage s
 | B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | done: B4a and B4b passed on the board, merged (PRs #3, #4). **M1-lite reached, 31 Oct 2026.** B4b found and fixed a task-exit fault (rule R6) |
 | B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | done: passed on the board 31 Oct 2026 (SYS-01, `testing/system/TEST_LOG.md`; worst jitter 566 µs of the 1000 µs limit), merged (PR #5). **M1 reached** |
 | B6 | baseline measurement, tag `baseline/week6-unpacked` | done: measured on the board 31 Oct 2026 (`docs/measurements/week6-baseline.txt`), merged (PR #6); tag on the merge commit (Buddy 2). Every debug build prints a `[STACK]`/`[MBF]` report every 60 s |
-| B7 | B-packed types + host tests: **milestone M2** (messages final) | code done (`src/common/data_repr.h`, packed `ipc_types.h`, host tests, `docs/measurements/week8-packed.txt`); gates and host tests pass; waiting for Buddy 2's 2-minute re-run (`.agents/tasks/batchB-b7-test.md`) |
+| B7 | B-packed types + host tests: **milestone M2** (messages final) | done: packed formats in `src/common/data_repr.h`, 273 host checks, re-measured (`docs/measurements/week8-packed.txt`), board re-run passed 31 Oct 2026, merged (PR #7). **M2 reached: Batch B complete** |
 
 Since B4 (M1-lite) members can run their own tasks on the car. Planned as two
 parts (owner decision C4): **B-baseline** (unpacked Week 6 types, measured, tagged
