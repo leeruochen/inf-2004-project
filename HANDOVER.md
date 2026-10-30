@@ -114,8 +114,10 @@ General workflow for everyone:
    A periodic task waits with `app_period_wait()` (`src/common/period.h`), never with a
    plain `tk_dly_tsk(P)` loop: that runs every P + 1 ms. A task ends by returning from its
    function, never with `tk_ext_tsk` (rule R6). Log with `dbg_puts` / `dbg_printf`; the
-   console and debugging are in `docs/DEBUG.md`. The message structs in
-   `src/common/ipc_types.h` are PROVISIONAL until milestone M2 (stage B7).
+   console and debugging are in `docs/DEBUG.md`. Messages are packed words (stage B7):
+   build and read them only with the `drep_` functions in `src/common/data_repr.h`,
+   for example `nav_input_t m = drep_nav_steer(err_q7);` then
+   `tk_snd_mbf(MBF_NAV_IN, &m, sizeof m, TMO_POL)`. Field table: `docs/DATA_REPRESENTATION.md`.
 
 Every subsystem today has `subsystemN.c` (init/start stubs), `subsystemN.h` (its interfaces as
 comments), `subsystemN_test.c` (empty test) and `sources.cmake`. Interfaces between
@@ -196,7 +198,7 @@ commands, stop conditions). It wins over this summary where they differ. Stage s
 | B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | done: B4a and B4b passed on the board, merged (PRs #3, #4). **M1-lite reached, 31 Oct 2026.** B4b found and fixed a task-exit fault (rule R6) |
 | B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | done: passed on the board 31 Oct 2026 (SYS-01, `testing/system/TEST_LOG.md`; worst jitter 566 µs of the 1000 µs limit), merged (PR #5). **M1 reached** |
 | B6 | baseline measurement, tag `baseline/week6-unpacked` | done: measured on the board 31 Oct 2026 (`docs/measurements/week6-baseline.txt`), merged (PR #6); tag on the merge commit (Buddy 2). Every debug build prints a `[STACK]`/`[MBF]` report every 60 s |
-| B7 | B-packed types + host tests: **milestone M2** (messages final) | not started |
+| B7 | B-packed types + host tests: **milestone M2** (messages final) | code done (`src/common/data_repr.h`, packed `ipc_types.h`, host tests, `docs/measurements/week8-packed.txt`); gates and host tests pass; waiting for Buddy 2's 2-minute re-run (`.agents/tasks/batchB-b7-test.md`) |
 
 Since B4 (M1-lite) members can run their own tasks on the car. Planned as two
 parts (owner decision C4): **B-baseline** (unpacked Week 6 types, measured, tagged

@@ -8,12 +8,15 @@
 # Usage, from the repo root:
 #   powershell -ExecutionPolicy Bypass -File tools/bringup_check.ps1 -Log build/b5-run.txt
 #   powershell -ExecutionPolicy Bypass -File tools/bringup_check.ps1 -Log build/b5-replug.txt -Replug
+#   powershell -ExecutionPolicy Bypass -File tools/bringup_check.ps1 -Log build/b7-run.txt -MinMinutes 2 -NoStress
 #
 # Main run (default): one boot, at least -MinMinutes of heartbeats from all
 # nine tasks, the stress window (ON and OFF lines) with the drop counter
 # rising inside it.
 # -Replug: the step 4 log. Reboots (after unplugging) and line loss while
 # the terminal was closed are expected; heartbeats must come back.
+# -NoStress: a short re-run (stage B7) that ends before the stress window;
+# the stress ON/OFF lines and the drop-counter rise are not required.
 #
 # Rules (FAIL unless noted):
 #   F1  [FAULT] or [ERR] line.
@@ -34,7 +37,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$Log,
     [double]$MinMinutes = 10,
-    [switch]$Replug
+    [switch]$Replug,
+    [switch]$NoStress
 )
 
 $names = @{ 1 = 'safety'; 2 = 'vc'; 3 = 'motion'; 4 = 'lf'; 5 = 'bc';
@@ -210,9 +214,11 @@ if ($Replug) {
             Fail ("F7 task id={0} {1}: only {2:N0} s of heartbeats (need {3} min)" -f $id, $names[$id], $best[$id], $MinMinutes)
         }
     }
-    if (-not $stressOn) { Fail "F7 no '[BRINGUP] stress ON' line (capture too short?)" }
-    if (-not $stressOff) { Fail "F7 no '[BRINGUP] stress OFF' line (capture too short?)" }
-    if ($stressOn -and -not $dropInStress) { Fail "F7 the drop counter did not rise during the stress window" }
+    if (-not $NoStress) {
+        if (-not $stressOn) { Fail "F7 no '[BRINGUP] stress ON' line (capture too short?)" }
+        if (-not $stressOff) { Fail "F7 no '[BRINGUP] stress OFF' line (capture too short?)" }
+        if ($stressOn -and -not $dropInStress) { Fail "F7 the drop counter did not rise during the stress window" }
+    }
 }
 
 Write-Host ("bringup_check: {0}{1}" -f $Log, $(if ($Replug) { ' (replug)' } else { '' }))

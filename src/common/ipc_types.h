@@ -5,12 +5,11 @@
  *  fields belong to its interface owner (TODO markers below).
  *  Pure header: <stdint.h> only, so drivers and host tests may include it.
  *
- *  PROVISIONAL until milestone M2 (Batch B stage B7).  These are the Week 6
- *  UNPACKED baseline types (batchB-plan O2; field lists from
- *  .agents/tasks/week8-impact-report.md C.1, sizes as the "Baseline bytes"
- *  column of docs/DATA_REPRESENTATION.md).  B7 replaces them with the
- *  minimum-bit Week 8 formats (ARCHITECTURE.md D8).  Code that reads or
- *  writes message fields may need edits between M1-lite and M2.
+ *  PACKED minimum-bit Week 8 formats since stage B7 (ARCHITECTURE.md D8).
+ *  Read and write fields only through src/common/data_repr.h.  Three field
+ *  meanings still wait for their owner (TODO(owner-to-confirm) in
+ *  data_repr.h): the steering sign (buddy 3), the bypass command values and
+ *  the 2-bit obstacle sequence (buddy 5).
  */
 
 #ifndef IPC_TYPES_H
@@ -28,84 +27,56 @@
 #define MBF_TELEMETRY_DEPTH     (32U)   /**< IF-04, tel_evt_t */
 
 /* ---------------------------------------------------------------------------
- * IF-01 MBF_NAV_IN: steering, barcode, bypass and remote commands to the
- * Vehicle Controller.  TODO(owner-to-confirm, buddy 2): field codes.
+ * Message and shared-data types: PACKED (stage B7, ARCHITECTURE.md D8).
+ * Each is one or two 32-bit words.  The field layout (bit positions, masks,
+ * ranges, clamping) and every pack/unpack function are in
+ * src/common/data_repr.h (prefix drep_): never set the words by hand.
+ * Field table, writers and readers: docs/DATA_REPRESENTATION.md section 2.
+ * The Week 6 unpacked structs were measured and tagged first
+ * (baseline/week6-unpacked, docs/measurements/week6-baseline.txt).
  * ------------------------------------------------------------------------- */
+
+/** IF-01 MBF_NAV_IN: source 2 + type 3 + payload 8 + bypass 3 + OOR 1 = 17 bits. */
 typedef struct
 {
-    uint8_t source;                 /**< LINE, BARCODE, AVOID, REMOTE */
-    uint8_t type;                   /**< meaning depends on source */
-    union
-    {
-        int16_t steering_err_q8;    /**< Line-Following steering error, Q8 */
-        uint8_t nav_cmd;            /**< barcode command */
-        uint8_t bypass_cmd;         /**< obstacle bypass command */
-        uint8_t remote_cmd;         /**< remote START / STOP / RESET */
-    } payload;
+    uint32_t w;
 } nav_input_t;
 
-/* ---------------------------------------------------------------------------
- * IF-02 MBF_MOTION_CMD: the one command Motion Control executes.
- * TODO(owner-to-confirm, buddy 2): field codes.
- * ------------------------------------------------------------------------- */
+/** IF-02 MBF_MOTION_CMD: type 3 + speed 6 + argument 9 + OOR 1 = 19 bits. */
 typedef struct
 {
-    uint8_t  type;                  /**< STOP, FWD, BACK, TURN_L, TURN_R, UTURN, STEER, BRAKE */
-    uint16_t distance_cm;
-    int16_t  angle_deg;
-    uint8_t  speed_cmps;
-    int16_t  steer_q8;
+    uint32_t w;
 } motion_cmd_t;
 
-/* ---------------------------------------------------------------------------
- * IF-03 MBF_OBSTACLE: one obstacle profile, Scanning -> Avoidance.
- * TODO(owner-to-confirm, buddy 5): field codes.
- * ------------------------------------------------------------------------- */
+/** IF-03 MBF_OBSTACLE: distance 9 + bearing 4 + width 7 + clear_L 7 + sequence 2
+ *  + OOR 1 in lo (30 bits), clear_R 7 in hi: 37 bits, 5 B on the wire. */
 typedef struct
 {
-    int16_t  bearing_deg;
-    uint16_t width_mm;
-    uint16_t closest_mm;
-    uint16_t clear_left_mm;
-    uint16_t clear_right_mm;
-    uint8_t  valid;
-    uint32_t timestamp_ms;
+    uint32_t lo;
+    uint32_t hi;
 } obstacle_profile_t;
 
-/* ---------------------------------------------------------------------------
- * IF-04 MBF_TELEMETRY: one status or sensor event for the dashboard.
- * TODO(owner-to-confirm, buddy 1): event types and payload layout.
- * ------------------------------------------------------------------------- */
+/** IF-04 MBF_TELEMETRY: header = type 5 + timestamp 24 + flags 3; payload 32 by type. */
 typedef struct
 {
-    uint8_t  type;
-    uint32_t timestamp_ms;
-    uint32_t payload[2];            /**< per-type payload, 8 bytes */
+    uint32_t hdr;
+    uint32_t payload;
 } tel_evt_t;
 
-/* ---------------------------------------------------------------------------
- * IF-08 motion_state_t: shared data under MTX_MOTION (not a queue).
- * Motion Control writes; Barcode Decode and Telemetry copy and release.
- * TODO(owner-to-confirm, buddy 2): field codes.
- * ------------------------------------------------------------------------- */
+/** IF-08 shared data under MTX_MOTION: speed 10 + distance 16 + OOR 1 in w; the
+ *  encoder words stay unpacked int32 (IF-10, single aligned store, D7/D8). */
 typedef struct
 {
-    uint16_t speed_cmps_x10;
-    uint32_t distance_cm_x10;
-    int32_t  enc_count[2];          /**< IF-10 encoder words, unpacked (D7) */
-    uint32_t tick_ms;
+    uint32_t w;
+    int32_t  enc_count[2];          /**< [0] left, [1] right; free-running */
+    uint32_t tick_ms;               /**< kernel time of the sample */
 } motion_state_t;
 
-/* ---------------------------------------------------------------------------
- * IF-09 barcode edge ring element (the ring itself is owned by subsystem 3;
- * BC_EDGE_RING_LEN entries, config/timing.h).
- * TODO(owner-to-confirm, buddy 3).
- * ------------------------------------------------------------------------- */
-typedef uint64_t bc_edge_t;         /**< edge time, us */
+/* IF-09 barcode edge ring: drep_edge_ring_t in data_repr.h (20-bit gaps). */
 
 /* ---------------------------------------------------------------------------
- * Event-flag bits.  PROVISIONAL bit positions (docs/DATA_REPRESENTATION.md
- * section 3, ARCHITECTURE.md D9); fixed in stage B7.
+ * Event-flag bits.  FIXED in stage B7 (docs/DATA_REPRESENTATION.md section 3,
+ * ARCHITECTURE.md D9): one setter per bit.
  * ------------------------------------------------------------------------- */
 
 /* IF-06 EVF_SAFETY.  Safety waits on COLLISION | IMU_ALIVE with
@@ -121,20 +92,46 @@ typedef uint64_t bc_edge_t;         /**< edge time, us */
 #define EVF_SAFETY_FAULT_WIFI_LOSS  (1UL << 8)
 #define EVF_SAFETY_FAULT_IR_SENSOR  (1UL << 9)
 
+/** Safety's wait: tk_wai_flg(EVF_SAFETY, EVF_SAFETY_WAIT_MASK, TWF_ORW | TWF_BITCLR, ...). */
+#define EVF_SAFETY_WAIT_MASK        (EVF_SAFETY_COLLISION | EVF_SAFETY_IMU_ALIVE)
+/** Bits counted as faults (STATUS_NO_ECHO is informational, IMU_ALIVE a watchdog input). */
+#define EVF_SAFETY_FAULT_MASK       (EVF_SAFETY_COLLISION | EVF_SAFETY_FAULT_LATCHED      \
+                                     | EVF_SAFETY_FAULT_STALL | EVF_SAFETY_FAULT_ENCODER  \
+                                     | EVF_SAFETY_FAULT_IMU_I2C | EVF_SAFETY_FAULT_IMU_WDOG \
+                                     | EVF_SAFETY_FAULT_WIFI_LOSS | EVF_SAFETY_FAULT_IR_SENSOR)
+/** Every defined EVF_SAFETY bit (b0-b9, 10 bits: the event_fault payload). */
+#define EVF_SAFETY_ALL_MASK         (0x3FFUL)
+
 /* IF-07 EVF_NAV.  Readers poll; nobody blocks on it. */
 #define EVF_NAV_AVOID_ACTIVE        (1UL << 0)
 #define EVF_NAV_LINE_FOUND          (1UL << 1)
 #define EVF_NAV_LINE_REACQUIRED     (1UL << 2)
 
 /* ---------------------------------------------------------------------------
- * Baseline sizes (natural ARM EABI alignment).  B6 measures them on target;
- * a change here must update docs/DATA_REPRESENTATION.md.
+ * Compile-time checks: packed sizes (docs/DATA_REPRESENTATION.md "Packed
+ * bytes"; the baseline sizes are in docs/measurements/week6-baseline.txt) and
+ * the event-flag bits.
  * ------------------------------------------------------------------------- */
-_Static_assert(sizeof(nav_input_t) == 4U, "nav_input_t baseline is 4 B");
-_Static_assert(sizeof(motion_cmd_t) == 10U, "motion_cmd_t baseline is 10 B");
-_Static_assert(sizeof(obstacle_profile_t) == 16U, "obstacle_profile_t baseline is 16 B");
-_Static_assert(sizeof(tel_evt_t) == 16U, "tel_evt_t baseline is 16 B");
-_Static_assert(sizeof(motion_state_t) == 20U, "motion_state_t baseline is 20 B");
-_Static_assert(sizeof(bc_edge_t) == 8U, "edge ring entries are 8 B");
+_Static_assert(sizeof(nav_input_t) == 4U, "nav_input_t is one word");
+_Static_assert(sizeof(motion_cmd_t) == 4U, "motion_cmd_t is one word");
+_Static_assert(sizeof(obstacle_profile_t) == 8U, "obstacle_profile_t is two words");
+_Static_assert(sizeof(tel_evt_t) == 8U, "tel_evt_t is header + payload");
+_Static_assert(sizeof(motion_state_t) == 16U, "motion_state_t is 16 B");
+
+#define IPC_TYPES_BIT_DISTINCT(a, b)    (((a) & (b)) == 0UL)
+_Static_assert(IPC_TYPES_BIT_DISTINCT(EVF_SAFETY_COLLISION | EVF_SAFETY_IMU_ALIVE | EVF_SAFETY_FAULT_LATCHED,
+                                      EVF_SAFETY_FAULT_STALL | EVF_SAFETY_FAULT_ENCODER | EVF_SAFETY_FAULT_IMU_I2C
+                                      | EVF_SAFETY_FAULT_IMU_WDOG | EVF_SAFETY_STATUS_NO_ECHO
+                                      | EVF_SAFETY_FAULT_WIFI_LOSS | EVF_SAFETY_FAULT_IR_SENSOR),
+               "EVF_SAFETY bits overlap");
+_Static_assert((EVF_SAFETY_COLLISION | EVF_SAFETY_IMU_ALIVE | EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_FAULT_STALL
+                | EVF_SAFETY_FAULT_ENCODER | EVF_SAFETY_FAULT_IMU_I2C | EVF_SAFETY_FAULT_IMU_WDOG
+                | EVF_SAFETY_STATUS_NO_ECHO | EVF_SAFETY_FAULT_WIFI_LOSS | EVF_SAFETY_FAULT_IR_SENSOR)
+               == EVF_SAFETY_ALL_MASK, "EVF_SAFETY: ten distinct bits b0-b9");
+_Static_assert(EVF_SAFETY_WAIT_MASK == 0x3UL, "Safety waits on COLLISION | IMU_ALIVE only");
+_Static_assert((EVF_SAFETY_FAULT_MASK & (EVF_SAFETY_STATUS_NO_ECHO | EVF_SAFETY_IMU_ALIVE)) == 0UL,
+               "NO_ECHO and IMU_ALIVE are not faults");
+_Static_assert((EVF_NAV_AVOID_ACTIVE | EVF_NAV_LINE_FOUND | EVF_NAV_LINE_REACQUIRED) == 0x7UL,
+               "EVF_NAV: three distinct bits");
 
 #endif /* IPC_TYPES_H */

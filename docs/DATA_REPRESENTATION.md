@@ -3,17 +3,21 @@
 Agreed field table for every inter-task message, shared word, state machine,
 eventflag bit and the MQTT wire format (ARCHITECTURE.md D8, D9, D10). It is
 **language-neutral**: the dashboard language is not decided, and no decoder
-exists. The unpacked Week 6 types are built and measured (Batch B stage B6,
-`docs/measurements/week6-baseline.txt`); Batch B-packed adds the shared header
-and host tests (section 10).
+exists. Implemented in Batch B: the unpacked Week 6 types were measured and
+tagged (stage B6, `docs/measurements/week6-baseline.txt`, tag
+`baseline/week6-unpacked`); stage B7 implements these tables in
+`src/common/data_repr.h` and switches `src/common/ipc_types.h` to them, with
+host tests (`tests/host/test_data_repr.c`) and the re-measurement
+(`docs/measurements/week8-packed.txt`). Section 10 lists what B7 decided.
 
 ## 1. General rules
 
 - Masks and shifts only. No C bit-fields anywhere.
-- One shared, pure header (`<stdint.h>` only) will hold every `*_BITS`,
-  `*_SHIFT`, `*_MASK`, the wire version and the pack/unpack functions
-  (proposed `src/common/data_repr.h`, prefix `drep_`, Batch B-packed). It is
-  included by SDK-side drivers, kernel-side tasks and host tests.
+- One shared, pure header (`<stdbool.h>`, `<stddef.h>`, `<stdint.h>` only)
+  holds every `*_BITS`, `*_SHIFT`, `*_MASK`, the wire version and the
+  pack/unpack functions: `src/common/data_repr.h`, prefix `drep_` (stage B7;
+  `app.h` includes it). It is included by SDK-side drivers, kernel-side tasks
+  and host tests.
 - The header separates the **wire / message formats** (fixed, versioned) from
   **private task state**. Private state sits in its own section with its own
   accessors, so Buddy 1 can later switch private state to bit-fields (if the
@@ -231,11 +235,12 @@ plus a 4-byte header, and the buffers live inside the fixed 96 KB kernel pool.
 Only what the map file shows is reported. Baseline (stage B6,
 `docs/measurements/week6-baseline.txt`): the 96 KB kernel pool, the 2 KB
 `dbg_` ring and the 3.3 KB task table are the large RAM items; the message
-buffers live inside the pool. Expected from the arithmetic above, for
-planning only: MBF_NAV_IN 64 → 64 B,
+buffers live inside the pool. Measured in stage B7
+(`docs/measurements/week8-packed.txt`): MBF_NAV_IN 64 → 64 B,
 MBF_MOTION_CMD 64 → 32 B, MBF_OBSTACLE 40 → 24 B, MBF_TELEMETRY 640 → 384 B
-(all inside the pool, so the map does not move); edge ring 512 → 160 B (a
-static array, visible in the map).
+(808 → 504 B, all inside the pool); the firmware map (text, data, bss) is
+byte-for-byte unchanged, as predicted. Edge ring 512 → 160 B: a static array,
+visible in the map once subsystem 3 creates it.
 
 ## 7. Baseline plan
 
@@ -307,5 +312,25 @@ against the shared header once both exist.
 
 ## 10. Status
 
-Baseline measured (stage B6). No packed types, pack/unpack code or encoder
-code exist yet (stage B7).
+Baseline measured (stage B6). Packed formats implemented and host-tested
+(stage B7, `src/common/data_repr.h`). Decisions taken in B7 (beyond the tables):
+
+- Containers: `nav_input_t` and `motion_cmd_t` one word; `obstacle_profile_t`
+  two words (`lo` = 30 bits, `hi` = clear_R, so no field straddles a word;
+  5 B on the wire); `tel_evt_t` header word + payload word; `motion_state_t`
+  packed word + the unpacked encoder words + tick.
+- `nav_input_t` from REMOTE: the type is the command (START, STOP, RESET); the
+  payload is 0.
+- Obstacle rounding is conservative: the width rounds UP and the clearances
+  round DOWN to 5 mm, so a profile never shows a smaller obstacle or a wider
+  gap than measured.
+- MQTT frame type numbers: telemetry_motion 1, telemetry_sensor 2,
+  event_barcode 3, event_hump 4, event_obstacle 5, event_fault 6, heartbeat 7,
+  cmd_start 8, cmd_stop 9, cmd_reset 10; wire version 1.
+- `tel_evt_t` types (provisional, TODO(owner-to-confirm, buddy 1)): HUMP 1,
+  BARCODE 2, FAULT 3, STATE 4. An obstacle profile (37 bits) does not fit the
+  32-bit telemetry payload: open for buddy 1 and buddy 5 (send the 30-bit `lo`
+  word only, or a second event).
+
+Still open, used as placeholders until the owner confirms: the steering sign
+(buddy 3), the bypass command values and the 2-bit sequence (buddy 5).
