@@ -38,3 +38,11 @@ target_include_directories(test_period PRIVATE host/stubs "${ROBOCAR_ROOT}")
 target_compile_options(test_period PRIVATE -Wall -Wextra -Werror)
 set_target_properties(test_period PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME period COMMAND test_period)
+
+# Packed data representation (src/common/data_repr.h, stage B7): every
+# format at its limits, sign extension, edge ring, MQTT frames and rejects.
+add_executable(test_data_repr host/test_data_repr.c)
+target_include_directories(test_data_repr PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_data_repr PRIVATE -Wall -Wextra -Werror)
+set_target_properties(test_data_repr PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME data_repr COMMAND test_data_repr)

@@ -1,0 +1,68 @@
+Week 8 packed formats (Batch B stage B7): measured with the B6 commands
+================================================================================
+Compare with docs/measurements/week6-baseline.txt (tag baseline/week6-unpacked).
+Same toolchain and commands; part A by the helper (WSL), re-checked by Buddy 2;
+part B from Buddy 2's 2-minute bring-up re-run (.agents/tasks/batchB-b7-test.md).
+
+A1. Message types and buffers (bytes)
+    arm-none-eabi-nm -S --size-sort build/b7/CMakeFiles/size_report.dir/cmake/size_report.c.obj
+
+    quantity                     Week 6   Week 8   change
+    sizeof_nav_input_t                4        4       +0
+    sizeof_motion_cmd_t              10        4       -6
+    sizeof_obstacle_profile_t        16        8       -8
+    sizeof_tel_evt_t                 16        8       -8
+    sizeof_motion_state_t            20       16       -4
+    slot_nav_input_t                  8        8       +0
+    slot_motion_cmd_t                16        8       -8
+    slot_obstacle_profile_t          20       12       -8
+    slot_tel_evt_t                   20       12       -8
+    mbf_nav_in                       64       64       +0
+    mbf_motion_cmd                   64       32      -32
+    mbf_obstacle                     40       24      -16
+    mbf_telemetry                   640      384     -256
+    edge_ring                       512      160     -352
+    all four message buffers        808      504     -304
+    edge_ring_total (+indices)               164
+
+    edge_ring is the 64 x 20-bit gap storage (lo16[64] + hi-nibble[32]); the
+    whole drep_edge_ring_t adds head, tail and the overflow count.
+    Every Week 8 value equals the "Packed bytes" column of
+    docs/DATA_REPRESENTATION.md.
+
+A2. Firmware sections: UNCHANGED
+    arm-none-eabi-size build/b7/robocar.elf build/b7-rel/robocar.elf build/b7-bu/robocar.elf
+
+        text   data      bss  build
+       50424      0   111476  Debug
+       36604      0   109252  Release
+       51304      0   111480  Debug + PLATFORM_BRINGUP
+
+    Byte-for-byte the same text/data/bss as the Week 6 baseline (A2 there),
+    as DATA_REPRESENTATION.md section 6 predicted: no task uses a message
+    yet (the pack/unpack functions are static inline and not called), the
+    message buffers live inside the fixed 96 KB kernel pool (so the map does
+    not move), and the edge ring is not in the firmware until subsystem 3
+    creates it.  The saving shows at run time, inside the pool (B2).
+
+B. Run time (Buddy 2's Pico W, Debug + PLATFORM_BRINGUP, 2-minute re-run)
+
+Buddy 2, 31 Oct 2026, commit 842dc03; bringup_check -MinMinutes 2 -NoStress
+PASS (re-run by the helper); A1 re-checked on his build: equal.
+Log: testing/system/logs/2026-10-31_b7-packed-rerun.txt
+
+B1. [MBF] lines (Week 6 -> Week 8)
+
+    nav_in        64 ->  64 B buffer, all free
+    motion_cmd    64 ->  32 B buffer, all free
+    obstacle      40 ->  24 B buffer, all free
+    telemetry    640 -> 384 B buffer, all free
+
+B2. [STACK] lines: equal to the Week 6 baseline except the drain (772 here,
+    784 in the 800 s baseline run, which includes the stress window)
+
+    task        used    size   never used
+    init         360    1152      792
+    dbg_drain    772    1664      892
+    safety ... tel (nine heartbeat tasks): 676 used each; sizes as B6
+    stack top check: 0 mismatches

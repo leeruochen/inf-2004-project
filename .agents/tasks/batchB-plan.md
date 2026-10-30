@@ -1,6 +1,6 @@
 # Batch B plan: platform (boot, kernel port, debug console, IPC objects)
 
-Status (31 Oct 2026): B0-B6 merged on `main` (PRs #1-#6); every hardware stage passed on Buddy 2's Pico W: **milestone M1** (SYS-01), Week 6 baseline measured (tag `baseline/week6-unpacked`, pushed by Buddy 2 on the B6 merge commit). Next: B7 (proposed owner defaults as placeholders).
+Status (31 Oct 2026): B0-B6 merged on `main` (PRs #1-#6); every hardware stage passed on Buddy 2's Pico W: **milestone M1** (SYS-01), Week 6 baseline measured (tag `baseline/week6-unpacked` on `5194288`). B7 merged after Buddy 2's re-run: **milestone M2, Batch B complete.** Open: the owner placeholders (steering sign, bypass values, sequence, telemetry event types; obstacle event payload), and the after-B5 follow-ups Q8 (fault record SP and task ID) and Q9 (watchdog).
 Written 29 Oct 2026 for the Batch B helper (Buddy 3, Jin Yong), with Buddy 2's go-ahead.
 
 Rev 2 (29 Oct 2026, after review):
@@ -430,6 +430,15 @@ Split into two flashable steps (helper + Buddy 2, 30 Oct 2026), each tested on t
 
   Then declare **M2** in HANDOVER.
 - **Stop if:** a packed type changes an interface some member already uses without their agreement.
+- **B7 result (helper, branch `batchB/b7-packed`, after the baseline tag, 31 Oct 2026):**
+  - `src/common/data_repr.h` (pure, `drep_`): bit layouts and masks of every message, clamp + OOR packing, sign-extending unpacking, reject rules (`drep_nav_valid`, `drep_mc_valid`, `drep_tel_valid`), the 64 × 20-bit edge ring (single producer ISR / single consumer task), FSM widths, the MQTT frames (encoders, `drep_frame_check`, `drep_cmd_to_nav`: a rejected frame never yields a `nav_input_t`). Compile-time checks: field totals, contiguous layouts, FSM widths, frame lengths. `app.h` includes it.
+  - `src/common/ipc_types.h`: the packed types (4 / 4 / 8 / 8 / 16 B); EVF_SAFETY bits fixed (b0-b9, wait mask, fault mask, distinctness asserts). `mbf_size.h` asserts the new buffer sizes; `size_report.c` reports them. No member code used the old fields (checked), so nobody's code changes.
+  - `tests/host/test_data_repr.c`: 273 checks (week8-impact-report E.3, `HOST-MC-01..08`), clean under ASan/UBSan; mutation-checked (a shifted field and a broken sign extension both fail).
+  - Measured (`docs/measurements/week8-packed.txt`): message buffers 808 → 504 B, edge ring 512 → 160 B; firmware text/data/bss byte-for-byte unchanged (nothing calls the inline functions yet; buffers are inside the pool), as DATA_REPRESENTATION.md section 6 predicted.
+  - Placeholders (owner to confirm on the PR): steering sign (buddy 3), bypass command values and 2-bit sequence (buddy 5), telemetry event types (buddy 1). Open: an obstacle profile does not fit the 32-bit telemetry payload (buddy 1 / buddy 5).
+  - `tools/bringup_check.ps1 -NoStress` for the short re-run. Gates: all five configurations 0 warnings, `check_rules: PASS (70 files)`; host tests 4/4.
+  - Board check for Buddy 2: `.agents/tasks/batchB-b7-test.md` (2-minute B5 re-run).
+  - **Hardware re-run (Buddy 2, 31 Oct 2026, `842dc03`): PASS** (report on PR #7; log `testing/system/logs/2026-10-31_b7-packed-rerun.txt`). `[MBF]` 64 / 32 / 24 / 384 B as measured; stacks as B6; 0 stack-top mismatches; his `size_report` equal to week8-packed.txt A1. The helper re-ran the checker: PASS. **Milestone M2: Batch B complete.**
 
 ## 4. Out of scope
 

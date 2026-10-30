@@ -13,13 +13,18 @@
  *   sizeof_<type>   sizeof(type) (the "Baseline bytes" of DATA_REPRESENTATION.md)
  *   slot_<type>     bytes one message takes in a kernel message buffer
  *   mbf_<buffer>    MBF_BUFSZ of each message buffer (depth x slot)
- *   edge_ring       the IF-09 barcode edge ring (BC_EDGE_RING_LEN x bc_edge_t)
+ *   edge_ring       the IF-09 barcode edge ring storage (64 x 20-bit gaps)
+ *   edge_ring_total the whole drep_edge_ring_t (storage + head, tail, overflow)
+ *
+ * Stage B7 switched the types to the packed formats (data_repr.h); the
+ * Week 6 numbers are in docs/measurements/week6-baseline.txt.
  * Pure headers only: no SDK or kernel API headers here.
  */
 
 #include <stdint.h>
 
 #include "config/timing.h"
+#include "src/common/data_repr.h"
 #include "src/common/ipc_types.h"
 #include "src/common/mbf_size.h"
 
@@ -32,7 +37,6 @@ SIZE_REPORT(sizeof_motion_cmd_t, sizeof(motion_cmd_t));
 SIZE_REPORT(sizeof_obstacle_profile_t, sizeof(obstacle_profile_t));
 SIZE_REPORT(sizeof_tel_evt_t, sizeof(tel_evt_t));
 SIZE_REPORT(sizeof_motion_state_t, sizeof(motion_state_t));
-SIZE_REPORT(sizeof_bc_edge_t, sizeof(bc_edge_t));
 
 SIZE_REPORT(slot_nav_input_t, MBF_SLOT_BYTES(sizeof(nav_input_t)));
 SIZE_REPORT(slot_motion_cmd_t, MBF_SLOT_BYTES(sizeof(motion_cmd_t)));
@@ -44,4 +48,5 @@ SIZE_REPORT(mbf_motion_cmd, MBF_BUFSZ(MBF_MOTION_CMD_DEPTH, motion_cmd_t));
 SIZE_REPORT(mbf_obstacle, MBF_BUFSZ(MBF_OBSTACLE_DEPTH, obstacle_profile_t));
 SIZE_REPORT(mbf_telemetry, MBF_BUFSZ(MBF_TELEMETRY_DEPTH, tel_evt_t));
 
-SIZE_REPORT(edge_ring, BC_EDGE_RING_LEN * sizeof(bc_edge_t));
+SIZE_REPORT(edge_ring, sizeof(((drep_edge_ring_t *)0)->lo) + sizeof(((drep_edge_ring_t *)0)->hi));
+SIZE_REPORT(edge_ring_total, sizeof(drep_edge_ring_t));

@@ -23,9 +23,10 @@
 #define MBF_BUFSZ(n, T)             ((uint32_t)(n) * MBF_SLOT_BYTES(sizeof(T)))
 
 /* Expected RAM per buffer, inside the kernel pool (docs/DATA_REPRESENTATION.md section 6). */
+/* Packed sizes (stage B7; the Week 6 baseline was 64 / 64 / 40 / 640 B). */
 _Static_assert(MBF_BUFSZ(MBF_NAV_IN_DEPTH, nav_input_t) == 64U, "MBF_NAV_IN is 64 B");
-_Static_assert(MBF_BUFSZ(MBF_MOTION_CMD_DEPTH, motion_cmd_t) == 64U, "MBF_MOTION_CMD is 64 B");
-_Static_assert(MBF_BUFSZ(MBF_OBSTACLE_DEPTH, obstacle_profile_t) == 40U, "MBF_OBSTACLE is 40 B");
-_Static_assert(MBF_BUFSZ(MBF_TELEMETRY_DEPTH, tel_evt_t) == 640U, "MBF_TELEMETRY is 640 B");
+_Static_assert(MBF_BUFSZ(MBF_MOTION_CMD_DEPTH, motion_cmd_t) == 32U, "MBF_MOTION_CMD is 32 B");
+_Static_assert(MBF_BUFSZ(MBF_OBSTACLE_DEPTH, obstacle_profile_t) == 24U, "MBF_OBSTACLE is 24 B");
+_Static_assert(MBF_BUFSZ(MBF_TELEMETRY_DEPTH, tel_evt_t) == 384U, "MBF_TELEMETRY is 384 B");
 
 #endif /* MBF_SIZE_H */
