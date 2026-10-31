@@ -600,31 +600,48 @@ static bool test_s2_u28_public_motion_api(void)
 
 #if S2_HW_CALIB_MODE
 /*
- * Manual hardware bring-up and calibration stream (S2-U07 hand-spin sign
- * check and S2-U10 10-revolution ENC_CPR measurement).  Enabled only when
- * built with -DS2_HW_CALIB_MODE=1.
+ * Phase 1 manual bench bring-up and calibration sequence:
+ *   Step 1 (S2-U03): Left wheel +40% (2 s) then -40% (2 s)
+ *   Step 2 (S2-U03): Right wheel +40% (2 s) then -40% (2 s)
+ *   Step 3 (S2-U04): Coast (3 s, GP8..11 HIGH) then Brake (2 s, GP8..11 LOW)
+ *   Step 4 (S2-U05): Both wheels +50% (1.5 s) then motion_emergency_brake()
+ *   Step 5 (S2-U07 / S2-U10): 35 s hand-spin window for sign & 10-turn ENC_CPR
  */
 static void run_hw_calibration_stream(void)
 {
-    int32_t const l0 = enc_get_count(ENC_WHEEL_LEFT);
-    int32_t const r0 = enc_get_count(ENC_WHEEL_RIGHT);
+    int32_t l0;
+    int32_t r0;
+    int32_t dl;
+    int32_t dr;
 
-    dbg_puts("[S2-CALIB] Hand-spin wheels forward / 10 turns (30 s window)...");
-    for (uint32_t s = 0U; s < 60U; s++)
+    motion_set_calib_hold(true);
+    motor_init();
+    enc_init();
+    /* Put motors in COAST so wheels turn freely by hand without dynamic braking. */
+    motor_coast(MOTOR_LEFT);
+    motor_coast(MOTOR_RIGHT);
+    (void)tk_dly_tsk(200);
+
+    l0 = enc_get_count(ENC_WHEEL_LEFT);
+    r0 = enc_get_count(ENC_WHEEL_RIGHT);
+    dbg_puts("[S2-PHASE1] >>> HAND-SPIN ONE WHEEL FORWARD 10 EXACT REVOLUTIONS (35 s window) <<<");
+    for (uint32_t s = 1U; s <= 35U; s++)
     {
-        int32_t const dl = enc_get_count(ENC_WHEEL_LEFT) - l0;
-        int32_t const dr = enc_get_count(ENC_WHEEL_RIGHT) - r0;
-
-        dbg_printf("[S2-CALIB] t=%lu.%lus dL=%ld dR=%ld (CPR_10rev L=%ld R=%ld)",
-                   (unsigned long)(s / 2U),
-                   (unsigned long)((s % 2U) * 5U),
+        (void)tk_dly_tsk(1000);
+        dl = enc_get_count(ENC_WHEEL_LEFT) - l0;
+        dr = enc_get_count(ENC_WHEEL_RIGHT) - r0;
+        dbg_printf("[S2-CALIB] t=%2lus/35s  dL=%6ld  dR=%6ld  | 1-rev CPR: L=%ld R=%ld | 10-rev CPR: L=%ld R=%ld",
+                   (unsigned long)s,
                    (long)dl,
                    (long)dr,
+                   (long)(dl / (int32_t)ENC_QUAD_MULT),
+                   (long)(dr / (int32_t)ENC_QUAD_MULT),
                    (long)(dl / (10 * (int32_t)ENC_QUAD_MULT)),
                    (long)(dr / (10 * (int32_t)ENC_QUAD_MULT)));
-        (void)tk_dly_tsk(500);
     }
-    dbg_puts("[S2-CALIB] Done.");
+    motor_brake_all();
+    dbg_puts("[S2-PHASE1] Hand-spin calibration complete.");
+    motion_set_calib_hold(false);
 }
 #endif /* S2_HW_CALIB_MODE */
 
@@ -657,6 +674,9 @@ void subsystem2_test(void)
                "motion_emergency_brake drives all four channels LOW without Motion task");
     TEST_CHECK("S2-U09", test_s2_u09_encoder_nonblocking(),
                "enc_get_count is non-blocking (< 10 us avg over 1000 calls)");
+#if S2_HW_CALIB_MODE
+    run_hw_calibration_stream();
+#endif
     TEST_CHECK("S2-U12", test_s2_u12_motion_period(),
                "Motion period: 500 +- 1 releases in 10 s, 0 missed");
     TEST_CHECK("S2-U13", test_s2_u13_motion_reject_invalid(),
@@ -683,10 +703,6 @@ void subsystem2_test(void)
                "Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_cmd_t");
 
     TEST_SUMMARY("subsystem2");
-
-#if S2_HW_CALIB_MODE
-    run_hw_calibration_stream();
-#endif
 }
 
 #endif /* APP_TEST */

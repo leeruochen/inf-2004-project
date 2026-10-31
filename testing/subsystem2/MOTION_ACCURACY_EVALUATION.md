@@ -12,12 +12,12 @@
 
 | Parameter | Header | Default / Status | Measurement Method (`TEST_LOG.md`) | Measured Value |
 |---|---|---|---|---|
-| `MOTOR_L_DIR_INVERT` | `config/pins.h` | `0U` (to confirm on car) | `S2-U03`: Wheels off ground, command low-duty forward/backward | *pending S2-U03* |
-| `MOTOR_R_DIR_INVERT` | `config/pins.h` | `0U` (to confirm on car) | `S2-U03`: Wheels off ground, command low-duty forward/backward | *pending S2-U03* |
-| `ENC_L_DIR_INVERT` | `config/pins.h` | `0U` (confirmed on car) | `S2-U07` / `S2-U08`: Hand-spin forward + 100 ms forward drive (`encL: 101->561, +460`) | `0U` |
-| `ENC_R_DIR_INVERT` | `config/pins.h` | `0U` (needs `1U` in `config/pins.h`) | `S2-U07` / `S2-U08`: Hand-spin forward + 100 ms forward drive (`encR: -575->-1122, -547`) | `1U` |
-| `ENC_CPR` | `config/thresholds.h` | `0U` (`#error` guard active when required) | `S2-U10`: Turn wheel 10 exact revolutions by hand; `CPR = delta_count / (10 * 4)` | *pending S2-U10* |
-| `WHEEL_CIRC_MM` | `config/thresholds.h` | `0U` (`#error` guard active when required) | `S2-U11`: Roll wheel 10 turns along a ruler; `WHEEL_CIRC_MM = total_mm / 10` | *pending S2-U11* |
+| `MOTOR_L_DIR_INVERT` | `config/pins.h` | `0U` (needs `1U` in `config/pins.h`) | `S2-U03`: Left `+40%` spun backward (`dL=-7610`), `-40%` spun forward (`dL=+7790`) | `1U` |
+| `MOTOR_R_DIR_INVERT` | `config/pins.h` | `0U` (confirmed on car) | `S2-U03`: Right `+40%` spun forward (`dR=-7901`), `-40%` spun backward (`dR=+7948`) | `0U` |
+| `ENC_L_DIR_INVERT` | `config/pins.h` | `0U` (confirmed on car) | `S2-U03` / `S2-U08`: Forward physical motion (`-40%` on uninverted motor) gave `dL=+7790` (counts up) | `0U` |
+| `ENC_R_DIR_INVERT` | `config/pins.h` | `0U` (needs `1U` in `config/pins.h`) | `S2-U03` / `S2-U08`: Forward physical motion (`+40%` on right motor) gave `dR=-7901` (counts down) | `1U` |
+| `ENC_CPR` | `config/thresholds.h` | `0U` (`#error` guard active when required) | `S2-U10`: Turn wheel 10 exact revolutions by hand; `CPR = delta_count / (10 * 4)` | *provisional (`dL=15572` on continuous hand-spin; confirm exact 10-turn count)* |
+| `WHEEL_CIRC_MM` | `config/thresholds.h` | `0U` (`#error` guard active when required) | `S2-U11`: Wheel diameter `66 mm` (`pi * 66 mm = 207.3 mm`) | `207U` (`207 mm`) |
 | `MOTOR_DUTY_MAX_PCT` | `config/thresholds.h` | `80U` | `S2-U02` (auto) + top-speed load check at `POWER_VIN_MIN_MV` (`3.6 V`) | `80 %` (`800` permille) |
 
 ### 1.2 3.3 V Grove Power Budget Verification (`POWER_GROVE_3V3_BUDGET_MA`)
@@ -103,14 +103,15 @@ Per `config/thresholds.h` (`POWER_GROVE_3V3_BUDGET_MA = 300U`), the Cytron Robo 
 **Requirement (`ARCHITECTURE.md` D7):**
 > *"Wheel encoder pulses shall be captured by hardware (PIO quadrature decoding) on both wheels independently, with zero missed counts under normal operating speed (target: up to 50 cm/s)."*
 
-**Expected Count Formula:**
+**Expected Count Formula (`ENC_CPR = 390U`, `ENC_QUAD_MULT = 4U`, `WHEEL_CIRC_MM = 207U`):**
 ```text
 expected_counts = (distance_mm * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM
+                = (1000 * 4 * 390) / 207 = 7536 counts per 1000 mm
 ```
 
 | Run | Target Speed (cm/s) | Measured Distance (mm) | Expected Counts | Left Measured Counts | Right Measured Counts | Left Error (%) | Right Error (%) | Pass / Fail |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `50` | `1000` | *pending* | *pending* | *pending* | *pending* | *pending* | *pending* |
-| 2 | `50` | `1000` | *pending* | *pending* | *pending* | *pending* | *pending* | *pending* |
-| 3 | `50` | `1000` | *pending* | *pending* | *pending* | *pending* | *pending* | *pending* |
+| 1 | `50` | `1000` | `7536` | *pending floor run* | *pending floor run* | *pending* | *pending* | *pending* |
+| 2 | `50` | `1000` | `7536` | *pending floor run* | *pending floor run* | *pending* | *pending* | *pending* |
+| 3 | `50` | `1000` | `7536` | *pending floor run* | *pending floor run* | *pending* | *pending* | *pending* |
 

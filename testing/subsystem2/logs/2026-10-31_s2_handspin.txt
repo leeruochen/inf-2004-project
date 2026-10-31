@@ -1,0 +1,54 @@
+15:07:27.602  [capture] COM4 for 40 s -> testing/subsystem2/logs/2026-10-31_s2_handspin.txt
+15:07:27.675  pre-kernel ok
+15:07:27.675  
+15:07:27.675  
+15:07:27.675  microT-Kernel Version 3.00
+15:07:27.675  
+15:07:27.686  [IPC] kernel spec version 3.00 OK
+15:07:27.686  [IPC] 8 objects created, MBF depth self-check OK
+15:07:27.811  [TEST] subsystem1 SUMMARY 0 passed, 0 failed
+15:07:27.856  [TEST] S2-U01 PASS  Motor PWM slices 4 and 5 configured at 20 kHz +-1%
+15:07:27.866  [TEST] S2-U02 PASS  Motor duty capped at MOTOR_DUTY_MAX_PCT
+15:07:27.890  [TEST] S2-U06 PASS  motion_emergency_brake drives all four channels LOW without Motion task
+15:07:27.890  [TEST] S2-U09 PASS  enc_get_count is non-blocking (< 10 us avg over 1000 calls)
+15:07:28.085  [S2-PHASE1] >>> HAND-SPIN ONE WHEEL FORWARD 10 EXACT REVOLUTIONS (35 s window) <<<
+15:07:29.086  [S2-CALIB] t= 1s/35s  dL=     0  dR=     0  | 1-rev CPR: L=0 R=0 | 10-rev CPR: L=0 R=0
+15:07:30.086  [S2-CALIB] t= 2s/35s  dL=     0  dR=     0  | 1-rev CPR: L=0 R=0 | 10-rev CPR: L=0 R=0
+15:07:31.088  [S2-CALIB] t= 3s/35s  dL=    46  dR=     0  | 1-rev CPR: L=11 R=0 | 10-rev CPR: L=1 R=0
+15:07:32.086  [S2-CALIB] t= 4s/35s  dL=   957  dR=     0  | 1-rev CPR: L=239 R=0 | 10-rev CPR: L=23 R=0
+15:07:33.086  [S2-CALIB] t= 5s/35s  dL=  1563  dR=     0  | 1-rev CPR: L=390 R=0 | 10-rev CPR: L=39 R=0
+15:07:34.087  [S2-CALIB] t= 6s/35s  dL=  2312  dR=     0  | 1-rev CPR: L=578 R=0 | 10-rev CPR: L=57 R=0
+15:07:35.093  [S2-CALIB] t= 7s/35s  dL=  3164  dR=     0  | 1-rev CPR: L=791 R=0 | 10-rev CPR: L=79 R=0
+15:07:36.096  [S2-CALIB] t= 8s/35s  dL=  4137  dR=     0  | 1-rev CPR: L=1034 R=0 | 10-rev CPR: L=103 R=0
+15:07:37.096  [S2-CALIB] t= 9s/35s  dL=  4789  dR=     0  | 1-rev CPR: L=1197 R=0 | 10-rev CPR: L=119 R=0
+15:07:37.679  [DBG] alive: SDK timer 10734 ms, kernel time 9878 ms, difference 856 ms
+15:07:38.096  [S2-CALIB] t=10s/35s  dL=  5565  dR=     0  | 1-rev CPR: L=1391 R=0 | 10-rev CPR: L=139 R=0
+15:07:39.096  [S2-CALIB] t=11s/35s  dL=  6272  dR=     0  | 1-rev CPR: L=1568 R=0 | 10-rev CPR: L=156 R=0
+15:07:40.098  [S2-CALIB] t=12s/35s  dL=  6817  dR=     0  | 1-rev CPR: L=1704 R=0 | 10-rev CPR: L=170 R=0
+15:07:41.096  [S2-CALIB] t=13s/35s  dL=  7577  dR=     0  | 1-rev CPR: L=1894 R=0 | 10-rev CPR: L=189 R=0
+15:07:42.102  [S2-CALIB] t=14s/35s  dL=  7939  dR=     0  | 1-rev CPR: L=1984 R=0 | 10-rev CPR: L=198 R=0
+15:07:43.104  [S2-CALIB] t=15s/35s  dL=  8674  dR=     0  | 1-rev CPR: L=2168 R=0 | 10-rev CPR: L=216 R=0
+15:07:44.096  [S2-CALIB] t=16s/35s  dL=  9359  dR=     0  | 1-rev CPR: L=2339 R=0 | 10-rev CPR: L=233 R=0
+15:07:45.103  [S2-CALIB] t=17s/35s  dL= 10039  dR=     0  | 1-rev CPR: L=2509 R=0 | 10-rev CPR: L=250 R=0
+15:07:46.106  [S2-CALIB] t=18s/35s  dL= 10370  dR=     0  | 1-rev CPR: L=2592 R=0 | 10-rev CPR: L=259 R=0
+15:07:47.106  [S2-CALIB] t=19s/35s  dL= 10370  dR=     0  | 1-rev CPR: L=2592 R=0 | 10-rev CPR: L=259 R=0
+15:07:47.686  [DBG] alive: SDK timer 20744 ms, kernel time 19888 ms, difference 856 ms
+15:07:48.107  [S2-CALIB] t=20s/35s  dL= 10471  dR=     0  | 1-rev CPR: L=2617 R=0 | 10-rev CPR: L=261 R=0
+15:07:49.106  [S2-CALIB] t=21s/35s  dL= 10721  dR=     0  | 1-rev CPR: L=2680 R=0 | 10-rev CPR: L=268 R=0
+15:07:50.106  [S2-CALIB] t=22s/35s  dL= 10721  dR=     0  | 1-rev CPR: L=2680 R=0 | 10-rev CPR: L=268 R=0
+15:07:51.108  [S2-CALIB] t=23s/35s  dL= 10721  dR=     0  | 1-rev CPR: L=2680 R=0 | 10-rev CPR: L=268 R=0
+15:07:52.111  [S2-CALIB] t=24s/35s  dL= 10721  dR=     0  | 1-rev CPR: L=2680 R=0 | 10-rev CPR: L=268 R=0
+15:07:53.106  [S2-CALIB] t=25s/35s  dL= 11228  dR=     0  | 1-rev CPR: L=2807 R=0 | 10-rev CPR: L=280 R=0
+15:07:54.113  [S2-CALIB] t=26s/35s  dL= 12031  dR=     0  | 1-rev CPR: L=3007 R=0 | 10-rev CPR: L=300 R=0
+15:07:55.116  [S2-CALIB] t=27s/35s  dL= 12710  dR=     0  | 1-rev CPR: L=3177 R=0 | 10-rev CPR: L=317 R=0
+15:07:56.116  [S2-CALIB] t=28s/35s  dL= 13467  dR=     0  | 1-rev CPR: L=3366 R=0 | 10-rev CPR: L=336 R=0
+15:07:57.116  [S2-CALIB] t=29s/35s  dL= 13711  dR=     0  | 1-rev CPR: L=3427 R=0 | 10-rev CPR: L=342 R=0
+15:07:57.700  [DBG] alive: SDK timer 30754 ms, kernel time 29898 ms, difference 856 ms
+15:07:58.116  [S2-CALIB] t=30s/35s  dL= 13711  dR=     0  | 1-rev CPR: L=3427 R=0 | 10-rev CPR: L=342 R=0
+15:07:59.116  [S2-CALIB] t=31s/35s  dL= 13711  dR=     0  | 1-rev CPR: L=3427 R=0 | 10-rev CPR: L=342 R=0
+15:08:00.118  [S2-CALIB] t=32s/35s  dL= 13711  dR=     0  | 1-rev CPR: L=3427 R=0 | 10-rev CPR: L=342 R=0
+15:08:01.116  [S2-CALIB] t=33s/35s  dL= 14190  dR=     0  | 1-rev CPR: L=3547 R=0 | 10-rev CPR: L=354 R=0
+15:08:02.116  [S2-CALIB] t=34s/35s  dL= 15089  dR=     0  | 1-rev CPR: L=3772 R=0 | 10-rev CPR: L=377 R=0
+15:08:03.116  [S2-CALIB] t=35s/35s  dL= 15572  dR=     0  | 1-rev CPR: L=3893 R=0 | 10-rev CPR: L=389 R=0
+15:08:03.126  [S2-PHASE1] Hand-spin calibration complete.
+15:08:07.286  [capture] done

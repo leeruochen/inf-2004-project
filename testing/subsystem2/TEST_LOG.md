@@ -65,4 +65,12 @@ Add a new row for every run. Never edit or delete old rows.
 | 2026-10-31 | S2-U26 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | System FSM transitions `INITIALISING` -> `READY_WAITING` -> `NAV_LINE_TRACKING` |
 | 2026-10-31 | S2-U27 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | System FSM returns to `READY_WAITING` and stops on `TRACK_LOST` and remote `STOP` |
 | 2026-10-31 | S2-U28 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Public API (`moveForward`, `moveBackward`, `turnLeft`, `turnRight`, `stop`) posts valid `motion_cmd_t` |
+| 2026-10-31 | S2-U03 | `a25bb17` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_phase1_calib.txt` | Left `+40%` spun backward (`dL=-7610`), `-40%` spun forward (`dL=+7790`) -> `MOTOR_L_DIR_INVERT=1U`, `ENC_L_DIR_INVERT=0U`; Right `+40%` spun forward (`dR=-7901`), `-40%` spun backward (`dR=+7948`) -> `MOTOR_R_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U` |
+| 2026-10-31 | S2-U04 | `a25bb17` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_phase1_calib.txt` | Coast: `L=(6250,6250)/6250 R=(6250,6250)/6250` (all 4 channels HIGH); Brake: `L=(0,0)/6250 R=(0,0)/6250 braked=1` (all 4 channels LOW) |
+| 2026-10-31 | S2-U05 | `a25bb17` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_phase1_calib.txt` | Both wheels driven at +50% for 1.5 s then `motion_emergency_brake()` called: both wheels stopped immediately (`dL=0, dR=0, braked=1`) |
+| 2026-10-31 | S2-U07 | `a25bb17` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_handspin.txt` | Hand-spinning left wheel forward rose monotonically `0 -> +15572` while unspun right wheel stayed at `dR=0` (`ENC_L_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U`) |
+| 2026-10-31 | S2-U11 | `a25bb17` | 2500530 | PASS | `testing/subsystem2/MOTION_ACCURACY_EVALUATION.md` | Measured 66 mm wheel diameter -> `WHEEL_CIRC_MM = 207U` (`pi * 66 mm = 207.3 mm`) |
+
+
+
 

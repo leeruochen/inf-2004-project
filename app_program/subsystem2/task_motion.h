@@ -61,5 +61,8 @@ uint32_t motion_get_cmd_type(void);
 /** Last valid motion_cmd_t received by Motion Control from MBF_MOTION_CMD. */
 motion_cmd_t motion_get_last_cmd(void);
 
+/** Suspend/resume motor output writes from the 20 ms loop during manual bench calibration. */
+void motion_set_calib_hold(bool hold);
+
 #endif /* TASK_MOTION_H */
 

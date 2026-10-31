@@ -89,6 +89,7 @@ typedef struct
 } motion_pid_t;
 
 static volatile bool     s_task_running = false;
+static volatile bool     s_calib_hold = false;
 static volatile uint32_t s_release_count = 0U;
 static volatile uint32_t s_missed_count = 0U;
 static volatile uint32_t s_reject_count = 0U;
@@ -518,7 +519,10 @@ void motion_step_cycle(uint32_t now_ms)
         check_manoeuvre_completion(cnt);
     }
 
-    apply_control(dl, dr, &speed_x10);
+    if (!s_calib_hold)
+    {
+        apply_control(dl, dr, &speed_x10);
+    }
     publish_motion_state(speed_x10, cnt, now_ms);
     s_release_count++;
 }
@@ -638,4 +642,9 @@ uint32_t motion_get_cmd_type(void)
 motion_cmd_t motion_get_last_cmd(void)
 {
     return s_last_cmd;
+}
+
+void motion_set_calib_hold(bool hold)
+{
+    s_calib_hold = hold;
 }
