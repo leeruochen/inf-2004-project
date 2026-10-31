@@ -104,6 +104,7 @@ static int32_t      s_manoeuvre_start_cnt[ENC_WHEEL_COUNT] = { 0, 0 };
 static uint32_t     s_distance_mm_rem = 0U;
 static uint32_t     s_distance_cm = 0U;
 static motion_pid_t s_pid[ENC_WHEEL_COUNT];
+#if MOTION_HAS_GEOMETRY
 static uint32_t     s_stall_ticks = 0U;
 static uint32_t     s_fault_bits_set = 0U;
 
@@ -124,6 +125,7 @@ static uint32_t abs_i32(int32_t v)
 {
     return (v < 0) ? (uint32_t)(0U - (uint32_t)v) : (uint32_t)v;
 }
+#endif /* MOTION_HAS_GEOMETRY */
 
 static void reset_pid(void)
 {
@@ -469,8 +471,10 @@ void motion_control_init(void)
     s_hold_elapsed_ms = 0U;
     s_distance_mm_rem = 0U;
     s_distance_cm = 0U;
+#if MOTION_HAS_GEOMETRY
     s_stall_ticks = 0U;
     s_fault_bits_set = 0U;
+#endif
 
     s_prev_cnt[ENC_WHEEL_LEFT] = enc_get_count(ENC_WHEEL_LEFT);
     s_prev_cnt[ENC_WHEEL_RIGHT] = enc_get_count(ENC_WHEEL_RIGHT);

@@ -59,3 +59,4 @@ uint32_t motion_get_setpoint_cmps(void);
 uint32_t motion_get_cmd_type(void);
 
 #endif /* TASK_MOTION_H */
+

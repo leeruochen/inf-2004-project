@@ -10,8 +10,8 @@
 | S1 motor driver | DONE (code + compile) 31 Oct 2026 | `drv_motor.h/.c` created, registered in `sources.cmake`, S2-U01/S2-U02 auto checks added in `subsystem2_test.c`. Both `build/s0b` and `build/test` (`APP_TEST=ON`) pass with 0 warnings, `check_rules: PASS` (72 files). Hardware checks S2-U01..U04 pending on board |
 | S2 emergency brake | DONE (code + compile) 31 Oct 2026 | `motion_emergency_brake()` defined in `subsystem2.c` calling `motor_brake_all()`; `motor_are_all_braked()` readback and S2-U06 auto check added (verifies brake both before `motor_init()` and after driving). 0 warnings, `check_rules: PASS` |
 | S3 encoder driver | DONE (code + compile) 31 Oct 2026 | `quadrature_encoder.pio` (24 instructions, `.origin 0`, BSD-3-Clause header preserved) added; `drv_encoder.h/.c` implemented on PIO0 (SM0 right GP0/1, SM1 left GP16/17, non-blocking `enc_get_count()`); `pico_generate_pio_header` added in `CMakeLists.txt` (shared file: notify team); S2-U09 auto check added. Hardware checks S2-U07..U11 (`ENC_x_DIR_INVERT`, `ENC_CPR`, `WHEEL_CIRC_MM`) pending on board |
-| S4 Motion task | NEXT | `task_motion.c` (P3, 20 ms `app_period_wait()`, PID, `MOTION_T_HOLD_MS`, `MTX_MOTION` publish, `#error` guard on unmeasured `ENC_CPR`/`WHEEL_CIRC_MM` when converting distance/angle) |
-| S5 Vehicle Controller | not started | |
+| S4 Motion task | DONE (code + compile) 31 Oct 2026 | `task_motion.h/.c` implemented (P3, 20 ms `app_period_wait()`, `MBF_MOTION_CMD` poll + `drep_mc_valid()`, `MOTION_T_HOLD_MS` = 100 ms hold, `MOTION_SPEED_MAX_CMPS` = 50 cm/s cap, `EVF_SAFETY` latch stop, PID + straight-line correction, `MTX_MOTION` + `motion_get_state()` publish, `#error` guards on `ENC_CPR`/`WHEEL_CIRC_MM`). Auto checks S2-U12..U16 added in `subsystem2_test.c`. 0 warnings, `check_rules: PASS` (75 files) |
+| S5 Vehicle Controller | NEXT | `task_vc.h/.c` (P2, sole reader of `MBF_NAV_IN`, `drep_nav_valid()`, arbitration Safety > Avoid > Barcode > Line, `EVF_SAFETY` ref & `FAULT_LATCHED` reset after `SAFETY_T_STILL_MS`, 10-state 4-bit System FSM) |
 | S6 startup and API | not started | see Q3 |
 | S7 tests and reports | not started | |
 
