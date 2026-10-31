@@ -37,7 +37,7 @@ Define a test here before running it. Test IDs never change.
 | S2-U25 | VC clears FAULT_LATCHED only when stationary | IF-06, `SAFETY_T_STILL_MS` | auto | RESET while moving, then RESET after 500 ms at zero speed | First RESET ignored; second clears only the FAULT_LATCHED bit |
 | S2-U26 | System FSM: power-up to READY to NAV | design.md section 5 | auto | Boot, then post remote START | State goes INITIALISING, then READY, then AUTONOMOUS_NAVIGATION/LINE_TRACKING |
 | S2-U27 | System FSM: TRACK_LOST and STOP return to READY | design.md section 5 | auto | In NAV, post LINE TRACK_LOST; restart, then post remote STOP | State goes to READY and the car stops each time |
-| S2-U28 | Public API posts through the VC | FR4, Q3 | auto | Call `moveForward`, `turnLeft`, `stop`; read `MBF_NAV_IN` | One valid `nav_input_t` per call; no direct write to `MBF_MOTION_CMD` |
+| S2-U28 | Public motion API packs valid `motion_cmd_t` | FR4, IF-02, Q3 | auto | Call `moveForward(100)`, `moveBackward(25)`, `turnLeft(90)`, `turnRight(45)`, `stop()`; inspect the `motion_cmd_t` received by Motion Control | Each call posts one valid `motion_cmd_t` (`drep_mc_valid()`) to `MBF_MOTION_CMD` with the expected type, speed ≤ 50 cm/s, and distance/angle argument |
 
 *Method:* **auto** = `TEST_CHECK` in code, result printed on the console;
 **manual** = a person observes the result (LED, scope, meter, phone app…).

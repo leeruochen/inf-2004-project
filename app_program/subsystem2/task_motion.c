@@ -96,6 +96,7 @@ static volatile uint32_t s_reject_count = 0U;
 static uint32_t     s_cmd_type = DREP_MC_STOP;
 static uint32_t     s_setpoint_cmps = 0U;
 static int32_t      s_cmd_arg = 0;
+static motion_cmd_t s_last_cmd = { 0U };
 static uint32_t     s_hold_elapsed_ms = 0U;
 static bool         s_cmd_active = false;
 
@@ -180,6 +181,7 @@ static void poll_command_queue(int32_t const cnt[ENC_WHEEL_COUNT])
             continue;
         }
 
+        s_last_cmd = cmd;
         s_cmd_type = drep_mc_type(cmd);
         s_setpoint_cmps = drep_mc_speed(cmd);
         if (s_setpoint_cmps > MOTION_SPEED_MAX_CMPS)
@@ -468,6 +470,7 @@ void motion_control_init(void)
     s_release_count = 0U;
     s_missed_count = 0U;
     s_reject_count = 0U;
+    s_last_cmd.w = 0U;
     s_hold_elapsed_ms = 0U;
     s_distance_mm_rem = 0U;
     s_distance_cm = 0U;
@@ -524,7 +527,22 @@ void motion_test_run_periods(uint32_t periods)
 {
     if (s_task_running)
     {
-        (void)tk_dly_tsk((RELTIM)(periods * MOTION_PERIOD_MS));
+        if (periods >= 100U)
+        {
+            app_period_t wait_per;
+
+            app_period_init(&wait_per, periods * MOTION_PERIOD_MS);
+            (void)app_period_wait(&wait_per);
+        }
+        else
+        {
+            uint32_t const target = s_release_count + periods;
+
+            while ((int32_t)(s_release_count - target) < 0)
+            {
+                (void)tk_dly_tsk(1);
+            }
+        }
         return;
     }
 
@@ -615,4 +633,9 @@ uint32_t motion_get_setpoint_cmps(void)
 uint32_t motion_get_cmd_type(void)
 {
     return s_cmd_type;
+}
+
+motion_cmd_t motion_get_last_cmd(void)
+{
+    return s_last_cmd;
 }

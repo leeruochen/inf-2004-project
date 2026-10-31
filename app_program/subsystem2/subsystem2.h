@@ -70,4 +70,48 @@ _Static_assert(VC_SYS_STATE_COUNT == DREP_FSM_SYSTEM_STATES,
 /** Current 4-bit system state (VC_SYS_*). */
 uint32_t vc_get_system_state(void);
 
+/* ---------------------------------------------------------------------------
+ * Public Motion Control Library API (specs.md "Required APIs", roadmap Q3
+ * Option (a)).  Each call packs a validated motion_cmd_t with drep_mc_pack()
+ * and posts it non-blocking (TMO_POL) to MBF_MOTION_CMD (IF-02).  During
+ * autonomous runs only the Vehicle Controller sends to MBF_MOTION_CMD; the
+ * public wrappers also support standalone calibration, accuracy evaluation
+ * (S2-U18, S2-U20), and unit tests (S2-U28).
+ * ------------------------------------------------------------------------- */
+ER motion_move_forward(int32_t distance_cm);
+ER motion_move_backward(int32_t distance_cm);
+ER motion_turn_left(int32_t angle_deg);
+ER motion_turn_right(int32_t angle_deg);
+ER motion_stop(void);
+
+/* Inline aliases matching the camelCase names in specs.md ("Required APIs"). */
+static inline ER moveForward(int32_t distance_cm)
+{
+    return motion_move_forward(distance_cm);
+}
+
+static inline ER moveBackward(int32_t distance_cm)
+{
+    return motion_move_backward(distance_cm);
+}
+
+static inline ER turnLeft(int32_t angle_deg)
+{
+    return motion_turn_left(angle_deg);
+}
+
+static inline ER turnRight(int32_t angle_deg)
+{
+    return motion_turn_right(angle_deg);
+}
+
+static inline ER stop(void)
+{
+    return motion_stop();
+}
+
+/** True if motion_emergency_brake() drove all four channels LOW in
+ *  subsystem2_init() before motor_init() and before the Motion task started. */
+bool subsystem2_pre_start_brake_ok(void);
+
 #endif /* SUBSYSTEM2_H */

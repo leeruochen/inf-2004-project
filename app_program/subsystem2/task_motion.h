@@ -58,5 +58,8 @@ uint32_t motion_get_setpoint_cmps(void);
 /** Current active command type (DREP_MC_*). */
 uint32_t motion_get_cmd_type(void);
 
+/** Last valid motion_cmd_t received by Motion Control from MBF_MOTION_CMD. */
+motion_cmd_t motion_get_last_cmd(void);
+
 #endif /* TASK_MOTION_H */
 

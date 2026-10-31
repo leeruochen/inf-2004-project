@@ -47,6 +47,10 @@ static bool test_s2_u02_motor_duty_cap(void)
     uint32_t cap_l;
     uint32_t cap_r;
 
+    if (motion_is_task_running())
+    {
+        motion_test_run_periods(1U);
+    }
     motor_init();
     motor_set_duty(MOTOR_LEFT, MOTOR_DUTY_FULL_PM);
     motor_set_duty(MOTOR_RIGHT, MOTOR_DUTY_FULL_PM);
@@ -71,6 +75,10 @@ static bool test_s2_u06_emergency_brake(bool pre_init_ok)
     bool active_while_driving;
     bool braked_after_call;
 
+    if (motion_is_task_running())
+    {
+        motion_test_run_periods(1U);
+    }
     motor_init();
     motor_set_duty(MOTOR_LEFT, 500);
     motor_set_duty(MOTOR_RIGHT, -500);
@@ -255,10 +263,14 @@ static bool test_s2_u16_motion_state_published(void)
            && (st2.enc_count[ENC_WHEEL_RIGHT] >= st1.enc_count[ENC_WHEEL_RIGHT]);
 }
 
-/* Helper: drain any residual messages in MBF_MOTION_CMD when Motion task is not running. */
+/* Helper: ensure any pending motion_cmd_t in MBF_MOTION_CMD is consumed. */
 static void drain_motion_cmd_mbf(void)
 {
-    if (!motion_is_task_running())
+    if (motion_is_task_running())
+    {
+        motion_test_run_periods(1U);
+    }
+    else
     {
         motion_cmd_t dummy;
 
@@ -365,7 +377,7 @@ static bool test_s2_u24_vc_stops_on_fault_latched(void)
 static bool test_s2_u25_vc_reset_stationary_only(void)
 {
     nav_input_t const reset_msg = drep_nav_remote(DREP_NAV_REMOTE_RESET);
-    uint32_t const    t0 = app_period_now_ms();
+    uint32_t          t0;
     T_RFLG            rflg1 = { 0 };
     T_RFLG            rflg2 = { 0 };
     bool              moving_ignored;
@@ -376,6 +388,11 @@ static bool test_s2_u25_vc_reset_stationary_only(void)
         vc_init();
         vc_complete_selftest(true);
     }
+
+    /* Align with the 20 ms Motion cycle so g_motion_state.w is not overwritten
+     * mid-step while simulating non-zero speed. */
+    drain_motion_cmd_mbf();
+    t0 = app_period_now_ms();
 
     /* Set FAULT_LATCHED plus another bit (STATUS_NO_ECHO) to verify only
      * FAULT_LATCHED is cleared on reset. */
@@ -399,6 +416,7 @@ static bool test_s2_u25_vc_reset_stationary_only(void)
         g_motion_state.w = drep_ms_pack(0, 0U);
         (void)tk_unl_mtx(MTX_MOTION);
     }
+    t0 = app_period_now_ms();
     vc_drain_and_step(t0);
     if (vc_is_task_running())
     {
@@ -479,15 +497,85 @@ static bool test_s2_u27_vc_fsm_track_lost_and_stop(void)
            && (cmd_after_stop == DREP_MC_STOP);
 }
 
+static bool test_s2_u28_public_motion_api(void)
+{
+    motion_cmd_t cmd_fwd;
+    motion_cmd_t cmd_back;
+    motion_cmd_t cmd_left;
+    motion_cmd_t cmd_right;
+    motion_cmd_t cmd_stop;
+
+    if (!motion_is_task_running())
+    {
+        motion_control_init();
+    }
+    drain_motion_cmd_mbf();
+
+    if (moveForward(100) != E_OK)
+    {
+        return false;
+    }
+    motion_test_run_periods(1U);
+    cmd_fwd = motion_get_last_cmd();
+
+    if (moveBackward(25) != E_OK)
+    {
+        return false;
+    }
+    motion_test_run_periods(1U);
+    cmd_back = motion_get_last_cmd();
+
+    if (turnLeft(90) != E_OK)
+    {
+        return false;
+    }
+    motion_test_run_periods(1U);
+    cmd_left = motion_get_last_cmd();
+
+    if (turnRight(45) != E_OK)
+    {
+        return false;
+    }
+    motion_test_run_periods(1U);
+    cmd_right = motion_get_last_cmd();
+
+    if (stop() != E_OK)
+    {
+        return false;
+    }
+    motion_test_run_periods(1U);
+    cmd_stop = motion_get_last_cmd();
+
+    return drep_mc_valid(cmd_fwd)
+           && (drep_mc_type(cmd_fwd) == DREP_MC_FWD)
+           && (drep_mc_arg(cmd_fwd) == 100)
+           && (drep_mc_speed(cmd_fwd) <= MOTION_SPEED_MAX_CMPS)
+           && drep_mc_valid(cmd_back)
+           && (drep_mc_type(cmd_back) == DREP_MC_BACK)
+           && (drep_mc_arg(cmd_back) == 25)
+           && drep_mc_valid(cmd_left)
+           && (drep_mc_type(cmd_left) == DREP_MC_TURN_L)
+           && (drep_mc_arg(cmd_left) == 90)
+           && drep_mc_valid(cmd_right)
+           && (drep_mc_type(cmd_right) == DREP_MC_TURN_R)
+           && (drep_mc_arg(cmd_right) == 45)
+           && drep_mc_valid(cmd_stop)
+           && (drep_mc_type(cmd_stop) == DREP_MC_STOP)
+           && (drep_mc_speed(cmd_stop) == 0U)
+           && (motion_get_setpoint_cmps() == 0U);
+}
+
 void subsystem2_test(void)
 {
-    bool pre_init_brake_ok;
+    bool pre_init_brake_ok = subsystem2_pre_start_brake_ok();
 
     TEST_INIT();
 
-    /* Exercise motion_emergency_brake() before motor_init() first (S2-U06). */
-    motion_emergency_brake();
-    pre_init_brake_ok = motor_are_all_braked();
+    if (!pre_init_brake_ok)
+    {
+        motion_emergency_brake();
+        pre_init_brake_ok = motor_are_all_braked();
+    }
 
     TEST_CHECK("S2-U01", test_s2_u01_motor_pwm_freq(),
                "Motor PWM slices 4 and 5 configured at 20 kHz +-1%");
@@ -519,6 +607,8 @@ void subsystem2_test(void)
                "System FSM transitions INITIALISING -> READY -> NAV_LINE_TRACKING");
     TEST_CHECK("S2-U27", test_s2_u27_vc_fsm_track_lost_and_stop(),
                "System FSM returns to READY and stops on TRACK_LOST and STOP");
+    TEST_CHECK("S2-U28", test_s2_u28_public_motion_api(),
+               "Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_cmd_t");
 
     TEST_SUMMARY("subsystem2");
 }
