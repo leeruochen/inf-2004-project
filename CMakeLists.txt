@@ -212,6 +212,8 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/src/app/main.c")
         # SDK side: hardware_* include paths without pulling the SDK runtime
         # (crt0, stdio) into a compile-only target.
         add_library(app_program_check_sdk OBJECT ${ROBOCAR_SOURCES})
+        pico_generate_pio_header(app_program_check_sdk
+            "${PROJECT_SOURCE_DIR}/app_program/subsystem2/quadrature_encoder.pio")
         target_link_libraries(app_program_check_sdk PRIVATE
             robocar_options
             hardware_gpio
@@ -240,6 +242,8 @@ else()
     endif()
 
     add_executable(robocar ${ROBOCAR_SOURCES})
+    pico_generate_pio_header(robocar
+        "${PROJECT_SOURCE_DIR}/app_program/subsystem2/quadrature_encoder.pio")
     robocar_apply_warnings(${ROBOCAR_SOURCES})
     target_link_libraries(robocar PRIVATE
         robocar_options

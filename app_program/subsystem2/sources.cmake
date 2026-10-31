@@ -3,6 +3,10 @@
 # ROBOCAR_SOURCES        = SDK-side drv_*.c files (SDK headers only, never subsystem2.h). Never both.
 list(APPEND ROBOCAR_KERNEL_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/subsystem2.c"
-    "${CMAKE_CURRENT_LIST_DIR}/subsystem2_test.c")
-# SDK-side drivers go here, for example:
-#   list(APPEND ROBOCAR_SOURCES "${CMAKE_CURRENT_LIST_DIR}/drv_example.c")
+    "${CMAKE_CURRENT_LIST_DIR}/subsystem2_test.c"
+    "${CMAKE_CURRENT_LIST_DIR}/task_motion.c"
+    "${CMAKE_CURRENT_LIST_DIR}/task_vc.c")
+# SDK-side drivers:
+list(APPEND ROBOCAR_SOURCES
+    "${CMAKE_CURRENT_LIST_DIR}/drv_motor.c"
+    "${CMAKE_CURRENT_LIST_DIR}/drv_encoder.c")

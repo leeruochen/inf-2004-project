@@ -1,0 +1,19 @@
+15:25:55.284  [capture] COM4 for 8 s -> testing/subsystem2/logs/floor_fwd100_run1.txt
+15:25:55.349  
+15:25:55.349  
+15:25:55.349  microT-Kernel Version 3.00
+15:25:55.349  
+15:25:55.349  [IPC] kernel spec version 3.00 OK
+15:25:55.354  [IPC] 8 objects created, MBF depth self-check OK
+15:25:55.364  [TEST] subsystem1 SUMMARY 0 passed, 0 failed
+15:25:55.364  [S2-FLOOR] Starting moveForward(100) in 5 s...
+15:25:55.364  [S2-FLOOR] Starting moveForward(100) in 4 s...
+15:25:55.364  [S2-FLOOR] Starting moveForward(100) in 3 s...
+15:25:55.364  [S2-FLOOR] Starting moveForward(100) in 2 s...
+15:25:55.364  [S2-FLOOR] Starting moveForward(100) in 1 s...
+15:25:55.364  [DBG] alive: SDK timer 49416 ms, kernel time 46278 ms, difference 3138 ms
+15:25:55.884  [S2-FLOOR-FWD100] dt=5375 ms | rep_dist=101 cm | avg_spd=18.7 cm/s (peak=27.8) | dL=7320 dR=7926
+15:25:57.884  [S2-FLOOR-FWD100] dt=5375 ms | rep_dist=101 cm | avg_spd=18.7 cm/s (peak=27.8) | dL=7320 dR=7926
+15:25:59.885  [S2-FLOOR-FWD100] dt=5375 ms | rep_dist=101 cm | avg_spd=18.7 cm/s (peak=27.8) | dL=7320 dR=7926
+15:26:01.894  [S2-FLOOR-FWD100] dt=5375 ms | rep_dist=101 cm | avg_spd=18.7 cm/s (peak=27.8) | dL=7320 dR=7926
+15:26:03.354  [capture] done

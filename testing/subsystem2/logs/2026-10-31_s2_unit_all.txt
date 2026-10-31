@@ -1,0 +1,35 @@
+14:45:02.199  [capture] COM4 for 20 s -> testing/subsystem2/logs/2026-10-31_s2_unit_all.txt
+14:45:02.268  
+14:45:02.268  
+14:45:02.268  microT-Kernel Version 3.00
+14:45:02.268  
+14:45:02.268  [IPC] kernel spec version 3.00 OK
+14:45:02.268  [IPC] 8 objects created, MBF depth self-check OK
+14:45:02.278  [TEST] subsystem1 SUMMARY 0 passed, 0 failed
+14:45:02.309  [TEST] S2-U01 PASS  Motor PWM slices 4 and 5 configured at 20 kHz +-1%
+14:45:02.324  [TEST] S2-U02 PASS  Motor duty capped at MOTOR_DUTY_MAX_PCT
+14:45:02.348  [TEST] S2-U06 PASS  motion_emergency_brake drives all four channels LOW without Motion task
+14:45:02.348  [TEST] S2-U09 PASS  enc_get_count is non-blocking (< 10 us avg over 1000 calls)
+14:45:12.058  [DBG] alive: SDK timer 13014 ms, kernel time 9878 ms, difference 3136 ms
+14:45:12.368  [TEST] S2-U12 PASS  Motion period: 500 +- 1 releases in 10 s, 0 missed
+14:45:12.389  [MOT] invalid motion_cmd_t rejected
+14:45:12.389  [TEST] S2-U13 PASS  Motion rejects invalid motion_cmd_t and keeps setpoint
+14:45:12.508  [TEST] S2-U14 PASS  Motion holds setpoint for MOTION_T_HOLD_MS then stops
+14:45:12.538  [MOT] invalid motion_cmd_t rejected
+14:45:12.568  [TEST] S2-U15 PASS  Motion caps speed at MOTION_SPEED_MAX_CMPS (50 cm/s)
+14:45:12.708  [MOT] S2-U16 dt=100 ms dist=4->7 cm encL=101->561 encR=-575->-1122
+14:45:12.708  [TEST] S2-U16 PASS  motion_state_t published under MTX_MOTION advances over 100 ms
+14:45:12.708  [VC] invalid nav_input_t rejected
+14:45:12.716  [TEST] S2-U22 PASS  VC rejects invalid nav_input_t and sends no motion_cmd_t
+14:45:12.733  [TEST] S2-U23 PASS  VC precedence: AVOID overrides LINE while authority is AVOID
+14:45:12.753  [TEST] S2-U24 PASS  VC commands stop/brake when EVF_SAFETY_FAULT_LATCHED is set
+14:45:13.328  [TEST] S2-U25 PASS  VC clears FAULT_LATCHED only after SAFETY_T_STILL_MS stationary
+14:45:13.348  [TEST] S2-U26 PASS  System FSM transitions INITIALISING -> READY -> NAV_LINE_TRACKING
+14:45:13.370  [TEST] S2-U27 PASS  System FSM returns to READY and stops on TRACK_LOST and STOP
+14:45:13.488  [TEST] S2-U28 PASS  Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_c
+14:45:13.488  [TEST] subsystem2 SUMMARY 16 passed, 0 failed
+14:45:13.496  [TEST] subsystem3 SUMMARY 0 passed, 0 failed
+14:45:13.496  [TEST] subsystem4 SUMMARY 0 passed, 0 failed
+14:45:13.496  [TEST] subsystem5 SUMMARY 0 passed, 0 failed
+14:45:22.073  [DBG] alive: SDK timer 23024 ms, kernel time 19888 ms, difference 3136 ms
+14:45:22.285  [capture] done

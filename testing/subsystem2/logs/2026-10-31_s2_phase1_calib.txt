@@ -1,0 +1,24 @@
+15:04:08.200  [capture] COM4 for 60 s -> testing/subsystem2/logs/2026-10-31_s2_phase1_calib.txt
+15:04:08.266  pre-kernel ok
+15:04:08.266  
+15:04:08.276  
+15:04:08.286  microT-Kernel Version 3.00
+15:04:08.286  
+15:04:08.286  [IPC] kernel spec version 3.00 OK
+15:04:08.286  [IPC] 8 objects created, MBF depth self-check OK
+15:04:08.406  [TEST] subsystem1 SUMMARY 0 passed, 0 failed
+15:04:08.450  [TEST] S2-U01 PASS  Motor PWM slices 4 and 5 configured at 20 kHz +-1%
+15:04:08.456  [TEST] S2-U02 PASS  Motor duty capped at MOTOR_DUTY_MAX_PCT
+15:04:08.486  [TEST] S2-U06 PASS  motion_emergency_brake drives all four channels LOW without Motion task
+15:04:08.486  [TEST] S2-U09 PASS  enc_get_count is non-blocking (< 10 us avg over 1000 calls)
+15:04:08.991  [S2-PHASE1] S2-U03 LEFT wheel: +40% (FORWARD) for 2 s...
+15:04:10.981  [S2-PHASE1] S2-U03 LEFT +40% done: dL=-7212
+15:04:11.786  [S2-PHASE1] S2-U03 LEFT wheel: -40% (BACKWARD) for 2 s...
+15:04:13.786  [S2-PHASE1] S2-U03 LEFT -40% done: dL=6961
+15:04:14.786  [S2-PHASE1] S2-U03 RIGHT wheel: +40% (FORWARD) for 2 s...
+15:04:16.787  [S2-PHASE1] S2-U03 RIGHT +40% done: dR=-7387
+15:04:17.592  [S2-PHASE1] S2-U03 RIGHT wheel: -40% (BACKWARD) for 2 s...
+15:04:18.276  [DBG] alive: SDK timer 10664 ms, kernel time 9878 ms, difference 786 ms
+15:04:19.596  [S2-PHASE1] S2-U03 RIGHT -40% done: dR=7181
+15:04:20.596  [S2-PHASE1] S2-U04 COAST (3 s): L=(6250,6250)/6250 R=(6250,6250)/6250 (all HIGH)
+15:04:22.046  [capture] done

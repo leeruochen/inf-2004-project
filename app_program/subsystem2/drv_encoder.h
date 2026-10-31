@@ -6,8 +6,6 @@
  *  <stdint.h> only, so both the driver (SDK side) and the Motion Control task
  *  (kernel side) may include it.  Week 8: quadrature on PIO0, one state
  *  machine per wheel (ARCHITECTURE.md D7).
- *  TODO(phase 1 batch B, buddy 2): implementation (drv_encoder.c); not
- *  created yet.
  */
 
 #ifndef DRV_ENCODER_H
@@ -19,6 +17,17 @@
 #define ENC_WHEEL_LEFT          (0U)
 /** Wheel index for enc_get_count(): right wheel (GP0/GP1, PIO0 SM0). */
 #define ENC_WHEEL_RIGHT         (1U)
+/** Number of encoder wheels. */
+#define ENC_WHEEL_COUNT         (2U)
+
+/*
+ * Load quadrature_encoder.pio at offset 0 on PIO0 and start SM0 (right,
+ * GP0/GP1) and SM1 (left, GP16/GP17).  Idempotent: a second call does nothing.
+ */
+void enc_init(void);
+
+/** Non-zero once enc_init() has succeeded at offset 0 on PIO0. */
+uint32_t enc_is_ready(void);
 
 /*
  * Current encoder count of one wheel.
