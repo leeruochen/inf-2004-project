@@ -565,6 +565,40 @@ static bool test_s2_u28_public_motion_api(void)
            && (motion_get_setpoint_cmps() == 0U);
 }
 
+#ifndef S2_HW_CALIB_MODE
+#define S2_HW_CALIB_MODE    (0)
+#endif
+
+#if S2_HW_CALIB_MODE
+/*
+ * Manual hardware bring-up and calibration stream (S2-U07 hand-spin sign
+ * check and S2-U10 10-revolution ENC_CPR measurement).  Enabled only when
+ * built with -DS2_HW_CALIB_MODE=1.
+ */
+static void run_hw_calibration_stream(void)
+{
+    int32_t const l0 = enc_get_count(ENC_WHEEL_LEFT);
+    int32_t const r0 = enc_get_count(ENC_WHEEL_RIGHT);
+
+    dbg_puts("[S2-CALIB] Hand-spin wheels forward / 10 turns (30 s window)...");
+    for (uint32_t s = 0U; s < 60U; s++)
+    {
+        int32_t const dl = enc_get_count(ENC_WHEEL_LEFT) - l0;
+        int32_t const dr = enc_get_count(ENC_WHEEL_RIGHT) - r0;
+
+        dbg_printf("[S2-CALIB] t=%lu.%lus dL=%ld dR=%ld (CPR_10rev L=%ld R=%ld)",
+                   (unsigned long)(s / 2U),
+                   (unsigned long)((s % 2U) * 5U),
+                   (long)dl,
+                   (long)dr,
+                   (long)(dl / (10 * (int32_t)ENC_QUAD_MULT)),
+                   (long)(dr / (10 * (int32_t)ENC_QUAD_MULT)));
+        (void)tk_dly_tsk(500);
+    }
+    dbg_puts("[S2-CALIB] Done.");
+}
+#endif /* S2_HW_CALIB_MODE */
+
 void subsystem2_test(void)
 {
     bool pre_init_brake_ok = subsystem2_pre_start_brake_ok();
@@ -611,6 +645,10 @@ void subsystem2_test(void)
                "Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_cmd_t");
 
     TEST_SUMMARY("subsystem2");
+
+#if S2_HW_CALIB_MODE
+    run_hw_calibration_stream();
+#endif
 }
 
 #endif /* APP_TEST */
