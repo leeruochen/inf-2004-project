@@ -14,6 +14,7 @@
 #include "drv_encoder.h"
 #include "drv_motor.h"
 #include "task_motion.h"
+#include "task_vc.h"
 #include "config/thresholds.h"
 #include "config/timing.h"
 
@@ -254,6 +255,230 @@ static bool test_s2_u16_motion_state_published(void)
            && (st2.enc_count[ENC_WHEEL_RIGHT] >= st1.enc_count[ENC_WHEEL_RIGHT]);
 }
 
+/* Helper: drain any residual messages in MBF_MOTION_CMD when Motion task is not running. */
+static void drain_motion_cmd_mbf(void)
+{
+    if (!motion_is_task_running())
+    {
+        motion_cmd_t dummy;
+
+        while (tk_rcv_mbf(MBF_MOTION_CMD, &dummy, TMO_POL) == (INT)sizeof(dummy))
+        {
+            /* drain */
+        }
+    }
+}
+
+static bool test_s2_u22_vc_reject_invalid(void)
+{
+    /* Bypass value 6 is out of range (DREP_BYPASS_COUNT = 5 -> 5..7 invalid). */
+    nav_input_t const bad = drep_nav_make(DREP_NAV_SRC_AVOID, DREP_NAV_AVOID_BYPASS, 0U, 6U, false);
+    uint32_t          rej0;
+    uint32_t          sent0;
+
+    if (!vc_is_task_running())
+    {
+        vc_init();
+        vc_complete_selftest(true);
+    }
+    rej0 = vc_get_reject_count();
+    sent0 = vc_get_sent_cmd_count();
+
+    if (tk_snd_mbf(MBF_NAV_IN, &bad, (INT)sizeof(bad), TMO_POL) != E_OK)
+    {
+        return false;
+    }
+    vc_drain_and_step(app_period_now_ms());
+
+    return (vc_get_reject_count() == (rej0 + 1U))
+           && (vc_get_sent_cmd_count() == sent0);
+}
+
+static bool test_s2_u23_vc_avoid_precedence(void)
+{
+    nav_input_t const  start_msg = drep_nav_remote(DREP_NAV_REMOTE_START);
+    nav_input_t const  line_msg = drep_nav_steer(64);
+    nav_input_t const  avoid_msg = drep_nav_avoid(DREP_NAV_AVOID_BYPASS, DREP_BYPASS_LEFT);
+    uint32_t           sent_before_line;
+    uint32_t           sent_after_line;
+    uint32_t           sent_after_avoid;
+    motion_cmd_t       last_cmd;
+
+    if (!vc_is_task_running())
+    {
+        vc_init();
+        vc_complete_selftest(true);
+    }
+    /* Enter navigation, then switch authority to AVOID. */
+    (void)tk_snd_mbf(MBF_NAV_IN, &start_msg, (INT)sizeof(start_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    vc_set_authority(VC_AUTH_AVOID);
+
+    sent_before_line = vc_get_sent_cmd_count();
+    (void)tk_snd_mbf(MBF_NAV_IN, &line_msg, (INT)sizeof(line_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    sent_after_line = vc_get_sent_cmd_count();
+
+    (void)tk_snd_mbf(MBF_NAV_IN, &avoid_msg, (INT)sizeof(avoid_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    sent_after_avoid = vc_get_sent_cmd_count();
+    last_cmd = vc_get_last_motion_cmd();
+
+    /* Restore READY state. */
+    {
+        nav_input_t const stop_msg = drep_nav_remote(DREP_NAV_REMOTE_STOP);
+        (void)tk_snd_mbf(MBF_NAV_IN, &stop_msg, (INT)sizeof(stop_msg), TMO_POL);
+        vc_drain_and_step(app_period_now_ms());
+    }
+    drain_motion_cmd_mbf();
+
+    return (sent_after_line == sent_before_line)
+           && (sent_after_avoid == (sent_before_line + 1U))
+           && (drep_mc_type(last_cmd) == DREP_MC_TURN_L);
+}
+
+static bool test_s2_u24_vc_stops_on_fault_latched(void)
+{
+    nav_input_t const line_msg = drep_nav_steer(32);
+    motion_cmd_t      last_cmd;
+    uint32_t          cmd_type;
+
+    if (!vc_is_task_running())
+    {
+        vc_init();
+        vc_complete_selftest(true);
+    }
+    (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_FAULT_LATCHED);
+    (void)tk_snd_mbf(MBF_NAV_IN, &line_msg, (INT)sizeof(line_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+
+    last_cmd = vc_get_last_motion_cmd();
+    cmd_type = drep_mc_type(last_cmd);
+    (void)tk_clr_flg(EVF_SAFETY, (UINT)~EVF_SAFETY_FAULT_LATCHED);
+    drain_motion_cmd_mbf();
+
+    return (vc_get_system_state() == VC_SYS_SAFETY_FAULT_LATCHED)
+           && ((cmd_type == DREP_MC_BRAKE) || (cmd_type == DREP_MC_STOP))
+           && (drep_mc_speed(last_cmd) == 0U);
+}
+
+static bool test_s2_u25_vc_reset_stationary_only(void)
+{
+    nav_input_t const reset_msg = drep_nav_remote(DREP_NAV_REMOTE_RESET);
+    uint32_t const    t0 = app_period_now_ms();
+    T_RFLG            rflg1 = { 0 };
+    T_RFLG            rflg2 = { 0 };
+    bool              moving_ignored;
+    bool              stationary_cleared;
+
+    if (!vc_is_task_running())
+    {
+        vc_init();
+        vc_complete_selftest(true);
+    }
+
+    /* Set FAULT_LATCHED plus another bit (STATUS_NO_ECHO) to verify only
+     * FAULT_LATCHED is cleared on reset. */
+    (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_STATUS_NO_ECHO);
+
+    /* 1. Simulate moving (speed != 0 under MTX_MOTION), then send RESET. */
+    if (tk_loc_mtx(MTX_MOTION, TMO_FEVR) == E_OK)
+    {
+        g_motion_state.w = drep_ms_pack(200, 0U);   /* 20.0 cm/s */
+        (void)tk_unl_mtx(MTX_MOTION);
+    }
+    (void)tk_snd_mbf(MBF_NAV_IN, &reset_msg, (INT)sizeof(reset_msg), TMO_POL);
+    vc_drain_and_step(t0);
+    (void)tk_ref_flg(EVF_SAFETY, &rflg1);
+    moving_ignored = ((rflg1.flgptn & EVF_SAFETY_FAULT_LATCHED) != 0U)
+                     && (vc_get_system_state() == VC_SYS_SAFETY_FAULT_LATCHED);
+
+    /* 2. Set speed = 0, mark stationary start at t0, then step at t0 + 500 ms. */
+    if (tk_loc_mtx(MTX_MOTION, TMO_FEVR) == E_OK)
+    {
+        g_motion_state.w = drep_ms_pack(0, 0U);
+        (void)tk_unl_mtx(MTX_MOTION);
+    }
+    vc_drain_and_step(t0);
+    if (vc_is_task_running())
+    {
+        (void)tk_dly_tsk((RELTIM)(SAFETY_T_STILL_MS + 40U));
+    }
+    (void)tk_snd_mbf(MBF_NAV_IN, &reset_msg, (INT)sizeof(reset_msg), TMO_POL);
+    vc_drain_and_step(t0 + SAFETY_T_STILL_MS);
+    (void)tk_ref_flg(EVF_SAFETY, &rflg2);
+
+    stationary_cleared = ((rflg2.flgptn & EVF_SAFETY_FAULT_LATCHED) == 0U)
+                         && ((rflg2.flgptn & EVF_SAFETY_STATUS_NO_ECHO) != 0U)
+                         && (vc_get_system_state() == VC_SYS_READY_WAITING);
+
+    (void)tk_clr_flg(EVF_SAFETY, (UINT)~(EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_STATUS_NO_ECHO));
+    drain_motion_cmd_mbf();
+    return moving_ignored && stationary_cleared;
+}
+
+static bool test_s2_u26_vc_fsm_powerup_to_nav(void)
+{
+    nav_input_t const start_msg = drep_nav_remote(DREP_NAV_REMOTE_START);
+    uint32_t          st_init;
+    uint32_t          st_ready;
+    uint32_t          st_nav;
+
+    vc_init();
+    st_init = vc_get_system_state();
+
+    vc_complete_selftest(true);
+    st_ready = vc_get_system_state();
+
+    (void)tk_snd_mbf(MBF_NAV_IN, &start_msg, (INT)sizeof(start_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    st_nav = vc_get_system_state();
+
+    drain_motion_cmd_mbf();
+    return (st_init == VC_SYS_INITIALISING)
+           && (st_ready == VC_SYS_READY_WAITING)
+           && (st_nav == VC_SYS_NAV_LINE_TRACKING);
+}
+
+static bool test_s2_u27_vc_fsm_track_lost_and_stop(void)
+{
+    nav_input_t const start_msg = drep_nav_remote(DREP_NAV_REMOTE_START);
+    nav_input_t const lost_msg = drep_nav_line_event(DREP_NAV_LINE_TRACK_LOST);
+    nav_input_t const stop_msg = drep_nav_remote(DREP_NAV_REMOTE_STOP);
+    uint32_t          st_after_lost;
+    uint32_t          cmd_after_lost;
+    uint32_t          st_after_stop;
+    uint32_t          cmd_after_stop;
+
+    if (!vc_is_task_running())
+    {
+        vc_init();
+        vc_complete_selftest(true);
+    }
+
+    /* Enter NAV, then post LINE TRACK_LOST -> READY + STOP. */
+    (void)tk_snd_mbf(MBF_NAV_IN, &start_msg, (INT)sizeof(start_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    (void)tk_snd_mbf(MBF_NAV_IN, &lost_msg, (INT)sizeof(lost_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    st_after_lost = vc_get_system_state();
+    cmd_after_lost = drep_mc_type(vc_get_last_motion_cmd());
+
+    /* Restart NAV, then post remote STOP -> READY + STOP. */
+    (void)tk_snd_mbf(MBF_NAV_IN, &start_msg, (INT)sizeof(start_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    (void)tk_snd_mbf(MBF_NAV_IN, &stop_msg, (INT)sizeof(stop_msg), TMO_POL);
+    vc_drain_and_step(app_period_now_ms());
+    st_after_stop = vc_get_system_state();
+    cmd_after_stop = drep_mc_type(vc_get_last_motion_cmd());
+
+    drain_motion_cmd_mbf();
+    return (st_after_lost == VC_SYS_READY_WAITING)
+           && (cmd_after_lost == DREP_MC_STOP)
+           && (st_after_stop == VC_SYS_READY_WAITING)
+           && (cmd_after_stop == DREP_MC_STOP);
+}
+
 void subsystem2_test(void)
 {
     bool pre_init_brake_ok;
@@ -282,6 +507,18 @@ void subsystem2_test(void)
                "Motion caps speed at MOTION_SPEED_MAX_CMPS (50 cm/s)");
     TEST_CHECK("S2-U16", test_s2_u16_motion_state_published(),
                "motion_state_t published under MTX_MOTION advances over 100 ms");
+    TEST_CHECK("S2-U22", test_s2_u22_vc_reject_invalid(),
+               "VC rejects invalid nav_input_t and sends no motion_cmd_t");
+    TEST_CHECK("S2-U23", test_s2_u23_vc_avoid_precedence(),
+               "VC precedence: AVOID overrides LINE while authority is AVOID");
+    TEST_CHECK("S2-U24", test_s2_u24_vc_stops_on_fault_latched(),
+               "VC commands stop/brake when EVF_SAFETY_FAULT_LATCHED is set");
+    TEST_CHECK("S2-U25", test_s2_u25_vc_reset_stationary_only(),
+               "VC clears FAULT_LATCHED only after SAFETY_T_STILL_MS stationary");
+    TEST_CHECK("S2-U26", test_s2_u26_vc_fsm_powerup_to_nav(),
+               "System FSM transitions INITIALISING -> READY -> NAV_LINE_TRACKING");
+    TEST_CHECK("S2-U27", test_s2_u27_vc_fsm_track_lost_and_stop(),
+               "System FSM returns to READY and stops on TRACK_LOST and STOP");
 
     TEST_SUMMARY("subsystem2");
 }

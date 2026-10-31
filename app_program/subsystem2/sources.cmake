@@ -4,7 +4,8 @@
 list(APPEND ROBOCAR_KERNEL_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/subsystem2.c"
     "${CMAKE_CURRENT_LIST_DIR}/subsystem2_test.c"
-    "${CMAKE_CURRENT_LIST_DIR}/task_motion.c")
+    "${CMAKE_CURRENT_LIST_DIR}/task_motion.c"
+    "${CMAKE_CURRENT_LIST_DIR}/task_vc.c")
 # SDK-side drivers:
 list(APPEND ROBOCAR_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/drv_motor.c"

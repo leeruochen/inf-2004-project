@@ -47,4 +47,27 @@ void motion_emergency_brake(void);
 extern motion_state_t g_motion_state;
 ER motion_get_state(motion_state_t *p_out);
 
+/* ---------------------------------------------------------------------------
+ * 10-state System FSM (4 bits flat, docs/DATA_REPRESENTATION.md section 4,
+ * design.md section 5).  Owned by the Vehicle Controller (roadmap Q1);
+ * Telemetry reads vc_get_system_state() for the heartbeat frame.
+ * ------------------------------------------------------------------------- */
+#define VC_SYS_INITIALISING             (0U)
+#define VC_SYS_READY_WAITING            (1U)
+#define VC_SYS_OBSTACLE_AVOIDANCE       (2U)
+#define VC_SYS_SAFETY_FAULT_LATCHED     (3U)
+#define VC_SYS_NAV_LINE_TRACKING        (4U)
+#define VC_SYS_NAV_HUMP_SENSING         (5U)
+#define VC_SYS_NAV_TURN_LEFT            (6U)
+#define VC_SYS_NAV_GO_STRAIGHT          (7U)
+#define VC_SYS_NAV_U_TURN               (8U)
+#define VC_SYS_NAV_TURN_RIGHT           (9U)
+#define VC_SYS_STATE_COUNT              (10U)
+
+_Static_assert(VC_SYS_STATE_COUNT == DREP_FSM_SYSTEM_STATES,
+               "System FSM state count must match DREP_FSM_SYSTEM_STATES (10)");
+
+/** Current 4-bit system state (VC_SYS_*). */
+uint32_t vc_get_system_state(void);
+
 #endif /* SUBSYSTEM2_H */
