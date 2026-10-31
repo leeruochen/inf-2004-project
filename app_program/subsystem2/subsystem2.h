@@ -33,10 +33,18 @@
 
 /*
  * IF-11: emergency brake, called by the Safety task (subsystem 4) ONLY
- * through this header.  Drives all four motor channels LOW (ROBO PICO brake).
- * TODO(phase 2, buddy 2): defined in Motion (all four motor channels LOW
- * inside a critical section); not defined yet.
+ * through this header.  Drives all four motor channels LOW (ROBO PICO brake)
+ * inside a critical section, safe from any task and before motor_init().
  */
 void motion_emergency_brake(void);
+
+/*
+ * IF-08 / NFR6: shared motion state guarded by MTX_MOTION.
+ * Readers may either call motion_get_state(&copy) or lock MTX_MOTION, copy
+ * g_motion_state, and unlock MTX_MOTION at once.  Safety never takes
+ * MTX_MOTION.
+ */
+extern motion_state_t g_motion_state;
+ER motion_get_state(motion_state_t *p_out);
 
 #endif /* SUBSYSTEM2_H */

@@ -1,0 +1,59 @@
+;
+; Copyright (c) 2023 Raspberry Pi (Trading) Ltd.
+;
+; SPDX-License-Identifier: BSD-3-Clause
+;
+
+.program quadrature_encoder
+
+; must be loaded at address 0 because it uses computed jumps
+.origin 0
+
+
+; the code works by running a loop that continuously shifts the 2 phase pins into
+; ISR and looks up the nextello action in a 16-entry jump table
+;
+; the jump table is indexed by (prev_pins << 2) | curr_pins:
+;   00 -> 00 : no change
+;   00 -> 01 : -1
+;   00 -> 10 : +1
+;   00 -> 11 : invalid (no change)
+
+    jmp update      ; read 00
+    jmp decrement   ; read 01
+    jmp increment   ; read 10
+    jmp update      ; read 11
+
+    jmp increment   ; read 00
+    jmp update      ; read 01
+    jmp update      ; read 10
+    jmp decrement   ; read 11
+
+    jmp decrement   ; read 00
+    jmp update      ; read 01
+    jmp update      ; read 10
+    jmp increment   ; read 11
+
+    jmp update      ; read 00
+    jmp increment   ; read 01
+decrement:
+    jmp y--, update ; read 10
+
+.wrap_target
+update:
+    mov isr, y
+    push noblock
+
+sample_pins:
+    out isr, 2
+    in pins, 2
+    mov osr, isr
+    mov pc, isr
+
+increment:
+    mov y, ~y
+    jmp y--, increment_cont
+increment_cont:
+    mov y, ~y
+.wrap
+

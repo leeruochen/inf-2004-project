@@ -146,7 +146,7 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 | Bring-up order | motor direction first (`MOTOR_x_DIR_INVERT`), then encoder sign (`ENC_x_DIR_INVERT`) by hand-spin and forward-drive tests |
 | Values to measure | `ENC_CPR`, `WHEEL_CIRC_MM` (0 = not measured; code using them must `#error` while 0), `MOTOR_DUTY_MAX_PCT`, `POWER_GROVE_3V3_BUDGET_MA` |
 | Also yours | Batch B platform work (section 4), labelled `TODO(phase 1 batch B, buddy 2)` across the repo; it unblocks everyone's hardware tests. Buddy 3 writes it as the helper (C1). You own the decisions, review and merge each stage PR, and run every hardware stage: from B4, build the `.uf2` from the PR commit, flash the Pico W and run the hardware/USB tests (C7, plan section 2). NFR2 wording test: drive a measured distance at 50 cm/s and compare counts, both wheels (ARCHITECTURE.md D7) |
-| Status | not started |
+| Status | started 31 Oct 2026: branch `buddy2/motion`; S0-S3 done (`drv_motor.h/.c`, `motion_emergency_brake()`, `quadrature_encoder.pio` + `drv_encoder.c`, S2-U01/U02/U06/U09 auto checks, 0 warnings, `check_rules: PASS`). Next: S4 `task_motion.c`. Progress and resume point: `app_program/subsystem2/subsystem2_roadmap.md` |
 
 ### Buddy 3: Jin Yong (2503319, jyong1101), line following + barcode, `app_program/subsystem3/`
 

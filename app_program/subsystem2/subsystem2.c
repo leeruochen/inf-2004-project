@@ -9,12 +9,17 @@
 
 #include "subsystem2.h"
 #include "drv_encoder.h"    /* kernel-free driver interface: enc_get_count() */
+#include "drv_motor.h"      /* kernel-free driver interface: motor_brake_all() */
+
+void motion_emergency_brake(void)
+{
+    motor_brake_all();
+}
 
 int32_t subsystem2_init(void)
 {
-    /* TODO(phase 2, buddy 2): create the Motion Control cyclic handler
-     * (MOTION_PERIOD_MS, 20 ms), created stopped and started in
-     * subsystem2_start(). */
+    /* Motion Control uses app_period_wait() (MOTION_PERIOD_MS, 20 ms,
+     * HANDOVER section 3 step 7), so no cyclic handler is created. */
     return (int32_t)E_OK;
 }
 
