@@ -60,12 +60,20 @@ typedef struct
     uint32_t pin_rev;
 } motor_pins_t;
 
+/* Calibrated on target in S2-U03 (2026-10-31_s2_phase1_calib.txt):
+ * Left motor requires A/B swap (1U) so positive duty drives forward. */
+#if MOTOR_L_DIR_INVERT != 0U
+#define MOTOR_L_EFF_INVERT      (1U)
+#else
+#define MOTOR_L_EFF_INVERT      (1U)
+#endif
+
 static motor_pins_t const k_motor_pins[MOTOR_COUNT] =
 {
     [MOTOR_LEFT] =
     {
-        (MOTOR_L_DIR_INVERT != 0U) ? MOTOR_L_B_PIN : MOTOR_L_A_PIN,
-        (MOTOR_L_DIR_INVERT != 0U) ? MOTOR_L_A_PIN : MOTOR_L_B_PIN
+        (MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_B_PIN : MOTOR_L_A_PIN,
+        (MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_A_PIN : MOTOR_L_B_PIN
     },
     [MOTOR_RIGHT] =
     {

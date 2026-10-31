@@ -277,15 +277,9 @@ static bool test_s2_u16_motion_state_published(void)
                (long)st1.enc_count[ENC_WHEEL_RIGHT],
                (long)st2.enc_count[ENC_WHEEL_RIGHT]);
 
-#if (ENC_CPR != 0U) && (WHEEL_CIRC_MM != 0U)
     enc_ok = (st2.enc_count[ENC_WHEEL_LEFT] >= st1.enc_count[ENC_WHEEL_LEFT])
-             && (st2.enc_count[ENC_WHEEL_RIGHT] >= st1.enc_count[ENC_WHEEL_RIGHT]);
-#else
-    /* Before ENC_x_DIR_INVERT and MOTOR_x_DIR_INVERT are calibrated on the
-     * physical harness, one wheel's raw quadrature count decreases while
-     * spinning forward; verify speed, cumulative distance, and tick_ms. */
-    enc_ok = (drep_ms_speed_x10(st2.w) == 300);
-#endif
+             && (st2.enc_count[ENC_WHEEL_RIGHT] >= st1.enc_count[ENC_WHEEL_RIGHT])
+             && (drep_ms_speed_x10(st2.w) > 0);
 
     return (st2.tick_ms > st1.tick_ms)
            && (drep_ms_distance_cm(st2.w) > drep_ms_distance_cm(st1.w))
@@ -645,10 +639,148 @@ static void run_hw_calibration_stream(void)
 }
 #endif /* S2_HW_CALIB_MODE */
 
+#ifndef S2_FLOOR_TEST_MODE
+/* 0 = standard unit tests; 1 = Phase 2 floor straight + 90-degree turns test. */
+#define S2_FLOOR_TEST_MODE  (0)
+#endif
+
+#if S2_FLOOR_TEST_MODE == 1
+static void run_floor_straight_test(void)
+{
+    motion_state_t st0;
+    motion_state_t st1;
+    uint32_t       t0_ms;
+    uint32_t       t1_ms;
+    int32_t        tl_l;
+    int32_t        tl_r;
+    int32_t        tr_l;
+    int32_t        tr_r;
+    int32_t        dl;
+    int32_t        dr;
+    uint32_t       dist_cm;
+    int32_t        peak_spd_x10 = 0;
+
+    /* 5-second countdown after boot/RESET so the car can be placed at the
+     * 0 cm floor start line untethered or tethered before driving. */
+    for (uint32_t s = 5U; s > 0U; s--)
+    {
+        dbg_printf("[S2-FLOOR] Starting turnLeft(90)->turnRight(90)->moveForward(100) in %lu s...",
+                   (unsigned long)s);
+        (void)tk_dly_tsk(1000);
+    }
+
+    /* 1. S2-U20: turnLeft(90) */
+    drain_motion_cmd_mbf();
+    (void)motion_get_state(&st0);
+    (void)turnLeft(90);
+    motion_test_run_periods(1U);
+    while (motion_get_setpoint_cmps() != 0U)
+    {
+        (void)tk_dly_tsk(20);
+    }
+    (void)tk_dly_tsk(300);
+    (void)motion_get_state(&st1);
+    tl_l = st1.enc_count[ENC_WHEEL_LEFT] - st0.enc_count[ENC_WHEEL_LEFT];
+    tl_r = st1.enc_count[ENC_WHEEL_RIGHT] - st0.enc_count[ENC_WHEEL_RIGHT];
+    (void)tk_dly_tsk(2200);
+
+    /* 2. S2-U20: turnRight(90) (returns to 0 deg heading) */
+    drain_motion_cmd_mbf();
+    (void)motion_get_state(&st0);
+    (void)turnRight(90);
+    motion_test_run_periods(1U);
+    while (motion_get_setpoint_cmps() != 0U)
+    {
+        (void)tk_dly_tsk(20);
+    }
+    (void)tk_dly_tsk(300);
+    (void)motion_get_state(&st1);
+    tr_l = st1.enc_count[ENC_WHEEL_LEFT] - st0.enc_count[ENC_WHEEL_LEFT];
+    tr_r = st1.enc_count[ENC_WHEEL_RIGHT] - st0.enc_count[ENC_WHEEL_RIGHT];
+    (void)tk_dly_tsk(2200);
+
+    /* 3. S2-U17 / S2-U18 / S2-U19:
+     *    Drive 100 cm forward at standard cruise speed (moveForward(100)). */
+    drain_motion_cmd_mbf();
+    (void)motion_get_state(&st0);
+    t0_ms = app_period_now_ms();
+    (void)moveForward(100);
+    motion_test_run_periods(1U);
+
+    while (motion_get_setpoint_cmps() != 0U)
+    {
+        motion_state_t cur;
+
+        if (motion_get_state(&cur) == E_OK)
+        {
+            int32_t const spd = drep_ms_speed_x10(cur.w);
+
+            if (spd > peak_spd_x10)
+            {
+                peak_spd_x10 = spd;
+            }
+        }
+        (void)tk_dly_tsk(20);
+    }
+    t1_ms = app_period_now_ms();
+    (void)tk_dly_tsk(400);
+    (void)motion_get_state(&st1);
+
+    dl = st1.enc_count[ENC_WHEEL_LEFT] - st0.enc_count[ENC_WHEEL_LEFT];
+    dr = st1.enc_count[ENC_WHEEL_RIGHT] - st0.enc_count[ENC_WHEEL_RIGHT];
+    dist_cm = (uint32_t)drep_ms_distance_cm(st1.w) - (uint32_t)drep_ms_distance_cm(st0.w);
+
+    /* Repeat the result every 2 s so you can plug in USB after an untethered
+     * floor run and capture the exact telemetry. */
+    for (;;)
+    {
+        if (hal_console_connected())
+        {
+            uint32_t const dt_ms = (t1_ms > t0_ms) ? (t1_ms - t0_ms) : 1U;
+            uint32_t const avg_spd_x10 = (dist_cm * 10000U) / dt_ms;
+
+            dbg_printf("[S2-TURN90] L90 dL=%ld dR=%ld | R90 dL=%ld dR=%ld",
+                       (long)tl_l, (long)tl_r, (long)tr_l, (long)tr_r);
+            dbg_printf("[S2-FWD100] dt=%lums dist=%lucm spd=%lu.%lu(pk %ld.%ld) dL=%ld dR=%ld df=%ld",
+                       (unsigned long)dt_ms,
+                       (unsigned long)dist_cm,
+                       (unsigned long)(avg_spd_x10 / 10U),
+                       (unsigned long)(avg_spd_x10 % 10U),
+                       (long)(peak_spd_x10 / 10),
+                       (long)(peak_spd_x10 % 10),
+                       (long)dl,
+                       (long)dr,
+                       (long)(dl - dr));
+        }
+        (void)tk_dly_tsk(2000);
+    }
+}
+#endif /* S2_FLOOR_TEST_MODE == 1 */
+
 void subsystem2_test(void)
 {
     bool pre_init_brake_ok = subsystem2_pre_start_brake_ok();
 
+#if S2_FLOOR_TEST_MODE == 1
+    (void)pre_init_brake_ok;
+    (void)test_s2_u01_motor_pwm_freq;
+    (void)test_s2_u02_motor_duty_cap;
+    (void)test_s2_u06_emergency_brake;
+    (void)test_s2_u09_encoder_nonblocking;
+    (void)test_s2_u12_motion_period;
+    (void)test_s2_u13_motion_reject_invalid;
+    (void)test_s2_u14_motion_hold_then_stop;
+    (void)test_s2_u15_motion_speed_cap;
+    (void)test_s2_u16_motion_state_published;
+    (void)test_s2_u22_vc_reject_invalid;
+    (void)test_s2_u23_vc_avoid_precedence;
+    (void)test_s2_u24_vc_stops_on_fault_latched;
+    (void)test_s2_u25_vc_reset_stationary_only;
+    (void)test_s2_u26_vc_fsm_powerup_to_nav;
+    (void)test_s2_u27_vc_fsm_track_lost_and_stop;
+    (void)test_s2_u28_public_motion_api;
+    run_floor_straight_test();
+#else
     /* Wait for the USB CDC terminal to open and let dbg_drain_task (priority
      * 10) flush the boot lines first, so no [TEST] lines overflow the 2 KB
      * ring if the terminal connects after the 3 s pre-kernel wait. */
@@ -703,6 +835,7 @@ void subsystem2_test(void)
                "Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_cmd_t");
 
     TEST_SUMMARY("subsystem2");
+#endif /* S2_FLOOR_TEST_MODE == 1 */
 }
 
 #endif /* APP_TEST */

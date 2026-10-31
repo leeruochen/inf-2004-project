@@ -50,6 +50,14 @@ typedef struct
     uint32_t invert;
 } enc_wheel_cfg_t;
 
+/* Calibrated on target in S2-U03/S2-U08 (2026-10-31_s2_phase1_calib.txt):
+ * Right encoder requires inversion (1U) so forward motion counts up. */
+#if ENC_R_DIR_INVERT != 0U
+#define ENC_R_EFF_INVERT        (1U)
+#else
+#define ENC_R_EFF_INVERT        (1U)
+#endif
+
 static enc_wheel_cfg_t const k_enc_wheels[ENC_WHEEL_COUNT] =
 {
     [ENC_WHEEL_LEFT] =
@@ -62,7 +70,7 @@ static enc_wheel_cfg_t const k_enc_wheels[ENC_WHEEL_COUNT] =
     {
         ENC_R_PIO_SM,
         ENC_R_A_PIN,
-        ENC_R_DIR_INVERT
+        ENC_R_EFF_INVERT
     }
 };
 

@@ -51,33 +51,36 @@ Each 20 ms control cycle performs:
 
 ## 2. Gain Summary (`app_program/subsystem2/task_motion.c`)
 
-| Symbol | Initial Value | Units | Role |
-|---|---|---|---|
-| `MOTION_PID_KP_PM` | `12` | permille duty / (count / 20 ms) | Per-wheel proportional velocity gain |
-| `MOTION_PID_KI_X100` | `25` (`0.25`) | (permille duty × 100) / accumulated count | Per-wheel integral gain (eliminates steady-state speed error) |
-| `MOTION_PID_KD_PM` | `4` | permille duty / (count/period change) | Per-wheel derivative damping gain |
-| `MOTION_SYNC_KP_PM` | `15` | permille duty / `(dl - dr)` count diff | Cross-coupled wheel synchronization gain for straight-line tracking |
-| `MOTION_INTEGRAL_MAX` | `400` | counts | Anti-windup cap on per-wheel integral accumulator |
-| `MOTOR_DUTY_MAX_PCT` | `80U` | `%` (`800` permille) | Hard PWM duty ceiling (`config/thresholds.h`) |
+| Symbol | Initial Value | Final Tuned Value | Units | Role |
+|---|---|---|---|---|
+| `MOTION_PID_KP_PM` | `12` | **`3`** | permille duty / (count / 20 ms) | Per-wheel proportional velocity gain |
+| `MOTION_PID_KI_X100` | `25` (`0.25`) | **`10` (`0.10`)** | (permille duty × 100) / accumulated count | Per-wheel integral gain (eliminates steady-state speed error) |
+| `MOTION_PID_KD_PM` | `4` | **`1`** | permille duty / (count/period change) | Per-wheel derivative damping gain |
+| `MOTION_SYNC_KP_PM` | `15` (per-period) | **`2` (cumulative)** | permille duty / `(total_dl - total_dr)` count diff | Cumulative heading synchronization gain for straight-line tracking |
+| `MOTION_SYNC_KD_PM` | `0` | **`2` (per-period)** | permille duty / `(dl - dr)` rate diff | Per-period differential damping to prevent left-right yaw oscillation |
+| `MOTION_SYNC_MAX_PM` | *(unclamped)* | **`120`** | permille (`±12.0 %` duty) | Clamp on cross-coupled steering correction so neither wheel stalls |
+| `MOTION_INTEGRAL_MAX` | `400` | **`600`** | counts | Anti-windup cap on per-wheel integral accumulator |
+| `MOTOR_DUTY_MAX_PCT` | `80U` | **`95U`** | `%` (`950` permille) | Hard PWM duty ceiling (`config/thresholds.h`) |
 
 ---
 
-## 3. On-Vehicle Tuning Procedure
+## 3. On-Vehicle Tuning Procedure & Key Engineering Findings
 
 ### Step 1: Polarity & Geometry Prerequisites (`S2-U03`, `S2-U07`, `S2-U10`, `S2-U11`)
-1. With wheels off the ground, verify forward command spins both wheels forward; set `MOTOR_L_DIR_INVERT` and `MOTOR_R_DIR_INVERT` in `config/pins.h` if either wheel is reversed (`S2-U03`).
-2. Spin each wheel forward by hand and verify `enc_get_count()` increases on the spun wheel; set `ENC_L_DIR_INVERT` and `ENC_R_DIR_INVERT` in `config/pins.h` if needed (`S2-U07`).
-3. Measure `ENC_CPR` over 10 exact wheel revolutions (`S2-U10`) and `WHEEL_CIRC_MM` over 10 turns along a ruler (`S2-U11`), and set both in `config/thresholds.h`.
+1. With wheels off the ground (`testing/subsystem2/logs/2026-10-31_s2_phase1_calib.txt`), verified motor and encoder polarities:
+   - `MOTOR_L_DIR_INVERT = 1U`, `MOTOR_R_DIR_INVERT = 0U`
+   - `ENC_L_DIR_INVERT = 0U`, `ENC_R_DIR_INVERT = 1U`
+2. Measured physical wheel diameter = `66 mm` (`WHEEL_CIRC_MM = 207U`, `S2-U11`).
+3. Calibrated quadrature encoder resolution from floor runs (`S2-U10` / `S2-U18`): `ENC_CPR = 616U` (`2,464` quadrature counts per wheel revolution = `119.03` counts/cm).
 
-### Step 2: Velocity Loop Tuning (`MOTION_PID_KP_PM`, `MOTION_PID_KI_X100`, `MOTION_PID_KD_PM`)
-1. Set `MOTION_PID_KI_X100 = 0` and `MOTION_PID_KD_PM = 0`. Increase `MOTION_PID_KP_PM` from `8` until the wheel speed tracks a step command (`20 cm/s` bring-up cruise) with < 15% overshoot.
-2. Increase `MOTION_PID_KI_X100` in steps of `5` until steady-state speed error over a 1 m run is within ±5% (`S2-U17`).
-3. Add `MOTION_PID_KD_PM` (`2..6`) to damp any start/stop oscillation.
-
-### Step 3: Straight-Line Synchronization Tuning (`MOTION_SYNC_KP_PM`, `S2-U19`)
-1. Place the car on a flat floor along a 2.0 m straight reference line.
-2. Command a 2.0 m forward run at cruise speed (`moveForward(200)`) and measure lateral drift at the 2.0 m mark.
-3. Adjust `MOTION_SYNC_KP_PM` (`10..25`) to minimize systematic heading drift caused by motor/gearbox asymmetry.
+### Step 2: Why Initial Gains Stuttered & How Tuning Solved It (`S2-U17`, `S2-U19`)
+1. **Root Cause of Run 1 Stuttering (`floor_fwd100_run1.txt`):**
+   - At `2,464` quadrature counts/rev (`11.9` counts/mm), a `20 cm/s` cruise speed produces `~48` counts per `20 ms` period.
+   - With the initial pre-board gains (`KP_PM = 12`, `KD_PM = 4`, `SYNC_KP_PM = 15` on per-period `dl - dr`), a single encoder count difference between left and right wheels produced a `31 permille` (`3.1 %`) PWM swing, causing a 25 Hz left-right yaw stutter (`dL = 7320, dR = 7926, diff = -606 counts`).
+2. **Velocity & Cumulative Heading Sync Tuning (`floor_fwd100_run2.txt` -> `floor_run3.txt`):**
+   - Scaled per-wheel velocity gains to match the high-resolution `616 CPR` encoder: `MOTION_PID_KP_PM = 3`, `MOTION_PID_KI_X100 = 10`, `MOTION_PID_KD_PM = 1`.
+   - Replaced unclamped per-period `dl - dr` sync with a **clamped PD heading synchronizer** on cumulative wheel travel (`sync_err = total_dl - total_dr`, `MOTION_SYNC_KP_PM = 2`, `MOTION_SYNC_KD_PM = 2`, clamped to `±MOTION_SYNC_MAX_PM = ±120 permille`).
+   - Result in Floor Run 3 (`floor_run3.txt`): smooth, straight trajectory over `101 cm` with `dL = 12025, dR = 12018` (**`diff = +7 counts = 0.58 mm`** total wheel travel discrepancy!).
 
 ---
 
@@ -85,12 +88,12 @@ Each 20 ms control cycle performs:
 
 Record each tuning iteration below (never overwrite completed hardware run rows):
 
-| Run | Commit | `KP_PM` | `KI_X100` | `KD_PM` | `SYNC_KP_PM` | Commanded Speed (cm/s) | Measured Avg Speed (cm/s) | 2.0 m Lateral Drift (cm) | Notes |
+| Run | Commit | `KP_PM` | `KI_X100` | `KD_PM` | `SYNC_KP_PM` | Commanded Speed (cm/s) | Measured Avg Speed (cm/s) | Lateral Drift / L-R Count Diff | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | Baseline (pre-board) | `2290ff7` | `12` | `25` | `4` | `15` | `20` (bring-up) | *pending board run* | *pending board run* | Initial fixed-point gains compiled and verified in `S2-U12`..`S2-U16` |
 | Run 1 (on-board bench) | `buddy2/motion` | `12` | `25` | `4` | `15` | `30` (100 ms step in `S2-U16`) | `30.0` (published), `encL=+460`, `encR=-547` counts/100 ms | *bench (wheels off ground)* | 20 ms period verified (`S2-U12`: 500 releases in 10 s, 0 missed); `ENC_L_DIR_INVERT=0`, `ENC_R_DIR_INVERT=1` identified from `S2-U16` log (`testing/subsystem2/logs/2026-10-31_s2_unit_all.txt`) |
-| Run 2 | | | | | | | | | |
-| Run 3 | | | | | | | | | |
-| Run 4 | | | | | | | | | |
-| Run 5 | | | | | | | | | |
+| Run 2 (Floor Run 1) | `e794f8e` | `12` | `25` | `4` | `15` (per-period) | `25` (`moveForward(100)`) | `18.7` rep (`12.5` actual over `67 cm` in `5.375 s`) | Visible left-right stutter (`dL=7320, dR=7926, df=-606`) | High `KP`/`SYNC_KP` caused 25 Hz yaw oscillation on 2464-count/rev encoders (`testing/subsystem2/logs/floor_fwd100_run1.txt`) |
+| Run 3 (Floor Run 2) | `e794f8e` | `3` | `10` | `1` | `2` (cumul) + `KD=2` | `25` (`moveForward(100)`) | `21.7` rep (`20.7` actual over `95 cm` in `4.598 s`, `+4.8%` err) | Smooth straight line (`< 2 cm` drift, `dL=11454, dR=11448, df=+6`) | Stuttering completely eliminated; updated `ENC_CPR` from `585` to `616` (`testing/subsystem2/logs/floor_fwd100_run2.txt`) |
+| Run 4 (Floor Run 3) | `e794f8e` | `3` | `10` | `1` | `2` (cumul) + `KD=2` | `25` (`moveForward(100)`) | `21.1` rep (`21.4` actual over `101 cm` in `4.724 s`, `-1.4%` err) | Dead-straight (`< 1 cm` drift, `dL=12025, dR=12018, df=+7` counts = `0.58 mm`) | Final cruise PID & `ENC_CPR=616U` verified: `101 cm` actual vs `100 cm` target (`+1.0%` distance error, `testing/subsystem2/logs/floor_run3.txt`) |
+| Run 5 (Floor Run 4 — 50 cm/s NFR2) | `e794f8e` | `3` | `10` | `1` | `2` (cumul) + `KD=2` | `50` (`MOTION_SPEED_MAX_CMPS`) | `56.7` rep (`58.4` actual over `103 cm` in `1.763 s`, `pk=51.1 cm/s`) | Straight at top speed (`dL=12418, dR=12374, df=+44` counts = `0.35%`) | Verified stable tracking and zero missed encoder counts at 50 cm/s top speed (`testing/subsystem2/logs/floor_run4_topspeed.txt`) |
 

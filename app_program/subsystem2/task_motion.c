@@ -52,24 +52,44 @@
 #endif
 
 #if (ENC_CPR != 0U) && (WHEEL_CIRC_MM != 0U)
-#define MOTION_HAS_GEOMETRY     (1)
-#define MOTION_COUNTS_PER_REV   ((int32_t)(ENC_QUAD_MULT * ENC_CPR))
+#define MOTION_EFF_ENC_CPR      ((uint32_t)ENC_CPR)
+#define MOTION_EFF_WHEEL_CIRC   ((uint32_t)WHEEL_CIRC_MM)
 #else
-#define MOTION_HAS_GEOMETRY     (0)
+/* Calibrated on target in Phase 1/2 (S2-U10/S2-U11/S2-U18):
+ * 66 mm wheel diameter -> 207 mm circumference; Run 2 gave 11454 counts for
+ * 950 mm -> 2464 quadrature counts/rev (616 CPR). */
+#define MOTION_EFF_ENC_CPR      (616U)
+#define MOTION_EFF_WHEEL_CIRC   (207U)
 #endif
+#define MOTION_HAS_GEOMETRY     (1)
+#define MOTION_COUNTS_PER_REV   ((int32_t)(ENC_QUAD_MULT * MOTION_EFF_ENC_CPR))
+
+/** Effective wheel track width (mm) for in-place turns (calibrated on floor:
+ *  138 mm -> ~104 deg, 120 mm -> ~95 deg, 114 mm -> 90.0 deg). */
+#define MOTION_EFF_TRACK_MM     (114U)
+/** Minimum feed-forward duty (permille) to overcome tire stiction in turns. */
+#define MOTION_TURN_MIN_BASE_PM (280)
+
+/** Maximum duration (ms) for a bounded-distance or bounded-angle manoeuvre. */
+#define MOTION_MANOEUVRE_MAX_MS (15000U)
 
 /* ---------------------------------------------------------------------------
- * Initial PID and straight-line correction gains (fixed-point x100, TUNE).
+ * Tuned PID and straight-line correction gains (fixed-point x100, TUNE).
+ * Tuned for 2340 quad counts/rev (~45 counts per 20 ms at 20 cm/s).
  * ------------------------------------------------------------------------- */
 
 /** Velocity error proportional gain (permille duty per count/period error). TUNE */
-#define MOTION_PID_KP_PM        (12)
+#define MOTION_PID_KP_PM        (3)
 /** Velocity error integral gain x100 (permille duty per accumulated count). TUNE */
-#define MOTION_PID_KI_X100      (25)
+#define MOTION_PID_KI_X100      (10)
 /** Velocity error derivative gain (permille duty per count/period change). TUNE */
-#define MOTION_PID_KD_PM        (4)
-/** Straight-line cross-coupling gain (permille duty per (delta_l - delta_r)). TUNE */
-#define MOTION_SYNC_KP_PM       (15)
+#define MOTION_PID_KD_PM        (1)
+/** Cumulative heading error gain (permille duty per count of total_dl - total_dr). TUNE */
+#define MOTION_SYNC_KP_PM       (2)
+/** Instantaneous wheel delta damping gain (permille duty per dl - dr). TUNE */
+#define MOTION_SYNC_KD_PM       (2)
+/** Maximum differential steering trim (permille) for straight-line tracking. */
+#define MOTION_SYNC_MAX_PM      (120)
 /** Anti-windup cap on the integral term (in count units). */
 #define MOTION_INTEGRAL_MAX     (400)
 
@@ -213,8 +233,16 @@ static void poll_command_queue(int32_t const cnt[ENC_WHEEL_COUNT])
 
     if (s_cmd_active)
     {
+        bool const is_bounded_manoeuvre =
+            (((s_cmd_type == DREP_MC_FWD) || (s_cmd_type == DREP_MC_BACK)
+              || (s_cmd_type == DREP_MC_TURN_L) || (s_cmd_type == DREP_MC_TURN_R))
+             && (s_cmd_arg > 0))
+            || (s_cmd_type == DREP_MC_UTURN);
+        uint32_t const hold_limit_ms =
+            is_bounded_manoeuvre ? MOTION_MANOEUVRE_MAX_MS : MOTION_T_HOLD_MS;
+
         s_hold_elapsed_ms += MOTION_PERIOD_MS;
-        if (s_hold_elapsed_ms >= MOTION_T_HOLD_MS)
+        if (s_hold_elapsed_ms >= hold_limit_ms)
         {
             stop_internal(false);
         }
@@ -235,7 +263,7 @@ static void check_manoeuvre_completion(int32_t const cnt[ENC_WHEEL_COUNT])
     {
         uint32_t const target_mm = (uint32_t)s_cmd_arg * 10U;
         uint32_t const target_counts =
-            (target_mm * (uint32_t)MOTION_COUNTS_PER_REV) / WHEEL_CIRC_MM;
+            (target_mm * (uint32_t)MOTION_COUNTS_PER_REV) / MOTION_EFF_WHEEL_CIRC;
 
         if (mean_counts >= target_counts)
         {
@@ -250,10 +278,10 @@ static void check_manoeuvre_completion(int32_t const cnt[ENC_WHEEL_COUNT])
 
         if (angle_deg > 0U)
         {
-            /* Wheel arc = pi * CAR_WIDTH_MM * angle_deg / 360. */
-            uint32_t const arc_mm = (3142U * CAR_WIDTH_MM * angle_deg) / 360000U;
+            /* Wheel arc = pi * MOTION_EFF_TRACK_MM * angle_deg / 360. */
+            uint32_t const arc_mm = (3142U * MOTION_EFF_TRACK_MM * angle_deg) / 360000U;
             uint32_t const target_counts =
-                (arc_mm * (uint32_t)MOTION_COUNTS_PER_REV) / WHEEL_CIRC_MM;
+                (arc_mm * (uint32_t)MOTION_COUNTS_PER_REV) / MOTION_EFF_WHEEL_CIRC;
 
             if (mean_counts >= target_counts)
             {
@@ -360,15 +388,13 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
     switch (s_cmd_type)
     {
         case DREP_MC_FWD:
-            sync_trim = (dl - dr) * MOTION_SYNC_KP_PM;
-            duty_l = base_pm - sync_trim;
-            duty_r = base_pm + sync_trim;
+            duty_l = base_pm;
+            duty_r = base_pm;
             break;
 
         case DREP_MC_BACK:
-            sync_trim = (dl - dr) * MOTION_SYNC_KP_PM;
-            duty_l = -base_pm - sync_trim;
-            duty_r = -base_pm + sync_trim;
+            duty_l = -base_pm;
+            duty_r = -base_pm;
             break;
 
         case DREP_MC_STEER:
@@ -382,15 +408,25 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
         }
 
         case DREP_MC_TURN_L:
-            duty_l = -base_pm;
-            duty_r = base_pm;
+        {
+            int32_t const turn_pm = (base_pm < MOTION_TURN_MIN_BASE_PM)
+                                    ? MOTION_TURN_MIN_BASE_PM : base_pm;
+
+            duty_l = -turn_pm;
+            duty_r = turn_pm;
             break;
+        }
 
         case DREP_MC_TURN_R:
         case DREP_MC_UTURN:
-            duty_l = base_pm;
-            duty_r = -base_pm;
+        {
+            int32_t const turn_pm = (base_pm < MOTION_TURN_MIN_BASE_PM)
+                                    ? MOTION_TURN_MIN_BASE_PM : base_pm;
+
+            duty_l = turn_pm;
+            duty_r = -turn_pm;
             break;
+        }
 
         default:
             duty_l = 0;
@@ -400,21 +436,62 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
 
 #if MOTION_HAS_GEOMETRY
     {
-        int32_t const mag_counts =
+        uint32_t const cm_denom = (uint32_t)(2 * MOTION_COUNTS_PER_REV * 10);
+        int32_t const  mag_counts =
             ((int32_t)s_setpoint_cmps * 10 * MOTION_COUNTS_PER_REV * (int32_t)MOTION_PERIOD_MS)
-            / ((int32_t)WHEEL_CIRC_MM * 1000);
-        int32_t const tgt_l = (duty_l >= 0) ? mag_counts : -mag_counts;
-        int32_t const tgt_r = (duty_r >= 0) ? mag_counts : -mag_counts;
-        int32_t const mean_d = (dl + dr) / 2;
+            / ((int32_t)MOTION_EFF_WHEEL_CIRC * 1000);
+        int32_t const  tgt_l = (duty_l >= 0) ? mag_counts : -mag_counts;
+        int32_t const  tgt_r = (duty_r >= 0) ? mag_counts : -mag_counts;
+        int32_t const  mean_d = (dl + dr) / 2;
 
         duty_l += pid_step_wheel(ENC_WHEEL_LEFT, tgt_l, dl);
         duty_r += pid_step_wheel(ENC_WHEEL_RIGHT, tgt_r, dr);
 
-        /* 1 mm/s == 0.1 cm/s. */
-        *p_speed_x10 = (mean_d * (int32_t)WHEEL_CIRC_MM * (int32_t)(1000U / MOTION_PERIOD_MS))
-                       / MOTION_COUNTS_PER_REV;
-        s_distance_mm_rem += ((abs_i32(dl) + abs_i32(dr)) * WHEEL_CIRC_MM)
-                             / (uint32_t)(2 * MOTION_COUNTS_PER_REV);
+        if ((s_cmd_type == DREP_MC_FWD) || (s_cmd_type == DREP_MC_BACK))
+        {
+            int32_t const total_dl = (int32_t)((uint32_t)s_prev_cnt[ENC_WHEEL_LEFT]
+                                               - (uint32_t)s_manoeuvre_start_cnt[ENC_WHEEL_LEFT]);
+            int32_t const total_dr = (int32_t)((uint32_t)s_prev_cnt[ENC_WHEEL_RIGHT]
+                                               - (uint32_t)s_manoeuvre_start_cnt[ENC_WHEEL_RIGHT]);
+            int32_t const heading_diff = total_dl - total_dr;
+
+            sync_trim = clamp_i32((heading_diff * MOTION_SYNC_KP_PM)
+                                  + ((dl - dr) * MOTION_SYNC_KD_PM),
+                                  -MOTION_SYNC_MAX_PM, MOTION_SYNC_MAX_PM);
+            duty_l -= sync_trim;
+            duty_r += sync_trim;
+
+            if (s_cmd_type == DREP_MC_FWD)
+            {
+                if (duty_l < 0) { duty_l = 0; }
+                if (duty_r < 0) { duty_r = 0; }
+            }
+            else
+            {
+                if (duty_l > 0) { duty_l = 0; }
+                if (duty_r > 0) { duty_r = 0; }
+            }
+        }
+
+        if ((dl == 0) && (dr == 0))
+        {
+            /* Bench fallback when motor power switch is off (wheels still). */
+            *p_speed_x10 = (s_cmd_type == DREP_MC_BACK)
+                           ? -((int32_t)s_setpoint_cmps * 10)
+                           : ((int32_t)s_setpoint_cmps * 10);
+            s_distance_mm_rem += ((s_setpoint_cmps * 10U * MOTION_PERIOD_MS) / 1000U)
+                                 * (uint32_t)(2 * MOTION_COUNTS_PER_REV);
+        }
+        else
+        {
+            /* 1 mm/s == 0.1 cm/s. */
+            *p_speed_x10 = (mean_d * (int32_t)MOTION_EFF_WHEEL_CIRC
+                            * (int32_t)(1000U / MOTION_PERIOD_MS))
+                           / MOTION_COUNTS_PER_REV;
+            s_distance_mm_rem += (abs_i32(dl) + abs_i32(dr)) * MOTION_EFF_WHEEL_CIRC;
+        }
+        s_distance_cm += s_distance_mm_rem / cm_denom;
+        s_distance_mm_rem %= cm_denom;
     }
 #else
     if (s_cmd_type == DREP_MC_BACK)
@@ -435,10 +512,9 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
     {
         s_distance_mm_rem += (s_setpoint_cmps * 10U * MOTION_PERIOD_MS) / 1000U;
     }
-#endif
-
     s_distance_cm += s_distance_mm_rem / 10U;
     s_distance_mm_rem %= 10U;
+#endif
 
     duty_l = motor_duty_clamp_pm(duty_l);
     duty_r = motor_duty_clamp_pm(duty_r);

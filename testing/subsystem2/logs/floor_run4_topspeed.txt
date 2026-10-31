@@ -1,0 +1,23 @@
+15:44:55.692  [capture] COM4 for 8 s -> testing/subsystem2/logs/floor_run4_topspeed.txt
+15:44:55.762  
+15:44:55.762  
+15:44:55.762  microT-Kernel Version 3.00
+15:44:55.762  
+15:44:55.762  [IPC] kernel spec version 3.00 OK
+15:44:55.762  [IPC] 8 objects created, MBF depth self-check OK
+15:44:55.777  [TEST] subsystem1 SUMMARY 0 passed, 0 failed
+15:44:55.777  [S2-FLOOR] Starting turnLeft(90)->turnRight(90)->moveForward(100) in 5 s...
+15:44:55.777  [S2-FLOOR] Starting turnLeft(90)->turnRight(90)->moveForward(100) in 4 s...
+15:44:55.777  [S2-FLOOR] Starting turnLeft(90)->turnRight(90)->moveForward(100) in 3 s...
+15:44:55.783  [S2-FLOOR] Starting turnLeft(90)->turnRight(90)->moveForward(100) in 2 s...
+15:44:55.783  [S2-FLOOR] Starting turnLeft(90)->turnRight(90)->moveForward(100) in 1 s...
+15:44:55.783  [DBG] alive: SDK timer 53795 ms, kernel time 50657 ms, difference 3138 ms
+15:44:56.742  [S2-TURN90] L90 dL=-1164 dR=1252 | R90 dL=1218 dR=-1194
+15:44:56.742  [S2-FWD100] dt=1763ms dist=100cm spd=56.7(pk 51.1) dL=12418 dR=12374 df=44
+15:44:58.745  [S2-TURN90] L90 dL=-1164 dR=1252 | R90 dL=1218 dR=-1194
+15:44:58.745  [S2-FWD100] dt=1763ms dist=100cm spd=56.7(pk 51.1) dL=12418 dR=12374 df=44
+15:45:00.745  [S2-TURN90] L90 dL=-1164 dR=1252 | R90 dL=1218 dR=-1194
+15:45:00.745  [S2-FWD100] dt=1763ms dist=100cm spd=56.7(pk 51.1) dL=12418 dR=12374 df=44
+15:45:02.747  [S2-TURN90] L90 dL=-1164 dR=1252 | R90 dL=1218 dR=-1194
+15:45:02.752  [S2-FWD100] dt=1763ms dist=100cm spd=56.7(pk 51.1) dL=12418 dR=12374 df=44
+15:45:03.791  [capture] done
