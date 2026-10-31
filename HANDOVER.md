@@ -4,8 +4,7 @@ Read this first. Section 3 is for every team member (where to continue on your
 own subsystem). Section 0 is for whoever continues on another device or with an
 AI agent. The detailed evidence is in `.agents/tasks/` (index in section 9).
 
-Last updated: 31 Oct 2026, Batch B stage B5 (bring-up test build), by Buddy 3 (Jin Yong) as
-the Batch B helper. Previous update: 29 Oct 2026, Batch B stage B0, by Buddy 3.
+Last updated: 31 Oct 2026, Subsystem 2 (Motion & Vehicle Controller) complete and merged on main, by Buddy 2 (Ruo Chen). Previous update: 31 Oct 2026, Batch B stage B5 (bring-up test build), by Buddy 3 (Jin Yong) as the Batch B helper.
 
 ---
 
@@ -46,7 +45,7 @@ the Batch B helper. Previous update: 29 Oct 2026, Batch B stage B0, by Buddy 3.
 | Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
 | Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
 | **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Complete (31 Oct 2026): milestones M1 (Phase 1 USB CDC bring-up test, SYS-01) and M2 (message formats final, `src/common/data_repr.h`).** B0-B7 merged on `main` (PRs #1-#7); every hardware stage passed on Buddy 2's board; Week 6 baseline tagged `baseline/week6-unpacked`. Members build their subsystems on it (section 3). Open owner items: the placeholders in `docs/DATA_REPRESENTATION.md` section 10 Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
-| Subsystem code (all five buddies) | Buddy 2 (Subsystem 2) S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) and report deliverables complete on branch `buddy2/motion`; Buddies 1, 3, 4, 5 not started |
+| Subsystem code (all five buddies) | **Buddy 2 (Subsystem 2) COMPLETE (merged on main, 31 Oct 2026):** S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) PASS on board and floor; PID tuning and motion accuracy reports complete. Motion library (`moveForward`, `turnLeft`, etc.), Vehicle Controller (`MBF_NAV_IN`), emergency brake (`motion_emergency_brake()`), and telemetry publisher (`MTX_MOTION`) are operational and ready for team integration. Buddies 1, 3, 4, 5 not started |
 | Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026; B5 bring-up test (SYS-01, 13 min with stress, replug) passed, 31 Oct 2026. Buddy 2's Pico W; logs on PRs #3-#5 and in `testing/system/logs/` |
 
 **Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
@@ -58,7 +57,7 @@ map. Batch B work goes on one branch and one pull request per stage (`batchB/bN-
 | Scope | Done | Basis |
 |---|---|---|
 | Phase 1 platform skeleton | about 60 % | Build, config, rules, layout, docs done. Batch B (boot, port, debug ring, IPC) is the remaining and riskiest part: the kernel has never booted on the board |
-| Whole project (a car that meets design.md) | about 10 % | No subsystem logic, no driver, no hardware test yet; integration and tuning still ahead |
+| Whole project (a car that meets design.md) | about 30 % | Subsystem 2 (motor driver, quadrature PIO encoder, motion control, vehicle controller, 28/28 hardware tests) complete and merged on main; Subsystems 1, 3, 4, 5 and final full integration still ahead |
 
 **Is more merging needed?** No. The template merge is finished. What remains shared is
 Batch B (platform code in `src/`), which everyone's on-target tests depend on.
@@ -146,7 +145,7 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 | Bring-up order | motor direction first (`MOTOR_x_DIR_INVERT`), then encoder sign (`ENC_x_DIR_INVERT`) by hand-spin and forward-drive tests |
 | Values to measure | `ENC_CPR`, `WHEEL_CIRC_MM` (0 = not measured; code using them must `#error` while 0), `MOTOR_DUTY_MAX_PCT`, `POWER_GROVE_3V3_BUDGET_MA` |
 | Also yours | Batch B platform work (section 4), labelled `TODO(phase 1 batch B, buddy 2)` across the repo; it unblocks everyone's hardware tests. Buddy 3 writes it as the helper (C1). You own the decisions, review and merge each stage PR, and run every hardware stage: from B4, build the `.uf2` from the PR commit, flash the Pico W and run the hardware/USB tests (C7, plan section 2). NFR2 wording test: drive a measured distance at 50 cm/s and compare counts, both wheels (ARCHITECTURE.md D7) |
-| Status | S0-S7 done + **all 28/28 hardware tests PASS** on board and floor (31 Oct 2026, branch `buddy2/motion`: 16 auto tests + 6 bench calibration tests + 6 floor trials recorded in `testing/subsystem2/TEST_LOG.md`, `PID_TUNING_REPORT.md`, `MOTION_ACCURACY_EVALUATION.md`). Calibrated `MOTOR_L_DIR_INVERT=1U`, `MOTOR_R_DIR_INVERT=0U`, `ENC_L_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U`, `ENC_CPR=616U` (`2464` quad counts/rev), `MOTION_EFF_TRACK_MM=114U`. Progress and resume point: `app_program/subsystem2/subsystem2_roadmap.md` |
+| Status | **COMPLETE and MERGED ON MAIN (31 Oct 2026):** S0-S7 done + **all 28/28 hardware tests PASS** on board and floor (16 automated unit tests + 6 Phase 1 bench calibration tests + 6 Phase 2 floor trials recorded in `testing/subsystem2/TEST_LOG.md`, `PID_TUNING_REPORT.md`, `MOTION_ACCURACY_EVALUATION.md`). Calibrated hardware parameters: `MOTOR_L_DIR_INVERT=1U`, `MOTOR_R_DIR_INVERT=0U`, `ENC_L_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U` (66 mm wheel diameter), `ENC_CPR=616U` (2,464 quad counts/rev), `MOTION_EFF_TRACK_MM=114U` (skid-steer 90.0° in-place turns). Motion Library API (`moveForward`, `moveBackward`, `turnLeft`, `turnRight`, `stop`), `motion_emergency_brake()`, Vehicle Controller FSM & arbitration (`MBF_NAV_IN`), and `motion_state_t` publishing under `MTX_MOTION` are live and ready for all team members. Full progress history: `app_program/subsystem2/subsystem2_roadmap.md` |
 
 ### Buddy 3: Jin Yong (2503319, jyong1101), line following + barcode, `app_program/subsystem3/`
 
