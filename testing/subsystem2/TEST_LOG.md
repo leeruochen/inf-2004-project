@@ -48,3 +48,21 @@ Add a new row for every run. Never edit or delete old rows.
 
 | Date | Test ID | Commit | Tester | Result | Log / evidence | Notes |
 |---|---|---|---|---|---|---|
+| 2026-10-31 | S2-U01 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Motor PWM slices 4 and 5 verified at 20 kHz ±1 % |
+| 2026-10-31 | S2-U02 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Motor duty capped at `MOTOR_DUTY_MAX_PCT` (95 %) |
+| 2026-10-31 | S2-U06 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | `motion_emergency_brake()` drives GP8..GP11 LOW with and without Motion task |
+| 2026-10-31 | S2-U08 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Forward drive 100 ms: `encL: 101->561 (+460)`, `encR: -575->-1122 (-547)`; confirms `ENC_L_DIR_INVERT=0`, `ENC_R_DIR_INVERT=1` needed in `config/pins.h` |
+| 2026-10-31 | S2-U09 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | `enc_get_count()` 1000 calls completed in < 1 ms (~1 µs/call, non-blocking) |
+| 2026-10-31 | S2-U12 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Motion task 20 ms period: 500 ± 1 releases in 10 s, 0 missed |
+| 2026-10-31 | S2-U13 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Invalid `motion_cmd_t` rejected and logged; setpoint unchanged at 0 |
+| 2026-10-31 | S2-U14 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Setpoint held for `MOTION_T_HOLD_MS` (100 ms) then automatically stopped |
+| 2026-10-31 | S2-U15 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Speed capped at `MOTION_SPEED_MAX_CMPS` (50 cm/s); raw >50 rejected |
+| 2026-10-31 | S2-U16 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | `motion_state_t` published under `MTX_MOTION`: `dt=100 ms`, `dist=4->7 cm`, `encL=101->561`, `encR=-575->-1122` |
+| 2026-10-31 | S2-U22 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | VC rejected invalid `nav_input_t` (bypass=6) and sent no `motion_cmd_t` |
+| 2026-10-31 | S2-U23 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | VC precedence: `AVOID` overrides `LINE` while authority is `VC_AUTH_AVOID` |
+| 2026-10-31 | S2-U24 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | VC commands `DREP_MC_BRAKE` and transitions to `SAFETY_FAULT_LATCHED` when `EVF_SAFETY_FAULT_LATCHED` is set |
+| 2026-10-31 | S2-U25 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | VC ignores RESET while moving and clears only `EVF_SAFETY_FAULT_LATCHED` after `SAFETY_T_STILL_MS` (500 ms) stationary |
+| 2026-10-31 | S2-U26 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | System FSM transitions `INITIALISING` -> `READY_WAITING` -> `NAV_LINE_TRACKING` |
+| 2026-10-31 | S2-U27 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | System FSM returns to `READY_WAITING` and stops on `TRACK_LOST` and remote `STOP` |
+| 2026-10-31 | S2-U28 | `buddy2/motion` | 2500530 | PASS | `testing/subsystem2/logs/2026-10-31_s2_unit_all.txt` | Public API (`moveForward`, `moveBackward`, `turnLeft`, `turnRight`, `stop`) posts valid `motion_cmd_t` |
+

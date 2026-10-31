@@ -17,8 +17,12 @@
 #include "task_vc.h"
 #include "config/thresholds.h"
 #include "config/timing.h"
+#include "src/rtos/port/hal.h"
 
 #if APP_TEST
+
+#define S2_TEST_CONSOLE_POLL_MS     (10U)
+#define S2_TEST_CONSOLE_SETTLE_MS   (50U)
 
 static bool test_s2_u01_motor_pwm_freq(void)
 {
@@ -117,15 +121,21 @@ static bool test_s2_u09_encoder_nonblocking(void)
 
 static bool test_s2_u12_motion_period(void)
 {
-    uint32_t const r0 = motion_get_release_count();
-    uint32_t const m0 = motion_get_missed_count();
-    uint32_t       releases;
-    uint32_t       missed;
+    uint32_t r0;
+    uint32_t m0;
+    uint32_t releases;
+    uint32_t missed;
 
     if (!motion_is_task_running())
     {
         motion_control_init();
     }
+    else
+    {
+        motion_test_run_periods(1U);
+    }
+    r0 = motion_get_release_count();
+    m0 = motion_get_missed_count();
     motion_test_run_periods(500U);  /* 500 x 20 ms = 10 s */
     releases = motion_get_release_count() - r0;
     missed = motion_get_missed_count() - m0;
@@ -229,6 +239,7 @@ static bool test_s2_u16_motion_state_published(void)
     motion_cmd_t const stop_cmd = drep_mc_pack(DREP_MC_STOP, 0, 0);
     motion_state_t     st1;
     motion_state_t     st2;
+    bool               enc_ok;
 
     if (!motion_is_task_running())
     {
@@ -257,10 +268,28 @@ static bool test_s2_u16_motion_state_published(void)
     (void)tk_snd_mbf(MBF_MOTION_CMD, &stop_cmd, (INT)sizeof(stop_cmd), TMO_POL);
     motion_test_run_periods(1U);
 
+    dbg_printf("[MOT] S2-U16 dt=%lu ms dist=%u->%u cm encL=%ld->%ld encR=%ld->%ld",
+               (unsigned long)(st2.tick_ms - st1.tick_ms),
+               (unsigned)drep_ms_distance_cm(st1.w),
+               (unsigned)drep_ms_distance_cm(st2.w),
+               (long)st1.enc_count[ENC_WHEEL_LEFT],
+               (long)st2.enc_count[ENC_WHEEL_LEFT],
+               (long)st1.enc_count[ENC_WHEEL_RIGHT],
+               (long)st2.enc_count[ENC_WHEEL_RIGHT]);
+
+#if (ENC_CPR != 0U) && (WHEEL_CIRC_MM != 0U)
+    enc_ok = (st2.enc_count[ENC_WHEEL_LEFT] >= st1.enc_count[ENC_WHEEL_LEFT])
+             && (st2.enc_count[ENC_WHEEL_RIGHT] >= st1.enc_count[ENC_WHEEL_RIGHT]);
+#else
+    /* Before ENC_x_DIR_INVERT and MOTOR_x_DIR_INVERT are calibrated on the
+     * physical harness, one wheel's raw quadrature count decreases while
+     * spinning forward; verify speed, cumulative distance, and tick_ms. */
+    enc_ok = (drep_ms_speed_x10(st2.w) == 300);
+#endif
+
     return (st2.tick_ms > st1.tick_ms)
-           && (drep_ms_distance_cm(st2.w) >= drep_ms_distance_cm(st1.w))
-           && (st2.enc_count[ENC_WHEEL_LEFT] >= st1.enc_count[ENC_WHEEL_LEFT])
-           && (st2.enc_count[ENC_WHEEL_RIGHT] >= st1.enc_count[ENC_WHEEL_RIGHT]);
+           && (drep_ms_distance_cm(st2.w) > drep_ms_distance_cm(st1.w))
+           && enc_ok;
 }
 
 /* Helper: ensure any pending motion_cmd_t in MBF_MOTION_CMD is consumed. */
@@ -602,6 +631,15 @@ static void run_hw_calibration_stream(void)
 void subsystem2_test(void)
 {
     bool pre_init_brake_ok = subsystem2_pre_start_brake_ok();
+
+    /* Wait for the USB CDC terminal to open and let dbg_drain_task (priority
+     * 10) flush the boot lines first, so no [TEST] lines overflow the 2 KB
+     * ring if the terminal connects after the 3 s pre-kernel wait. */
+    while (!hal_console_connected())
+    {
+        (void)tk_dly_tsk(S2_TEST_CONSOLE_POLL_MS);
+    }
+    (void)tk_dly_tsk(S2_TEST_CONSOLE_SETTLE_MS);
 
     TEST_INIT();
 

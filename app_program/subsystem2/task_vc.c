@@ -142,14 +142,22 @@ static void handle_remote_msg(nav_input_t msg, bool fault_latched, uint32_t now_
 
     if (type == DREP_NAV_REMOTE_RESET)
     {
-        if (fault_latched && is_stationary_for_reset(now_ms))
+        if (fault_latched)
         {
-            /* Clear ONLY the FAULT_LATCHED bit (ARCHITECTURE.md D9). */
-            (void)tk_clr_flg(EVF_SAFETY, (UINT)~EVF_SAFETY_FAULT_LATCHED);
-            s_authority = VC_AUTH_LINE;
-            s_bc_pending = false;
-            set_system_state(VC_SYS_READY_WAITING, now_ms);
-            send_motion_cmd(drep_mc_pack(DREP_MC_STOP, 0, 0));
+            if (is_stationary_for_reset(now_ms))
+            {
+                /* Clear ONLY the FAULT_LATCHED bit (ARCHITECTURE.md D9). */
+                (void)tk_clr_flg(EVF_SAFETY, (UINT)~EVF_SAFETY_FAULT_LATCHED);
+                s_authority = VC_AUTH_LINE;
+                s_bc_pending = false;
+                set_system_state(VC_SYS_READY_WAITING, now_ms);
+                send_motion_cmd(drep_mc_pack(DREP_MC_STOP, 0, 0));
+            }
+            else
+            {
+                set_system_state(VC_SYS_SAFETY_FAULT_LATCHED, now_ms);
+                send_motion_cmd(drep_mc_pack(DREP_MC_BRAKE, 0, 0));
+            }
         }
         return;
     }
@@ -412,11 +420,10 @@ void vc_complete_selftest(bool passed)
     }
 }
 
-void vc_drain_and_step(uint32_t now_ms)
+static void vc_drain_mbf_internal(uint32_t cur_dist_cm, uint32_t now_ms)
 {
-    uint32_t const cur_dist_cm = update_stationary_tracker(now_ms);
-    nav_input_t    msg;
-    bool           any_msg = false;
+    nav_input_t msg;
+    bool        any_msg = false;
 
     for (;;)
     {
@@ -443,6 +450,34 @@ void vc_drain_and_step(uint32_t now_ms)
     }
 }
 
+void vc_drain_and_step(uint32_t now_ms)
+{
+    uint32_t const cur_dist_cm = update_stationary_tracker(now_ms);
+
+    /* If the VC task is running at TASK_PRI_VC (2) and waiting on MBF_NAV_IN,
+     * a lower-priority caller (such as app_test_task at priority 11) has
+     * already woken VC synchronously inside tk_snd_mbf().  Yield briefly if
+     * the buffer is not yet empty; never call tk_rcv_mbf(MBF_NAV_IN) from two
+     * tasks (design.md section 4: VC is the sole reader of MBF_NAV_IN). */
+    if (s_task_running)
+    {
+        T_RMBF rmbf;
+
+        while ((tk_ref_mbf(MBF_NAV_IN, &rmbf) == E_OK) && (rmbf.msgsz > 0))
+        {
+            (void)tk_dly_tsk(1);
+        }
+        if (is_fault_latched() && (s_sys_state != VC_SYS_SAFETY_FAULT_LATCHED))
+        {
+            set_system_state(VC_SYS_SAFETY_FAULT_LATCHED, now_ms);
+            send_motion_cmd(drep_mc_pack(DREP_MC_BRAKE, 0, 0));
+        }
+        return;
+    }
+
+    vc_drain_mbf_internal(cur_dist_cm, now_ms);
+}
+
 void vc_task_entry(INT stacd, void *p_exinf)
 {
     (void)stacd;
@@ -462,7 +497,7 @@ void vc_task_entry(INT stacd, void *p_exinf)
         if (n == (INT)sizeof(msg))
         {
             process_one_nav(msg, cur_dist_cm, now_ms);
-            vc_drain_and_step(now_ms);
+            vc_drain_mbf_internal(cur_dist_cm, now_ms);
         }
         else if (is_fault_latched() && (s_sys_state != VC_SYS_SAFETY_FAULT_LATCHED))
         {

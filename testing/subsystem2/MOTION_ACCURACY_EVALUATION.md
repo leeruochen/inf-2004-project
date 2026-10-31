@@ -14,8 +14,8 @@
 |---|---|---|---|---|
 | `MOTOR_L_DIR_INVERT` | `config/pins.h` | `0U` (to confirm on car) | `S2-U03`: Wheels off ground, command low-duty forward/backward | *pending S2-U03* |
 | `MOTOR_R_DIR_INVERT` | `config/pins.h` | `0U` (to confirm on car) | `S2-U03`: Wheels off ground, command low-duty forward/backward | *pending S2-U03* |
-| `ENC_L_DIR_INVERT` | `config/pins.h` | `0U` (to confirm on car) | `S2-U07` / `S2-U08`: Hand-spin forward + 1 s forward drive | *pending S2-U07* |
-| `ENC_R_DIR_INVERT` | `config/pins.h` | `0U` (to confirm on car) | `S2-U07` / `S2-U08`: Hand-spin forward + 1 s forward drive | *pending S2-U07* |
+| `ENC_L_DIR_INVERT` | `config/pins.h` | `0U` (confirmed on car) | `S2-U07` / `S2-U08`: Hand-spin forward + 100 ms forward drive (`encL: 101->561, +460`) | `0U` |
+| `ENC_R_DIR_INVERT` | `config/pins.h` | `0U` (needs `1U` in `config/pins.h`) | `S2-U07` / `S2-U08`: Hand-spin forward + 100 ms forward drive (`encR: -575->-1122, -547`) | `1U` |
 | `ENC_CPR` | `config/thresholds.h` | `0U` (`#error` guard active when required) | `S2-U10`: Turn wheel 10 exact revolutions by hand; `CPR = delta_count / (10 * 4)` | *pending S2-U10* |
 | `WHEEL_CIRC_MM` | `config/thresholds.h` | `0U` (`#error` guard active when required) | `S2-U11`: Roll wheel 10 turns along a ruler; `WHEEL_CIRC_MM = total_mm / 10` | *pending S2-U11* |
 | `MOTOR_DUTY_MAX_PCT` | `config/thresholds.h` | `80U` | `S2-U02` (auto) + top-speed load check at `POWER_VIN_MIN_MV` (`3.6 V`) | `80 %` (`800` permille) |

@@ -37,6 +37,9 @@
 #error "drv_encoder.c: left and right encoders must use distinct PIO SMs"
 #endif
 
+/** Depth of the RP2040 PIO RX FIFO (PIO_FIFO_JOIN_NONE). */
+#define ENC_FIFO_DEPTH          (4U)
+
 /** Bounded poll iterations for a fresh push after draining the 4-word FIFO. */
 #define ENC_FRESH_POLL_MAX      (32U)
 
@@ -82,6 +85,7 @@ static void enc_init_sm(enc_wheel_cfg_t const *p_cfg)
     sm_config_set_in_pins(&c, pin_a);
     sm_config_set_jmp_pin(&c, pin_a);
     sm_config_set_in_shift(&c, false, false, 32U);
+    sm_config_set_out_shift(&c, true, false, 32U);
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_NONE);
     sm_config_set_clkdiv(&c, 1.0f);
 
@@ -144,14 +148,20 @@ int32_t enc_get_count(uint32_t wheel)
     sm = k_enc_wheels[wheel].sm;
     raw = s_last_raw[wheel];
 
-    /* Drain any stale values sitting in the 4-word RX FIFO. */
-    while (!pio_sm_is_rx_fifo_empty(pio0, sm))
+    /* Drain up to the 4-word RX FIFO depth (bounded to ENC_FIFO_DEPTH so a
+     * 125 MHz PIO state machine that pushes every 7 cycles cannot livelock
+     * the CPU in an unbounded while-not-empty loop). */
+    for (uint32_t d = 0U; d < ENC_FIFO_DEPTH; d++)
     {
+        if (pio_sm_is_rx_fifo_empty(pio0, sm))
+        {
+            break;
+        }
         raw = (int32_t)pio_sm_get(pio0, sm);
         got = true;
     }
 
-    /* Wait a bounded number of iterations (~10 clk_sys cycles) for the state
+    /* Poll a bounded number of iterations (~10 clk_sys cycles) for the state
      * machine's next PUSH noblock so we return the live Y register. */
     for (uint32_t i = 0U; i < ENC_FRESH_POLL_MAX; i++)
     {

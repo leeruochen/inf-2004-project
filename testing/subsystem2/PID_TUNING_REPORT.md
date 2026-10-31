@@ -88,7 +88,7 @@ Record each tuning iteration below (never overwrite completed hardware run rows)
 | Run | Commit | `KP_PM` | `KI_X100` | `KD_PM` | `SYNC_KP_PM` | Commanded Speed (cm/s) | Measured Avg Speed (cm/s) | 2.0 m Lateral Drift (cm) | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | Baseline (pre-board) | `2290ff7` | `12` | `25` | `4` | `15` | `20` (bring-up) | *pending board run* | *pending board run* | Initial fixed-point gains compiled and verified in `S2-U12`..`S2-U16` |
-| Run 1 | | | | | | | | | |
+| Run 1 (on-board bench) | `buddy2/motion` | `12` | `25` | `4` | `15` | `30` (100 ms step in `S2-U16`) | `30.0` (published), `encL=+460`, `encR=-547` counts/100 ms | *bench (wheels off ground)* | 20 ms period verified (`S2-U12`: 500 releases in 10 s, 0 missed); `ENC_L_DIR_INVERT=0`, `ENC_R_DIR_INVERT=1` identified from `S2-U16` log (`testing/subsystem2/logs/2026-10-31_s2_unit_all.txt`) |
 | Run 2 | | | | | | | | | |
 | Run 3 | | | | | | | | | |
 | Run 4 | | | | | | | | | |
