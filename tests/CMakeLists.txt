@@ -57,3 +57,15 @@ target_compile_options(test_bc_decode PRIVATE -Wall -Wextra -Werror)
 target_link_libraries(test_bc_decode PRIVATE m)
 set_target_properties(test_bc_decode PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME bc_decode COMMAND test_bc_decode)
+
+# Subsystem 1 (Buddy 1) pure modules: link state machine + backoff, event
+# outbox, topic tree + command check, and the golden frames shared with
+# tools/dashboard/test_tel_decode.py (Week 8 risk R3).
+add_executable(test_tel host/test_tel.c
+    "${ROBOCAR_ROOT}/app_program/subsystem1/tel_link.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem1/tel_outbox.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem1/tel_wire.c")
+target_include_directories(test_tel PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_tel PRIVATE -Wall -Wextra -Werror)
+set_target_properties(test_tel PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME tel COMMAND test_tel)

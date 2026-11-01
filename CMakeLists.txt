@@ -60,10 +60,16 @@ if(NOT DBG_BACKEND STREQUAL "USB")
 endif()
 
 option(TEL_BACKEND_WIFI "WiFi/MQTT telemetry backend (cyw43 + lwIP)" OFF)
+# TEL_BACKEND_WIFI=OFF: nothing links cyw43 or lwIP; telemetry frames go to the
+# debug console as "[TEL] <topic> <hex>" (app_program/subsystem1/MQTT.md).
+# TEL_BACKEND_WIFI=ON (Buddy 1): CYW43 + lwIP MQTT in poll mode, every network
+# call inside the Telemetry task. Needs the local, git-ignored config/secrets.h.
 if(TEL_BACKEND_WIFI)
-    message(FATAL_ERROR "TEL_BACKEND_WIFI=ON is not implemented in Phase 1")
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/config/secrets.h")
+        message(FATAL_ERROR "TEL_BACKEND_WIFI=ON needs config/secrets.h: copy config/secrets.h.example "
+                            "and fill in the WiFi network and MQTT broker (it is git-ignored).")
+    endif()
 endif()
-# TEL_BACKEND_WIFI=OFF: nothing links cyw43 or lwIP.
 
 # Platform self-test build (Batch B stage B4b, batchB-plan B4): forced fault,
 # fault record, CRC and stack checks.  Never in a normal build.
@@ -126,6 +132,11 @@ if(PLATFORM_BRINGUP)
     target_compile_definitions(robocar_options INTERFACE PLATFORM_BRINGUP=1)
 else()
     target_compile_definitions(robocar_options INTERFACE PLATFORM_BRINGUP=0)
+endif()
+if(TEL_BACKEND_WIFI)
+    target_compile_definitions(robocar_options INTERFACE TEL_BACKEND_WIFI=1)
+else()
+    target_compile_definitions(robocar_options INTERFACE TEL_BACKEND_WIFI=0)
 endif()
 
 # --- Config header check (pure macros, our warning flags) --------------------
@@ -262,6 +273,23 @@ else()
         hardware_watchdog)
     if(TARGET robocar_kside)
         target_link_libraries(robocar PRIVATE robocar_kside)
+    endif()
+
+    # Telemetry WiFi backend (Buddy 1, app_program/subsystem1/drv_wifi.c).
+    # Poll mode: lwIP and the CYW43 driver run only inside cyw43_arch_poll(),
+    # called by the Telemetry task; no network code runs in an interrupt.
+    #   - lwipopts.h and tel_cyw43_config.h live in app_program/subsystem1/.
+    #   - tel_cyw43_config.h silences the driver's printf (rule R3a: only the
+    #     debug drain may use stdio).
+    #   - Shared IRQ handlers: USB + echo + barcode + CYW43 = 4, the SDK
+    #     default limit; raised to 8 so one more handler cannot panic at boot.
+    if(TEL_BACKEND_WIFI)
+        target_link_libraries(robocar PRIVATE pico_cyw43_arch_lwip_poll pico_lwip_mqtt)
+        target_include_directories(robocar PRIVATE "${PROJECT_SOURCE_DIR}/app_program/subsystem1")
+        target_compile_definitions(robocar PRIVATE
+            "CYW43_CONFIG_FILE=\"tel_cyw43_config.h\""
+            PICO_CYW43_ARCH_DEBUG_ENABLED=0
+            PICO_MAX_SHARED_IRQ_HANDLERS=8)
     endif()
 
     pico_set_linker_script(robocar "${PROJECT_SOURCE_DIR}/cmake/memmap_mtk3.ld")

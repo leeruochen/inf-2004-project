@@ -45,7 +45,7 @@ Last updated: 31 Oct 2026, Subsystem 2 (Motion & Vehicle Controller) complete an
 | Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
 | Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
 | **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Complete (31 Oct 2026): milestones M1 (Phase 1 USB CDC bring-up test, SYS-01) and M2 (message formats final, `src/common/data_repr.h`).** B0-B7 merged on `main` (PRs #1-#7); every hardware stage passed on Buddy 2's board; Week 6 baseline tagged `baseline/week6-unpacked`. Members build their subsystems on it (section 3). Open owner items: the placeholders in `docs/DATA_REPRESENTATION.md` section 10 Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
-| Subsystem code (all five buddies) | **Buddy 2 (Subsystem 2) COMPLETE (merged on main, 31 Oct 2026):** S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) PASS on board and floor; PID tuning and motion accuracy reports complete. Motion library (`moveForward`, `turnLeft`, etc.), Vehicle Controller (`MBF_NAV_IN`), emergency brake (`motion_emergency_brake()`), and telemetry publisher (`MTX_MOTION`) are operational and ready for team integration. Buddies 1, 3, 4, 5 not started |
+| Subsystem code (all five buddies) | **Buddy 2 (Subsystem 2) COMPLETE (merged on main, 31 Oct 2026):** S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) PASS on board and floor; PID tuning and motion accuracy reports complete. Motion library (`moveForward`, `turnLeft`, etc.), Vehicle Controller (`MBF_NAV_IN`), emergency brake (`motion_emergency_brake()`), and telemetry publisher (`MTX_MOTION`) are operational and ready for team integration. **Buddy 1 (Subsystem 1): code complete, awaiting on-car tests (1 Nov 2026)**: Telemetry task, binary MQTT over CYW43/lwIP (poll mode), dashboard; see section 3. Buddies 3, 4, 5 not started |
 | Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026; B5 bring-up test (SYS-01, 13 min with stress, replug) passed, 31 Oct 2026. Buddy 2's Pico W; logs on PRs #3-#5 and in `testing/system/logs/` |
 
 **Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
@@ -127,12 +127,12 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 
 | | |
 |---|---|
-| Tasks | Telemetry, priority 9 (`TASK_PRI_TEL`, `TASK_STACK_TEL_BYTES`) |
-| Pins / peripherals | none in Phase 1. Phase 2: CYW43 (GP23-25, GP29), PIO1, 2 DMA channels (reserved in TEAM.md) |
-| Interfaces | owns IF-04 MBF_TELEMETRY (receives `tel_evt_t`); sends remote commands into IF-01 MBF_NAV_IN; reads IF-08 `motion_state_t` under MTX_MOTION |
-| Start with | MQTT binary frame format and reject rules (`docs/DATA_REPRESENTATION.md` section 8, ARCHITECTURE.md D10); WiFi/MQTT ownership design (TODO(phase 2, buddy 1)); the template's WiFi code is reference only (`docs/TEMPLATE_NOTES.md`) |
-| Decisions open for you | D2: 20 ms telemetry wake is NOT approved (`config/timing.h`); `DBG_DRAIN_PERIOD_MS`; whether Barr C allows bit-fields for private state |
-| Status | not started |
+| Tasks | Telemetry, priority 9 (`TASK_PRI_TEL`, `TASK_STACK_TEL_BYTES`), wakes every 20 ms (`app_period_wait`, D2), publishes every 200 ms, heartbeat every 1 s |
+| Pins / peripherals | none with the console backend. WiFi build: CYW43 (GP23-25, GP29), PIO1, 2 DMA channels (claimed at run time, reserved in TEAM.md) |
+| Interfaces | owns IF-04 MBF_TELEMETRY (`tel_post_*()` helpers, never wait); sends validated remote commands into IF-01 MBF_NAV_IN (5 ms); reads IF-08 through `motion_get_state()`; sets/clears EVF_SAFETY b8 FAULT_WIFI_LOSS; proposes IF-12 (`tel_set_ir_raw/range_cm/attitude`, `tel_post_obstacle`) |
+| Docs | `app_program/subsystem1/MQTT.md` (API, topics, frames, QoS, connection handling, resource use, setup); dashboard `tools/dashboard/` |
+| Decisions open for you | approve D2 (implemented; poll-mode lwIP needs the 20 ms service, MQTT.md section 9); IF-12 row in TEAM.md with Buddies 3/4/5; release S1's unused cyclic handler in TEAM.md section 6; Barr C bit-fields (not needed: masks and shifts only) |
+| Status | **Code complete, not yet run on the car (1 Nov 2026).** Console backend (default) and WiFi/MQTT backend (`-DTEL_BACKEND_WIFI=ON`, needs `config/secrets.h`) both build with 0 warnings and `check_rules: PASS`; host tests S1-H01..H05 pass; on-target tests S1-U01..U10 and car tests S1-M01..M06 defined in `testing/subsystem1/TEST_LOG.md`. **Next: flash the APP_TEST build, then the WiFi build; run S1-M01..M04 (A9 soak).** Shared files touched (need team OK): `CMakeLists.txt` (TEL_BACKEND_WIFI block), `tests/CMakeLists.txt` (+ `tests/host/test_tel.c`), `config/secrets.h.example`, new `tools/dashboard/` |
 
 ### Buddy 2: Ruo Chen (2500530, leeruochen), motion + Vehicle Controller, `app_program/subsystem2/`
 
