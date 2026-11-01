@@ -57,3 +57,15 @@ target_compile_options(test_bc_decode PRIVATE -Wall -Wextra -Werror)
 target_link_libraries(test_bc_decode PRIVATE m)
 set_target_properties(test_bc_decode PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME bc_decode COMMAND test_bc_decode)
+
+# Barcode capture framing (app_program/subsystem3/bc_frame.c + bc_decode.c,
+# pure C): Subsystem 3 test S3-U02. Same barcode/physics/Motion generator as
+# S3-U01 (host/bc_fixture.h), plus the Barcode task's poll rule.
+add_executable(test_bc_frame host/test_bc_frame.c
+    "${ROBOCAR_ROOT}/app_program/subsystem3/bc_frame.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/bc_decode.c")
+target_include_directories(test_bc_frame PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_bc_frame PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_bc_frame PRIVATE m)
+set_target_properties(test_bc_frame PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME bc_frame COMMAND test_bc_frame)
