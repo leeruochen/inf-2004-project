@@ -214,3 +214,4 @@ Every integration and system test requires **both** a saved log and (for physica
    - Add the YouTube link to `videos/README.md` and to the **Log / evidence** column of `testing/integration/TEST_LOG.md` or `testing/system/TEST_LOG.md`.
 3. **Final Pre-Submission Sanity Gate**:
    - Ensure `git status` is clean, `cmake -P cmake/check_rules.cmake` reports `PASS`, and all `TEST_LOG.md` tables have committed log files and video links for every run.
+
