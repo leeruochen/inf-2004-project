@@ -35,10 +35,19 @@ int32_t imu_get_pitch_half_deg(void);
 /** Latest acceleration magnitude in milli-g. */
 uint32_t imu_get_accel_mag_mg(void);
 
+/** Latest Z-axis acceleration in milli-g. */
+int32_t imu_get_z_mg(void);
+
 /** Total periodic releases completed by the IMU task. */
 uint32_t imu_get_release_count(void);
 
+/** Total samples read without an I2C error. */
+uint32_t imu_get_good_sample_count(void);
+
 /** Total I2C read failures since boot. */
 uint32_t imu_get_i2c_error_count(void);
+
+/** Collisions detected since boot (one per spike). */
+uint32_t imu_get_collision_count(void);
 
 #endif /* TASK_IMU_H */
