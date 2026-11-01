@@ -10,18 +10,18 @@
 #include <stdint.h>
 
 #include "config/thresholds.h"      /* BC_WIDE_RATIO_X100, BC_MIN_SPEED_MMPS */
-#include "src/common/data_repr.h"   /* DREP_BC_CMD_*, DREP_EDGE_GAP_MAX, DREP_MS_SPEED_X10_MAX */
+#include "src/common/data_repr.h"   /* DREP_EDGE_GAP_MAX, DREP_MS_SPEED_X10_MAX */
 #include "app_program/subsystem3/bc_decode.h"
 
 /** Micrometres per (microsecond x millimetre per second). */
 #define BC_US_MMPS_PER_UM           (1000U)
-/** Characters per symbol: start '*', the command, stop '*'. */
+/** Characters per symbol: start '*', the letter, stop '*'. */
 #define BC_SYMBOL_CHARS             (3U)
 /** Elements per character: 5 bars and 4 spaces. */
 #define BC_CHAR_ELEMENTS            (9U)
 /** Character positions in a symbol. */
 #define BC_CHAR_START               (0U)
-#define BC_CHAR_CMD                 (1U)
+#define BC_CHAR_DATA                (1U)
 #define BC_CHAR_STOP                (2U)
 /** A character plus the gap that follows it. */
 #define BC_CHAR_STRIDE              (BC_CHAR_ELEMENTS + 1U)
@@ -33,22 +33,28 @@
 /* Code 39 character patterns (ISO/IEC 16388 table): the 9 elements of a
  * character in crossing order, first element in bit 8, 1 = wide. */
 #define BC_PATTERN_START_STOP       (0x094U)    /* '*' */
-#define BC_PATTERN_A                (0x109U)
-#define BC_PATTERN_B                (0x049U)
-#define BC_PATTERN_C                (0x148U)
-#define BC_PATTERN_D                (0x019U)
-#define BC_COMMANDS                 (4U)
+#define BC_LETTERS                  (26U)
 /** Every Code 39 character has exactly 3 wide elements of 9 ("3 of 9"). */
 #define BC_WIDE_PER_CHAR            (3U)
 
-/** The four command characters and what each means (FR9). */
-static uint16_t const s_cmd_pattern[BC_COMMANDS] =
+/** One letter and its pattern. */
+typedef struct
 {
-    BC_PATTERN_A, BC_PATTERN_B, BC_PATTERN_C, BC_PATTERN_D
-};
-static uint32_t const s_cmd_value[BC_COMMANDS] =
+    char     letter;
+    uint16_t pattern;
+} bc_letter_t;
+
+/* A-Z only (module clarification, 1 Nov 2026).  Digits and symbols are
+ * valid Code 39 but rejected (BC_ERR_NOT_LETTER). */
+static bc_letter_t const s_letters[BC_LETTERS] =
 {
-    DREP_BC_CMD_LEFT, DREP_BC_CMD_RIGHT, DREP_BC_CMD_STRAIGHT, DREP_BC_CMD_UTURN
+    { 'A', 0x109U }, { 'B', 0x049U }, { 'C', 0x148U }, { 'D', 0x019U },
+    { 'E', 0x118U }, { 'F', 0x058U }, { 'G', 0x00DU }, { 'H', 0x10CU },
+    { 'I', 0x04CU }, { 'J', 0x01CU }, { 'K', 0x103U }, { 'L', 0x043U },
+    { 'M', 0x142U }, { 'N', 0x013U }, { 'O', 0x112U }, { 'P', 0x052U },
+    { 'Q', 0x007U }, { 'R', 0x106U }, { 'S', 0x046U }, { 'T', 0x016U },
+    { 'U', 0x181U }, { 'V', 0x0C1U }, { 'W', 0x1C0U }, { 'X', 0x091U },
+    { 'Y', 0x190U }, { 'Z', 0x0D0U }
 };
 
 /* Median of the coded widths: an insertion-sorted copy, middle entry.  With
@@ -95,6 +101,21 @@ static uint32_t bc_wide_count(uint32_t pattern)
     return n;
 }
 
+/* A 9-bit pattern with its element order reversed: what the same character
+ * looks like when the sensor crosses it the other way. */
+static uint32_t bc_mirror(uint32_t pattern)
+{
+    uint32_t m = 0U;
+    uint32_t e;
+
+    for (e = 0U; e < BC_CHAR_ELEMENTS; e++)
+    {
+        m = (m << 1U) | ((pattern >> e) & 1U);
+    }
+
+    return m;
+}
+
 /* Width of each of the 27 coded elements (each with its own speed, NFR9),
  * then narrow/wide by ratio to their median, packed first element first.
  * The gap after each character is skipped. */
@@ -139,14 +160,15 @@ void bc_cfg_default(bc_cfg_t *p_cfg)
 }
 
 bc_result_t bc_decode(bc_element_t const p_elem[], uint32_t count,
-                      bc_cfg_t const *p_cfg, uint32_t *p_cmd)
+                      bc_cfg_t const *p_cfg, char *p_char)
 {
     uint32_t    pattern[BC_SYMBOL_CHARS] = { 0U, 0U, 0U };
-    uint32_t    cmd = 0U;
+    uint32_t    data = 0U;
+    char        letter = '?';
     uint32_t    i;
     bc_result_t result = BC_OK;
 
-    if ((p_elem == NULL) || (p_cfg == NULL) || (p_cmd == NULL) || (count != BC_SYMBOL_ELEMENTS))
+    if ((p_elem == NULL) || (p_cfg == NULL) || (p_char == NULL) || (count != BC_SYMBOL_ELEMENTS))
     {
         result = BC_ERR_COUNT;
     }
@@ -176,21 +198,38 @@ bc_result_t bc_decode(bc_element_t const p_elem[], uint32_t count,
         }
     }
 
-    if ((result == BC_OK)
-        && ((pattern[BC_CHAR_START] != BC_PATTERN_START_STOP) || (pattern[BC_CHAR_STOP] != BC_PATTERN_START_STOP)))
-    {
-        result = BC_ERR_START_STOP;
-    }
-
-    /* Only A-D are commands (FR9); every other character is rejected. */
+    /* Direction from the ends.  Forwards both read '*'; backwards both read
+     * '*' mirrored (0x052, which is also 'P', but the middle character is
+     * never taken as an end).  '*' is not its own mirror, so the two cases
+     * cannot both hold.  Backwards, the middle character arrives mirrored:
+     * mirror it back. */
     if (result == BC_OK)
     {
-        result = BC_ERR_NOT_CMD;
-        for (i = 0U; i < BC_COMMANDS; i++)
+        uint32_t const stop_rev = bc_mirror(BC_PATTERN_START_STOP);
+
+        if ((pattern[BC_CHAR_START] == BC_PATTERN_START_STOP) && (pattern[BC_CHAR_STOP] == BC_PATTERN_START_STOP))
         {
-            if (pattern[BC_CHAR_CMD] == s_cmd_pattern[i])
+            data = pattern[BC_CHAR_DATA];
+        }
+        else if ((pattern[BC_CHAR_START] == stop_rev) && (pattern[BC_CHAR_STOP] == stop_rev))
+        {
+            data = bc_mirror(pattern[BC_CHAR_DATA]);
+        }
+        else
+        {
+            result = BC_ERR_START_STOP;
+        }
+    }
+
+    /* Only A-Z are accepted; digits, symbols and '*' are rejected. */
+    if (result == BC_OK)
+    {
+        result = BC_ERR_NOT_LETTER;
+        for (i = 0U; i < BC_LETTERS; i++)
+        {
+            if (data == s_letters[i].pattern)
             {
-                cmd = s_cmd_value[i];
+                letter = s_letters[i].letter;
                 result = BC_OK;
             }
         }
@@ -198,7 +237,7 @@ bc_result_t bc_decode(bc_element_t const p_elem[], uint32_t count,
 
     if (result == BC_OK)
     {
-        *p_cmd = cmd;
+        *p_char = letter;
     }
 
     return result;

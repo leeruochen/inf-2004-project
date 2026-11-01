@@ -11,7 +11,6 @@
 
 #include "config/thresholds.h"      /* ENC_QUAD_MULT */
 #include "config/timing.h"          /* MOTION_PERIOD_MS */
-#include "src/common/data_repr.h"   /* DREP_BC_CMD_* */
 #include "app_program/subsystem3/bc_decode.h"
 #include "test_check.h"
 
@@ -19,7 +18,7 @@
  * Test generator.  The decoder only ever sees what the car will give it: one
  * {gap_us, speed_mmps} pair per bar or space.  Those pairs are produced here
  * from three independent layers, never by the decoder's own arithmetic:
- *   1. Barcode: physical element widths (mm) from the Code 39 table.
+ *   1. Barcode: physical element widths (mm) from Code 39 patterns.
  *   2. Physics: the sensor crosses the barcode at constant acceleration,
  *      x(t) = v0 t + a t^2 / 2; each edge time is rounded to 1 us, as the
  *      GP27 edge interrupt will record it.
@@ -33,20 +32,40 @@
 #define SYM_ELEMS       (29)        /* '*' + character + '*', 2 gaps between */
 #define CHAR_ELEMS      (9)
 
-/* Code 39 element patterns (ISO/IEC 16388 character table): 9 elements,
- * bar first, alternating bar/space; W = wide, n = narrow. */
+/* Code 39 element patterns, 9 elements, bar first, alternating bar/space;
+ * W = wide, n = narrow.  Measured from the symbols *A* .. *Z*, *0*, *-* and
+ * *$* made by the generator the module refers to (barcode.tec-it.com/en/Code39,
+ * 1 Nov 2026), so they are a source independent of the hex table in
+ * bc_decode.c.  The official samples (test 16) agree for A, F, W, X, Y, Z. */
 static char const *code39_pattern(char c)
 {
-    switch (c)
+    static char const *const k_letter[26] =
     {
-        case '*': return "nWnnWnWnn";
-        case 'A': return "WnnnnWnnW";
-        case 'B': return "nnWnnWnnW";
-        case 'C': return "WnWnnWnnn";
-        case 'D': return "nnnnWWnnW";
-        case 'E': return "WnnnWWnnn";
-        default:  return NULL;
+        "WnnnnWnnW", "nnWnnWnnW", "WnWnnWnnn", "nnnnWWnnW", "WnnnWWnnn",     /* A-E */
+        "nnWnWWnnn", "nnnnnWWnW", "WnnnnWWnn", "nnWnnWWnn", "nnnnWWWnn",     /* F-J */
+        "WnnnnnnWW", "nnWnnnnWW", "WnWnnnnWn", "nnnnWnnWW", "WnnnWnnWn",     /* K-O */
+        "nnWnWnnWn", "nnnnnnWWW", "WnnnnnWWn", "nnWnnnWWn", "nnnnWnWWn",     /* P-T */
+        "WWnnnnnnW", "nWWnnnnnW", "WWWnnnnnn", "nWnnWnnnW", "WWnnWnnnn",     /* U-Y */
+        "nWWnWnnnn"                                                          /* Z */
+    };
+    char const *p_pat = NULL;
+
+    if ((c >= 'A') && (c <= 'Z'))
+    {
+        p_pat = k_letter[c - 'A'];
     }
+    else
+    {
+        switch (c)
+        {
+            case '*': p_pat = "nWnnWnWnn"; break;
+            case '0': p_pat = "nnnWWnWnn"; break;
+            case '-': p_pat = "nWnnnnWnW"; break;
+            case '$': p_pat = "nWnWnWnnn"; break;   /* the 3 wide are all spaces */
+            default:  break;
+        }
+    }
+    return p_pat;
 }
 
 /* Motion Control's speed estimate (task_motion.c:59-62 and :488): 616 CPR x
@@ -173,21 +192,31 @@ static void fx_elements(fixture_t const *p_fx, bc_element_t p_out[SYM_ELEMS])
 }
 
 /* Decode a fixture with the default configuration. */
-static bc_result_t fx_decode(fixture_t const *p_fx, uint32_t *p_cmd)
+static bc_result_t fx_decode(fixture_t const *p_fx, char *p_char)
 {
     bc_element_t el[SYM_ELEMS];
     bc_cfg_t     cfg;
 
     fx_elements(p_fx, el);
     bc_cfg_default(&cfg);
-    return bc_decode(el, SYM_ELEMS, &cfg, p_cmd);
+    return bc_decode(el, SYM_ELEMS, &cfg, p_char);
 }
 
-/* FR9 mapping (design.md section 1): A left, B right, C straight, D u-turn. */
-static char const       g_cmd_char[4] = { 'A', 'B', 'C', 'D' };
-static uint32_t const   g_cmd_expect[4] = {
-    DREP_BC_CMD_LEFT, DREP_BC_CMD_RIGHT, DREP_BC_CMD_STRAIGHT, DREP_BC_CMD_UTURN
-};
+/* The same barcode crossed the other way: the widths in mirror order.  The
+ * speed profile (v0 at the first edge met, a) is kept. */
+static fixture_t fx_reversed(fixture_t const *p_fx)
+{
+    fixture_t r = *p_fx;
+
+    for (int k = 0; k < SYM_ELEMS; k++)
+    {
+        r.w_mm[k] = p_fx->w_mm[SYM_ELEMS - 1 - k];
+    }
+    return r;
+}
+
+/* "Untouched" marker for the output character. */
+#define NO_CHAR         ('#')
 
 static void sym_of(char c, char p_sym[4])
 {
@@ -210,22 +239,23 @@ static void test_gap_to_width(void)
     CHECK(bc_gap_to_width_um(10000U, -300) == 0U);
 }
 
-/* Tests 3-4: A-D at a constant 300 mm/s, wide:narrow 2:1 and 3:1. */
+/* Tests 3-4: every letter A-Z at a constant 300 mm/s, wide:narrow 2:1 and
+ * 3:1.  The decoder returns the letter; it does not decide any movement. */
 static void test_constant_speed(void)
 {
     double const ratios[2] = { 2.0, 3.0 };
 
     for (int r = 0; r < 2; r++)
     {
-        for (int i = 0; i < 4; i++)
+        for (char c = 'A'; c <= 'Z'; c++)
         {
-            char      sym[4];
-            uint32_t  cmd = 0xFFU;
+            char sym[4];
+            char ch = NO_CHAR;
 
-            sym_of(g_cmd_char[i], sym);
+            sym_of(c, sym);
             fixture_t const fx = fx_symbol(sym, 5.0, ratios[r], 300.0, 300.0, 7.0);
-            CHECK(fx_decode(&fx, &cmd) == BC_OK);
-            CHECK(cmd == g_cmd_expect[i]);
+            CHECK(fx_decode(&fx, &ch) == BC_OK);
+            CHECK(ch == c);
         }
     }
 }
@@ -237,11 +267,11 @@ static void test_speed_invariance(void)
 
     for (int s = 0; s < 3; s++)
     {
-        uint32_t        cmd = 0xFFU;
+        char            ch = NO_CHAR;
         fixture_t const fx = fx_symbol("*B*", 5.0, 2.0, speeds[s], speeds[s], 7.0);
 
-        CHECK(fx_decode(&fx, &cmd) == BC_OK);
-        CHECK(cmd == DREP_BC_CMD_RIGHT);
+        CHECK(fx_decode(&fx, &ch) == BC_OK);
+        CHECK(ch == 'B');
     }
 }
 
@@ -250,7 +280,8 @@ static void test_speed_invariance(void)
 static double const g_phase_ms[4] = { 0.0, 5.0, 10.0, 15.0 };
 
 /* Tests 6-7: speeding up 200 -> 400 mm/s and slowing down 400 -> 200 mm/s
- * (about 316 mm/s^2 over a 190 mm symbol), A-D, 2:1 bars, every phase. */
+ * (about 316 mm/s^2 over a 190 mm symbol), A-Z, 2:1 bars, every phase,
+ * crossed forwards and backwards. */
 static void test_varying_speed(void)
 {
     double const v_from[2] = { 200.0, 400.0 };
@@ -258,17 +289,21 @@ static void test_varying_speed(void)
 
     for (int d = 0; d < 2; d++)
     {
-        for (int i = 0; i < 4; i++)
+        for (char c = 'A'; c <= 'Z'; c++)
         {
             for (int p = 0; p < 4; p++)
             {
-                char     sym[4];
-                uint32_t cmd = 0xFFU;
+                char sym[4];
+                char ch = NO_CHAR;
 
-                sym_of(g_cmd_char[i], sym);
+                sym_of(c, sym);
                 fixture_t const fx = fx_symbol(sym, 5.0, 2.0, v_from[d], v_to[d], g_phase_ms[p]);
-                CHECK(fx_decode(&fx, &cmd) == BC_OK);
-                CHECK(cmd == g_cmd_expect[i]);
+                fixture_t const rev = fx_reversed(&fx);
+                CHECK(fx_decode(&fx, &ch) == BC_OK);
+                CHECK(ch == c);
+                ch = NO_CHAR;
+                CHECK(fx_decode(&rev, &ch) == BC_OK);
+                CHECK(ch == c);
             }
         }
     }
@@ -282,21 +317,21 @@ static void test_time_only_fails(void)
     bc_cfg_t cfg;
 
     bc_cfg_default(&cfg);
-    for (int i = 0; i < 4; i++)
+    for (char c = 'A'; c <= 'D'; c++)
     {
         char         sym[4];
         bc_element_t el[SYM_ELEMS];
-        uint32_t     cmd = 0xFFU;
+        char         ch = NO_CHAR;
 
-        sym_of(g_cmd_char[i], sym);
+        sym_of(c, sym);
         fixture_t const fx = fx_symbol(sym, 5.0, 2.0, 200.0, 400.0, 0.0);
         fx_elements(&fx, el);
         for (int k = 0; k < SYM_ELEMS; k++)
         {
             el[k].speed_mmps = 300;
         }
-        CHECK(bc_decode(el, SYM_ELEMS, &cfg, &cmd) != BC_OK);
-        CHECK(cmd == 0xFFU);
+        CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) != BC_OK);
+        CHECK(ch == NO_CHAR);
     }
 }
 
@@ -305,18 +340,18 @@ static void test_reject_count(void)
 {
     bc_element_t    el[SYM_ELEMS + 1];
     bc_cfg_t        cfg;
-    uint32_t        cmd = 0xFFU;
+    char            ch = NO_CHAR;
     fixture_t const fx = fx_symbol("*A*", 5.0, 2.0, 300.0, 300.0, 7.0);
 
     fx_elements(&fx, el);
     el[SYM_ELEMS] = el[SYM_ELEMS - 2];      /* a 30th element: a narrow space */
     bc_cfg_default(&cfg);
-    CHECK(bc_decode(el, SYM_ELEMS - 1, &cfg, &cmd) == BC_ERR_COUNT);
-    CHECK(bc_decode(el, SYM_ELEMS + 1, &cfg, &cmd) == BC_ERR_COUNT);
-    CHECK(bc_decode(NULL, SYM_ELEMS, &cfg, &cmd) == BC_ERR_COUNT);
-    CHECK(bc_decode(el, SYM_ELEMS, NULL, &cmd) == BC_ERR_COUNT);
+    CHECK(bc_decode(el, SYM_ELEMS - 1, &cfg, &ch) == BC_ERR_COUNT);
+    CHECK(bc_decode(el, SYM_ELEMS + 1, &cfg, &ch) == BC_ERR_COUNT);
+    CHECK(bc_decode(NULL, SYM_ELEMS, &cfg, &ch) == BC_ERR_COUNT);
+    CHECK(bc_decode(el, SYM_ELEMS, NULL, &ch) == BC_ERR_COUNT);
     CHECK(bc_decode(el, SYM_ELEMS, &cfg, NULL) == BC_ERR_COUNT);
-    CHECK(cmd == 0xFFU);
+    CHECK(ch == NO_CHAR);
 }
 
 /* Test 10: one element below BC_MIN_SPEED_MMPS (50) is a stall, wherever it
@@ -334,18 +369,18 @@ static void test_reject_stall(void)
         for (int v = 0; v < 3; v++)
         {
             bc_element_t el[SYM_ELEMS];
-            uint32_t     cmd = 0xFFU;
+            char         ch = NO_CHAR;
 
             fx_elements(&fx, el);
             el[where[w]].speed_mmps = slow[v];
-            CHECK(bc_decode(el, SYM_ELEMS, &cfg, &cmd) == BC_ERR_STALL);
-            CHECK(cmd == 0xFFU);
+            CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_ERR_STALL);
+            CHECK(ch == NO_CHAR);
         }
     }
 
     /* At exactly the minimum the read stands: every element at 50 mm/s. */
     {
-        uint32_t        cmd = 0xFFU;
+        char            ch = NO_CHAR;
         fixture_t const fx50 = fx_symbol("*A*", 5.0, 2.0, 50.0, 50.0, 7.0);
         bc_element_t    el[SYM_ELEMS];
 
@@ -354,23 +389,34 @@ static void test_reject_stall(void)
         {
             el[k].speed_mmps = 50;
         }
-        CHECK(bc_decode(el, SYM_ELEMS, &cfg, &cmd) == BC_OK);
-        CHECK(cmd == DREP_BC_CMD_LEFT);
+        CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_OK);
+        CHECK(ch == 'A');
     }
 }
 
-/* Tests 11-12: wrong start or stop character; a valid character outside A-D. */
+/* Tests 11-12: the ends must both be '*' in the same direction; the middle
+ * character must be a letter. */
 static void test_reject_chars(void)
 {
-    uint32_t cmd = 0xFFU;
+    /* 11: a letter at an end, or '*' at one end and '*' mirrored (which
+     * reads as 'P') at the other: neither forwards nor backwards. */
+    char const *const bad_ends[4] = { "AA*", "*AA", "*AP", "PA*" };
+    /* 12: valid Code 39, valid ends, but not A-Z: a digit, a symbol, a
+     * symbol whose 3 wide elements are all spaces, and '*' itself. */
+    char const *const not_letter[4] = { "*0*", "*-*", "*$*", "***" };
 
-    fixture_t const fx_start = fx_symbol("AA*", 5.0, 2.0, 300.0, 300.0, 7.0);
-    CHECK(fx_decode(&fx_start, &cmd) == BC_ERR_START_STOP);
-    fixture_t const fx_stop = fx_symbol("*AA", 5.0, 2.0, 300.0, 300.0, 7.0);
-    CHECK(fx_decode(&fx_stop, &cmd) == BC_ERR_START_STOP);
-    fixture_t const fx_e = fx_symbol("*E*", 5.0, 2.0, 300.0, 300.0, 7.0);
-    CHECK(fx_decode(&fx_e, &cmd) == BC_ERR_NOT_CMD);
-    CHECK(cmd == 0xFFU);
+    for (int i = 0; i < 4; i++)
+    {
+        char            ch = NO_CHAR;
+        fixture_t const fx_end = fx_symbol(bad_ends[i], 5.0, 2.0, 300.0, 300.0, 7.0);
+        fixture_t const fx_nl = fx_symbol(not_letter[i], 5.0, 2.0, 300.0, 300.0, 7.0);
+        fixture_t const fx_nl_rev = fx_reversed(&fx_nl);
+
+        CHECK(fx_decode(&fx_end, &ch) == BC_ERR_START_STOP);
+        CHECK(fx_decode(&fx_nl, &ch) == BC_ERR_NOT_LETTER);
+        CHECK(fx_decode(&fx_nl_rev, &ch) == BC_ERR_NOT_LETTER);
+        CHECK(ch == NO_CHAR);
+    }
 }
 
 /* Test 13: a middle character with 2 or with 4 wide elements of 9. */
@@ -378,31 +424,36 @@ static void test_reject_pattern(void)
 {
     char const *two[3] = { code39_pattern('*'), "WnnnnWnnn", code39_pattern('*') };
     char const *four[3] = { code39_pattern('*'), "WnnnnWnWW", code39_pattern('*') };
-    uint32_t    cmd = 0xFFU;
+    char        ch = NO_CHAR;
 
     fixture_t const fx2 = fx_patterns(two, 5.0, 2.0, 300.0, 300.0, 7.0);
-    CHECK(fx_decode(&fx2, &cmd) == BC_ERR_PATTERN);
+    CHECK(fx_decode(&fx2, &ch) == BC_ERR_PATTERN);
     fixture_t const fx4 = fx_patterns(four, 5.0, 2.0, 300.0, 300.0, 7.0);
-    CHECK(fx_decode(&fx4, &cmd) == BC_ERR_PATTERN);
-    CHECK(cmd == 0xFFU);
+    CHECK(fx_decode(&fx4, &ch) == BC_ERR_PATTERN);
+    CHECK(ch == NO_CHAR);
 }
 
-/* Test 14: *A* crossed the other way is rejected, never read as a command
- * (reverse decoding is deferred: no requirement asks for it). */
-static void test_reject_reversed(void)
+/* Test 14: every letter crossed backwards reads as the same letter (module
+ * clarification: both scan directions give the same character), 2:1 and 3:1,
+ * at 300 mm/s.  Backwards with a changing speed is in tests 6-7. */
+static void test_reversed(void)
 {
-    uint32_t  cmd = 0xFFU;
-    fixture_t fx = fx_symbol("*A*", 5.0, 2.0, 300.0, 300.0, 7.0);
+    double const ratios[2] = { 2.0, 3.0 };
 
-    for (int k = 0; k < (SYM_ELEMS / 2); k++)
+    for (int r = 0; r < 2; r++)
     {
-        double const t = fx.w_mm[k];
+        for (char c = 'A'; c <= 'Z'; c++)
+        {
+            char sym[4];
+            char ch = NO_CHAR;
 
-        fx.w_mm[k] = fx.w_mm[SYM_ELEMS - 1 - k];
-        fx.w_mm[SYM_ELEMS - 1 - k] = t;
+            sym_of(c, sym);
+            fixture_t const fx = fx_symbol(sym, 5.0, ratios[r], 300.0, 300.0, 7.0);
+            fixture_t const rev = fx_reversed(&fx);
+            CHECK(fx_decode(&rev, &ch) == BC_OK);
+            CHECK(ch == c);
+        }
     }
-    CHECK(fx_decode(&fx, &cmd) == BC_ERR_START_STOP);
-    CHECK(cmd == 0xFFU);
 }
 
 /* Test 15: the threshold comes from bc_cfg_t.  One narrow element of the 'A'
@@ -412,80 +463,95 @@ static void test_cfg_ratio(void)
 {
     bc_element_t    el[SYM_ELEMS];
     bc_cfg_t        cfg;
-    uint32_t        cmd = 0xFFU;
+    char            ch = NO_CHAR;
     fixture_t const fx = fx_symbol("*A*", 5.0, 3.0, 300.0, 300.0, 7.0);
 
     fx_elements(&fx, el);
     el[11].gap_us = (el[11].gap_us * 16U) / 10U;
     bc_cfg_default(&cfg);
     CHECK(cfg.wide_ratio_x100 == 150U);
-    CHECK(bc_decode(el, SYM_ELEMS, &cfg, &cmd) == BC_ERR_PATTERN);
-    CHECK(cmd == 0xFFU);
+    CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_ERR_PATTERN);
+    CHECK(ch == NO_CHAR);
     cfg.wide_ratio_x100 = 170U;
-    CHECK(bc_decode(el, SYM_ELEMS, &cfg, &cmd) == BC_OK);
-    CHECK(cmd == DREP_BC_CMD_LEFT);
+    CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_OK);
+    CHECK(ch == 'A');
 }
 
 /* ===========================================================================
  * Test 16: the official barcode samples from the module material.  These
- * widths were measured from the files' drawing data (not from a picture), so
- * they are a second source independent of code39_pattern() above.  Each row
- * is the 29 elements in printed order, bar first, in the file's own units:
+ * widths were measured from the files themselves, so they are a second
+ * source independent of code39_pattern() above.  Each row is the 29 elements
+ * in printed order, bar first, in the file's own units:
  *   - Barcode Sample.pdf: bar rectangles of the drawing on pages 1-2 (*A*)
  *     and on pages 3-4 (*Z*), PDF units, 3 decimals;
  *   - BARCODE.pptx: the vector pictures ppt/media/image1.emf (*A*),
- *     image2.emf (*F*) and image3.emf (*Z*), EMF logical units.
+ *     image2.emf (*F*), image3.emf (*Z*), image4.emf (*W*) and image5.emf
+ *     (*X*), EMF logical units; and the bitmap image6.png (*Y*), pixels along
+ *     a row clear of its watermark text.
  * Barcode & Line Specification.pdf shows the printed symbol 141 mm long, and
  * every symbol is 47 narrow widths long (20 narrow + 9 wide x 3), so each row
  * is scaled to 141 mm: narrow 3.0 mm, wide 9.0 mm.
+ * Every one is a valid letter and must read as that letter both ways.
  * ========================================================================= */
 #define OFFICIAL_SYMBOL_MM      (141.0)
 
 typedef struct
 {
     char const *p_name;
+    char        letter;         /* what the sample is labelled and must read as */
     double      w[SYM_ELEMS];
-    bc_result_t expect;
-    uint32_t    cmd;            /* expected command when expect == BC_OK */
 } official_t;
 
 static official_t const g_official[] =
 {
-    { "PDF p1-2 *A*",
+    { "PDF p1-2 *A*", 'A',
       { 90.581, 271.743, 90.581, 90.579, 271.740, 90.580, 271.740, 90.590, 90.581,
         90.579,
         271.740, 90.580, 90.581, 90.579, 90.581, 271.739, 90.581, 90.579, 271.740,
         90.590,
-        90.581, 271.739, 90.581, 90.579, 271.740, 90.580, 271.740, 90.590, 90.581 },
-      BC_OK, DREP_BC_CMD_LEFT },
-    { "PDF p3-4 *Z*",
+        90.581, 271.739, 90.581, 90.579, 271.740, 90.580, 271.740, 90.590, 90.581 } },
+    { "PDF p3-4 *Z*", 'Z',
       { 90.581, 271.743, 90.581, 90.579, 271.740, 90.580, 271.740, 90.590, 90.581,
         90.579,
         90.581, 271.739, 271.740, 90.580, 271.740, 90.580, 90.581, 90.589, 90.581,
         90.579,
-        90.581, 271.739, 90.581, 90.579, 271.740, 90.580, 271.740, 90.590, 90.581 },
-      BC_ERR_NOT_CMD, 0U },
-    { "PPTX image1 *A*",
+        90.581, 271.739, 90.581, 90.579, 271.740, 90.580, 271.740, 90.590, 90.581 } },
+    { "PPTX image1 *A*", 'A',
       { 117, 351, 117, 117, 351, 117, 351, 117, 117,
         117,
         351, 117, 117, 117, 117, 351, 117, 117, 351,
         117,
-        117, 351, 117, 117, 351, 117, 351, 117, 117 },
-      BC_OK, DREP_BC_CMD_LEFT },
-    { "PPTX image2 *F*",
+        117, 351, 117, 117, 351, 117, 351, 117, 117 } },
+    { "PPTX image2 *F*", 'F',
       { 117, 351, 117, 117, 351, 117, 351, 117, 117,
         117,
         117, 117, 351, 117, 351, 351, 117, 117, 117,
         117,
-        117, 351, 117, 117, 351, 117, 351, 117, 117 },
-      BC_ERR_NOT_CMD, 0U },
-    { "PPTX image3 *Z*",
+        117, 351, 117, 117, 351, 117, 351, 117, 117 } },
+    { "PPTX image3 *Z*", 'Z',
       { 117, 351, 117, 117, 351, 117, 351, 117, 117,
         117,
         117, 351, 351, 117, 351, 117, 117, 117, 117,
         117,
-        117, 351, 117, 117, 351, 117, 351, 117, 117 },
-      BC_ERR_NOT_CMD, 0U },
+        117, 351, 117, 117, 351, 117, 351, 117, 117 } },
+    { "PPTX image4 *W*", 'W',
+      { 26, 78, 26, 26, 78, 26, 78, 26, 26,
+        26,
+        78, 78, 78, 26, 26, 26, 26, 26, 26,
+        26,
+        26, 78, 26, 26, 78, 26, 78, 26, 26 } },
+    { "PPTX image5 *X*", 'X',
+      { 22, 66, 22, 22, 66, 22, 66, 22, 22,
+        22,
+        22, 66, 22, 22, 66, 22, 22, 22, 66,
+        22,
+        22, 66, 22, 22, 66, 22, 66, 22, 22 } },
+    { "PPTX image6 *Y*", 'Y',
+      { 9, 27, 9, 9, 27, 9, 27, 9, 9,
+        9,
+        27, 27, 9, 9, 27, 9, 9, 9, 9,
+        9,
+        9, 27, 9, 9, 27, 9, 27, 9, 9 } },
 };
 #define OFFICIAL_COUNT  ((int)(sizeof(g_official) / sizeof(g_official[0])))
 
@@ -519,7 +585,7 @@ static void test_official_samples(void)
     for (int s = 0; s < OFFICIAL_COUNT; s++)
     {
         official_t const *p_off = &g_official[s];
-        int               fails = g_failures;
+        int const         fails = g_failures;
 
         /* The sample data itself: two widths only, 3.0 mm and 9.0 mm. */
         {
@@ -531,23 +597,20 @@ static void test_official_samples(void)
             }
         }
 
-        /* Forwards: *A* is LEFT.  *F* and *Z* return BC_ERR_NOT_CMD, which
-         * bc_decode() reaches only after the 3-of-9 and the start/stop checks
-         * pass: valid Code 39, just not a command.  Backwards: '*' reads as
-         * 'P' (also 3 of 9), so every reversed read fails start/stop. */
+        /* Forwards and backwards, every speed profile and phase: the letter. */
         for (int p = 0; p < 5; p++)
         {
             for (int ph = 0; ph < 4; ph++)
             {
-                uint32_t        cmd = 0xFFU;
+                char            ch = NO_CHAR;
                 fixture_t const fwd = fx_official(p_off, 0, g_prof_from[p], g_prof_to[p], g_phase_ms[ph]);
                 fixture_t const rev = fx_official(p_off, 1, g_prof_from[p], g_prof_to[p], g_phase_ms[ph]);
 
-                CHECK(fx_decode(&fwd, &cmd) == p_off->expect);
-                CHECK(cmd == ((p_off->expect == BC_OK) ? p_off->cmd : 0xFFU));
-                cmd = 0xFFU;
-                CHECK(fx_decode(&rev, &cmd) == BC_ERR_START_STOP);
-                CHECK(cmd == 0xFFU);
+                CHECK(fx_decode(&fwd, &ch) == BC_OK);
+                CHECK(ch == p_off->letter);
+                ch = NO_CHAR;
+                CHECK(fx_decode(&rev, &ch) == BC_OK);
+                CHECK(ch == p_off->letter);
             }
         }
 
@@ -569,7 +632,7 @@ int main(void)
     test_reject_stall();
     test_reject_chars();
     test_reject_pattern();
-    test_reject_reversed();
+    test_reversed();
     test_cfg_ratio();
     test_official_samples();
     return TEST_RESULT("bc_decode");

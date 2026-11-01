@@ -6,7 +6,12 @@
  *  Pure module: includes only <stdint.h>, <stdbool.h> and pure project
  *  headers, never a kernel or SDK header and never subsystem3.h (check_rules
  *  R1), so the host tests (tests/host/test_bc_decode.c) build it unchanged.
- *  The Barcode Decode task (BC-2) collects the inputs and acts on the result.
+ *
+ *  It returns the decoded LETTER (A-Z), never a movement: which four letters
+ *  mean forward / left / right / U-turn is set at the demo and sent over MQTT
+ *  (module clarification, 1 Nov 2026), so that mapping lives outside this
+ *  module.  The Barcode Decode task (BC-2) collects the inputs and uses the
+ *  result.
  */
 
 #ifndef BC_DECODE_H
@@ -35,29 +40,32 @@ typedef struct
 /** Decode outcome.  Every value but BC_OK leads to INVALID_READ_RESET. */
 typedef enum
 {
-    BC_OK = 0,              /**< valid *A* .. *D*: command written */
+    BC_OK = 0,              /**< valid *X*, X in A-Z, either direction: letter written */
     BC_ERR_COUNT,           /**< NULL pointer, or not BC_SYMBOL_ELEMENTS elements */
     BC_ERR_STALL,           /**< an element's speed below min_speed_mmps (or <= 0) */
     BC_ERR_PATTERN,         /**< a character without exactly 3 wide of 9 */
-    BC_ERR_START_STOP,      /**< first or last character is not '*' */
-    BC_ERR_NOT_CMD          /**< middle character is not A, B, C or D */
+    BC_ERR_START_STOP,      /**< the ends are not both '*' in the same direction */
+    BC_ERR_NOT_LETTER       /**< middle character is valid 3-of-9 but not A-Z */
 } bc_result_t;
 
 /** Fill *p_cfg with the defaults BC_WIDE_RATIO_X100 and BC_MIN_SPEED_MMPS. */
 void bc_cfg_default(bc_cfg_t *p_cfg);
 
 /*
- * Decode one Code 39 symbol (FR9, NFR8, NFR9).
+ * Decode one Code 39 symbol '*' + letter + '*' (FR7, NFR8, NFR9), crossed in
+ * either direction.
  * p_elem: count elements in crossing order, first one a bar.  Each width is
  * gap_us x speed_mmps (bc_gap_to_width_um); the 27 character elements are
  * classified wide or narrow by their ratio to the median of those 27, so a
  * constant speed cancels and a changing one is corrected element by element.
  * The 2 gaps between characters are not checked (Code 39 allows them wider).
- * On BC_OK, *p_cmd = DREP_BC_CMD_LEFT/RIGHT/STRAIGHT/UTURN for A/B/C/D;
- * otherwise *p_cmd is left unchanged.
+ * Crossed backwards, the elements arrive mirrored: both ends then read as
+ * '*' mirrored, and the middle character is mirrored back before lookup, so
+ * both directions give the same letter.
+ * On BC_OK, *p_char = 'A'..'Z'; otherwise *p_char is left unchanged.
  */
 bc_result_t bc_decode(bc_element_t const p_elem[], uint32_t count,
-                      bc_cfg_t const *p_cfg, uint32_t *p_cmd);
+                      bc_cfg_t const *p_cfg, char *p_char);
 
 /*
  * Width of one bar or space from how long it lasted and how fast the car was
