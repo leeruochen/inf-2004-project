@@ -1,0 +1,44 @@
+S1-H01..S1-H05 host run, 2026-11-01
+commit: d3c1e90e9a04ff33e0c24114a267e73ec74e47d3 (branch buddy1/telemetry); working tree clean: yes
+host C compiler: gcc.exe (Rev8, Built by MSYS2 project) 15.2.0
+cmake: cmake version 3.25.2; python: Python 3.13.15
+
+=== cmake --build build/host
+ninja: no work to do.
+
+=== ctest --test-dir build/host --output-on-failure
+Internal ctest changing into directory: C:/Users/damia/Year 2 Tri 1/Embedded systems/inf-2004-project/build/host
+Test project C:/Users/damia/Year 2 Tri 1/Embedded systems/inf-2004-project/build/host
+    Start 1: dbg_ring
+1/6 Test #1: dbg_ring .........................   Passed    0.02 sec
+    Start 2: crc32
+2/6 Test #2: crc32 ............................   Passed    0.02 sec
+    Start 3: period
+3/6 Test #3: period ...........................   Passed    0.02 sec
+    Start 4: data_repr
+4/6 Test #4: data_repr ........................   Passed    0.02 sec
+    Start 5: bc_decode
+5/6 Test #5: bc_decode ........................   Passed    0.02 sec
+    Start 6: tel
+6/6 Test #6: tel ..............................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) =   0.11 sec
+
+=== build/host/test_tel (S1-H01..S1-H04)
+tel: 243 checks, 0 failed
+exit: 0
+
+=== cd tools/dashboard; python -m unittest -v test_tel_decode (S1-H05)
+test_parse_line (test_tel_decode.ConsoleLog.test_parse_line) ... ok
+test_signed_edges (test_tel_decode.ConsoleLog.test_signed_edges) ... ok
+test_commands_match_firmware (test_tel_decode.GoldenFrames.test_commands_match_firmware) ... ok
+test_golden_decode (test_tel_decode.GoldenFrames.test_golden_decode) ... ok
+test_rules (test_tel_decode.Rejects.test_rules) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.002s
+
+OK
+exit: 0
