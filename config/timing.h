@@ -148,7 +148,11 @@
 
 /** Barcode task poll period while capturing. Not in design.md (ISR-woken there). TUNE */
 #define BC_POLL_PERIOD_MS               (2U)
-/** Abandon a capture after this long. TUNE
+/** End a capture when NO EDGE has arrived for this long (not a limit on the
+ *  whole symbol: 141 mm at 100 mm/s takes 1.41 s). Before a full symbol's 29
+ *  elements it is the only end rule (a partial pass); after them T_end ends
+ *  the capture sooner (bc_frame_ended()). 1 s is far above the longest valid
+ *  element (9 mm at 50 mm/s = 180 ms). TUNE
  *  TODO(owner-to-confirm, buddy 3): provisional value. Must fit a
  *  BC_GAP_BITS microsecond gap (checked below). */
 #define BC_CAPTURE_TIMEOUT_MS           (1000U)
