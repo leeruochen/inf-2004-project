@@ -21,3 +21,4 @@ Add a new row for every run. Never edit or delete old rows.
 
 | Date | Test ID | Commit | Tester | Result | Log / evidence | Notes |
 |---|---|---|---|---|---|---|
+| 2026-11-01 | S3-U01 | `0542c43` | 2503319 | PASS | `testing/subsystem3/logs/2026-11-01_s3_u01_host.txt` | Host only: 5/5 ctest, `bc_decode: 683 checks, 0 failed` (tests 1-16, incl. official `*A*`/`*F*`/`*Z*` samples forwards and reversed). Firmware gates 7/7 exit 0, 0 warnings |
