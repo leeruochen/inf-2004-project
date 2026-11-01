@@ -100,9 +100,9 @@ Check these on the car before the first power-on with the Week 8 wiring:
 - [ ] Line sensors: only VCC, GND and AO are wired. DO is not wired, so GP6
       and GP7 stay spare (inputs only).
 - [ ] Barcode sensor: VCC, GND and DO only. Its AO is not wired.
-- [ ] Encoders are powered from 3V3, never VIN or the servo header V pins.
+- [x] Encoders are powered from 3V3, never VIN or the servo header V pins.
 - [ ] Ultrasonic ECHO is 3.3 V-safe for GP5 (assumption A8).
-- [ ] Encoder harness is green/red; the A/B order is confirmed by the
+- [x] Encoder harness is green/red; the A/B order is confirmed by the
       hand-spin and forward-drive test and fixed with `ENC_x_DIR_INVERT`
       (after `MOTOR_x_DIR_INVERT`).
 
@@ -142,7 +142,7 @@ mixed up, and the SDK drivers have no locking to stop it.
 | PIO0 | S2 | Motion Control (encoders: SM0 right, SM1 left) | GP0, GP1, GP16, GP17 |
 | PIO1 | S1 | *reserved* for CYW43, Phase 2 | GP23–25, GP29 |
 | DMA (2 channels) | S1 | *reserved* for CYW43, Phase 2 | |
-| IO_IRQ_BANK0 handlers | S5 / S3 | echo GP5 (S5), barcode GP27 (S3). Dispatcher: TODO(phase 1 batch B, buddy 2) | GP5, GP27 |
+| IO_IRQ_BANK0 handlers | S5 / S3 | echo GP5 (S5), barcode GP27 (S3). Dispatcher: `hal_gpio_irq_register()` (`src/rtos/port/port_irq.c`) | GP5, GP27 |
 | USB (CDC) | platform | debug drain task (debug console, `DBG_ENABLE` builds) | USB port |
 | UART0, UART1, I2C0, SPI0, SPI1 | | unused | |
 
@@ -174,17 +174,17 @@ in `usermain()` step 1 (Batch B), before any `subsystemN_init()`.
 
 | ID | From → To | Mechanism | Object ID name | Data / meaning | Agreed by |
 |---|---|---|---|---|---|
-| IF-01 | S3, S5, S1 → S2 (VC) | message buffer, 8 slots (owned by S2) | `MBF_NAV_IN` | `nav_input_t`: steering (LF, `TMO_POL`), barcode and bypass commands (5 ms timeout), remote commands | TODO(owner-to-confirm) |
-| IF-02 | S2 VC → S2 Motion (internal) | message buffer, 4 slots (owned by S2) | `MBF_MOTION_CMD` | `motion_cmd_t`; VC sends `TMO_POL`, Motion polls every 20 ms | TODO(owner-to-confirm) |
+| IF-01 | S3, S5, S1 → S2 (VC) | message buffer, 8 slots (owned by S2) | `MBF_NAV_IN` | `nav_input_t`: steering (LF, `TMO_POL`), barcode and bypass commands (5 ms timeout), remote commands | S2 (2500530); S1/S3/S5 pending |
+| IF-02 | S2 VC → S2 Motion (internal) | message buffer, 4 slots (owned by S2) | `MBF_MOTION_CMD` | `motion_cmd_t`; VC sends `TMO_POL`, Motion polls every 20 ms | S2 (2500530) |
 | IF-03 | S5 Scan → S5 Avoid (internal) | message buffer, 2 slots (owned by S5) | `MBF_OBSTACLE` | `obstacle_profile_t`; newest profile wins | TODO(owner-to-confirm) |
-| IF-04 | all → S1 | message buffer, 32 slots (owned by S1) | `MBF_TELEMETRY` | `tel_evt_t`; senders `TMO_POL`, overflow dropped and counted | TODO(owner-to-confirm) |
+| IF-04 | all → S1 | message buffer, 32 slots (owned by S1) | `MBF_TELEMETRY` | `tel_evt_t`; senders `TMO_POL`, overflow dropped and counted | S2 (2500530); S1/S3/S4/S5 pending |
 | IF-05 | echo ISR → S5 Scan | semaphore (owned by S5) | `SEM_ECHO` | echo received; 30 ms timeout = nothing in range | TODO(owner-to-confirm) |
-| IF-06 | S4 IMU → S4 Safety; Safety → S2 VC | eventflag (owned by S4) | `EVF_SAFETY` | COLLISION, IMU_ALIVE (set by IMU); FAULT_LATCHED set only by Safety, cleared only by S2 VC | TODO(owner-to-confirm) |
-| IF-07 | S5, S3 → readers | eventflag (owned by S5) | `EVF_NAV` | AVOID_ACTIVE, LINE_REACQUIRED (S5), LINE_FOUND (S3); readers poll | TODO(owner-to-confirm) |
-| IF-08 | S2 Motion → S3 BC, S1 | shared data under a mutex, `TA_INHERIT` (owned by S2) | `MTX_MOTION`, `motion_state_t` | speed, distance, encoder counts; copy and release at once. Safety never takes it | TODO(owner-to-confirm) |
+| IF-06 | S4 IMU → S4 Safety; Safety → S2 VC | eventflag (owned by S4) | `EVF_SAFETY` | COLLISION, IMU_ALIVE (set by IMU); FAULT_LATCHED set only by Safety, cleared only by S2 VC | S2 (2500530); S4 pending |
+| IF-07 | S5, S3 → readers | eventflag (owned by S5) | `EVF_NAV` | AVOID_ACTIVE, LINE_REACQUIRED (S5), LINE_FOUND (S3); readers poll | S2 (2500530); S3/S5 pending |
+| IF-08 | S2 Motion → S3 BC, S1 | shared data under a mutex, `TA_INHERIT` (owned by S2) | `MTX_MOTION`, `motion_state_t` | speed, distance, encoder counts; copy and release at once. Safety never takes it | S2 (2500530); S1/S3 pending |
 | IF-09 | barcode ISR → S3 BC (internal) | ISR ring buffer, 64 edges (owned by S3) | barcode edge ring | bar/space edge times; overflow forces INVALID_READ_RESET | TODO(owner-to-confirm) |
-| IF-10 | PIO0 → S2 Motion (internal) | hardware counters read via `enc_get_count()` (owned by S2) | encoder count words | free-running signed counts, written only by the Motion task (Week 8, ARCHITECTURE.md D7) | TODO(owner-to-confirm) |
-| IF-11 | S4 Safety → S2 | function call through `subsystem2.h` | `motion_emergency_brake()` | all four motor channels LOW | TODO(owner-to-confirm) |
+| IF-10 | PIO0 → S2 Motion (internal) | hardware counters read via `enc_get_count()` (owned by S2) | encoder count words | free-running signed counts, written only by the Motion task (Week 8, ARCHITECTURE.md D7) | S2 (2500530) |
+| IF-11 | S4 Safety → S2 | function call through `subsystem2.h` | `motion_emergency_brake()` | all four motor channels LOW | S2 (2500530); S4 pending |
 
 Each interface is tested by at least one integration test
 (`testing/integration/TEST_LOG.md`).
@@ -204,7 +204,7 @@ Limits are set in `config/mtk3/config.h` and checked in
 | Message buffer | 8 | 1 | 2 | | | 1 | |
 | Fixed memory pool | 4 | | | | | | |
 | Variable memory pool | 4 | | | | | | |
-| Cyclic handler | 8 | 1 | 1 | 1 | 1 | 1 | |
+| Cyclic handler | 8 | 1 | 0 (`app_period_wait`) | 1 | 1 | 1 | |
 | Alarm handler | 4 | | | | | | |
 
 The telemetry cyclic handler's period is open: delta D2 (20 ms wake) is

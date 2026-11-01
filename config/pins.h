@@ -66,16 +66,18 @@
 /** Left wheel encoder phase B (Grove 4). PROVISIONAL label. */
 #define ENC_L_B_PIN             (17U)
 
-/** 1 = swap A/B for the left motor so "forward" drives forward. TUNE */
-#define MOTOR_L_DIR_INVERT      (0U)
-/** 1 = swap A/B for the right motor so "forward" drives forward. TUNE */
+/** 1 = swap A/B for the left motor so "forward" drives forward.
+ *  Confirmed on car (Buddy 2, S2-U03, 2026-10-31_s2_phase1_calib.txt). */
+#define MOTOR_L_DIR_INVERT      (1U)
+/** 1 = swap A/B for the right motor so "forward" drives forward.
+ *  Confirmed on car (Buddy 2, S2-U03, 2026-10-31_s2_phase1_calib.txt). */
 #define MOTOR_R_DIR_INVERT      (0U)
-/** 1 = negate the left encoder count so forward motion counts up. TUNE
- *  Set by the hand-spin and forward-drive test. */
+/** 1 = negate the left encoder count so forward motion counts up.
+ *  Confirmed on car by hand-spin and forward-drive tests (Buddy 2, S2-U07/S2-U08). */
 #define ENC_L_DIR_INVERT        (0U)
-/** 1 = negate the right encoder count so forward motion counts up. TUNE
- *  Set by the hand-spin and forward-drive test. */
-#define ENC_R_DIR_INVERT        (0U)
+/** 1 = negate the right encoder count so forward motion counts up.
+ *  Confirmed on car by hand-spin and forward-drive tests (Buddy 2, S2-U07/S2-U08). */
+#define ENC_R_DIR_INVERT        (1U)
 
 /** PIO block used by the encoders (PIO0; PIO1 is reserved for the CYW43). */
 #define ENC_PIO_NUM             (0U)

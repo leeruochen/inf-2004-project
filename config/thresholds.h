@@ -101,11 +101,11 @@
 /** Quadrature decoding multiplier (X4: every edge of A and B). */
 #define ENC_QUAD_MULT               (4U)
 /** Encoder cycles per wheel revolution, per channel, gearbox included.
- *  TODO(owner-to-confirm, buddy 2): from the encoder spec or a measured turn. */
-#define ENC_CPR                     (0U)
-/** Wheel circumference.
- *  TODO(owner-to-confirm, buddy 2): measure the wheel. */
-#define WHEEL_CIRC_MM               (0U)
+ *  Measured on car (Buddy 2, S2-U10/S2-U18, floor_run3.txt: 2464 quad counts/rev). */
+#define ENC_CPR                     (616U)
+/** Wheel circumference in mm.
+ *  Measured on car (Buddy 2, S2-U11: 66 mm wheel diameter -> pi * 66 = 207.3 mm). */
+#define WHEEL_CIRC_MM               (207U)
 
 /* ---------------------------------------------------------------------------
  * Barcode (Buddy 3)
@@ -166,8 +166,8 @@
 /** Motor PWM frequency. */
 #define MOTOR_PWM_FREQ_HZ           (20000UL)
 /** Motor duty cap. TUNE
- *  TODO(owner-to-confirm, buddy 2): provisional duty cap. */
-#define MOTOR_DUTY_MAX_PCT          (80U)
+ *  Confirmed on car (Buddy 2, S2-U02 / S2-U21). */
+#define MOTOR_DUTY_MAX_PCT          (95U)
 /** Servo PWM frequency. */
 #define SERVO_PWM_FREQ_HZ           (50U)
 /** Servo minimum pulse width. TUNE */
@@ -184,7 +184,8 @@
 /** Maximum VIN (design.md section 2). */
 #define POWER_VIN_MAX_MV            (6000U)
 /** 3.3 V budget for Grove devices.
- *  TODO(owner-to-confirm, buddy 2): verify 300 mA against the ROBO PICO datasheet. */
+ *  Verified on car (Buddy 2, MOTION_ACCURACY_EVALUATION.md section 1.2:
+ *  72 mA typical / 110 mA peak across all 7 Grove devices < 300 mA LDO budget). */
 #define POWER_GROVE_3V3_BUDGET_MA   (300U)
 
 /* ---------------------------------------------------------------------------
