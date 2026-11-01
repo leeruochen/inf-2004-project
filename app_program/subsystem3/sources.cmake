@@ -8,6 +8,9 @@ list(APPEND ROBOCAR_KERNEL_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3.c"
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3_test.c"
     "${CMAKE_CURRENT_LIST_DIR}/bc_decode.c"
-    "${CMAKE_CURRENT_LIST_DIR}/bc_frame.c")
+    "${CMAKE_CURRENT_LIST_DIR}/bc_frame.c"
+    "${CMAKE_CURRENT_LIST_DIR}/task_bc.c")
 # SDK-side drivers:
-list(APPEND ROBOCAR_SOURCES "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c")
+list(APPEND ROBOCAR_SOURCES
+    "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c"
+    "${CMAKE_CURRENT_LIST_DIR}/drv_bc.c")
