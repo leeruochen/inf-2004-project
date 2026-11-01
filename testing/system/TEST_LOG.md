@@ -2,7 +2,7 @@
 
 Tests of the complete product against its requirements, run on the final hardware set-up. Run the full set before every demo and before hand-in.
 
-See `testing/README.md` for how to run tests and record results, and **`docs/INTEGRATION_PHASES.md`** for the step-by-step lab course testing guide.
+See `testing/README.md` for how to run tests and record results, and **`INTEGRATION_PHASES.md`** for the step-by-step lab course testing guide.
 
 ## Test cases
 

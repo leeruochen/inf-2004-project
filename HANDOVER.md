@@ -1,6 +1,6 @@
 # HANDOVER: where the project stands and where each member continues
 
-Read this first. Section 3 is for every team member (where to continue on your
+Read this first (or start at **`START_GUIDE.md`** for a full index of all important files, and **`INTEGRATION_PHASES.md`** for team integration and lab course testing). Section 3 is for every team member (where to continue on your
 own subsystem). Section 0 is for whoever continues on another device or with an
 AI agent. The detailed evidence is in `.agents/tasks/` (index in section 9).
 
