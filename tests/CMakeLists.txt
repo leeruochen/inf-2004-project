@@ -46,3 +46,14 @@ target_include_directories(test_data_repr PRIVATE "${ROBOCAR_ROOT}")
 target_compile_options(test_data_repr PRIVATE -Wall -Wextra -Werror)
 set_target_properties(test_data_repr PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME data_repr COMMAND test_data_repr)
+
+# Code 39 barcode decoder core (app_program/subsystem3/bc_decode.c, pure C):
+# Subsystem 3 test S3-U01. Fixtures model the barcode, the car's motion and
+# Motion Control's published speed (needs libm for the physics).
+add_executable(test_bc_decode host/test_bc_decode.c
+    "${ROBOCAR_ROOT}/app_program/subsystem3/bc_decode.c")
+target_include_directories(test_bc_decode PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_bc_decode PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_bc_decode PRIVATE m)
+set_target_properties(test_bc_decode PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME bc_decode COMMAND test_bc_decode)

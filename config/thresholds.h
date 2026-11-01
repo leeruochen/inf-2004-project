@@ -115,6 +115,17 @@
 #define BC_D_CMD_CM                 (30U)
 /** Ignore a repeat of the same barcode within this distance. Not in design.md. TUNE */
 #define BC_REPEAT_IGNORE_CM         (10U)
+/** Wide/narrow threshold (NFR9): an element is wide when its width is more
+ *  than this x the median element width / 100.  Code 39 wide:narrow is 2:1 to
+ *  3:1 and most elements are narrow, so the median is a narrow width and the
+ *  value must lie between 100 and 200 (checked below); 150 is the midpoint at
+ *  the worst-case 2:1.  Set from measured hardware ratios. Not in design.md. TUNE */
+#define BC_WIDE_RATIO_X100          (150U)
+/** Slowest speed at which a read is trusted; any element below it makes the
+ *  read a stall (design.md 6.2).  Half the slowest drive speed
+ *  (MOTION_SPEED_SLOW_BRINGUP_CMPS, 10 cm/s): below it one encoder count is a
+ *  large part of Motion's 20 ms speed estimate. Not in design.md. TUNE */
+#define BC_MIN_SPEED_MMPS           (50U)
 
 /* ---------------------------------------------------------------------------
  * Speeds (Buddy 2). Two sets: nominal and bring-up. All TUNE.
@@ -244,6 +255,14 @@
 
 #if ADC_NOISE_MAX_RAW >= ADC_FULL_SCALE_RAW
 #error "thresholds.h: ADC_NOISE_MAX_RAW must be below the ADC full scale"
+#endif
+
+#if (BC_WIDE_RATIO_X100 <= 100U) || (BC_WIDE_RATIO_X100 >= 200U)
+#error "thresholds.h: BC_WIDE_RATIO_X100 must lie between 100 and 200 (2:1 bars)"
+#endif
+
+#if (BC_MIN_SPEED_MMPS == 0U) || (BC_MIN_SPEED_MMPS > (MOTION_SPEED_SLOW_BRINGUP_CMPS * 10U))
+#error "thresholds.h: BC_MIN_SPEED_MMPS must be > 0 and not above the slowest drive speed"
 #endif
 
 /* Once ENC_CPR and WHEEL_CIRC_MM are measured: one second of counts at top
