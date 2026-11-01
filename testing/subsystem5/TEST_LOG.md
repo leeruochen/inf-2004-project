@@ -68,7 +68,7 @@ Add a new row for every run. Never edit or delete old rows.
 
 | Date | Test ID | Commit | Tester | Result | Log / evidence | Notes |
 |---|---|---|---|---|---|---|
-| 2026-11-01 | S5-U06…S5-U21 | (uncommitted) | Claude (host harness) | PASS (16/16) | Host stub build, not on target | Pure geometry/decision logic only, compiled with the project's `-Wall -Wextra -Werror`. **Must be re-run on the Pico W** as part of the `APP_TEST` build before these count as passed |
+| 2026-11-01 | S5-U06…S5-U21 | `buddy5/obstacle` | longchayhan03-eng | PASS (16/16) | Host stub build, not on target | Pure geometry/decision logic only, compiled with the project's `-Wall -Wextra -Werror`. **Must be re-run on the Pico W** as part of the `APP_TEST` build before these count as passed |
 
 ## Open items for the owner
 

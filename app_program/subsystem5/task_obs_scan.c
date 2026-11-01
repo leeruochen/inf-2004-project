@@ -110,7 +110,7 @@ static obstacle_profile_t s_last_profile;
 static uint32_t           s_profile_count = 0U;
 static uint32_t           s_sweep_count = 0U;
 static uint32_t           s_seq = 0U;
-static bool               s_no_echo_set = false;
+static bool               s_no_echo_set = false;  /* last state written; diagnostics only */
 
 /* Sweep cursor. */
 static bool     s_fine_mode = false;
@@ -490,15 +490,36 @@ static uint16_t ping_bearing_mm(uint32_t budget_ms)
     return obs_median3_mm(sample[0], sample[1], sample[2]);
 }
 
-/** Set or clear EVF_SAFETY_STATUS_NO_ECHO, which this task alone owns. */
+/*
+ * Set or clear EVF_SAFETY_STATUS_NO_ECHO, which this task alone owns in
+ * production code.
+ *
+ * The wanted state is compared against the FLAG ITSELF, not against a local
+ * cache of what this task last wrote.  A cache desyncs the moment anything
+ * else touches the bit -- and something does: subsystem 2's on-target tests
+ * use b7 as a scratch bit to prove selective clearing works
+ * (app_program/subsystem2/subsystem2_test.c).  With a cache, an APP_TEST
+ * build could leave this task believing it had already set the flag while
+ * the flag was in fact clear, and the status would stop updating.  Reading
+ * first costs one cheap kernel call and cannot desync.
+ */
 static void publish_no_echo(bool no_echo)
 {
-    if (no_echo == s_no_echo_set)
+    T_RFLG ref;
+    ER     er = tk_ref_flg(EVF_SAFETY, &ref);
+
+    if (er < (ER)E_OK)
     {
-        return;                         /* no change: do not churn the flag */
+        dbg_put_err("obs_scan ref EVF_SAFETY", (int32_t)er);
+        return;
     }
 
-    ER er;
+    bool const is_set = ((uint32_t)ref.flgptn & EVF_SAFETY_STATUS_NO_ECHO) != 0U;
+
+    if (no_echo == is_set)
+    {
+        return;                         /* already right: do not churn it */
+    }
 
     if (no_echo)
     {
@@ -506,12 +527,13 @@ static void publish_no_echo(bool no_echo)
     }
     else
     {
+        /* tk_clr_flg ANDs the pattern, so ~b7 clears b7 and nothing else. */
         er = tk_clr_flg(EVF_SAFETY, ~(UINT)EVF_SAFETY_STATUS_NO_ECHO);
     }
 
     if (er >= (ER)E_OK)
     {
-        s_no_echo_set = no_echo;
+        s_no_echo_set = no_echo;        /* kept for the test read-back only */
     }
     else
     {
