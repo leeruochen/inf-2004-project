@@ -45,7 +45,8 @@ Last updated: 31 Oct 2026, Subsystem 2 (Motion & Vehicle Controller) complete an
 | Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
 | Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
 | **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Complete (31 Oct 2026): milestones M1 (Phase 1 USB CDC bring-up test, SYS-01) and M2 (message formats final, `src/common/data_repr.h`).** B0-B7 merged on `main` (PRs #1-#7); every hardware stage passed on Buddy 2's board; Week 6 baseline tagged `baseline/week6-unpacked`. Members build their subsystems on it (section 3). Open owner items: the placeholders in `docs/DATA_REPRESENTATION.md` section 10 Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
-| Subsystem code (all five buddies) | **Buddy 2 (Subsystem 2) COMPLETE (merged on main, 31 Oct 2026):** S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) PASS on board and floor; PID tuning and motion accuracy reports complete. Motion library (`moveForward`, `turnLeft`, etc.), Vehicle Controller (`MBF_NAV_IN`), emergency brake (`motion_emergency_brake()`), and telemetry publisher (`MTX_MOTION`) are operational and ready for team integration. Buddies 1, 3, 4, 5 not started |
+| Subsystem 5 code | **Written, desk-verified only (1 Nov 2026):** servo + ultrasonic drivers, Obstacle Scanning and Obstacle Avoidance tasks, 26 on-target tests defined and 33 test cases logged. Compiles clean with `-Wall -Wextra -Werror`, 0 rule violations, 16/16 host logic tests pass. **Never run on hardware** — see section 3, Buddy 5 |
+| Subsystem code (all five buddies) | **Buddy 2 (Subsystem 2) COMPLETE (merged on main, 31 Oct 2026):** S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) PASS on board and floor; PID tuning and motion accuracy reports complete. Motion library (`moveForward`, `turnLeft`, etc.), Vehicle Controller (`MBF_NAV_IN`), emergency brake (`motion_emergency_brake()`), and telemetry publisher (`MTX_MOTION`) are operational and ready for team integration. Buddy 5 code written but not yet run on hardware (row above); Buddies 1, 3, 4 not started |
 | Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026; B5 bring-up test (SYS-01, 13 min with stress, replug) passed, 31 Oct 2026. Buddy 2's Pico W; logs on PRs #3-#5 and in `testing/system/logs/` |
 
 **Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
@@ -176,10 +177,11 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 |---|---|
 | Tasks | Obstacle Scanning, priority 6 (60 ms servo step); Obstacle Avoidance, priority 7 |
 | Pins / peripherals | ultrasonic TRIG GP4, ECHO GP5 (Grove 3, echo must be 3.3 V-safe); servo GP15 = PWM slice 7 B (never GP12); owns PWM slice 7 |
-| Interfaces | owns IF-03 MBF_OBSTACLE, IF-05 SEM_ECHO, IF-07 EVF_NAV (AVOID_ACTIVE, LINE_REACQUIRED); sends bypass commands into IF-01 |
-| Start with | `drv_servo.c`, `drv_ultrasonic.c`; newest-wins needs drain-then-send on MBF_OBSTACLE (`docs/DATA_REPRESENTATION.md` 2.3) |
-| Decisions open for you | keep the 2-bit sequence number in `obstacle_profile_t`; the 3-bit bypass command in `nav_input_t`; `CAR_WIDTH_MM`; servo pulse range; settle time vs 60 ms step |
-| Status | not started |
+| Interfaces | owns IF-03 MBF_OBSTACLE, IF-05 SEM_ECHO, IF-07 EVF_NAV (AVOID_ACTIVE, LINE_REACQUIRED) and EVF_SAFETY b7 STATUS_NO_ECHO; sends bypass commands into IF-01. All four claimed in TEAM.md section 5 |
+| Files | `drv_servo.c/.h` (PWM slice 7 B), `drv_ultrasonic.c/.h` (trigger + echo ISR via `hal_gpio_irq_register`, signals SEM_ECHO with `hal_isr_sig`), `task_obs_scan.c/.h` (sweep, median filter, obstacle profiling, drain-then-send on MBF_OBSTACLE), `task_obs_avoid.c/.h` (side choice, four-turn bypass, line reacquisition), `subsystem5.c/.h`, `subsystem5_test.c` (S5-U01..S5-U26) |
+| Decisions made | **sequence number: KEPT** (Avoidance uses it to ignore a repeated profile). **Bypass commands: the existing `DREP_BYPASS_*` values are used as-is.** **Settle vs 60 ms step: resolved** — a period either settles or pings, never both, and the settle allowance scales with how far the horn actually travels, so a 10 deg fine step still pings in its own period (see the `task_obs_scan.c` header) |
+| Decisions still open | `CAR_WIDTH_MM` is still the 120 mm ASSUMPTION: measure the car. `OBS_TURN_DWELL_MS`, `OBS_SERVO_SETTLE_MS`, `OBS_EDGE_TOL_MM`, `OBS_BEAM_DEG` are TUNE and must be measured on the track (S5-U31..S5-U33), then promoted to `config/*.h` the way S2 promoted its constants |
+| Status | **Code complete, DESK-VERIFIED ONLY (1 Nov 2026).** All six files compile clean under the project's `-Wall -Wextra -Werror` and pass the R1-R6 rule checks; the 16 pure geometry/decision tests pass on a host stub harness. **Nothing has run on the Pico W.** Next step: flash an `APP_TEST` build and work through S5-U01..S5-U26, then the manual and INT-S5-* tests in `testing/subsystem5/TEST_LOG.md` |
 
 ---
 

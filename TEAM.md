@@ -174,13 +174,13 @@ in `usermain()` step 1 (Batch B), before any `subsystemN_init()`.
 
 | ID | From → To | Mechanism | Object ID name | Data / meaning | Agreed by |
 |---|---|---|---|---|---|
-| IF-01 | S3, S5, S1 → S2 (VC) | message buffer, 8 slots (owned by S2) | `MBF_NAV_IN` | `nav_input_t`: steering (LF, `TMO_POL`), barcode and bypass commands (5 ms timeout), remote commands | S2 (2500530); S1/S3/S5 pending |
+| IF-01 | S3, S5, S1 → S2 (VC) | message buffer, 8 slots (owned by S2) | `MBF_NAV_IN` | `nav_input_t`: steering (LF, `TMO_POL`), barcode and bypass commands (5 ms timeout), remote commands | S2 (2500530); **S5 (2500596)**; S1/S3 pending |
 | IF-02 | S2 VC → S2 Motion (internal) | message buffer, 4 slots (owned by S2) | `MBF_MOTION_CMD` | `motion_cmd_t`; VC sends `TMO_POL`, Motion polls every 20 ms | S2 (2500530) |
-| IF-03 | S5 Scan → S5 Avoid (internal) | message buffer, 2 slots (owned by S5) | `MBF_OBSTACLE` | `obstacle_profile_t`; newest profile wins | TODO(owner-to-confirm) |
-| IF-04 | all → S1 | message buffer, 32 slots (owned by S1) | `MBF_TELEMETRY` | `tel_evt_t`; senders `TMO_POL`, overflow dropped and counted | S2 (2500530); S1/S3/S4/S5 pending |
-| IF-05 | echo ISR → S5 Scan | semaphore (owned by S5) | `SEM_ECHO` | echo received; 30 ms timeout = nothing in range | TODO(owner-to-confirm) |
-| IF-06 | S4 IMU → S4 Safety; Safety → S2 VC | eventflag (owned by S4) | `EVF_SAFETY` | COLLISION, IMU_ALIVE (set by IMU); FAULT_LATCHED set only by Safety, cleared only by S2 VC | S2 (2500530); S4 pending |
-| IF-07 | S5, S3 → readers | eventflag (owned by S5) | `EVF_NAV` | AVOID_ACTIVE, LINE_REACQUIRED (S5), LINE_FOUND (S3); readers poll | S2 (2500530); S3/S5 pending |
+| IF-03 | S5 Scan → S5 Avoid (internal) | message buffer, 2 slots (owned by S5) | `MBF_OBSTACLE` | `obstacle_profile_t`; newest profile wins. Sender drains then sends (`DATA_REPRESENTATION.md` 2.3) | **S5 (2500596)** |
+| IF-04 | all → S1 | message buffer, 32 slots (owned by S1) | `MBF_TELEMETRY` | `tel_evt_t`; senders `TMO_POL`, overflow dropped and counted | S2 (2500530); S1/S3/S4 pending. S5 sends nothing: `DREP_TEL_TYPE_COUNT` has no obstacle type (see `testing/subsystem5/TEST_LOG.md` open item 5) |
+| IF-05 | echo ISR → S5 Scan | semaphore (owned by S5) | `SEM_ECHO` | echo received; 30 ms timeout = nothing in range. Signalled from the echo ISR via `hal_isr_sig()` | **S5 (2500596)** |
+| IF-06 | S4 IMU → S4 Safety; Safety → S2 VC | eventflag (owned by S4) | `EVF_SAFETY` | COLLISION, IMU_ALIVE (set by IMU); FAULT_LATCHED set only by Safety, cleared only by S2 VC; STATUS_NO_ECHO (b7) set and cleared only by S5 Scan, which also reads COLLISION/FAULT_LATCHED to abort a bypass | S2 (2500530); **S5 (2500596)** for b7; S4 pending |
+| IF-07 | S5, S3 → readers | eventflag (owned by S5) | `EVF_NAV` | AVOID_ACTIVE, LINE_REACQUIRED (S5), LINE_FOUND (S3); readers poll | S2 (2500530); **S5 (2500596)**; S3 pending |
 | IF-08 | S2 Motion → S3 BC, S1 | shared data under a mutex, `TA_INHERIT` (owned by S2) | `MTX_MOTION`, `motion_state_t` | speed, distance, encoder counts; copy and release at once. Safety never takes it | S2 (2500530); S1/S3 pending |
 | IF-09 | barcode ISR → S3 BC (internal) | ISR ring buffer, 64 edges (owned by S3) | barcode edge ring | bar/space edge times; overflow forces INVALID_READ_RESET | TODO(owner-to-confirm) |
 | IF-10 | PIO0 → S2 Motion (internal) | hardware counters read via `enc_get_count()` (owned by S2) | encoder count words | free-running signed counts, written only by the Motion task (Week 8, ARCHITECTURE.md D7) | S2 (2500530) |
@@ -204,7 +204,7 @@ Limits are set in `config/mtk3/config.h` and checked in
 | Message buffer | 8 | 1 | 2 | | | 1 | |
 | Fixed memory pool | 4 | | | | | | |
 | Variable memory pool | 4 | | | | | | |
-| Cyclic handler | 8 | 1 | 0 (`app_period_wait`) | 1 | 1 | 1 | |
+| Cyclic handler | 8 | 1 | 0 (`app_period_wait`) | 1 | 1 | 0 (`app_period_wait`) | |
 | Alarm handler | 4 | | | | | | |
 
 The telemetry cyclic handler's period is open: delta D2 (20 ms wake) is
