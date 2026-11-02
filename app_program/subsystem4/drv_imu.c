@@ -6,8 +6,10 @@
  *
  *  See drv_imu.h for the interface and ownership.
  *
- *  Hardware: GY-511 LSM303DLHC accelerometer on I2C1 (SDA GP2, SCL GP3).
- *  Output is a 12-bit value left-justified in 16 bits (high-resolution mode).
+ *  "GY-511" boards carry one of two ST chips, detected at boot:
+ *    LSM303DLHC  accel 0x19 + mag 0x1E; 12-bit accel, left-justified.
+ *    LSM303D     accel + mag in one chip at 0x1D (or 0x1E), WHO_AM_I 0x49;
+ *                16-bit accel.  Found on the team's car (I2C scan: 0x1D only).
  *  TODO(owner-to-confirm, buddy 4): the code assumes the board's +X axis
  *  points to the front of the car (pitch sign).  Check by tilting the nose up.
  */
@@ -21,44 +23,62 @@
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 
-/* ---------------------------------------------------------------------------
- * LSM303DLHC accelerometer registers
- * ------------------------------------------------------------------------- */
-
-#define LSM303_CTRL_REG1_A      (0x20U)
-#define LSM303_CTRL_REG4_A      (0x23U)
-#define LSM303_OUT_X_L_A        (0x28U)
-
-/* CTRL_REG1_A: ODR 400 Hz (ODR[3:0] = 0111), X/Y/Z enabled. */
-#define CTRL_REG1_ODR_400HZ     (0x70U)
-#define CTRL_REG1_XYZ_EN        (0x07U)
-
 #if IMU_ODR_HZ != 400U
-#error "drv_imu.c: CTRL_REG1_A is set for 400 Hz; update it with IMU_ODR_HZ"
+#error "drv_imu.c: the control registers are set for 400 Hz; update them with IMU_ODR_HZ"
 #endif
 
-/* CTRL_REG4_A: block data update (no torn high/low bytes), high resolution. */
-#define CTRL_REG4_BDU           (0x80U)
-#define CTRL_REG4_HR            (0x08U)
+/* ---------------------------------------------------------------------------
+ * Common register map (both chips)
+ * ------------------------------------------------------------------------- */
+
+#define REG_WHO_AM_I            (0x0FU)
+#define REG_CTRL1               (0x20U)     /* DLHC CTRL_REG1_A, D CTRL1 */
+#define REG_OUT_X_L_A           (0x28U)
+#define AUTO_INC                (0x80U)     /* sub-address MSB: auto-increment */
+
+/* ---------------------------------------------------------------------------
+ * LSM303DLHC accelerometer
+ * ------------------------------------------------------------------------- */
+
+#define DLHC_CTRL_REG4_A        (0x23U)
+#define DLHC_CTRL1_400HZ_XYZ    (0x77U)     /* ODR 0111 = 400 Hz, X/Y/Z on */
+#define DLHC_REG4_BDU_HR        (0x88U)     /* block data update, high resolution */
 #if IMU_ACCEL_FS_G == 4U
-#define CTRL_REG4_FS            (0x10U)
-#define ACCEL_SENSITIVITY_MG    (2)      /* 2 mg/LSB at 12-bit */
+#define DLHC_REG4_FS            (0x10U)
+#define DLHC_MG_PER_LSB         (2)         /* 12-bit */
 #elif IMU_ACCEL_FS_G == 8U
-#define CTRL_REG4_FS            (0x20U)
-#define ACCEL_SENSITIVITY_MG    (4)      /* 4 mg/LSB at 12-bit */
+#define DLHC_REG4_FS            (0x20U)
+#define DLHC_MG_PER_LSB         (4)
 #elif IMU_ACCEL_FS_G == 16U
-#define CTRL_REG4_FS            (0x30U)
-#define ACCEL_SENSITIVITY_MG    (12)     /* 12 mg/LSB at 12-bit */
+#define DLHC_REG4_FS            (0x30U)
+#define DLHC_MG_PER_LSB         (12)
 #else
 #error "drv_imu.c: unsupported IMU_ACCEL_FS_G (4, 8 or 16)"
 #endif
 
-/* Sub-address MSB set = auto-increment for multi-byte reads. */
-#define AUTO_INC                (0x80U)
+/* ---------------------------------------------------------------------------
+ * LSM303D (accel + mag in one chip)
+ * ------------------------------------------------------------------------- */
+
+#define LSM303D_ADDR_SA0_HIGH   (0x1DU)
+#define LSM303D_ADDR_SA0_LOW    (0x1EU)
+#define LSM303D_WHO_AM_I_VALUE  (0x49U)
+#define LSM303D_CTRL2           (0x21U)
+#define LSM303D_CTRL1_400HZ     (0x8FU)     /* AODR 1000 = 400 Hz, BDU, X/Y/Z on */
+#define LSM303D_CTRL2_ABW_50HZ  (0xC0U)     /* anti-alias filter 50 Hz (ABW 11): cuts vibration */
+#if IMU_ACCEL_FS_G == 4U
+#define LSM303D_CTRL2_FS        (0x08U)     /* AFS 001 */
+#define LSM303D_UG_PER_LSB      (122)       /* 0.122 mg/LSB, 16-bit */
+#elif IMU_ACCEL_FS_G == 8U
+#define LSM303D_CTRL2_FS        (0x18U)     /* AFS 011 */
+#define LSM303D_UG_PER_LSB      (244)
+#elif IMU_ACCEL_FS_G == 16U
+#define LSM303D_CTRL2_FS        (0x20U)     /* AFS 100 */
+#define LSM303D_UG_PER_LSB      (732)
+#endif
 
 /* One 7-byte transfer at 400 kHz takes about 200 us; 2 ms is a stuck bus. */
 #define I2C_TIMEOUT_US          (2000U)
-
 #define I2C_SPEED_HZ            (400U * 1000U)
 
 #if IMU_I2C_PORT_NUM == 0U
@@ -73,9 +93,12 @@
  * State
  * ------------------------------------------------------------------------- */
 
-static bool s_ready       = false;
-static bool s_accel_found = false;
-static bool s_mag_found   = false;
+static bool     s_ready       = false;
+static bool     s_accel_found = false;
+static bool     s_mag_found   = false;
+static uint32_t s_chip        = IMU_CHIP_NONE;
+static uint8_t  s_accel_addr  = 0U;
+static uint32_t s_scan_map[4] = { 0U, 0U, 0U, 0U };    /* bit per 7-bit address */
 
 /* ---------------------------------------------------------------------------
  * Helpers
@@ -86,6 +109,16 @@ static bool write_reg(uint8_t addr, uint8_t reg, uint8_t val)
     uint8_t const buf[2] = { reg, val };
 
     return i2c_write_timeout_us(IMU_I2C_INST, addr, buf, 2, false, I2C_TIMEOUT_US) == 2;
+}
+
+static bool read_regs(uint8_t addr, uint8_t reg, uint8_t *p_dst, size_t len)
+{
+    if (i2c_write_timeout_us(IMU_I2C_INST, addr, &reg, 1, true, I2C_TIMEOUT_US) != 1)
+    {
+        return false;
+    }
+
+    return i2c_read_timeout_us(IMU_I2C_INST, addr, p_dst, len, false, I2C_TIMEOUT_US) == (int)len;
 }
 
 static bool i2c_probe(uint8_t addr)
@@ -155,6 +188,43 @@ static int32_t atan2_half_deg(int32_t y, int32_t x)
     return (y < 0) ? -a : a;
 }
 
+static void scan_bus(void)
+{
+    for (uint32_t addr = 0x08U; addr <= 0x77U; addr++)
+    {
+        if (i2c_probe((uint8_t)addr))
+        {
+            s_scan_map[addr >> 5U] |= (1UL << (addr & 31U));
+        }
+    }
+}
+
+static bool is_lsm303d(uint8_t addr)
+{
+    uint8_t who = 0U;
+
+    return imu_scan_found(addr)
+           && read_regs(addr, REG_WHO_AM_I, &who, 1U)
+           && (who == LSM303D_WHO_AM_I_VALUE);
+}
+
+static bool configure(void)
+{
+    if (s_chip == IMU_CHIP_LSM303DLHC)
+    {
+        return write_reg(s_accel_addr, REG_CTRL1, DLHC_CTRL1_400HZ_XYZ)
+               && write_reg(s_accel_addr, DLHC_CTRL_REG4_A, DLHC_REG4_BDU_HR | DLHC_REG4_FS);
+    }
+
+    if (s_chip == IMU_CHIP_LSM303D)
+    {
+        return write_reg(s_accel_addr, REG_CTRL1, LSM303D_CTRL1_400HZ)
+               && write_reg(s_accel_addr, LSM303D_CTRL2, LSM303D_CTRL2_ABW_50HZ | LSM303D_CTRL2_FS);
+    }
+
+    return false;
+}
+
 /* ---------------------------------------------------------------------------
  * Public API
  * ------------------------------------------------------------------------- */
@@ -172,33 +242,44 @@ bool imu_init(void)
     gpio_pull_up(IMU_I2C_SDA_PIN);
     gpio_pull_up(IMU_I2C_SCL_PIN);
 
-    s_accel_found = i2c_probe((uint8_t)IMU_ACCEL_I2C_ADDR);
-    s_mag_found   = i2c_probe((uint8_t)IMU_MAG_I2C_ADDR);
+    scan_bus();
 
-    if (!s_accel_found)
+    if (imu_scan_found(IMU_ACCEL_I2C_ADDR))
+    {
+        s_chip       = IMU_CHIP_LSM303DLHC;
+        s_accel_addr = (uint8_t)IMU_ACCEL_I2C_ADDR;
+        s_mag_found  = imu_scan_found(IMU_MAG_I2C_ADDR);
+    }
+    else if (is_lsm303d((uint8_t)LSM303D_ADDR_SA0_HIGH))
+    {
+        s_chip       = IMU_CHIP_LSM303D;
+        s_accel_addr = (uint8_t)LSM303D_ADDR_SA0_HIGH;
+        s_mag_found  = true;    /* magnetometer is in the same chip */
+    }
+    else if (is_lsm303d((uint8_t)LSM303D_ADDR_SA0_LOW))
+    {
+        s_chip       = IMU_CHIP_LSM303D;
+        s_accel_addr = (uint8_t)LSM303D_ADDR_SA0_LOW;
+        s_mag_found  = true;
+    }
+    else
     {
         return false;
     }
 
-    if (!write_reg((uint8_t)IMU_ACCEL_I2C_ADDR, LSM303_CTRL_REG1_A,
-                   CTRL_REG1_ODR_400HZ | CTRL_REG1_XYZ_EN))
-    {
-        return false;
-    }
-
-    if (!write_reg((uint8_t)IMU_ACCEL_I2C_ADDR, LSM303_CTRL_REG4_A,
-                   CTRL_REG4_BDU | CTRL_REG4_FS | CTRL_REG4_HR))
-    {
-        return false;
-    }
-
-    s_ready = true;
-    return true;
+    s_accel_found = true;
+    s_ready       = configure();
+    return s_ready;
 }
 
 bool imu_is_ready(void)
 {
     return s_ready;
+}
+
+bool imu_reconfigure(void)
+{
+    return s_ready && configure();
 }
 
 bool imu_accel_found(void)
@@ -211,29 +292,49 @@ bool imu_mag_found(void)
     return s_mag_found;
 }
 
+uint32_t imu_chip(void)
+{
+    return s_chip;
+}
+
+uint32_t imu_accel_addr(void)
+{
+    return s_accel_addr;
+}
+
+bool imu_scan_found(uint32_t addr)
+{
+    if (addr > 0x7FU)
+    {
+        return false;
+    }
+
+    return (s_scan_map[addr >> 5U] & (1UL << (addr & 31U))) != 0U;
+}
+
+int32_t imu_read_id_reg(uint32_t addr, uint32_t reg)
+{
+    uint8_t val = 0U;
+
+    if (!read_regs((uint8_t)addr, (uint8_t)reg, &val, 1U))
+    {
+        return -1;
+    }
+
+    return (int32_t)val;
+}
+
 bool imu_read_accel(imu_accel_raw_t *p_out)
 {
-    if (!s_ready || (p_out == NULL))
+    uint8_t buf[6];
+
+    if (!s_ready || (p_out == NULL)
+        || !read_regs(s_accel_addr, (uint8_t)(REG_OUT_X_L_A | AUTO_INC), buf, sizeof buf))
     {
         return false;
     }
 
-    uint8_t const reg = (uint8_t)(LSM303_OUT_X_L_A | AUTO_INC);
-    uint8_t       buf[6];
-
-    if (i2c_write_timeout_us(IMU_I2C_INST, (uint8_t)IMU_ACCEL_I2C_ADDR,
-                             &reg, 1, true, I2C_TIMEOUT_US) != 1)
-    {
-        return false;
-    }
-
-    if (i2c_read_timeout_us(IMU_I2C_INST, (uint8_t)IMU_ACCEL_I2C_ADDR,
-                            buf, 6, false, I2C_TIMEOUT_US) != 6)
-    {
-        return false;
-    }
-
-    /* Little-endian: low byte first. */
+    /* Little-endian: low byte first (both chips). */
     p_out->x = (int16_t)((uint16_t)buf[0] | ((uint16_t)buf[1] << 8U));
     p_out->y = (int16_t)((uint16_t)buf[2] | ((uint16_t)buf[3] << 8U));
     p_out->z = (int16_t)((uint16_t)buf[4] | ((uint16_t)buf[5] << 8U));
@@ -244,10 +345,19 @@ bool imu_read_accel(imu_accel_raw_t *p_out)
 void imu_raw_to_mg(imu_accel_raw_t const *p_raw,
                    int32_t *p_x_mg, int32_t *p_y_mg, int32_t *p_z_mg)
 {
-    /* Arithmetic shift keeps the sign (GCC); 16 = 4-bit left justification. */
-    *p_x_mg = ((int32_t)p_raw->x >> 4) * ACCEL_SENSITIVITY_MG;
-    *p_y_mg = ((int32_t)p_raw->y >> 4) * ACCEL_SENSITIVITY_MG;
-    *p_z_mg = ((int32_t)p_raw->z >> 4) * ACCEL_SENSITIVITY_MG;
+    if (s_chip == IMU_CHIP_LSM303D)
+    {
+        *p_x_mg = ((int32_t)p_raw->x * LSM303D_UG_PER_LSB) / 1000;
+        *p_y_mg = ((int32_t)p_raw->y * LSM303D_UG_PER_LSB) / 1000;
+        *p_z_mg = ((int32_t)p_raw->z * LSM303D_UG_PER_LSB) / 1000;
+    }
+    else
+    {
+        /* DLHC: 12 bits left-justified; arithmetic shift keeps the sign (GCC). */
+        *p_x_mg = ((int32_t)p_raw->x >> 4) * DLHC_MG_PER_LSB;
+        *p_y_mg = ((int32_t)p_raw->y >> 4) * DLHC_MG_PER_LSB;
+        *p_z_mg = ((int32_t)p_raw->z >> 4) * DLHC_MG_PER_LSB;
+    }
 }
 
 int32_t imu_pitch_half_deg(int32_t x_mg, int32_t y_mg, int32_t z_mg)

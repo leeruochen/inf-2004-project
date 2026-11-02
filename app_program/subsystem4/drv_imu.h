@@ -6,9 +6,9 @@
  *  <stdbool.h> and <stdint.h> only, so both drv_imu.c (SDK side) and the
  *  IMU Processing / Safety tasks (kernel side) may include it.
  *
- *  Hardware: GY-511 LSM303DLHC, accelerometer at 0x19 and magnetometer at
- *  0x1E on I2C1 (SDA GP2, SCL GP3).  Accelerometer-only pitch in Phase 1
- *  (IMU_HAS_GYRO = 0).
+ *  Hardware: GY-511 on I2C1 (SDA GP2, SCL GP3) with either an LSM303DLHC
+ *  (accel 0x19, mag 0x1E) or an LSM303D (accel + mag at 0x1D), detected at
+ *  boot.  Accelerometer-only pitch in Phase 1 (IMU_HAS_GYRO = 0).
  *
  *  Ownership: I2C1 has one owner.  imu_init() runs in subsystem4_init()
  *  before any task starts; after that only the IMU Processing task calls
@@ -41,9 +41,39 @@ bool imu_init(void);
 /** True once imu_init() has configured the accelerometer. */
 bool imu_is_ready(void);
 
+/*
+ * Write the configuration again to the chip found by imu_init().  A sensor
+ * that lost power (cable unplugged) wakes up powered down and must be
+ * configured before its readings mean anything.  IMU Processing task only.
+ */
+bool imu_reconfigure(void);
+
 /** Bus-scan results recorded by imu_init() (no I2C traffic). */
 bool imu_accel_found(void);
 bool imu_mag_found(void);
+
+/*
+ * True if any device answered at addr (0x08..0x77) in the full I2C1 scan
+ * done by imu_init().  For wiring checks: tells a missing or miswired IMU
+ * from a different chip at another address.
+ */
+bool imu_scan_found(uint32_t addr);
+
+/** Chip found by imu_init(). */
+#define IMU_CHIP_NONE           (0U)
+#define IMU_CHIP_LSM303DLHC     (1U)    /* accel 0x19, mag 0x1E */
+#define IMU_CHIP_LSM303D        (2U)    /* accel + mag at 0x1D or 0x1E */
+
+uint32_t imu_chip(void);
+
+/** I2C address the accelerometer is read from (0 if none). */
+uint32_t imu_accel_addr(void);
+
+/*
+ * Read one register for identification logs: the value 0..255, or -1 on an
+ * I2C error.  IMU Processing task only (it owns I2C1 after init).
+ */
+int32_t imu_read_id_reg(uint32_t addr, uint32_t reg);
 
 /*
  * Read the latest accelerometer sample.  Returns false on an I2C error or

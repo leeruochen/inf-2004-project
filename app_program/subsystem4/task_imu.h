@@ -32,7 +32,13 @@ bool imu_is_task_running(void);
 /** Latest pitch in half-degree units (Q1: value / 2 = degrees). */
 int32_t imu_get_pitch_half_deg(void);
 
-/** Latest acceleration magnitude in milli-g. */
+/** Board pitch measured at boot with the car flat, subtracted from every reading. */
+int32_t imu_get_pitch_offset_half_deg(void);
+
+/** True once the boot level reference has been taken (0.7 s after start). */
+bool imu_is_level_done(void);
+
+/** Latest acceleration magnitude in milli-g (low-passed). */
 uint32_t imu_get_accel_mag_mg(void);
 
 /** Latest Z-axis acceleration in milli-g. */
@@ -49,5 +55,11 @@ uint32_t imu_get_i2c_error_count(void);
 
 /** Collisions detected since boot (one per spike). */
 uint32_t imu_get_collision_count(void);
+
+/** Humps reported since boot (one per hump). */
+uint32_t imu_get_hump_count(void);
+
+/** Pitch of the last reported hump, half-degrees (positive = nose up). */
+int32_t imu_get_last_hump_pitch_half_deg(void);
 
 #endif /* TASK_IMU_H */
