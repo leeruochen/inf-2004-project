@@ -1,0 +1,70 @@
+S1-M01..M03 Mosquitto broker log, 2026-11-02: connection events only (PUBLISH/PING/ACK lines removed; epoch times converted to local time)
+
+14:32:11 mosquitto version 2.1.2 starting
+14:32:11 Config loaded from C:\Users\damia\mosquitto-car.conf.
+14:32:11 Bridge support available.
+14:32:11 Persistence support available.
+14:32:11 TLS support available.
+14:32:11 TLS-PSK support available.
+14:32:11 Websockets support available.
+14:32:11 Opening ipv4 listen socket on port 1883.
+14:32:11 mosquitto version 2.1.2 running
+14:32:13 New connection from 172.20.10.8:58316 on port 1883.
+14:32:13 New client connected from 172.20.10.8:58316 as robocar-dashboard (p4, c1, k30).
+14:32:13 No will message specified.
+14:32:13 	car/# (QoS 1)
+14:32:13 robocar-dashboard 1 car/#
+14:33:59 New connection from 172.20.10.2:59002 on port 1883.
+14:33:59 New client connected from 172.20.10.2:59002 as robocar-is16 (p4, c1, k5).
+14:33:59 Will message specified (1 bytes) (r1, q1).
+14:33:59 	car/status
+14:33:59 	car/cmd/# (QoS 1)
+14:33:59 robocar-is16 1 car/cmd/#
+14:37:30 New connection from 172.20.10.8:62115 on port 1883.
+14:37:30 New client connected from 172.20.10.8:62115 as robocar-dashboard-cmd (p4, c1, k30).
+14:37:30 No will message specified.
+14:37:31 Client robocar-dashboard-cmd [172.20.10.8:62115] disconnected.
+14:37:35 New connection from 172.20.10.8:62118 on port 1883.
+14:37:35 New client connected from 172.20.10.8:62118 as robocar-dashboard-cmd (p4, c1, k30).
+14:37:35 No will message specified.
+14:37:36 Client robocar-dashboard-cmd [172.20.10.8:62118] disconnected.
+14:37:39 New connection from 172.20.10.8:62121 on port 1883.
+14:37:39 New client connected from 172.20.10.8:62121 as robocar-dashboard-cmd (p4, c1, k30).
+14:37:39 No will message specified.
+14:37:40 Client robocar-dashboard-cmd [172.20.10.8:62121] disconnected.
+14:37:44 New connection from 172.20.10.8:62126 on port 1883.
+14:37:44 New client connected from 172.20.10.8:62126 as auto-607D707F-EE9C-F0BE-69AA-D28A61CB5E14 (p4, c1, k60).
+14:37:44 No will message specified.
+14:37:44 Client auto-607D707F-EE9C-F0BE-69AA-D28A61CB5E14 [172.20.10.8:62126] disconnected.
+14:37:44 New connection from 172.20.10.8:62129 on port 1883.
+14:37:44 New client connected from 172.20.10.8:62129 as auto-5D12642C-F26A-4651-51D2-20C31327CB9E (p4, c1, k60).
+14:37:44 No will message specified.
+14:37:44 Client auto-5D12642C-F26A-4651-51D2-20C31327CB9E [172.20.10.8:62129] disconnected.
+14:38:28 Client robocar-dashboard [172.20.10.8:58316] disconnected: connection closed by client.
+14:38:29 New connection from 127.0.0.1:62135 on port 1883.
+14:38:29 New client connected from 127.0.0.1:62135 as robocar-dashboard (p4, c1, k30).
+14:38:29 No will message specified.
+14:38:29 	car/# (QoS 1)
+14:38:29 robocar-dashboard 1 car/#
+14:40:18 Client robocar-is16 [172.20.10.2:59002] disconnected: exceeded timeout.
+14:40:55 New connection from 172.20.10.2:59004 on port 1883.
+14:41:10 Client 172.20.10.2 [172.20.10.2:59004] disconnected: connection closed by client.
+14:41:26 New connection from 172.20.10.2:59005 on port 1883.
+14:41:41 Client 172.20.10.2 [172.20.10.2:59005] disconnected: connection closed by client.
+14:42:13 New connection from 172.20.10.2:59006 on port 1883.
+14:42:26 Client 172.20.10.2 [172.20.10.2:59006] disconnected: connection closed by client.
+14:42:56 New connection from 172.20.10.2:59007 on port 1883.
+14:43:11 Client 172.20.10.2 [172.20.10.2:59007] disconnected: connection closed by client.
+14:43:41 New connection from 172.20.10.2:59008 on port 1883.
+14:43:56 Client 172.20.10.2 [172.20.10.2:59008] disconnected: connection closed by client.
+14:44:26 New connection from 172.20.10.2:59009 on port 1883.
+14:44:41 Client 172.20.10.2 [172.20.10.2:59009] disconnected: connection closed by client.
+14:45:11 New connection from 172.20.10.2:59010 on port 1883.
+14:45:26 Client 172.20.10.2 [172.20.10.2:59010] disconnected: connection closed by client.
+14:45:56 New connection from 172.20.10.2:59011 on port 1883.
+14:46:11 Client 172.20.10.2 [172.20.10.2:59011] disconnected: connection closed by client.
+14:46:41 New connection from 172.20.10.2:59012 on port 1883.
+14:46:56 Client 172.20.10.2 [172.20.10.2:59012] disconnected: connection closed by client.
+14:47:26 New connection from 172.20.10.2:59013 on port 1883.
+14:47:41 Client 172.20.10.2 [172.20.10.2:59013] disconnected: connection closed by client.
+14:48:09 Client robocar-dashboard [127.0.0.1:62135] disconnected: connection closed by client.

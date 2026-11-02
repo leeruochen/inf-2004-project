@@ -1,0 +1,1463 @@
+14:32:19.956  [capture] COM3 for 1800 s -> testing/subsystem1/logs/2026-11-02_s1_mqtt.txt
+14:32:20.045  [S5] coarse hit 78 mm @ 140 deg, fine scan
+14:32:20.048  [TEL] car/telemetry/motion 01010fc82003000000080a00004400000000
+14:32:20.050  [TEL] car/telemetry/sensor 01020ac82003ffbf07904d4b00
+14:32:20.052  [TEL] car/telemetry/heartbeat 010706c82003004306
+14:32:20.054  [S5] obstacle 78 mm @ 150 deg w=34 clrL=635 clrR=635
+14:32:20.056  [S5] avoid -> SLOW (3000 ms)
+14:32:20.058  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:32:20.060  [S5] avoid -> IDLE (reacquired=0)
+14:32:20.074  [TEL] car/telemetry/motion 01010fb02403000000080a00004400000000
+14:32:20.079  [TEL] car/telemetry/sensor 01020ab02403ffbf07904d4b00
+14:32:20.081  [S5] coarse hit 74 mm @ 140 deg, fine scan
+14:32:20.082  [TEL] car/telemetry/motion 01010f982803000000080a00004400000000
+14:32:20.084  [TEL] car/telemetry/sensor 01020a982803ffbf07904d4b00
+14:32:20.086  [S5] obstacle 74 mm @ 140 deg w=6 clrL=25 clrR=635
+14:32:20.088  [S5] avoid -> SLOW (3000 ms)
+14:32:20.090  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:32:20.092  [S5] avoid -> IDLE (reacquired=0)
+14:32:20.094  [TEL] car/telemetry/motion 01010f802c03000000080a00004400000000
+14:32:20.097  [TEL] car/telemetry/sensor 01020a802c03ffbf07904d4b00
+14:32:20.099  [S5] coarse hit 74 mm @ 140 deg, fine scan
+14:32:20.101  [S5] obstacle 78 mm @ 150 deg w=34 clrL=635 clrR=635
+14:32:20.103  [S5] avoid -> SLOW (3000 ms)
+14:32:20.105  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:32:20.107  [S5] avoid -> IDLE (reacquired=0)
+14:32:20.109  [TEL] car/telemetry/motion 01010f683003000000080a00004400000000
+14:32:20.110  [TEL] car/telemetry/sensor 01020a683003ffbf07904d4b00
+14:32:20.114  [TEL] car/telemetry/motion 01010f503403000000080a00004400000000
+14:32:20.116  [TEL] car/telemetry/sensor 01020a503403ffbf07904d4b00
+14:32:20.117  [TEL] car/telemetry/heartbeat 010706503403004306
+14:32:20.119  [S5] coarse hit 74 mm @ 140 deg, fine scan
+14:32:20.123  [S5] obstacle 78 mm @ 150 deg w=34 clrL=635 clrR=635
+14:32:20.125  [S5] avoid -> SLOW (3000 ms)
+14:32:20.126  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:32:20.128  [S5] avoid -> IDLE (reacquired=0)
+14:32:20.130  [TEL] car/telemetry/motion 01010f383803000000080a00004400000000
+14:32:20.133  [TEL] car/telemetry/sensor 01020a383803ffbf07904d4b00
+14:32:20.136  [TEL] car/telemetry/motion 01010f203c03000000080a00004400000000
+14:32:20.139  [TEL] car/telemetry/sensor 01020a203c03ffbf07904d4b00
+14:32:20.142  [S5] coarse hit 74 mm @ 140 deg, fine scan
+14:32:20.143  [S5] obstacle 78 mm @ 140 deg w=9 clrL=635 clrR=635
+14:32:20.146  [S5] avoid -> SLOW (3000 ms)
+14:32:20.148  [S5] avoid -> IDLE (reacquired=0)
+14:32:20.150  [DBG] dropped so far: 1247 dbg_ lines, 0 kernel text bytes
+14:32:20.152  [DBG] alive: SDK timer 578568 ms, kernel time 577362 ms, difference 1206 ms
+14:32:20.672  [TEL] car/telemetry/motion 01010fd0d1080000006c000000e406000000
+14:32:20.674  [TEL] car/telemetry/sensor 01020ad0d108ffbf07904d4b00
+14:32:21.672  [TEL] car/telemetry/motion 01010fb8d5080000006c000000e406000000
+14:32:21.674  [TEL] car/telemetry/sensor 01020ab8d508ffbf07904d4b00
+14:32:22.674  [TEL] car/telemetry/motion 01010fa0d9080000006c000000e406000000
+14:32:22.678  [TEL] car/telemetry/sensor 01020aa0d908ffbf07904d4b00
+14:32:22.680  [TEL] car/telemetry/heartbeat 010706a0d908004306
+14:32:23.674  [TEL] car/telemetry/motion 01010f88dd080000006c000000e406000000
+14:32:23.676  [TEL] car/telemetry/sensor 01020a88dd08ffbf07904d4b00
+14:32:24.675  [TEL] car/telemetry/motion 01010f70e1080000006c000000e406000000
+14:32:24.677  [TEL] car/telemetry/sensor 01020a70e108ffbf07904d4b00
+14:32:25.676  [TEL] car/telemetry/motion 01010f58e5080000006c000000e406000000
+14:32:25.680  [TEL] car/telemetry/sensor 01020a58e508ffbf07904d4b00
+14:32:26.677  [TEL] car/telemetry/motion 01010f40e9080000006c000000e406000000
+14:32:26.679  [TEL] car/telemetry/sensor 01020a40e908ffbf07904d4b00
+14:32:27.679  [TEL] car/telemetry/motion 01010f28ed080000006c000000e406000000
+14:32:27.682  [TEL] car/telemetry/sensor 01020a28ed08ffbf07904d4b00
+14:32:27.684  [TEL] car/telemetry/heartbeat 01070628ed08004306
+14:32:28.679  [TEL] car/telemetry/motion 01010f10f1080000006c000000e406000000
+14:32:28.681  [TEL] car/telemetry/sensor 01020a10f108ffbf07904d4b00
+14:32:29.679  [TEL] car/telemetry/motion 01010ff8f4080000006c000000e406000000
+14:32:29.682  [TEL] car/telemetry/sensor 01020af8f408ffbf07904d4b00
+14:32:30.043  [DBG] alive: SDK timer 588578 ms, kernel time 587372 ms, difference 1206 ms
+14:32:30.681  [TEL] car/telemetry/motion 01010fe0f8080000006c000000e406000000
+14:32:30.684  [TEL] car/telemetry/sensor 01020ae0f808ffbf07904d4b00
+14:32:31.671  [TEL] car/telemetry/motion 01010fc8fc080000006c000000e406000000
+14:32:31.674  [TEL] car/telemetry/sensor 01020ac8fc08ffbf07904d4b00
+14:32:32.672  [TEL] car/telemetry/motion 01010fb000090000006c000000e406000000
+14:32:32.674  [TEL] car/telemetry/sensor 01020ab00009ffbf07904d4b00
+14:32:32.708  [TEL] car/telemetry/heartbeat 010706b00009004306
+14:32:33.672  [TEL] car/telemetry/motion 01010f9804090000006c000000e406000000
+14:32:33.675  [TEL] car/telemetry/sensor 01020a980409ffbf07904d4b00
+14:32:34.674  [TEL] car/telemetry/motion 01010f8008090000006c000000e406000000
+14:32:34.676  [TEL] car/telemetry/sensor 01020a800809ffbf07904d4b00
+14:32:35.675  [TEL] car/telemetry/motion 01010f680c090000006c000000e406000000
+14:32:35.677  [TEL] car/telemetry/sensor 01020a680c09ffbf07904d4b00
+14:32:36.676  [TEL] car/telemetry/motion 01010f5010090000006c000000e406000000
+14:32:36.678  [TEL] car/telemetry/sensor 01020a501009ffbf07904d4b00
+14:32:37.677  [TEL] car/telemetry/motion 01010f3814090000006c000000e406000000
+14:32:37.679  [TEL] car/telemetry/sensor 01020a381409ffbf07904d4b00
+14:32:37.681  [TEL] car/telemetry/heartbeat 01070638140900430e
+14:32:38.678  [TEL] car/telemetry/motion 01010f2018090000006c000000e406000000
+14:32:38.680  [TEL] car/telemetry/sensor 01020a201809ffbf07904d4b00
+14:32:39.679  [TEL] car/telemetry/motion 01010f081c090000006c000000e406000000
+14:32:39.681  [TEL] car/telemetry/sensor 01020a081c09ffbf07904d4b00
+14:32:40.053  [DBG] alive: SDK timer 598588 ms, kernel time 597382 ms, difference 1206 ms
+14:32:40.679  [TEL] car/telemetry/motion 01010ff01f090000006c000000e406000000
+14:32:40.681  [TEL] car/telemetry/sensor 01020af01f09ffbf07904d4b00
+14:32:41.680  [TEL] car/telemetry/motion 01010fd823090000006c000000e406000000
+14:32:41.683  [TEL] car/telemetry/sensor 01020ad82309ffbf07904d4b00
+14:32:42.671  [TEL] car/telemetry/motion 01010fc027090000006c000000e406000000
+14:32:42.674  [TEL] car/telemetry/sensor 01020ac02709ffbf07904d4b00
+14:32:42.676  [TEL] car/telemetry/heartbeat 010706c02709004306
+14:32:42.679  [TEL] CONNECTED tx=1326 txf=0 off=1 ev=39 bad=33 qd=32 od=0 cmd=1/5
+14:32:43.671  [TEL] car/telemetry/motion 01010fa82b090000006c000000e406000000
+14:32:43.674  [TEL] car/telemetry/sensor 01020aa82b09ffbf07904d4b00
+14:32:44.673  [TEL] car/telemetry/motion 01010f902f090000006c000000e406000000
+14:32:44.675  [TEL] car/telemetry/sensor 01020a902f09ffbf07904d4b00
+14:32:45.674  [TEL] car/telemetry/motion 01010f7833090000006c000000e406000000
+14:32:45.676  [TEL] car/telemetry/sensor 01020a783309ffbf07904d4b00
+14:32:46.675  [TEL] car/telemetry/motion 01010f6037090000006c000000e406000000
+14:32:46.677  [TEL] car/telemetry/sensor 01020a603709ffbf07904d4b00
+14:32:47.676  [TEL] car/telemetry/motion 01010f483b090000006c000000e406000000
+14:32:47.682  [TEL] car/telemetry/sensor 01020a483b09ffbf07904d4b00
+14:32:47.684  [TEL] car/telemetry/heartbeat 010706483b0900430e
+14:32:48.676  [TEL] car/telemetry/motion 01010f303f090000006c000000e406000000
+14:32:48.680  [TEL] car/telemetry/sensor 01020a303f09ffbf07904d4b00
+14:32:49.677  [TEL] car/telemetry/motion 01010f1843090000006c000000e406000000
+14:32:49.679  [TEL] car/telemetry/sensor 01020a184309ffbf07904d4b00
+14:32:50.063  [DBG] alive: SDK timer 608598 ms, kernel time 607392 ms, difference 1206 ms
+14:32:50.065  [STACK] init: 380 of 1152 B used, 772 never used
+14:32:50.066  [STACK] dbg_drain: 868 of 1664 B used, 796 never used
+14:32:50.068  [STACK] tel: 620 of 4736 B used, 4116 never used
+14:32:50.070  [STACK] vc: 452 of 1664 B used, 1212 never used
+14:32:50.072  [STACK] motion: 268 of 1664 B used, 1396 never used
+14:32:50.074  [STACK] safety: 328 of 1664 B used, 1336 never used
+14:32:50.075  [STACK] imu: 552 of 2176 B used, 1624 never used
+14:32:50.077  [STACK] obs_scan: 564 of 1664 B used, 1100 never used
+14:32:50.079  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:32:50.080  [STACK] app_test: 700 of 1664 B used, 964 never used
+14:32:50.082  [STACK] stack top check: 0 mismatches
+14:32:50.083  [MBF] nav_in: 64 B buffer, 64 B free
+14:32:50.085  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:32:50.087  [MBF] obstacle: 24 B buffer, 24 B free
+14:32:50.088  [MBF] telemetry: 384 B buffer, 384 B free
+14:32:50.670  [TEL] car/telemetry/motion 01010f0047090000006c000000e406000000
+14:32:50.673  [TEL] car/telemetry/sensor 01020a004709ffbf07904d4b00
+14:32:51.671  [TEL] car/telemetry/motion 01010fe84a090000006c000000e406000000
+14:32:51.674  [TEL] car/telemetry/sensor 01020ae84a09ffbf07904d4b00
+14:32:52.672  [TEL] car/telemetry/motion 01010fd04e090000006c000000e406000000
+14:32:52.675  [TEL] car/telemetry/sensor 01020ad04e09ffbf07904d4b00
+14:32:52.676  [TEL] car/telemetry/heartbeat 010706d04e09004306
+14:32:53.552  [S5] coarse hit 111 mm @ 60 deg, fine scan
+14:32:53.673  [TEL] car/telemetry/motion 01010fb852090000006c000000e406000000
+14:32:53.675  [TEL] car/telemetry/sensor 01020ab85209ffbf07904d4b00
+14:32:54.388  [S5] obstacle 91 mm @ 50 deg w=23 clrL=635 clrR=635
+14:32:54.390  [S5] avoid -> SLOW (3000 ms)
+14:32:54.392  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:32:54.393  [S5] avoid -> IDLE (reacquired=0)
+14:32:54.674  [TEL] car/telemetry/motion 01010fa056090000006c000000e406000000
+14:32:54.676  [TEL] car/telemetry/sensor 01020aa05609ffbf07904d4b00
+14:32:55.675  [TEL] car/telemetry/motion 01010f885a0900000034000000e406000000
+14:32:55.677  [TEL] car/telemetry/sensor 01020a885a09ffbf07904d4b00
+14:32:55.708  [S5] coarse hit 91 mm @ 50 deg, fine scan
+14:32:56.425  [S5] obstacle 95 mm @ 30 deg w=12 clrL=72 clrR=59
+14:32:56.427  [S5] avoid -> SLOW (3000 ms)
+14:32:56.429  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:32:56.430  [S5] avoid -> IDLE (reacquired=0)
+14:32:56.676  [TEL] car/telemetry/motion 01010f705e0900000034000000e406000000
+14:32:56.678  [TEL] car/telemetry/sensor 01020a705e09ffbf07904d4b00
+14:32:57.678  [TEL] car/telemetry/motion 01010f5862090000004c000000e406000000
+14:32:57.682  [TEL] car/telemetry/sensor 01020a586209ffbf07904d4b00
+14:32:57.683  [TEL] car/telemetry/heartbeat 010706586209004306
+14:32:57.809  [S5] coarse hit 95 mm @ 40 deg, fine scan
+14:33:34.528  [capture] port lost (MethodInvocationException); waiting for it to come back
+14:33:53.580  [capture] reconnected to COM3
+14:33:53.582  pre-kernel ok
+14:33:54.361  
+14:33:54.363  
+14:33:54.364  microT-Kernel Version 3.00
+14:33:54.366  
+14:33:54.367  [IPC] kernel spec version 3.00 OK
+14:33:54.372  [IPC] 8 objects created, MBF depth self-check OK
+14:33:54.375  [S4] IMU not found on I2C1
+14:33:54.377  [S4] tasks started
+14:33:54.378  [SAFETY] task started
+14:33:54.380  [IMU] task started, IMU NOT READY
+14:33:54.381  [IMU] I2C fault
+14:33:54.382  [SAFETY] BRAKE: IMU watchdog
+14:33:54.383  [TEL] backend: WiFi/MQTT
+14:33:54.386  [TEL] link DISCONNECTED -> CONNECTING
+14:33:57.587  [NET] WiFi up, IP 172.20.10.2
+14:33:58.533  [S5] coarse hit 145 mm @ 150 deg, fine scan
+14:33:59.128  [NET] MQTT session up
+14:33:59.130  [TEL] link CONNECTING -> CONNECTED
+14:33:59.138  [S5] obstacle 127 mm @ 170 deg w=33 clrL=20 clrR=12
+14:33:59.139  [S5] avoid -> SLOW (3000 ms)
+14:33:59.141  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:33:59.142  [S5] avoid -> IDLE (reacquired=0)
+14:34:00.513  [S5] coarse hit 60 mm @ 120 deg, fine scan
+14:34:02.977  [S5] coarse hit 107 mm @ 30 deg, fine scan
+14:34:03.583  [S5] obstacle 109 mm @ 10 deg w=28 clrL=37 clrR=635
+14:34:03.586  [S5] avoid -> SLOW (3000 ms)
+14:34:03.588  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:03.590  [S5] avoid -> IDLE (reacquired=0)
+14:34:04.364  [DBG] alive: SDK timer 12108 ms, kernel time 10652 ms, difference 1456 ms
+14:34:05.013  [S5] coarse hit 115 mm @ 150 deg, fine scan
+14:34:14.369  [DBG] alive: SDK timer 22113 ms, kernel time 20657 ms, difference 1456 ms
+14:34:16.075  [S5] coarse hit 80 mm @ 150 deg, fine scan
+14:34:16.779  [S5] obstacle 45 mm @ 150 deg w=79 clrL=635 clrR=26
+14:34:16.781  [S5] avoid -> SLOW (3000 ms)
+14:34:16.782  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:16.784  [S5] avoid -> IDLE (reacquired=0)
+14:34:18.395  [S5] coarse hit 45 mm @ 140 deg, fine scan
+14:34:18.880  [S5] obstacle 41 mm @ 130 deg w=41 clrL=82 clrR=635
+14:34:18.883  [S5] avoid -> SLOW (3000 ms)
+14:34:18.886  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:18.888  [S5] avoid -> IDLE (reacquired=0)
+14:34:20.377  [S5] coarse hit 41 mm @ 130 deg, fine scan
+14:34:20.795  [S5] obstacle 52 mm @ 130 deg w=49 clrL=635 clrR=635
+14:34:20.796  [S5] avoid -> SLOW (3000 ms)
+14:34:20.798  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:20.799  [S5] avoid -> IDLE (reacquired=0)
+14:34:22.346  [S5] coarse hit 52 mm @ 130 deg, fine scan
+14:34:24.375  [DBG] alive: SDK timer 32119 ms, kernel time 30663 ms, difference 1456 ms
+14:34:33.807  [S5] coarse hit 80 mm @ 150 deg, fine scan
+14:34:34.379  [DBG] alive: SDK timer 42123 ms, kernel time 40667 ms, difference 1456 ms
+14:34:38.020  [S5] coarse hit 41 mm @ 150 deg, fine scan
+14:34:38.726  [S5] obstacle 56 mm @ 150 deg w=14 clrL=635 clrR=635
+14:34:38.728  [S5] avoid -> SLOW (3000 ms)
+14:34:38.729  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:38.731  [S5] avoid -> IDLE (reacquired=0)
+14:34:40.289  [S5] coarse hit 61 mm @ 140 deg, fine scan
+14:34:40.784  [S5] obstacle 81 mm @ 160 deg w=21 clrL=635 clrR=7
+14:34:40.786  [S5] avoid -> SLOW (3000 ms)
+14:34:40.787  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:40.788  [S5] avoid -> IDLE (reacquired=0)
+14:34:41.983  [S5] coarse hit 41 mm @ 120 deg, fine scan
+14:34:42.631  [S5] obstacle 48 mm @ 140 deg w=5 clrL=635 clrR=77
+14:34:42.633  [S5] avoid -> SLOW (3000 ms)
+14:34:42.634  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:42.636  [S5] avoid -> IDLE (reacquired=0)
+14:34:44.193  [S5] coarse hit 61 mm @ 140 deg, fine scan
+14:34:44.381  [DBG] alive: SDK timer 52126 ms, kernel time 50670 ms, difference 1456 ms
+14:34:44.964  [S5] obstacle 43 mm @ 140 deg w=40 clrL=635 clrR=635
+14:34:44.966  [S5] avoid -> SLOW (3000 ms)
+14:34:44.967  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:44.969  [S5] avoid -> IDLE (reacquired=0)
+14:34:46.352  [S5] coarse hit 43 mm @ 130 deg, fine scan
+14:34:46.945  [S5] obstacle 69 mm @ 90 deg w=18 clrL=30 clrR=635
+14:34:46.948  [S5] avoid -> SLOW (3000 ms)
+14:34:46.950  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:46.950  [S5] avoid -> IDLE (reacquired=0)
+14:34:48.631  [S5] coarse hit 69 mm @ 130 deg, fine scan
+14:34:50.744  [S5] coarse hit 41 mm @ 150 deg, fine scan
+14:34:51.282  [S5] obstacle 37 mm @ 160 deg w=22 clrL=635 clrR=13
+14:34:51.284  [S5] avoid -> SLOW (3000 ms)
+14:34:51.286  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:51.288  [S5] avoid -> IDLE (reacquired=0)
+14:34:52.955  [S5] coarse hit 54 mm @ 140 deg, fine scan
+14:34:53.790  [S5] obstacle 58 mm @ 150 deg w=15 clrL=635 clrR=635
+14:34:53.792  [S5] avoid -> SLOW (3000 ms)
+14:34:53.794  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:53.795  [S5] avoid -> IDLE (reacquired=0)
+14:34:54.362  [TEL] CONNECTED tx=334 txf=0 off=28 ev=3 bad=0 qd=0 od=0 cmd=0/0
+14:34:54.386  [DBG] alive: SDK timer 62129 ms, kernel time 60673 ms, difference 1456 ms
+14:34:54.389  [STACK] init: 360 of 1152 B used, 792 never used
+14:34:54.391  [STACK] dbg_drain: 632 of 1664 B used, 1032 never used
+14:34:54.393  [STACK] tel: 864 of 4736 B used, 3872 never used
+14:34:54.395  [STACK] vc: 336 of 1664 B used, 1328 never used
+14:34:54.397  [STACK] motion: 184 of 1664 B used, 1480 never used
+14:34:54.398  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:34:54.400  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:34:54.402  [STACK] obs_scan: 564 of 1664 B used, 1100 never used
+14:34:54.404  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:34:54.405  [STACK] stack top check: 0 mismatches
+14:34:54.406  [MBF] nav_in: 64 B buffer, 64 B free
+14:34:54.408  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:34:54.409  [MBF] obstacle: 24 B buffer, 24 B free
+14:34:54.411  [MBF] telemetry: 384 B buffer, 384 B free
+14:34:56.126  [S5] coarse hit 62 mm @ 150 deg, fine scan
+14:34:56.862  [S5] obstacle 54 mm @ 170 deg w=28 clrL=635 clrR=11
+14:34:56.864  [S5] avoid -> SLOW (3000 ms)
+14:34:56.866  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:56.867  [S5] avoid -> IDLE (reacquired=0)
+14:34:58.182  [S5] coarse hit 41 mm @ 130 deg, fine scan
+14:34:58.644  [S5] obstacle 41 mm @ 130 deg w=32 clrL=635 clrR=635
+14:34:58.647  [S5] avoid -> SLOW (3000 ms)
+14:34:58.648  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:34:58.650  [S5] avoid -> IDLE (reacquired=0)
+14:35:00.207  [S5] coarse hit 41 mm @ 120 deg, fine scan
+14:35:00.879  [S5] obstacle 77 mm @ 90 deg w=20 clrL=32 clrR=635
+14:35:00.881  [S5] avoid -> SLOW (3000 ms)
+14:35:00.882  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:00.884  [S5] avoid -> IDLE (reacquired=0)
+14:35:02.485  [S5] coarse hit 78 mm @ 120 deg, fine scan
+14:35:03.211  [S5] obstacle 90 mm @ 120 deg w=60 clrL=635 clrR=635
+14:35:03.213  [S5] avoid -> SLOW (3000 ms)
+14:35:03.215  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:03.216  [S5] avoid -> IDLE (reacquired=0)
+14:35:04.389  [DBG] alive: SDK timer 72134 ms, kernel time 70678 ms, difference 1456 ms
+14:35:04.708  [S5] coarse hit 89 mm @ 120 deg, fine scan
+14:35:05.313  [S5] obstacle 89 mm @ 110 deg w=48 clrL=635 clrR=635
+14:35:05.315  [S5] avoid -> SLOW (3000 ms)
+14:35:05.316  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:05.318  [S5] avoid -> IDLE (reacquired=0)
+14:35:06.766  [S5] coarse hit 100 mm @ 110 deg, fine scan
+14:35:07.647  [S5] obstacle 113 mm @ 150 deg w=29 clrL=635 clrR=635
+14:35:07.648  [S5] avoid -> SLOW (3000 ms)
+14:35:07.651  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:07.652  [S5] avoid -> IDLE (reacquired=0)
+14:35:11.465  [S5] coarse hit 106 mm @ 60 deg, fine scan
+14:35:11.916  [S5] obstacle 54 mm @ 60 deg w=75 clrL=635 clrR=635
+14:35:11.918  [S5] avoid -> SLOW (3000 ms)
+14:35:11.919  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:11.921  [S5] avoid -> IDLE (reacquired=0)
+14:35:13.610  [S5] coarse hit 63 mm @ 70 deg, fine scan
+14:35:14.391  [DBG] alive: SDK timer 82137 ms, kernel time 80681 ms, difference 1456 ms
+14:35:14.435  [S5] obstacle 108 mm @ 100 deg w=28 clrL=635 clrR=635
+14:35:14.436  [S5] avoid -> SLOW (3000 ms)
+14:35:14.438  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:14.439  [S5] avoid -> IDLE (reacquired=0)
+14:35:15.933  [S5] coarse hit 107 mm @ 120 deg, fine scan
+14:35:16.658  [S5] obstacle 98 mm @ 90 deg w=17 clrL=46 clrR=635
+14:35:16.661  [S5] avoid -> SLOW (3000 ms)
+14:35:16.664  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:16.665  [S5] avoid -> IDLE (reacquired=0)
+14:35:18.264  [S5] coarse hit 98 mm @ 100 deg, fine scan
+14:35:19.166  [S5] obstacle 121 mm @ 150 deg w=31 clrL=635 clrR=635
+14:35:19.168  [S5] avoid -> SLOW (3000 ms)
+14:35:19.170  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:19.171  [S5] avoid -> IDLE (reacquired=0)
+14:35:24.395  [DBG] alive: SDK timer 92140 ms, kernel time 90684 ms, difference 1456 ms
+14:35:32.066  [S5] coarse hit 148 mm @ 30 deg, fine scan
+14:35:32.739  [S5] obstacle 128 mm @ 20 deg w=78 clrL=635 clrR=635
+14:35:32.741  [S5] avoid -> SLOW (3000 ms)
+14:35:32.743  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:32.744  [S5] avoid -> IDLE (reacquired=0)
+14:35:34.179  [S5] coarse hit 142 mm @ 30 deg, fine scan
+14:35:34.400  [DBG] alive: SDK timer 102145 ms, kernel time 100689 ms, difference 1456 ms
+14:35:34.707  [S5] obstacle 123 mm @ 20 deg w=96 clrL=635 clrR=635
+14:35:34.709  [S5] avoid -> SLOW (3000 ms)
+14:35:34.711  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:34.712  [S5] avoid -> IDLE (reacquired=0)
+14:35:36.225  [S5] coarse hit 141 mm @ 40 deg, fine scan
+14:35:36.643  [S5] obstacle 132 mm @ 20 deg w=57 clrL=635 clrR=635
+14:35:36.645  [S5] avoid -> SLOW (3000 ms)
+14:35:36.648  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:36.649  [S5] avoid -> IDLE (reacquired=0)
+14:35:38.019  [S5] coarse hit 142 mm @ 30 deg, fine scan
+14:35:38.580  [S5] obstacle 128 mm @ 20 deg w=100 clrL=635 clrR=635
+14:35:38.582  [S5] avoid -> SLOW (3000 ms)
+14:35:38.584  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:35:38.585  [S5] avoid -> IDLE (reacquired=0)
+14:35:40.109  [S5] coarse hit 146 mm @ 40 deg, fine scan
+14:35:44.402  [DBG] alive: SDK timer 112147 ms, kernel time 110691 ms, difference 1456 ms
+14:35:54.359  [TEL] CONNECTED tx=694 txf=0 off=28 ev=3 bad=0 qd=0 od=0 cmd=0/0
+14:35:54.404  [DBG] alive: SDK timer 122149 ms, kernel time 120693 ms, difference 1456 ms
+14:35:54.408  [STACK] init: 360 of 1152 B used, 792 never used
+14:35:54.410  [STACK] dbg_drain: 748 of 1664 B used, 916 never used
+14:35:54.412  [STACK] tel: 904 of 4736 B used, 3832 never used
+14:35:54.413  [STACK] vc: 336 of 1664 B used, 1328 never used
+14:35:54.414  [STACK] motion: 184 of 1664 B used, 1480 never used
+14:35:54.416  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:35:54.418  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:35:54.420  [STACK] obs_scan: 564 of 1664 B used, 1100 never used
+14:35:54.421  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:35:54.423  [STACK] stack top check: 0 mismatches
+14:35:54.424  [MBF] nav_in: 64 B buffer, 64 B free
+14:35:54.425  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:35:54.427  [MBF] obstacle: 24 B buffer, 24 B free
+14:35:54.428  [MBF] telemetry: 384 B buffer, 384 B free
+14:36:04.411  [DBG] alive: SDK timer 132156 ms, kernel time 130700 ms, difference 1456 ms
+14:36:07.291  [S5] coarse hit 131 mm @ 90 deg, fine scan
+14:36:07.776  [S5] obstacle 136 mm @ 90 deg w=148 clrL=635 clrR=635
+14:36:07.778  [S5] avoid -> SLOW (3000 ms)
+14:36:07.779  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:07.781  [S5] avoid -> IDLE (reacquired=0)
+14:36:09.206  [S5] coarse hit 131 mm @ 80 deg, fine scan
+14:36:09.877  [S5] obstacle 173 mm @ 50 deg w=26 clrL=55 clrR=635
+14:36:09.879  [S5] avoid -> SLOW (3000 ms)
+14:36:09.880  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:09.882  [S5] avoid -> IDLE (reacquired=0)
+14:36:11.208  [S5] coarse hit 174 mm @ 100 deg, fine scan
+14:36:11.922  [S5] obstacle 175 mm @ 50 deg w=45 clrL=142 clrR=635
+14:36:11.924  [S5] avoid -> SLOW (3000 ms)
+14:36:11.926  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:11.927  [S5] avoid -> IDLE (reacquired=0)
+14:36:13.287  [S5] coarse hit 73 mm @ 30 deg, fine scan
+14:36:13.902  [S5] obstacle 76 mm @ 10 deg w=33 clrL=13 clrR=635
+14:36:13.904  [S5] avoid -> SLOW (3000 ms)
+14:36:13.905  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:13.907  [S5] avoid -> IDLE (reacquired=0)
+14:36:14.420  [DBG] alive: SDK timer 142166 ms, kernel time 140710 ms, difference 1456 ms
+14:36:15.211  [S5] coarse hit 87 mm @ 50 deg, fine scan
+14:36:15.761  [S5] obstacle 86 mm @ 60 deg w=82 clrL=44 clrR=635
+14:36:15.762  [S5] avoid -> SLOW (3000 ms)
+14:36:15.764  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:15.766  [S5] avoid -> IDLE (reacquired=0)
+14:36:17.150  [S5] coarse hit 86 mm @ 70 deg, fine scan
+14:36:17.834  [S5] obstacle 187 mm @ 90 deg w=32 clrL=635 clrR=72
+14:36:17.836  [S5] avoid -> SLOW (3000 ms)
+14:36:17.837  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:17.838  [S5] avoid -> IDLE (reacquired=0)
+14:36:19.242  [S5] coarse hit 187 mm @ 60 deg, fine scan
+14:36:20.012  [S5] obstacle 187 mm @ 90 deg w=32 clrL=86 clrR=102
+14:36:20.014  [S5] avoid -> SLOW (3000 ms)
+14:36:20.015  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:20.017  [S5] avoid -> IDLE (reacquired=0)
+14:36:21.212  [S5] coarse hit 187 mm @ 90 deg, fine scan
+14:36:21.806  [S5] obstacle 196 mm @ 150 deg w=51 clrL=635 clrR=87
+14:36:21.809  [S5] avoid -> SLOW (3000 ms)
+14:36:21.810  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:21.811  [S5] avoid -> IDLE (reacquired=0)
+14:36:23.259  [S5] coarse hit 98 mm @ 150 deg, fine scan
+14:36:23.733  [S5] obstacle 87 mm @ 150 deg w=83 clrL=635 clrR=11
+14:36:23.735  [S5] avoid -> SLOW (3000 ms)
+14:36:23.737  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:23.738  [S5] avoid -> IDLE (reacquired=0)
+14:36:24.427  [DBG] alive: SDK timer 152173 ms, kernel time 150717 ms, difference 1456 ms
+14:36:24.998  [S5] coarse hit 87 mm @ 130 deg, fine scan
+14:36:25.417  [S5] obstacle 90 mm @ 120 deg w=102 clrL=635 clrR=34
+14:36:25.419  [S5] avoid -> SLOW (3000 ms)
+14:36:25.420  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:25.421  [S5] avoid -> IDLE (reacquired=0)
+14:36:26.801  [S5] coarse hit 90 mm @ 120 deg, fine scan
+14:36:27.220  [S5] obstacle 96 mm @ 120 deg w=92 clrL=635 clrR=34
+14:36:27.222  [S5] avoid -> SLOW (3000 ms)
+14:36:27.223  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:27.226  [S5] avoid -> IDLE (reacquired=0)
+14:36:28.651  [S5] coarse hit 96 mm @ 120 deg, fine scan
+14:36:29.135  [S5] obstacle 96 mm @ 120 deg w=92 clrL=635 clrR=34
+14:36:29.137  [S5] avoid -> SLOW (3000 ms)
+14:36:29.138  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:29.140  [S5] avoid -> IDLE (reacquired=0)
+14:36:30.521  [S5] coarse hit 97 mm @ 120 deg, fine scan
+14:36:30.940  [S5] obstacle 102 mm @ 110 deg w=124 clrL=635 clrR=35
+14:36:30.942  [S5] avoid -> SLOW (3000 ms)
+14:36:30.944  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:30.945  [S5] avoid -> IDLE (reacquired=0)
+14:36:32.490  [S5] coarse hit 102 mm @ 120 deg, fine scan
+14:36:33.162  [S5] obstacle 82 mm @ 130 deg w=35 clrL=635 clrR=83
+14:36:33.163  [S5] avoid -> SLOW (3000 ms)
+14:36:33.164  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:33.166  [S5] avoid -> IDLE (reacquired=0)
+14:36:34.438  [DBG] alive: SDK timer 162184 ms, kernel time 160728 ms, difference 1456 ms
+14:36:34.602  [S5] coarse hit 82 mm @ 130 deg, fine scan
+14:36:35.019  [S5] obstacle 84 mm @ 130 deg w=80 clrL=635 clrR=51
+14:36:35.022  [S5] avoid -> SLOW (3000 ms)
+14:36:35.023  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:35.024  [S5] avoid -> IDLE (reacquired=0)
+14:36:36.517  [S5] coarse hit 83 mm @ 120 deg, fine scan
+14:36:37.045  [S5] obstacle 83 mm @ 120 deg w=65 clrL=635 clrR=53
+14:36:37.047  [S5] avoid -> SLOW (3000 ms)
+14:36:37.049  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:37.051  [S5] avoid -> IDLE (reacquired=0)
+14:36:38.431  [S5] coarse hit 83 mm @ 120 deg, fine scan
+14:36:38.981  [S5] obstacle 82 mm @ 120 deg w=64 clrL=635 clrR=52
+14:36:38.984  [S5] avoid -> SLOW (3000 ms)
+14:36:38.985  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:38.987  [S5] avoid -> IDLE (reacquired=0)
+14:36:40.356  [S5] coarse hit 82 mm @ 120 deg, fine scan
+14:36:40.884  [S5] obstacle 81 mm @ 120 deg w=63 clrL=635 clrR=52
+14:36:40.886  [S5] avoid -> SLOW (3000 ms)
+14:36:40.888  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:40.889  [S5] avoid -> IDLE (reacquired=0)
+14:36:42.391  [S5] coarse hit 81 mm @ 120 deg, fine scan
+14:36:42.996  [S5] obstacle 86 mm @ 130 deg w=52 clrL=635 clrR=71
+14:36:42.998  [S5] avoid -> SLOW (3000 ms)
+14:36:43.000  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:43.002  [S5] avoid -> IDLE (reacquired=0)
+14:36:44.438  [S5] coarse hit 86 mm @ 130 deg, fine scan
+14:36:44.440  [DBG] alive: SDK timer 172184 ms, kernel time 170728 ms, difference 1456 ms
+14:36:44.855  [S5] obstacle 84 mm @ 130 deg w=80 clrL=635 clrR=51
+14:36:44.858  [S5] avoid -> SLOW (3000 ms)
+14:36:44.860  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:44.861  [S5] avoid -> IDLE (reacquired=0)
+14:36:46.363  [S5] coarse hit 84 mm @ 120 deg, fine scan
+14:36:46.824  [S5] obstacle 84 mm @ 120 deg w=65 clrL=635 clrR=51
+14:36:46.826  [S5] avoid -> SLOW (3000 ms)
+14:36:46.827  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:46.828  [S5] avoid -> IDLE (reacquired=0)
+14:36:48.331  [S5] coarse hit 85 mm @ 120 deg, fine scan
+14:36:48.936  [S5] obstacle 81 mm @ 130 deg w=49 clrL=635 clrR=67
+14:36:48.938  [S5] avoid -> SLOW (3000 ms)
+14:36:48.939  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:48.941  [S5] avoid -> IDLE (reacquired=0)
+14:36:50.310  [S5] coarse hit 85 mm @ 130 deg, fine scan
+14:36:50.938  [S5] obstacle 199 mm @ 70 deg w=35 clrL=635 clrR=64
+14:36:50.942  [S5] avoid -> SLOW (3000 ms)
+14:36:50.944  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:50.945  [S5] avoid -> IDLE (reacquired=0)
+14:36:52.445  [S5] coarse hit 199 mm @ 70 deg, fine scan
+14:36:54.360  [TEL] CONNECTED tx=1054 txf=0 off=28 ev=3 bad=0 qd=0 od=0 cmd=0/0
+14:36:54.449  [DBG] alive: SDK timer 182195 ms, kernel time 180739 ms, difference 1456 ms
+14:36:54.451  [STACK] init: 360 of 1152 B used, 792 never used
+14:36:54.452  [STACK] dbg_drain: 812 of 1664 B used, 852 never used
+14:36:54.453  [STACK] tel: 904 of 4736 B used, 3832 never used
+14:36:54.455  [STACK] vc: 336 of 1664 B used, 1328 never used
+14:36:54.456  [STACK] motion: 236 of 1664 B used, 1428 never used
+14:36:54.458  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:36:54.459  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:36:54.460  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:36:54.469  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:36:54.471  [STACK] stack top check: 0 mismatches
+14:36:54.473  [MBF] nav_in: 64 B buffer, 64 B free
+14:36:54.474  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:36:54.476  [MBF] obstacle: 24 B buffer, 24 B free
+14:36:54.477  [MBF] telemetry: 384 B buffer, 384 B free
+14:36:58.708  [S5] coarse hit 115 mm @ 150 deg, fine scan
+14:36:59.315  [S5] obstacle 109 mm @ 150 deg w=85 clrL=635 clrR=635
+14:36:59.317  [S5] avoid -> SLOW (3000 ms)
+14:36:59.319  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:36:59.320  [S5] avoid -> IDLE (reacquired=0)
+14:37:00.811  [S5] coarse hit 114 mm @ 130 deg, fine scan
+14:37:04.454  [DBG] alive: SDK timer 192201 ms, kernel time 190745 ms, difference 1456 ms
+14:37:14.457  [DBG] alive: SDK timer 202204 ms, kernel time 200748 ms, difference 1456 ms
+14:37:24.458  [DBG] alive: SDK timer 212206 ms, kernel time 210750 ms, difference 1456 ms
+14:37:31.103  [TEL] cmd car/cmd/start -> VC
+14:37:34.461  [DBG] alive: SDK timer 222208 ms, kernel time 220752 ms, difference 1456 ms
+14:37:35.496  [TEL] cmd car/cmd/stop -> VC
+14:37:39.997  [TEL] cmd car/cmd/reset -> VC
+14:37:44.299  [TEL] cmd rejected: SHORT (1 B)
+14:37:44.376  [TEL] cmd rejected: BAD_TOPIC (3 B)
+14:37:44.464  [DBG] alive: SDK timer 232212 ms, kernel time 230756 ms, difference 1456 ms
+14:37:54.356  [TEL] CONNECTED tx=1416 txf=0 off=28 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:37:54.468  [DBG] alive: SDK timer 242215 ms, kernel time 240759 ms, difference 1456 ms
+14:37:54.470  [STACK] init: 360 of 1152 B used, 792 never used
+14:37:54.472  [STACK] dbg_drain: 812 of 1664 B used, 852 never used
+14:37:54.474  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:37:54.475  [STACK] vc: 336 of 1664 B used, 1328 never used
+14:37:54.477  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:37:54.478  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:37:54.479  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:37:54.481  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:37:54.483  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:37:54.484  [STACK] stack top check: 0 mismatches
+14:37:54.485  [MBF] nav_in: 64 B buffer, 64 B free
+14:37:54.486  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:37:54.488  [MBF] obstacle: 24 B buffer, 24 B free
+14:37:54.489  [MBF] telemetry: 384 B buffer, 384 B free
+14:38:04.473  [DBG] alive: SDK timer 252220 ms, kernel time 250764 ms, difference 1456 ms
+14:38:14.477  [DBG] alive: SDK timer 262226 ms, kernel time 260770 ms, difference 1456 ms
+14:38:24.481  [DBG] alive: SDK timer 272229 ms, kernel time 270773 ms, difference 1456 ms
+14:38:30.281  [S5] coarse hit 81 mm @ 30 deg, fine scan
+14:38:30.930  [S5] obstacle 55 mm @ 20 deg w=33 clrL=635 clrR=635
+14:38:30.932  [S5] avoid -> SLOW (3000 ms)
+14:38:30.934  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:38:30.935  [S5] avoid -> IDLE (reacquired=0)
+14:38:32.074  [S5] coarse hit 74 mm @ 30 deg, fine scan
+14:38:32.657  [S5] obstacle 83 mm @ 20 deg w=50 clrL=635 clrR=635
+14:38:32.659  [S5] avoid -> SLOW (3000 ms)
+14:38:32.661  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:38:32.663  [S5] avoid -> IDLE (reacquired=0)
+14:38:33.812  [S5] coarse hit 72 mm @ 30 deg, fine scan
+14:38:34.318  [S5] obstacle 58 mm @ 20 deg w=45 clrL=635 clrR=635
+14:38:34.319  [S5] avoid -> SLOW (3000 ms)
+14:38:34.321  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:38:34.323  [S5] avoid -> IDLE (reacquired=0)
+14:38:34.483  [DBG] alive: SDK timer 282232 ms, kernel time 280776 ms, difference 1456 ms
+14:38:35.670  [S5] coarse hit 72 mm @ 40 deg, fine scan
+14:38:36.363  [S5] obstacle 62 mm @ 20 deg w=23 clrL=635 clrR=635
+14:38:36.365  [S5] avoid -> SLOW (3000 ms)
+14:38:36.366  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:38:36.368  [S5] avoid -> IDLE (reacquired=0)
+14:38:44.483  [DBG] alive: SDK timer 292232 ms, kernel time 290776 ms, difference 1456 ms
+14:38:53.737  [S5] coarse hit 172 mm @ 90 deg, fine scan
+14:38:54.342  [S5] obstacle 192 mm @ 100 deg w=105 clrL=635 clrR=101
+14:38:54.344  [S5] avoid -> SLOW (3000 ms)
+14:38:54.346  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:38:54.347  [S5] avoid -> IDLE (reacquired=0)
+14:38:54.354  [TEL] CONNECTED tx=1776 txf=0 off=28 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:38:54.487  [DBG] alive: SDK timer 302236 ms, kernel time 300780 ms, difference 1456 ms
+14:38:54.489  [STACK] init: 360 of 1152 B used, 792 never used
+14:38:54.491  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:38:54.492  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:38:54.494  [STACK] vc: 336 of 1664 B used, 1328 never used
+14:38:54.496  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:38:54.498  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:38:54.499  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:38:54.500  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:38:54.502  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:38:54.503  [STACK] stack top check: 0 mismatches
+14:38:54.504  [MBF] nav_in: 64 B buffer, 64 B free
+14:38:54.506  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:38:54.507  [MBF] obstacle: 24 B buffer, 24 B free
+14:38:54.508  [MBF] telemetry: 384 B buffer, 384 B free
+14:38:55.943  [S5] coarse hit 192 mm @ 100 deg, fine scan
+14:38:56.681  [S5] obstacle 207 mm @ 70 deg w=32 clrL=635 clrR=635
+14:38:56.682  [S5] avoid -> SLOW (3000 ms)
+14:38:56.683  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:38:56.685  [S5] avoid -> IDLE (reacquired=0)
+14:38:58.299  [S5] coarse hit 207 mm @ 70 deg, fine scan
+14:39:04.494  [DBG] alive: SDK timer 312244 ms, kernel time 310788 ms, difference 1456 ms
+14:39:09.741  [S5] coarse hit 121 mm @ 60 deg, fine scan
+14:39:10.302  [S5] obstacle 146 mm @ 50 deg w=114 clrL=635 clrR=635
+14:39:10.303  [S5] avoid -> SLOW (3000 ms)
+14:39:10.306  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:39:10.307  [S5] avoid -> IDLE (reacquired=0)
+14:39:11.679  [S5] coarse hit 148 mm @ 40 deg, fine scan
+14:39:12.098  [S5] obstacle 127 mm @ 40 deg w=144 clrL=635 clrR=635
+14:39:12.100  [S5] avoid -> SLOW (3000 ms)
+14:39:12.102  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:39:12.104  [S5] avoid -> IDLE (reacquired=0)
+14:39:13.781  [S5] coarse hit 132 mm @ 40 deg, fine scan
+14:39:14.485  [S5] obstacle 166 mm @ 80 deg w=43 clrL=635 clrR=635
+14:39:14.487  [S5] avoid -> SLOW (3000 ms)
+14:39:14.488  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:39:14.489  [S5] avoid -> IDLE (reacquired=0)
+14:39:14.496  [DBG] alive: SDK timer 322246 ms, kernel time 320790 ms, difference 1456 ms
+14:39:15.938  [S5] coarse hit 166 mm @ 80 deg, fine scan
+14:39:24.501  [DBG] alive: SDK timer 332251 ms, kernel time 330795 ms, difference 1456 ms
+14:39:34.502  [DBG] alive: SDK timer 342252 ms, kernel time 340796 ms, difference 1456 ms
+14:39:44.513  [DBG] alive: SDK timer 352264 ms, kernel time 350808 ms, difference 1456 ms
+14:39:54.360  [TEL] CONNECTED tx=2136 txf=0 off=28 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:39:54.514  [DBG] alive: SDK timer 362265 ms, kernel time 360809 ms, difference 1456 ms
+14:39:54.516  [STACK] init: 360 of 1152 B used, 792 never used
+14:39:54.517  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:39:54.519  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:39:54.521  [STACK] vc: 336 of 1664 B used, 1328 never used
+14:39:54.522  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:39:54.524  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:39:54.525  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:39:54.527  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:39:54.528  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:39:54.530  [STACK] stack top check: 0 mismatches
+14:39:54.531  [MBF] nav_in: 64 B buffer, 64 B free
+14:39:54.533  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:39:54.534  [MBF] obstacle: 24 B buffer, 24 B free
+14:39:54.536  [MBF] telemetry: 384 B buffer, 384 B free
+14:40:04.519  [DBG] alive: SDK timer 372270 ms, kernel time 370814 ms, difference 1456 ms
+14:40:12.958  [TEL] link CONNECTED -> DEGRADED
+14:40:12.981  [TEL] link DEGRADED -> CONNECTED
+14:40:13.156  [TEL] link CONNECTED -> DEGRADED
+14:40:13.179  [TEL] link DEGRADED -> CONNECTED
+14:40:13.354  [TEL] link CONNECTED -> DEGRADED
+14:40:13.376  [TEL] link DEGRADED -> CONNECTED
+14:40:13.553  [TEL] link CONNECTED -> DEGRADED
+14:40:13.574  [TEL] link DEGRADED -> CONNECTED
+14:40:13.761  [TEL] link CONNECTED -> DEGRADED
+14:40:13.772  [TEL] link DEGRADED -> CONNECTED
+14:40:13.960  [TEL] link CONNECTED -> DEGRADED
+14:40:13.981  [TEL] link DEGRADED -> CONNECTED
+14:40:14.157  [TEL] link CONNECTED -> DEGRADED
+14:40:14.179  [TEL] link DEGRADED -> CONNECTED
+14:40:14.355  [TEL] link CONNECTED -> DEGRADED
+14:40:14.377  [TEL] link DEGRADED -> CONNECTED
+14:40:14.521  [DBG] alive: SDK timer 382272 ms, kernel time 380816 ms, difference 1456 ms
+14:40:14.553  [TEL] link CONNECTED -> DEGRADED
+14:40:14.575  [TEL] link DEGRADED -> CONNECTED
+14:40:14.752  [TEL] link CONNECTED -> DEGRADED
+14:40:14.773  [TEL] link DEGRADED -> CONNECTED
+14:40:14.961  [TEL] link CONNECTED -> DEGRADED
+14:40:14.971  [TEL] link DEGRADED -> CONNECTED
+14:40:15.158  [TEL] link CONNECTED -> DEGRADED
+14:40:15.180  [TEL] link DEGRADED -> CONNECTED
+14:40:15.356  [TEL] link CONNECTED -> DEGRADED
+14:40:15.377  [TEL] link DEGRADED -> CONNECTED
+14:40:15.555  [TEL] link CONNECTED -> DEGRADED
+14:40:15.576  [TEL] link DEGRADED -> CONNECTED
+14:40:15.752  [TEL] link CONNECTED -> DEGRADED
+14:40:15.774  [TEL] link DEGRADED -> CONNECTED
+14:40:15.961  [TEL] link CONNECTED -> DEGRADED
+14:40:15.971  [TEL] link DEGRADED -> CONNECTED
+14:40:16.160  [TEL] link CONNECTED -> DEGRADED
+14:40:16.181  [TEL] link DEGRADED -> CONNECTED
+14:40:16.356  [TEL] link CONNECTED -> DEGRADED
+14:40:16.378  [TEL] link DEGRADED -> CONNECTED
+14:40:16.556  [TEL] link CONNECTED -> DEGRADED
+14:40:16.577  [TEL] link DEGRADED -> CONNECTED
+14:40:16.753  [TEL] link CONNECTED -> DEGRADED
+14:40:16.775  [TEL] link DEGRADED -> CONNECTED
+14:40:16.952  [TEL] link CONNECTED -> DEGRADED
+14:40:16.973  [TEL] link DEGRADED -> CONNECTED
+14:40:17.161  [TEL] link CONNECTED -> DEGRADED
+14:40:17.171  [TEL] link DEGRADED -> CONNECTED
+14:40:17.358  [TEL] link CONNECTED -> DEGRADED
+14:40:17.380  [TEL] link DEGRADED -> CONNECTED
+14:40:17.556  [TEL] link CONNECTED -> DEGRADED
+14:40:17.579  [TEL] link DEGRADED -> CONNECTED
+14:40:17.754  [TEL] link CONNECTED -> DEGRADED
+14:40:17.776  [TEL] link DEGRADED -> CONNECTED
+14:40:17.952  [TEL] link CONNECTED -> DEGRADED
+14:40:17.974  [TEL] link DEGRADED -> CONNECTED
+14:40:18.161  [TEL] link CONNECTED -> DEGRADED
+14:40:18.172  [TEL] link DEGRADED -> CONNECTED
+14:40:18.359  [TEL] link CONNECTED -> DEGRADED
+14:40:18.381  [TEL] link DEGRADED -> CONNECTED
+14:40:18.557  [TEL] link CONNECTED -> DEGRADED
+14:40:18.579  [TEL] link DEGRADED -> CONNECTED
+14:40:18.755  [TEL] link CONNECTED -> DEGRADED
+14:40:18.777  [TEL] link DEGRADED -> CONNECTED
+14:40:18.953  [TEL] link CONNECTED -> DEGRADED
+14:40:18.976  [TEL] link DEGRADED -> CONNECTED
+14:40:19.096  [NET] MQTT closed: status 257
+14:40:19.098  [TEL] link CONNECTED -> DEGRADED
+14:40:19.100  [TEL] link lost: FAULT_WIFI_LOSS set (vehicle unaffected)
+14:40:24.101  [TEL] link DEGRADED -> RECONNECTING
+14:40:24.103  [TEL] teardown (stage 5, status 257, leave AP), retry in 1000 ms
+14:40:24.531  [DBG] alive: SDK timer 392282 ms, kernel time 390826 ms, difference 1456 ms
+14:40:25.106  [TEL] link RECONNECTING -> CONNECTING
+14:40:25.601  [NET] WiFi join failed: -2
+14:40:25.603  [TEL] link CONNECTING -> RECONNECTING
+14:40:25.605  [TEL] teardown (stage 5, status -2, leave AP), retry in 2000 ms
+14:40:27.606  [TEL] link RECONNECTING -> CONNECTING
+14:40:28.112  [NET] WiFi join failed: -2
+14:40:28.115  [TEL] link CONNECTING -> RECONNECTING
+14:40:28.118  [TEL] teardown (stage 5, status -2, leave AP), retry in 4000 ms
+14:40:32.152  [TEL] link RECONNECTING -> CONNECTING
+14:40:34.540  [DBG] alive: SDK timer 402292 ms, kernel time 400836 ms, difference 1456 ms
+14:40:35.014  [NET] WiFi up, IP 172.20.10.2
+14:40:44.550  [DBG] alive: SDK timer 412302 ms, kernel time 410846 ms, difference 1456 ms
+14:40:47.112  [TEL] link CONNECTING -> RECONNECTING
+14:40:47.114  [TEL] teardown (stage 3, status 3), retry in 8000 ms
+14:40:54.372  [TEL] RECONNECTING tx=2246 txf=31 off=247 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:40:54.562  [DBG] alive: SDK timer 422312 ms, kernel time 420856 ms, difference 1456 ms
+14:40:54.564  [STACK] init: 360 of 1152 B used, 792 never used
+14:40:54.566  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:40:54.567  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:40:54.571  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:40:54.572  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:40:54.574  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:40:54.575  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:40:54.578  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:40:54.580  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:40:54.582  [STACK] stack top check: 0 mismatches
+14:40:54.584  [MBF] nav_in: 64 B buffer, 64 B free
+14:40:54.587  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:40:54.591  [MBF] obstacle: 24 B buffer, 24 B free
+14:40:54.596  [MBF] telemetry: 384 B buffer, 384 B free
+14:40:55.113  [TEL] link RECONNECTING -> CONNECTING
+14:41:04.562  [DBG] alive: SDK timer 432314 ms, kernel time 430858 ms, difference 1456 ms
+14:41:10.116  [TEL] link CONNECTING -> RECONNECTING
+14:41:10.119  [TEL] teardown (stage 3, status 3), retry in 16000 ms
+14:41:14.571  [DBG] alive: SDK timer 442324 ms, kernel time 440868 ms, difference 1456 ms
+14:41:24.581  [DBG] alive: SDK timer 452334 ms, kernel time 450878 ms, difference 1456 ms
+14:41:26.110  [TEL] link RECONNECTING -> CONNECTING
+14:41:34.591  [DBG] alive: SDK timer 462344 ms, kernel time 460888 ms, difference 1456 ms
+14:41:41.114  [TEL] link CONNECTING -> RECONNECTING
+14:41:41.116  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:41:44.602  [DBG] alive: SDK timer 472354 ms, kernel time 470898 ms, difference 1456 ms
+14:41:54.379  [TEL] RECONNECTING tx=2246 txf=31 off=607 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:41:54.613  [DBG] alive: SDK timer 482364 ms, kernel time 480908 ms, difference 1456 ms
+14:41:54.615  [STACK] init: 360 of 1152 B used, 792 never used
+14:41:54.616  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:41:54.618  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:41:54.620  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:41:54.621  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:41:54.622  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:41:54.623  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:41:54.625  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:41:54.627  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:41:54.628  [STACK] stack top check: 0 mismatches
+14:41:54.629  [MBF] nav_in: 64 B buffer, 64 B free
+14:41:54.631  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:41:54.632  [MBF] obstacle: 24 B buffer, 24 B free
+14:41:54.634  [MBF] telemetry: 384 B buffer, 384 B free
+14:42:04.613  [DBG] alive: SDK timer 492366 ms, kernel time 490910 ms, difference 1456 ms
+14:42:11.114  [TEL] link RECONNECTING -> CONNECTING
+14:42:14.622  [DBG] alive: SDK timer 502376 ms, kernel time 500920 ms, difference 1456 ms
+14:42:23.003  [S5] coarse hit 194 mm @ 60 deg, fine scan
+14:42:23.554  [S5] obstacle 172 mm @ 50 deg w=135 clrL=635 clrR=635
+14:42:23.556  [S5] avoid -> SLOW (3000 ms)
+14:42:23.557  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:23.558  [S5] avoid -> IDLE (reacquired=0)
+14:42:24.632  [DBG] alive: SDK timer 512386 ms, kernel time 510930 ms, difference 1456 ms
+14:42:24.929  [S5] coarse hit 172 mm @ 60 deg, fine scan
+14:42:25.458  [S5] obstacle 169 mm @ 50 deg w=132 clrL=635 clrR=635
+14:42:25.460  [S5] avoid -> SLOW (3000 ms)
+14:42:25.461  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:25.463  [S5] avoid -> IDLE (reacquired=0)
+14:42:26.118  [TEL] link CONNECTING -> RECONNECTING
+14:42:26.120  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:42:26.854  [S5] coarse hit 169 mm @ 60 deg, fine scan
+14:42:27.271  [S5] obstacle 169 mm @ 60 deg w=162 clrL=635 clrR=635
+14:42:27.273  [S5] avoid -> SLOW (3000 ms)
+14:42:27.275  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:27.276  [S5] avoid -> IDLE (reacquired=0)
+14:42:28.833  [S5] coarse hit 168 mm @ 50 deg, fine scan
+14:42:29.252  [S5] obstacle 168 mm @ 50 deg w=161 clrL=635 clrR=635
+14:42:29.254  [S5] avoid -> SLOW (3000 ms)
+14:42:29.255  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:29.256  [S5] avoid -> IDLE (reacquired=0)
+14:42:30.638  [S5] coarse hit 168 mm @ 60 deg, fine scan
+14:42:31.055  [S5] obstacle 166 mm @ 60 deg w=159 clrL=635 clrR=635
+14:42:31.058  [S5] avoid -> SLOW (3000 ms)
+14:42:31.060  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:31.061  [S5] avoid -> IDLE (reacquired=0)
+14:42:32.496  [S5] coarse hit 166 mm @ 60 deg, fine scan
+14:42:32.915  [S5] obstacle 174 mm @ 60 deg w=166 clrL=635 clrR=635
+14:42:32.918  [S5] avoid -> SLOW (3000 ms)
+14:42:32.918  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:32.920  [S5] avoid -> IDLE (reacquired=0)
+14:42:34.576  [S5] coarse hit 174 mm @ 40 deg, fine scan
+14:42:34.643  [DBG] alive: SDK timer 522396 ms, kernel time 520940 ms, difference 1456 ms
+14:42:35.378  [S5] obstacle 176 mm @ 80 deg w=46 clrL=635 clrR=139
+14:42:35.389  [S5] avoid -> SLOW (3000 ms)
+14:42:35.391  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:35.392  [S5] avoid -> IDLE (reacquired=0)
+14:42:36.742  [S5] coarse hit 176 mm @ 80 deg, fine scan
+14:42:37.579  [S5] obstacle 221 mm @ 40 deg w=57 clrL=635 clrR=635
+14:42:37.580  [S5] avoid -> SLOW (3000 ms)
+14:42:37.581  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:42:37.583  [S5] avoid -> IDLE (reacquired=0)
+14:42:39.262  [S5] coarse hit 221 mm @ 40 deg, fine scan
+14:42:44.652  [DBG] alive: SDK timer 532406 ms, kernel time 530950 ms, difference 1456 ms
+14:42:54.376  [TEL] RECONNECTING tx=2246 txf=31 off=967 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:42:54.665  [DBG] alive: SDK timer 542417 ms, kernel time 540961 ms, difference 1456 ms
+14:42:54.668  [STACK] init: 360 of 1152 B used, 792 never used
+14:42:54.670  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:42:54.675  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:42:54.678  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:42:54.681  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:42:54.684  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:42:54.686  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:42:54.688  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:42:54.690  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+14:42:54.693  [STACK] stack top check: 0 mismatches
+14:42:54.694  [MBF] nav_in: 64 B buffer, 64 B free
+14:42:54.696  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:42:54.698  [MBF] obstacle: 24 B buffer, 24 B free
+14:42:54.699  [MBF] telemetry: 384 B buffer, 384 B free
+14:42:56.117  [TEL] link RECONNECTING -> CONNECTING
+14:43:04.666  [DBG] alive: SDK timer 552420 ms, kernel time 550964 ms, difference 1456 ms
+14:43:07.997  [S5] coarse hit 191 mm @ 90 deg, fine scan
+14:43:08.614  [S5] obstacle 232 mm @ 80 deg w=163 clrL=635 clrR=635
+14:43:08.615  [S5] avoid -> SLOW (3000 ms)
+14:43:08.617  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:08.619  [S5] avoid -> IDLE (reacquired=0)
+14:43:09.988  [S5] coarse hit 228 mm @ 80 deg, fine scan
+14:43:10.472  [S5] obstacle 229 mm @ 70 deg w=147 clrL=78 clrR=54
+14:43:10.474  [S5] avoid -> SLOW (3000 ms)
+14:43:10.476  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:10.478  [S5] avoid -> IDLE (reacquired=0)
+14:43:11.111  [TEL] link CONNECTING -> RECONNECTING
+14:43:11.113  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:43:11.836  [S5] coarse hit 229 mm @ 70 deg, fine scan
+14:43:12.453  [S5] obstacle 229 mm @ 110 deg w=59 clrL=635 clrR=198
+14:43:12.455  [S5] avoid -> SLOW (3000 ms)
+14:43:12.456  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:12.458  [S5] avoid -> IDLE (reacquired=0)
+14:43:13.893  [S5] coarse hit 214 mm @ 50 deg, fine scan
+14:43:14.367  [S5] obstacle 209 mm @ 60 deg w=130 clrL=114 clrR=31
+14:43:14.369  [S5] avoid -> SLOW (3000 ms)
+14:43:14.370  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:14.371  [S5] avoid -> IDLE (reacquired=0)
+14:43:14.676  [DBG] alive: SDK timer 562430 ms, kernel time 560974 ms, difference 1456 ms
+14:43:15.752  [S5] coarse hit 211 mm @ 70 deg, fine scan
+14:43:16.281  [S5] obstacle 219 mm @ 50 deg w=171 clrL=117 clrR=635
+14:43:16.291  [S5] avoid -> SLOW (3000 ms)
+14:43:16.293  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:16.294  [S5] avoid -> IDLE (reacquired=0)
+14:43:17.776  [S5] coarse hit 216 mm @ 50 deg, fine scan
+14:43:18.327  [S5] obstacle 204 mm @ 50 deg w=195 clrL=118 clrR=635
+14:43:18.329  [S5] avoid -> SLOW (3000 ms)
+14:43:18.330  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:18.332  [S5] avoid -> IDLE (reacquired=0)
+14:43:19.768  [S5] coarse hit 204 mm @ 50 deg, fine scan
+14:43:20.196  [S5] obstacle 203 mm @ 50 deg w=194 clrL=115 clrR=635
+14:43:20.198  [S5] avoid -> SLOW (3000 ms)
+14:43:20.201  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:20.202  [S5] avoid -> IDLE (reacquired=0)
+14:43:21.627  [S5] coarse hit 201 mm @ 50 deg, fine scan
+14:43:22.056  [S5] obstacle 200 mm @ 50 deg w=191 clrL=115 clrR=635
+14:43:22.059  [S5] avoid -> SLOW (3000 ms)
+14:43:22.061  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:22.062  [S5] avoid -> IDLE (reacquired=0)
+14:43:23.430  [S5] coarse hit 201 mm @ 60 deg, fine scan
+14:43:23.914  [S5] obstacle 201 mm @ 60 deg w=192 clrL=78 clrR=635
+14:43:23.917  [S5] avoid -> SLOW (3000 ms)
+14:43:23.919  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:23.921  [S5] avoid -> IDLE (reacquired=0)
+14:43:24.684  [DBG] alive: SDK timer 572440 ms, kernel time 570984 ms, difference 1456 ms
+14:43:25.355  [S5] coarse hit 201 mm @ 60 deg, fine scan
+14:43:25.817  [S5] obstacle 197 mm @ 50 deg w=154 clrL=116 clrR=635
+14:43:25.819  [S5] avoid -> SLOW (3000 ms)
+14:43:25.833  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:25.836  [S5] avoid -> IDLE (reacquired=0)
+14:43:27.269  [S5] coarse hit 197 mm @ 50 deg, fine scan
+14:43:27.687  [S5] obstacle 204 mm @ 50 deg w=195 clrL=114 clrR=635
+14:43:27.689  [S5] avoid -> SLOW (3000 ms)
+14:43:27.691  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:27.693  [S5] avoid -> IDLE (reacquired=0)
+14:43:29.074  [S5] coarse hit 197 mm @ 60 deg, fine scan
+14:43:29.491  [S5] obstacle 197 mm @ 60 deg w=189 clrL=78 clrR=635
+14:43:29.493  [S5] avoid -> SLOW (3000 ms)
+14:43:29.495  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:29.497  [S5] avoid -> IDLE (reacquired=0)
+14:43:30.933  [S5] coarse hit 197 mm @ 60 deg, fine scan
+14:43:31.350  [S5] obstacle 200 mm @ 60 deg w=191 clrL=78 clrR=635
+14:43:31.353  [S5] avoid -> SLOW (3000 ms)
+14:43:31.354  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:31.355  [S5] avoid -> IDLE (reacquired=0)
+14:43:32.790  [S5] coarse hit 200 mm @ 60 deg, fine scan
+14:43:33.209  [S5] obstacle 200 mm @ 60 deg w=191 clrL=78 clrR=635
+14:43:33.212  [S5] avoid -> SLOW (3000 ms)
+14:43:33.213  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:33.215  [S5] avoid -> IDLE (reacquired=0)
+14:43:34.650  [S5] coarse hit 200 mm @ 60 deg, fine scan
+14:43:34.694  [DBG] alive: SDK timer 582450 ms, kernel time 580994 ms, difference 1456 ms
+14:43:35.068  [S5] obstacle 200 mm @ 60 deg w=191 clrL=78 clrR=635
+14:43:35.070  [S5] avoid -> SLOW (3000 ms)
+14:43:35.071  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:35.072  [S5] avoid -> IDLE (reacquired=0)
+14:43:36.388  [S5] coarse hit 197 mm @ 60 deg, fine scan
+14:43:36.862  [S5] obstacle 196 mm @ 50 deg w=153 clrL=115 clrR=635
+14:43:36.864  [S5] avoid -> SLOW (3000 ms)
+14:43:36.865  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:36.868  [S5] avoid -> IDLE (reacquired=0)
+14:43:38.390  [S5] coarse hit 197 mm @ 40 deg, fine scan
+14:43:39.139  [S5] obstacle 217 mm @ 80 deg w=56 clrL=115 clrR=635
+14:43:39.141  [S5] avoid -> SLOW (3000 ms)
+14:43:39.143  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:43:39.145  [S5] avoid -> IDLE (reacquired=0)
+14:43:40.800  [S5] coarse hit 217 mm @ 80 deg, fine scan
+14:43:41.107  [TEL] link RECONNECTING -> CONNECTING
+14:43:44.705  [DBG] alive: SDK timer 592460 ms, kernel time 591004 ms, difference 1456 ms
+14:43:54.374  [TEL] CONNECTING tx=2246 txf=31 off=1327 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:43:54.716  [DBG] alive: SDK timer 602470 ms, kernel time 601014 ms, difference 1456 ms
+14:43:54.718  [STACK] init: 360 of 1152 B used, 792 never used
+14:43:54.719  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:43:54.720  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:43:54.722  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:43:54.724  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:43:54.726  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:43:54.727  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:43:54.728  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:43:54.729  [STACK] obs_avoid: 592 of 1664 B used, 1072 never used
+14:43:54.731  [STACK] stack top check: 0 mismatches
+14:43:54.732  [MBF] nav_in: 64 B buffer, 64 B free
+14:43:54.734  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:43:54.735  [MBF] obstacle: 24 B buffer, 24 B free
+14:43:54.736  [MBF] telemetry: 384 B buffer, 384 B free
+14:43:56.114  [TEL] link CONNECTING -> RECONNECTING
+14:43:56.116  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:44:04.715  [DBG] alive: SDK timer 612472 ms, kernel time 611016 ms, difference 1456 ms
+14:44:14.726  [DBG] alive: SDK timer 622482 ms, kernel time 621026 ms, difference 1456 ms
+14:44:20.962  [S5] coarse hit 158 mm @ 150 deg, fine scan
+14:44:21.634  [S5] obstacle 140 mm @ 170 deg w=36 clrL=635 clrR=17
+14:44:21.636  [S5] avoid -> SLOW (3000 ms)
+14:44:21.637  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:21.639  [S5] avoid -> IDLE (reacquired=0)
+14:44:23.129  [S5] coarse hit 154 mm @ 150 deg, fine scan
+14:44:23.657  [S5] obstacle 160 mm @ 140 deg w=125 clrL=635 clrR=635
+14:44:23.659  [S5] avoid -> SLOW (3000 ms)
+14:44:23.661  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:23.662  [S5] avoid -> IDLE (reacquired=0)
+14:44:24.735  [DBG] alive: SDK timer 632492 ms, kernel time 631036 ms, difference 1456 ms
+14:44:25.175  [S5] coarse hit 160 mm @ 130 deg, fine scan
+14:44:25.637  [S5] obstacle 156 mm @ 130 deg w=122 clrL=635 clrR=635
+14:44:25.639  [S5] avoid -> SLOW (3000 ms)
+14:44:25.641  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:25.643  [S5] avoid -> IDLE (reacquired=0)
+14:44:26.110  [TEL] link RECONNECTING -> CONNECTING
+14:44:27.034  [S5] coarse hit 160 mm @ 130 deg, fine scan
+14:44:27.496  [S5] obstacle 160 mm @ 130 deg w=125 clrL=635 clrR=635
+14:44:27.498  [S5] avoid -> SLOW (3000 ms)
+14:44:27.499  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:27.501  [S5] avoid -> IDLE (reacquired=0)
+14:44:29.014  [S5] coarse hit 160 mm @ 130 deg, fine scan
+14:44:29.487  [S5] obstacle 156 mm @ 140 deg w=95 clrL=635 clrR=62
+14:44:29.489  [S5] avoid -> SLOW (3000 ms)
+14:44:29.490  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:29.494  [S5] avoid -> IDLE (reacquired=0)
+14:44:30.873  [S5] coarse hit 160 mm @ 100 deg, fine scan
+14:44:31.456  [S5] obstacle 165 mm @ 120 deg w=129 clrL=635 clrR=635
+14:44:31.459  [S5] avoid -> SLOW (3000 ms)
+14:44:31.460  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:31.461  [S5] avoid -> IDLE (reacquired=0)
+14:44:32.843  [S5] coarse hit 165 mm @ 120 deg, fine scan
+14:44:33.448  [S5] obstacle 150 mm @ 130 deg w=91 clrL=635 clrR=635
+14:44:33.450  [S5] avoid -> SLOW (3000 ms)
+14:44:33.452  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:33.453  [S5] avoid -> IDLE (reacquired=0)
+14:44:34.745  [DBG] alive: SDK timer 642502 ms, kernel time 641046 ms, difference 1456 ms
+14:44:34.833  [S5] coarse hit 150 mm @ 130 deg, fine scan
+14:44:35.252  [S5] obstacle 152 mm @ 130 deg w=145 clrL=635 clrR=635
+14:44:35.254  [S5] avoid -> SLOW (3000 ms)
+14:44:35.255  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:35.257  [S5] avoid -> IDLE (reacquired=0)
+14:44:36.571  [S5] coarse hit 157 mm @ 120 deg, fine scan
+14:44:36.988  [S5] obstacle 154 mm @ 120 deg w=147 clrL=635 clrR=635
+14:44:36.991  [S5] avoid -> SLOW (3000 ms)
+14:44:36.993  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:36.995  [S5] avoid -> IDLE (reacquired=0)
+14:44:38.352  [S5] coarse hit 153 mm @ 120 deg, fine scan
+14:44:38.848  [S5] obstacle 153 mm @ 120 deg w=146 clrL=635 clrR=635
+14:44:38.850  [S5] avoid -> SLOW (3000 ms)
+14:44:38.852  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:38.853  [S5] avoid -> IDLE (reacquired=0)
+14:44:40.168  [S5] coarse hit 153 mm @ 120 deg, fine scan
+14:44:40.586  [S5] obstacle 157 mm @ 120 deg w=150 clrL=635 clrR=635
+14:44:40.588  [S5] avoid -> SLOW (3000 ms)
+14:44:40.591  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:40.592  [S5] avoid -> IDLE (reacquired=0)
+14:44:41.115  [TEL] link CONNECTING -> RECONNECTING
+14:44:41.117  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:44:41.972  [S5] coarse hit 157 mm @ 120 deg, fine scan
+14:44:42.512  [S5] obstacle 163 mm @ 120 deg w=156 clrL=635 clrR=635
+14:44:42.517  [S5] avoid -> SLOW (3000 ms)
+14:44:42.518  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:42.520  [S5] avoid -> IDLE (reacquired=0)
+14:44:43.766  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:44:44.195  [S5] obstacle 160 mm @ 120 deg w=153 clrL=635 clrR=635
+14:44:44.197  [S5] avoid -> SLOW (3000 ms)
+14:44:44.198  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:44.199  [S5] avoid -> IDLE (reacquired=0)
+14:44:44.745  [DBG] alive: SDK timer 652502 ms, kernel time 651046 ms, difference 1456 ms
+14:44:45.614  [S5] coarse hit 158 mm @ 120 deg, fine scan
+14:44:46.108  [S5] obstacle 158 mm @ 120 deg w=151 clrL=635 clrR=635
+14:44:46.110  [S5] avoid -> SLOW (3000 ms)
+14:44:46.111  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:46.112  [S5] avoid -> IDLE (reacquired=0)
+14:44:47.307  [S5] coarse hit 158 mm @ 120 deg, fine scan
+14:44:47.726  [S5] obstacle 158 mm @ 120 deg w=151 clrL=635 clrR=635
+14:44:47.728  [S5] avoid -> SLOW (3000 ms)
+14:44:47.729  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:47.731  [S5] avoid -> IDLE (reacquired=0)
+14:44:49.056  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:44:49.585  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:44:49.588  [S5] avoid -> SLOW (3000 ms)
+14:44:49.590  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:49.592  [S5] avoid -> IDLE (reacquired=0)
+14:44:50.905  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:44:51.334  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:44:51.335  [S5] avoid -> SLOW (3000 ms)
+14:44:51.337  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:51.338  [S5] avoid -> IDLE (reacquired=0)
+14:44:52.753  [S5] coarse hit 158 mm @ 120 deg, fine scan
+14:44:53.247  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:44:53.249  [S5] avoid -> SLOW (3000 ms)
+14:44:53.250  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:53.252  [S5] avoid -> IDLE (reacquired=0)
+14:44:54.371  [TEL] RECONNECTING tx=2246 txf=31 off=1687 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:44:54.567  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:44:54.756  [DBG] alive: SDK timer 662512 ms, kernel time 661056 ms, difference 1456 ms
+14:44:54.758  [STACK] init: 360 of 1152 B used, 792 never used
+14:44:54.760  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:44:54.762  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:44:54.763  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:44:54.765  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:44:54.766  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:44:54.767  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:44:54.769  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:44:54.770  [STACK] obs_avoid: 592 of 1664 B used, 1072 never used
+14:44:54.771  [STACK] stack top check: 0 mismatches
+14:44:54.773  [MBF] nav_in: 64 B buffer, 64 B free
+14:44:54.774  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:44:54.775  [MBF] obstacle: 24 B buffer, 24 B free
+14:44:54.777  [MBF] telemetry: 384 B buffer, 384 B free
+14:44:54.990  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:44:54.992  [S5] avoid -> SLOW (3000 ms)
+14:44:54.993  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:54.994  [S5] avoid -> IDLE (reacquired=0)
+14:44:56.430  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:44:56.969  [S5] obstacle 156 mm @ 120 deg w=149 clrL=635 clrR=635
+14:44:56.970  [S5] avoid -> SLOW (3000 ms)
+14:44:56.973  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:56.974  [S5] avoid -> IDLE (reacquired=0)
+14:44:58.290  [S5] coarse hit 161 mm @ 120 deg, fine scan
+14:44:58.707  [S5] obstacle 156 mm @ 120 deg w=149 clrL=635 clrR=635
+14:44:58.709  [S5] avoid -> SLOW (3000 ms)
+14:44:58.710  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:44:58.711  [S5] avoid -> IDLE (reacquired=0)
+14:45:00.092  [S5] coarse hit 156 mm @ 120 deg, fine scan
+14:45:00.632  [S5] obstacle 162 mm @ 120 deg w=155 clrL=635 clrR=635
+14:45:00.634  [S5] avoid -> SLOW (3000 ms)
+14:45:00.635  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:00.636  [S5] avoid -> IDLE (reacquired=0)
+14:45:01.951  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:02.369  [S5] obstacle 160 mm @ 120 deg w=153 clrL=635 clrR=635
+14:45:02.371  [S5] avoid -> SLOW (3000 ms)
+14:45:02.373  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:02.374  [S5] avoid -> IDLE (reacquired=0)
+14:45:03.799  [S5] coarse hit 161 mm @ 120 deg, fine scan
+14:45:04.349  [S5] obstacle 162 mm @ 120 deg w=127 clrL=635 clrR=635
+14:45:04.351  [S5] avoid -> SLOW (3000 ms)
+14:45:04.352  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:04.354  [S5] avoid -> IDLE (reacquired=0)
+14:45:04.756  [DBG] alive: SDK timer 672514 ms, kernel time 671058 ms, difference 1456 ms
+14:45:05.669  [S5] coarse hit 161 mm @ 120 deg, fine scan
+14:45:06.087  [S5] obstacle 157 mm @ 120 deg w=150 clrL=635 clrR=635
+14:45:06.090  [S5] avoid -> SLOW (3000 ms)
+14:45:06.091  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:06.092  [S5] avoid -> IDLE (reacquired=0)
+14:45:07.517  [S5] coarse hit 157 mm @ 120 deg, fine scan
+14:45:08.068  [S5] obstacle 163 mm @ 120 deg w=127 clrL=635 clrR=635
+14:45:08.099  [S5] avoid -> SLOW (3000 ms)
+14:45:08.100  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:08.102  [S5] avoid -> IDLE (reacquired=0)
+14:45:09.455  [S5] coarse hit 163 mm @ 120 deg, fine scan
+14:45:09.871  [S5] obstacle 163 mm @ 120 deg w=156 clrL=635 clrR=635
+14:45:09.873  [S5] avoid -> SLOW (3000 ms)
+14:45:09.875  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:09.876  [S5] avoid -> IDLE (reacquired=0)
+14:45:11.115  [TEL] link RECONNECTING -> CONNECTING
+14:45:11.358  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:45:11.907  [S5] obstacle 159 mm @ 120 deg w=124 clrL=635 clrR=635
+14:45:11.909  [S5] avoid -> SLOW (3000 ms)
+14:45:11.910  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:11.911  [S5] avoid -> IDLE (reacquired=0)
+14:45:13.106  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:45:13.524  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:45:13.526  [S5] avoid -> SLOW (3000 ms)
+14:45:13.527  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:13.529  [S5] avoid -> IDLE (reacquired=0)
+14:45:14.767  [DBG] alive: SDK timer 682525 ms, kernel time 681069 ms, difference 1456 ms
+14:45:14.910  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:45:15.449  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:45:15.451  [S5] avoid -> SLOW (3000 ms)
+14:45:15.452  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:15.454  [S5] avoid -> IDLE (reacquired=0)
+14:45:16.648  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:17.067  [S5] obstacle 161 mm @ 120 deg w=154 clrL=635 clrR=635
+14:45:17.068  [S5] avoid -> SLOW (3000 ms)
+14:45:17.070  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:17.073  [S5] avoid -> IDLE (reacquired=0)
+14:45:18.397  [S5] coarse hit 161 mm @ 120 deg, fine scan
+14:45:18.925  [S5] obstacle 158 mm @ 120 deg w=151 clrL=635 clrR=635
+14:45:18.927  [S5] avoid -> SLOW (3000 ms)
+14:45:18.928  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:18.930  [S5] avoid -> IDLE (reacquired=0)
+14:45:20.190  [S5] coarse hit 158 mm @ 120 deg, fine scan
+14:45:20.608  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:45:20.610  [S5] avoid -> SLOW (3000 ms)
+14:45:20.612  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:20.614  [S5] avoid -> IDLE (reacquired=0)
+14:45:21.993  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:45:22.589  [S5] obstacle 159 mm @ 120 deg w=124 clrL=635 clrR=635
+14:45:22.591  [S5] avoid -> SLOW (3000 ms)
+14:45:22.592  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:22.594  [S5] avoid -> IDLE (reacquired=0)
+14:45:23.975  [S5] coarse hit 159 mm @ 120 deg, fine scan
+14:45:24.392  [S5] obstacle 160 mm @ 120 deg w=153 clrL=635 clrR=635
+14:45:24.394  [S5] avoid -> SLOW (3000 ms)
+14:45:24.396  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:24.398  [S5] avoid -> IDLE (reacquired=0)
+14:45:24.777  [DBG] alive: SDK timer 692535 ms, kernel time 691079 ms, difference 1456 ms
+14:45:25.756  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:26.107  [TEL] link CONNECTING -> RECONNECTING
+14:45:26.109  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:45:26.306  [S5] obstacle 159 mm @ 120 deg w=124 clrL=635 clrR=635
+14:45:26.308  [S5] avoid -> SLOW (3000 ms)
+14:45:26.310  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:26.311  [S5] avoid -> IDLE (reacquired=0)
+14:45:27.692  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:28.110  [S5] obstacle 160 mm @ 120 deg w=153 clrL=635 clrR=635
+14:45:28.112  [S5] avoid -> SLOW (3000 ms)
+14:45:28.114  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:28.115  [S5] avoid -> IDLE (reacquired=0)
+14:45:29.551  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:30.145  [S5] obstacle 160 mm @ 120 deg w=153 clrL=635 clrR=635
+14:45:30.147  [S5] avoid -> SLOW (3000 ms)
+14:45:30.150  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:30.152  [S5] avoid -> IDLE (reacquired=0)
+14:45:31.344  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:31.773  [S5] obstacle 161 mm @ 120 deg w=154 clrL=635 clrR=635
+14:45:31.776  [S5] avoid -> SLOW (3000 ms)
+14:45:31.777  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:31.778  [S5] avoid -> IDLE (reacquired=0)
+14:45:33.148  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:33.687  [S5] obstacle 160 mm @ 120 deg w=153 clrL=635 clrR=635
+14:45:33.690  [S5] avoid -> SLOW (3000 ms)
+14:45:33.691  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:33.693  [S5] avoid -> IDLE (reacquired=0)
+14:45:34.787  [DBG] alive: SDK timer 702545 ms, kernel time 701089 ms, difference 1456 ms
+14:45:34.885  [S5] coarse hit 160 mm @ 120 deg, fine scan
+14:45:35.305  [S5] obstacle 160 mm @ 120 deg w=153 clrL=635 clrR=635
+14:45:35.307  [S5] avoid -> SLOW (3000 ms)
+14:45:35.308  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:35.309  [S5] avoid -> IDLE (reacquired=0)
+14:45:36.734  [S5] coarse hit 163 mm @ 120 deg, fine scan
+14:45:37.284  [S5] obstacle 159 mm @ 120 deg w=124 clrL=635 clrR=635
+14:45:37.286  [S5] avoid -> SLOW (3000 ms)
+14:45:37.288  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:37.290  [S5] avoid -> IDLE (reacquired=0)
+14:45:38.604  [S5] coarse hit 163 mm @ 120 deg, fine scan
+14:45:39.033  [S5] obstacle 159 mm @ 120 deg w=152 clrL=635 clrR=635
+14:45:39.035  [S5] avoid -> SLOW (3000 ms)
+14:45:39.036  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:39.038  [S5] avoid -> IDLE (reacquired=0)
+14:45:40.518  [S5] coarse hit 160 mm @ 140 deg, fine scan
+14:45:41.067  [S5] obstacle 170 mm @ 100 deg w=44 clrL=635 clrR=635
+14:45:41.069  [S5] avoid -> SLOW (3000 ms)
+14:45:41.071  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:41.073  [S5] avoid -> IDLE (reacquired=0)
+14:45:42.509  [S5] coarse hit 170 mm @ 100 deg, fine scan
+14:45:44.796  [DBG] alive: SDK timer 712555 ms, kernel time 711099 ms, difference 1456 ms
+14:45:53.893  [S5] coarse hit 134 mm @ 60 deg, fine scan
+14:45:54.366  [TEL] RECONNECTING tx=2246 txf=31 off=2047 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:45:54.808  [DBG] alive: SDK timer 722565 ms, kernel time 721109 ms, difference 1456 ms
+14:45:54.810  [STACK] init: 360 of 1152 B used, 792 never used
+14:45:54.811  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:45:54.813  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:45:54.815  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:45:54.816  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:45:54.818  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:45:54.819  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:45:54.822  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:45:54.824  [STACK] obs_avoid: 592 of 1664 B used, 1072 never used
+14:45:54.825  [STACK] stack top check: 0 mismatches
+14:45:54.826  [MBF] nav_in: 64 B buffer, 64 B free
+14:45:54.828  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:45:54.830  [MBF] obstacle: 24 B buffer, 24 B free
+14:45:54.832  [MBF] telemetry: 384 B buffer, 384 B free
+14:45:56.106  [TEL] link RECONNECTING -> CONNECTING
+14:45:57.196  [S5] coarse hit 149 mm @ 60 deg, fine scan
+14:45:57.857  [S5] obstacle 149 mm @ 50 deg w=71 clrL=635 clrR=635
+14:45:57.859  [S5] avoid -> SLOW (3000 ms)
+14:45:57.860  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:45:57.861  [S5] avoid -> IDLE (reacquired=0)
+14:45:59.353  [S5] coarse hit 145 mm @ 50 deg, fine scan
+14:46:00.012  [S5] obstacle 145 mm @ 60 deg w=38 clrL=635 clrR=635
+14:46:00.014  [S5] avoid -> SLOW (3000 ms)
+14:46:00.016  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:00.019  [S5] avoid -> IDLE (reacquired=0)
+14:46:01.574  [S5] coarse hit 145 mm @ 50 deg, fine scan
+14:46:04.808  [DBG] alive: SDK timer 732567 ms, kernel time 731111 ms, difference 1456 ms
+14:46:04.819  [S5] coarse hit 156 mm @ 90 deg, fine scan
+14:46:05.489  [S5] obstacle 152 mm @ 70 deg w=84 clrL=635 clrR=635
+14:46:05.491  [S5] avoid -> SLOW (3000 ms)
+14:46:05.493  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:05.494  [S5] avoid -> IDLE (reacquired=0)
+14:46:06.975  [S5] coarse hit 152 mm @ 70 deg, fine scan
+14:46:07.591  [S5] obstacle 167 mm @ 80 deg w=87 clrL=635 clrR=635
+14:46:07.593  [S5] avoid -> SLOW (3000 ms)
+14:46:07.594  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:07.596  [S5] avoid -> IDLE (reacquired=0)
+14:46:09.120  [S5] coarse hit 167 mm @ 80 deg, fine scan
+14:46:09.737  [S5] obstacle 162 mm @ 80 deg w=56 clrL=635 clrR=635
+14:46:09.739  [S5] avoid -> SLOW (3000 ms)
+14:46:09.741  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:09.743  [S5] avoid -> IDLE (reacquired=0)
+14:46:11.112  [TEL] link CONNECTING -> RECONNECTING
+14:46:11.115  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:46:11.117  [S5] coarse hit 162 mm @ 80 deg, fine scan
+14:46:11.671  [S5] obstacle 158 mm @ 80 deg w=88 clrL=635 clrR=635
+14:46:11.673  [S5] avoid -> SLOW (3000 ms)
+14:46:11.674  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:11.676  [S5] avoid -> IDLE (reacquired=0)
+14:46:12.926  [S5] coarse hit 161 mm @ 80 deg, fine scan
+14:46:13.696  [S5] obstacle 131 mm @ 80 deg w=35 clrL=43 clrR=635
+14:46:13.698  [S5] avoid -> SLOW (3000 ms)
+14:46:13.700  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:13.701  [S5] avoid -> IDLE (reacquired=0)
+14:46:14.819  [DBG] alive: SDK timer 742577 ms, kernel time 741121 ms, difference 1456 ms
+14:46:14.950  [S5] coarse hit 106 mm @ 110 deg, fine scan
+14:46:15.445  [S5] obstacle 111 mm @ 110 deg w=125 clrL=635 clrR=54
+14:46:15.447  [S5] avoid -> SLOW (3000 ms)
+14:46:15.449  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:15.450  [S5] avoid -> IDLE (reacquired=0)
+14:46:16.765  [S5] coarse hit 111 mm @ 110 deg, fine scan
+14:46:17.183  [S5] obstacle 113 mm @ 110 deg w=128 clrL=635 clrR=635
+14:46:17.185  [S5] avoid -> SLOW (3000 ms)
+14:46:17.187  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:17.188  [S5] avoid -> IDLE (reacquired=0)
+14:46:18.557  [S5] coarse hit 106 mm @ 110 deg, fine scan
+14:46:19.042  [S5] obstacle 120 mm @ 110 deg w=136 clrL=635 clrR=635
+14:46:19.044  [S5] avoid -> SLOW (3000 ms)
+14:46:19.046  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:19.048  [S5] avoid -> IDLE (reacquired=0)
+14:46:20.131  [S5] coarse hit 119 mm @ 110 deg, fine scan
+14:46:20.604  [S5] obstacle 119 mm @ 110 deg w=140 clrL=635 clrR=635
+14:46:20.606  [S5] avoid -> SLOW (3000 ms)
+14:46:20.608  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:20.609  [S5] avoid -> IDLE (reacquired=0)
+14:46:21.979  [S5] coarse hit 115 mm @ 110 deg, fine scan
+14:46:22.528  [S5] obstacle 118 mm @ 120 deg w=113 clrL=635 clrR=635
+14:46:22.531  [S5] avoid -> SLOW (3000 ms)
+14:46:22.532  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:22.534  [S5] avoid -> IDLE (reacquired=0)
+14:46:23.727  [S5] coarse hit 118 mm @ 120 deg, fine scan
+14:46:24.146  [S5] obstacle 114 mm @ 120 deg w=109 clrL=635 clrR=635
+14:46:24.147  [S5] avoid -> SLOW (3000 ms)
+14:46:24.149  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:24.150  [S5] avoid -> IDLE (reacquired=0)
+14:46:24.828  [DBG] alive: SDK timer 752587 ms, kernel time 751131 ms, difference 1456 ms
+14:46:25.576  [S5] coarse hit 114 mm @ 120 deg, fine scan
+14:46:26.060  [S5] obstacle 119 mm @ 120 deg w=114 clrL=635 clrR=635
+14:46:26.062  [S5] avoid -> SLOW (3000 ms)
+14:46:26.064  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:26.065  [S5] avoid -> IDLE (reacquired=0)
+14:46:27.380  [S5] coarse hit 118 mm @ 120 deg, fine scan
+14:46:27.809  [S5] obstacle 114 mm @ 120 deg w=109 clrL=635 clrR=635
+14:46:27.810  [S5] avoid -> SLOW (3000 ms)
+14:46:27.812  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:27.813  [S5] avoid -> IDLE (reacquired=0)
+14:46:29.238  [S5] coarse hit 114 mm @ 120 deg, fine scan
+14:46:29.723  [S5] obstacle 123 mm @ 120 deg w=118 clrL=635 clrR=635
+14:46:29.724  [S5] avoid -> SLOW (3000 ms)
+14:46:29.726  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:29.726  [S5] avoid -> IDLE (reacquired=0)
+14:46:31.043  [S5] coarse hit 121 mm @ 120 deg, fine scan
+14:46:31.471  [S5] obstacle 121 mm @ 120 deg w=116 clrL=635 clrR=635
+14:46:31.473  [S5] avoid -> SLOW (3000 ms)
+14:46:31.475  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:31.476  [S5] avoid -> IDLE (reacquired=0)
+14:46:32.890  [S5] coarse hit 119 mm @ 120 deg, fine scan
+14:46:33.386  [S5] obstacle 120 mm @ 120 deg w=115 clrL=635 clrR=635
+14:46:33.388  [S5] avoid -> SLOW (3000 ms)
+14:46:33.390  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:33.392  [S5] avoid -> IDLE (reacquired=0)
+14:46:34.706  [S5] coarse hit 116 mm @ 120 deg, fine scan
+14:46:34.838  [DBG] alive: SDK timer 762597 ms, kernel time 761141 ms, difference 1456 ms
+14:46:35.123  [S5] obstacle 121 mm @ 120 deg w=116 clrL=635 clrR=635
+14:46:35.125  [S5] avoid -> SLOW (3000 ms)
+14:46:35.134  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:35.137  [S5] avoid -> IDLE (reacquired=0)
+14:46:36.510  [S5] coarse hit 121 mm @ 120 deg, fine scan
+14:46:37.049  [S5] obstacle 116 mm @ 120 deg w=111 clrL=635 clrR=635
+14:46:37.050  [S5] avoid -> SLOW (3000 ms)
+14:46:37.052  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:37.053  [S5] avoid -> IDLE (reacquired=0)
+14:46:38.303  [S5] coarse hit 116 mm @ 120 deg, fine scan
+14:46:38.720  [S5] obstacle 117 mm @ 120 deg w=112 clrL=635 clrR=635
+14:46:38.722  [S5] avoid -> SLOW (3000 ms)
+14:46:38.723  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:38.724  [S5] avoid -> IDLE (reacquired=0)
+14:46:40.150  [S5] coarse hit 117 mm @ 120 deg, fine scan
+14:46:40.646  [S5] obstacle 113 mm @ 120 deg w=108 clrL=635 clrR=635
+14:46:40.648  [S5] avoid -> SLOW (3000 ms)
+14:46:40.649  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:40.650  [S5] avoid -> IDLE (reacquired=0)
+14:46:41.107  [TEL] link RECONNECTING -> CONNECTING
+14:46:41.844  [S5] coarse hit 113 mm @ 120 deg, fine scan
+14:46:42.264  [S5] obstacle 115 mm @ 120 deg w=110 clrL=635 clrR=635
+14:46:42.265  [S5] avoid -> SLOW (3000 ms)
+14:46:42.267  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:42.268  [S5] avoid -> IDLE (reacquired=0)
+14:46:43.594  [S5] coarse hit 116 mm @ 120 deg, fine scan
+14:46:44.121  [S5] obstacle 116 mm @ 120 deg w=111 clrL=635 clrR=635
+14:46:44.123  [S5] avoid -> SLOW (3000 ms)
+14:46:44.124  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:44.125  [S5] avoid -> IDLE (reacquired=0)
+14:46:44.848  [DBG] alive: SDK timer 772607 ms, kernel time 771151 ms, difference 1456 ms
+14:46:45.320  [S5] coarse hit 116 mm @ 120 deg, fine scan
+14:46:45.749  [S5] obstacle 120 mm @ 120 deg w=115 clrL=635 clrR=635
+14:46:45.751  [S5] avoid -> SLOW (3000 ms)
+14:46:45.752  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:45.754  [S5] avoid -> IDLE (reacquired=0)
+14:46:47.180  [S5] coarse hit 116 mm @ 120 deg, fine scan
+14:46:47.663  [S5] obstacle 116 mm @ 120 deg w=111 clrL=635 clrR=635
+14:46:47.664  [S5] avoid -> SLOW (3000 ms)
+14:46:47.666  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:47.667  [S5] avoid -> IDLE (reacquired=0)
+14:46:48.983  [S5] coarse hit 116 mm @ 120 deg, fine scan
+14:46:49.403  [S5] obstacle 120 mm @ 120 deg w=115 clrL=635 clrR=635
+14:46:49.404  [S5] avoid -> SLOW (3000 ms)
+14:46:49.406  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:49.408  [S5] avoid -> IDLE (reacquired=0)
+14:46:50.832  [S5] coarse hit 120 mm @ 120 deg, fine scan
+14:46:51.328  [S5] obstacle 113 mm @ 120 deg w=108 clrL=635 clrR=635
+14:46:51.331  [S5] avoid -> SLOW (3000 ms)
+14:46:51.332  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:51.333  [S5] avoid -> IDLE (reacquired=0)
+14:46:52.647  [S5] coarse hit 112 mm @ 120 deg, fine scan
+14:46:53.066  [S5] obstacle 112 mm @ 120 deg w=107 clrL=635 clrR=635
+14:46:53.068  [S5] avoid -> SLOW (3000 ms)
+14:46:53.070  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:53.072  [S5] avoid -> IDLE (reacquired=0)
+14:46:54.364  [TEL] CONNECTING tx=2246 txf=31 off=2407 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:46:54.495  [S5] coarse hit 116 mm @ 120 deg, fine scan
+14:46:54.858  [DBG] alive: SDK timer 782618 ms, kernel time 781162 ms, difference 1456 ms
+14:46:54.862  [STACK] init: 360 of 1152 B used, 792 never used
+14:46:54.864  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:46:54.865  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:46:54.867  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:46:54.868  [STACK] motion: 356 of 1664 B used, 1308 never used
+14:46:54.870  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:46:54.871  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:46:54.873  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:46:54.874  [STACK] obs_avoid: 592 of 1664 B used, 1072 never used
+14:46:54.875  [STACK] stack top check: 0 mismatches
+14:46:54.876  [MBF] nav_in: 64 B buffer, 64 B free
+14:46:54.878  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:46:54.880  [MBF] obstacle: 24 B buffer, 24 B free
+14:46:54.881  [MBF] telemetry: 384 B buffer, 384 B free
+14:46:55.169  [S5] obstacle 126 mm @ 130 deg w=76 clrL=635 clrR=635
+14:46:55.172  [S5] avoid -> SLOW (3000 ms)
+14:46:55.173  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:46:55.175  [S5] avoid -> IDLE (reacquired=0)
+14:46:56.104  [TEL] link CONNECTING -> RECONNECTING
+14:46:56.106  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:46:56.613  [S5] coarse hit 126 mm @ 130 deg, fine scan
+14:47:04.861  [DBG] alive: SDK timer 792621 ms, kernel time 791165 ms, difference 1456 ms
+14:47:12.275  [S5] coarse hit 95 mm @ 60 deg, fine scan
+14:47:12.803  [S5] obstacle 69 mm @ 60 deg w=66 clrL=57 clrR=635
+14:47:12.804  [S5] avoid -> SLOW (3000 ms)
+14:47:12.806  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:12.808  [S5] avoid -> IDLE (reacquired=0)
+14:47:13.891  [S5] coarse hit 69 mm @ 60 deg, fine scan
+14:47:14.419  [S5] obstacle 83 mm @ 80 deg w=28 clrL=635 clrR=34
+14:47:14.421  [S5] avoid -> SLOW (3000 ms)
+14:47:14.423  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:14.424  [S5] avoid -> IDLE (reacquired=0)
+14:47:14.872  [DBG] alive: SDK timer 802631 ms, kernel time 801175 ms, difference 1456 ms
+14:47:15.916  [S5] coarse hit 83 mm @ 70 deg, fine scan
+14:47:20.491  [S5] coarse hit 69 mm @ 60 deg, fine scan
+14:47:21.019  [S5] obstacle 70 mm @ 60 deg w=71 clrL=635 clrR=635
+14:47:21.021  [S5] avoid -> SLOW (3000 ms)
+14:47:21.022  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:21.024  [S5] avoid -> IDLE (reacquired=0)
+14:47:22.286  [S5] coarse hit 71 mm @ 60 deg, fine scan
+14:47:22.702  [S5] obstacle 75 mm @ 60 deg w=134 clrL=635 clrR=635
+14:47:22.705  [S5] avoid -> SLOW (3000 ms)
+14:47:22.707  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:22.709  [S5] avoid -> IDLE (reacquired=0)
+14:47:23.902  [S5] coarse hit 62 mm @ 60 deg, fine scan
+14:47:24.319  [S5] obstacle 65 mm @ 60 deg w=114 clrL=635 clrR=635
+14:47:24.321  [S5] avoid -> SLOW (3000 ms)
+14:47:24.323  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:24.325  [S5] avoid -> IDLE (reacquired=0)
+14:47:24.881  [DBG] alive: SDK timer 812641 ms, kernel time 811185 ms, difference 1456 ms
+14:47:25.573  [S5] coarse hit 65 mm @ 60 deg, fine scan
+14:47:26.112  [TEL] link RECONNECTING -> CONNECTING
+14:47:26.355  [S5] obstacle 96 mm @ 120 deg w=25 clrL=59 clrR=124
+14:47:26.357  [S5] avoid -> SLOW (3000 ms)
+14:47:26.358  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:26.360  [S5] avoid -> IDLE (reacquired=0)
+14:47:28.632  [S5] coarse hit 135 mm @ 90 deg, fine scan
+14:47:29.313  [S5] obstacle 143 mm @ 80 deg w=48 clrL=635 clrR=635
+14:47:29.314  [S5] avoid -> SLOW (3000 ms)
+14:47:29.316  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:29.317  [S5] avoid -> IDLE (reacquired=0)
+14:47:30.732  [S5] coarse hit 143 mm @ 70 deg, fine scan
+14:47:31.295  [S5] obstacle 146 mm @ 70 deg w=81 clrL=635 clrR=635
+14:47:31.297  [S5] avoid -> SLOW (3000 ms)
+14:47:31.298  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:31.301  [S5] avoid -> IDLE (reacquired=0)
+14:47:32.778  [S5] coarse hit 135 mm @ 70 deg, fine scan
+14:47:33.549  [S5] obstacle 144 mm @ 70 deg w=47 clrL=635 clrR=635
+14:47:33.551  [S5] avoid -> SLOW (3000 ms)
+14:47:33.553  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:33.554  [S5] avoid -> IDLE (reacquired=0)
+14:47:34.892  [DBG] alive: SDK timer 822652 ms, kernel time 821196 ms, difference 1456 ms
+14:47:35.177  [S5] coarse hit 131 mm @ 80 deg, fine scan
+14:47:35.892  [S5] obstacle 148 mm @ 80 deg w=51 clrL=635 clrR=635
+14:47:35.893  [S5] avoid -> SLOW (3000 ms)
+14:47:35.895  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:35.897  [S5] avoid -> IDLE (reacquired=0)
+14:47:37.455  [S5] coarse hit 143 mm @ 70 deg, fine scan
+14:47:40.511  [S5] coarse hit 149 mm @ 60 deg, fine scan
+14:47:41.106  [TEL] link CONNECTING -> RECONNECTING
+14:47:41.109  [TEL] teardown (stage 3, status 3), retry in 30000 ms
+14:47:41.173  [S5] obstacle 153 mm @ 70 deg w=49 clrL=635 clrR=635
+14:47:41.175  [S5] avoid -> SLOW (3000 ms)
+14:47:41.177  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:41.178  [S5] avoid -> IDLE (reacquired=0)
+14:47:42.669  [S5] coarse hit 143 mm @ 70 deg, fine scan
+14:47:43.350  [S5] obstacle 150 mm @ 80 deg w=82 clrL=635 clrR=635
+14:47:43.352  [S5] avoid -> SLOW (3000 ms)
+14:47:43.354  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:43.355  [S5] avoid -> IDLE (reacquired=0)
+14:47:44.901  [DBG] alive: SDK timer 832662 ms, kernel time 831206 ms, difference 1456 ms
+14:47:45.012  [S5] coarse hit 150 mm @ 80 deg, fine scan
+14:47:45.912  [S5] obstacle 152 mm @ 80 deg w=39 clrL=635 clrR=635
+14:47:45.915  [S5] avoid -> SLOW (3000 ms)
+14:47:45.916  [S5] avoid ABORT in SLOW: bypass budget exhausted
+14:47:45.918  [S5] avoid -> IDLE (reacquired=0)
+14:47:47.288  [S5] coarse hit 144 mm @ 60 deg, fine scan
+14:47:54.373  [TEL] RECONNECTING tx=2246 txf=31 off=2767 ev=5 bad=0 qd=0 od=0 cmd=3/2
+14:47:54.912  [DBG] alive: SDK timer 842672 ms, kernel time 841216 ms, difference 1456 ms
+14:47:54.914  [STACK] init: 360 of 1152 B used, 792 never used
+14:47:54.916  [STACK] dbg_drain: 916 of 1664 B used, 748 never used
+14:47:54.917  [STACK] tel: 928 of 4736 B used, 3808 never used
+14:47:54.919  [STACK] vc: 412 of 1664 B used, 1252 never used
+14:47:54.920  [STACK] motion: 364 of 1664 B used, 1300 never used
+14:47:54.921  [STACK] safety: 420 of 1664 B used, 1244 never used
+14:47:54.923  [STACK] imu: 484 of 2176 B used, 1692 never used
+14:47:54.924  [STACK] obs_scan: 624 of 1664 B used, 1040 never used
+14:47:54.926  [STACK] obs_avoid: 592 of 1664 B used, 1072 never used
+14:47:54.927  [STACK] stack top check: 0 mismatches
+14:47:54.929  [MBF] nav_in: 64 B buffer, 64 B free
+14:47:54.930  [MBF] motion_cmd: 32 B buffer, 32 B free
+14:47:54.931  [MBF] obstacle: 24 B buffer, 24 B free
+14:47:54.933  [MBF] telemetry: 384 B buffer, 384 B free
+14:47:57.267  [S5] coarse hit 85 mm @ 30 deg, fine scan
+14:47:59.317  [capture] port lost (MethodInvocationException); waiting for it to come back
