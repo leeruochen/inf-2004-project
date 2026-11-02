@@ -177,11 +177,11 @@ static void s3_u03(uint32_t *p_pass, uint32_t *p_fail)
 
     s3_countdown("U03 prep", "back to WHITE, hold the 20 mm black strip ready", 10U);
     e0 = drv_bc_edge_count();
-    d0 = drv_bc_double_count();
+    d0 = drv_bc_glitch_count();
     s3_countdown("U03 strip", "slide the black strip under the sensor 5 times", 20U);
     (void)tk_dly_tsk(S3_SETTLE_MS);
-    dbg_printf("[S3] strip: edges=%lu double=%lu", (unsigned long)(drv_bc_edge_count() - e0),
-               (unsigned long)(drv_bc_double_count() - d0));
+    dbg_printf("[S3] strip: edges=%lu glitches=%lu", (unsigned long)(drv_bc_edge_count() - e0),
+               (unsigned long)(drv_bc_glitch_count() - d0));
     TEST_CHECK("S3-U03", (drv_bc_edge_count() - e0) == 10U, "(d) 5 strip passes = exactly 10 edges");
 
     *p_pass = test_pass_;
@@ -355,10 +355,12 @@ void subsystem3_test(void)
                (unsigned long)s.captures, (unsigned long)s.results[BC_FRAME_OK],
                (unsigned long)s.results[BC_FRAME_OVERFLOW], (unsigned long)s.results[BC_FRAME_TOO_LONG],
                (unsigned long)s.results[BC_FRAME_INCOMPLETE]);
-    dbg_printf("[S3] totals: no_symbol=%lu ambiguous=%lu edges=%lu double=%lu ring_ovf=%lu",
+    dbg_printf("[S3] totals: no_symbol=%lu ambiguous=%lu edges=%lu glitches=%lu irqs=%lu",
                (unsigned long)s.results[BC_FRAME_NO_SYMBOL], (unsigned long)s.results[BC_FRAME_AMBIGUOUS],
-               (unsigned long)drv_bc_edge_count(), (unsigned long)drv_bc_double_count(),
-               (unsigned long)drv_bc_overflow_count());
+               (unsigned long)drv_bc_edge_count(), (unsigned long)drv_bc_glitch_count(),
+               (unsigned long)drv_bc_irq_count());
+    dbg_printf("[S3] totals: ring_ovf=%lu ignored=%lu", (unsigned long)drv_bc_overflow_count(),
+               (unsigned long)drv_bc_ignored_count());
     dbg_printf("[S3] totals: max_batch=%lu max_poll=%luus dbg_dropped=%lu",
                (unsigned long)s.max_gaps_per_poll, (unsigned long)s.max_poll_gap_us,
                (unsigned long)dbg_overflow_count());

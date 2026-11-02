@@ -81,3 +81,16 @@ target_include_directories(test_tel PRIVATE "${ROBOCAR_ROOT}")
 target_compile_options(test_tel PRIVATE -Wall -Wextra -Werror)
 set_target_properties(test_tel PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME tel COMMAND test_tel)
+
+# Barcode edge glitch filter (app_program/subsystem3/bc_edge.c, pure C) with
+# bc_frame.c + bc_decode.c: Subsystem 3 test S3-U07. Flicker model from the
+# first hardware runs.
+add_executable(test_bc_edge host/test_bc_edge.c
+    "${ROBOCAR_ROOT}/app_program/subsystem3/bc_edge.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/bc_frame.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/bc_decode.c")
+target_include_directories(test_bc_edge PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_bc_edge PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_bc_edge PRIVATE m)
+set_target_properties(test_bc_edge PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME bc_edge COMMAND test_bc_edge)

@@ -10,7 +10,9 @@
  *                 1. read Motion's speed ONCE (motion_get_state, IF-08);
  *                 2. pop EVERY waiting gap, pair each with that speed
  *                    (bc_frame_add stores the magnitude);
- *                 3. ring empty and bc_frame_ended() -> decide the capture.
+ *                 3. ring empty: drv_bc_settle() (confirms the last bar
+ *                    once the pin is quiet for BC_GLITCH_US), then
+ *                    bc_frame_ended() -> decide the capture.
  *    decide     bc_frame_finish(): letter, or the reason it is invalid
  *               (INVALID_READ_RESET); log it with the raw gaps; back to IDLE.
  *
@@ -74,7 +76,7 @@ static int32_t bc_speed_now(void)
 /* Result line and raw gaps of one capture (tasks only: dbg_printf). */
 static void bc_log(bc_frame_result_t res, bc_frame_out_t const *p_out, uint32_t start_gap_us,
                    uint32_t quiet_us, uint32_t max_batch, uint32_t max_poll_us,
-                   uint32_t ovf, uint32_t dbl)
+                   uint32_t ovf, uint32_t glt, uint32_t irq)
 {
     uint32_t const n = s_stats.captures;
     int32_t        v_min = 0;
@@ -107,8 +109,8 @@ static void bc_log(bc_frame_result_t res, bc_frame_out_t const *p_out, uint32_t 
                    (long)v_min, (long)v_max, (unsigned long)(quiet_us / 1000U),
                    drv_bc_level() ? 1U : 0U);
     }
-    dbg_printf("[BC] #%lu ovf=%lu dbl=%lu batch=%lu poll=%luus start=%lu",
-               (unsigned long)n, (unsigned long)ovf, (unsigned long)dbl,
+    dbg_printf("[BC] #%lu ovf=%lu glt=%lu irq=%lu batch=%lu poll=%luus start=%lu",
+               (unsigned long)n, (unsigned long)ovf, (unsigned long)glt, (unsigned long)irq,
                (unsigned long)max_batch, (unsigned long)max_poll_us,
                (unsigned long)start_gap_us);
 
@@ -138,7 +140,8 @@ static void bc_log(bc_frame_result_t res, bc_frame_out_t const *p_out, uint32_t 
 static void bc_capture(bc_cfg_t const *p_cfg)
 {
     uint32_t const    ovf0 = drv_bc_overflow_count();
-    uint32_t const    dbl0 = drv_bc_double_count();
+    uint32_t const    glt0 = drv_bc_glitch_count();
+    uint32_t const    irq0 = drv_bc_irq_count();
     uint32_t          prev_poll_us = hal_time_us();
     uint32_t          start_gap_us = 0U;
     uint32_t          quiet_us = 0U;
@@ -172,11 +175,12 @@ static void bc_capture(bc_cfg_t const *p_cfg)
         {
             done = true;                        /* woken with nothing: not a capture */
         }
-        else if (drv_bc_pending() == 0U)
+        else if ((drv_bc_pending() == 0U) && !drv_bc_settle())
         {
-            /* Order: ring empty -> last edge -> now -> ring still empty.  An
-             * edge after the first check shows up in the second, so the
-             * capture never ends on a stale last-edge time. */
+            /* Order: ring empty -> nothing to settle -> last edge -> now ->
+             * ring still empty.  An edge after the first check shows up in
+             * the last one, so the capture never ends on a stale last-edge
+             * time.  (A settle that pushed the last bar: take it next poll.) */
             uint32_t const last_us = drv_bc_last_edge_us();
             uint32_t const now_us = hal_time_us();
 
@@ -202,7 +206,8 @@ static void bc_capture(bc_cfg_t const *p_cfg)
     if (have_start)
     {
         uint32_t const ovf = drv_bc_overflow_count() - ovf0;    /* 8-bit count: see drv_bc.h */
-        uint32_t const dbl = drv_bc_double_count() - dbl0;
+        uint32_t const glt = drv_bc_glitch_count() - glt0;
+        uint32_t const irq = drv_bc_irq_count() - irq0;
 
         if (ovf != 0U)
         {
@@ -221,7 +226,7 @@ static void bc_capture(bc_cfg_t const *p_cfg)
         s_stats.max_gaps_per_poll = (max_batch > s_stats.max_gaps_per_poll) ? max_batch : s_stats.max_gaps_per_poll;
         s_stats.max_poll_gap_us = (max_poll_us > s_stats.max_poll_gap_us) ? max_poll_us : s_stats.max_poll_gap_us;
 
-        bc_log(res, &out, start_gap_us, quiet_us, max_batch, max_poll_us, ovf, dbl);
+        bc_log(res, &out, start_gap_us, quiet_us, max_batch, max_poll_us, ovf, glt, irq);
     }
 }
 

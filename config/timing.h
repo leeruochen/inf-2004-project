@@ -162,6 +162,12 @@
 #define BC_T_END_WIDEST_MULT            (3U)
 /** ISR edge ring length (one Code 39 symbol is 29 elements). */
 #define BC_EDGE_RING_LEN                (64U)
+/** Barcode sensor glitch limit: a bar or space shorter than this is the
+ *  sensor's comparator flickering at a black/white edge (measured 1 Nov 2026:
+ *  pulses of 20-800 us), not a real element, and is merged away (bc_edge.c).
+ *  The narrowest real element, 3 mm at 511 mm/s, lasts 5.9 ms. Not in
+ *  design.md. TUNE */
+#define BC_GLITCH_US                    (2000U)
 
 /* ---------------------------------------------------------------------------
  * Queues and debug
@@ -190,6 +196,10 @@
 
 #if TEL_HEARTBEAT_PERIOD_MS != 1000U
 #error "timing.h: telemetry heartbeat period must be 1000 ms (FR1)"
+#endif
+
+#if (BC_GLITCH_US == 0U) || (BC_GLITCH_US >= 5000U)
+#error "timing.h: BC_GLITCH_US must be > 0 and well below the narrowest element (5.9 ms at 511 mm/s)"
 #endif
 
 #if (BC_EDGE_RING_LEN & (BC_EDGE_RING_LEN - 1U)) != 0U
