@@ -10,8 +10,11 @@
  *  and S3-U02 are host tests).
  *
  *  BC-2A hardware tests, guided by the console: the operator follows the
- *  "[S3] >>>" prompts, the test counts what the Barcode task decoded in each
- *  timed window and decides PASS/FAIL itself.  Guide for the operator:
+ *  "[S3] >>>" prompts, the test counts what the Barcode task decoded and
+ *  decides PASS/FAIL itself.  "Keep still" checks are timed; slide steps are
+ *  COUNTED: they wait for a number of reads (with a time limit) and print
+ *  each read as it happens (desk runs 2 Nov 2026: fixed 60 s windows lost
+ *  slides made just before or after them).  Guide for the operator:
  *  .agents/tasks/s3-bc2a-test.md.  Order (the car starts on the stand,
  *  because subsystem2_test() spins the wheels before this runs):
  *    S3-U03  GP27 edges, no barcode                 (stand)
@@ -85,7 +88,62 @@ static void s3_countdown(char const *p_tag, char const *p_what, uint32_t seconds
     dbg_printf("[S3] <<< %s: stop", p_tag);
 }
 
-/* Reads in a window: correct letter, any other letter, refused, overflow. */
+/** bc_frame_result_t names for the progress lines. */
+static char const *const k_s3_res[BC_STATS_RESULTS] =
+{
+    "OK", "OVERFLOW", "TOO_LONG", "INCOMPLETE", "NO_SYMBOL", "AMBIGUOUS"
+};
+/** Most reads a counted step waits for. */
+#define S3_COUNT_MAX            (10U)
+
+/*
+ * A counted step: wait until n more barcode reads have been decided (each
+ * slide or crossing is one read), or max_s seconds.  Every read is announced
+ * as it happens ("[S3] 3/10: OK A", "[S3] 4/10: refused INCOMPLETE"), so the
+ * operator sees the count.  *p_a = counters at the start, *p_b = at the end.
+ * Reads during the prep before it are not counted.
+ */
+static void s3_count_reads(char const *p_tag, char const *p_what, uint32_t n, uint32_t max_s,
+                           bc_stats_t *p_a, bc_stats_t *p_b)
+{
+    bc_stats_t prev;
+    uint32_t   waited_ms = 0U;
+    uint32_t   k = 0U;
+
+    s3_snap(p_a);
+    prev = *p_a;
+    dbg_printf("[S3] >>> %s: %s (%lu reads, max %lu s)", p_tag, p_what, (unsigned long)n,
+               (unsigned long)max_s);
+    while ((k < n) && (waited_ms < (max_s * S3_SECOND_MS)))
+    {
+        bc_stats_t now;
+
+        (void)tk_dly_tsk((RELTIM)S3_DRIVE_POLL_MS);
+        waited_ms += S3_DRIVE_POLL_MS;
+        s3_snap(&now);
+        for (uint32_t r = 0U; r < BC_STATS_RESULTS; r++)
+        {
+            for (uint32_t d = now.results[r] - prev.results[r]; (d > 0U) && (k < n); d--)
+            {
+                k++;
+                if (r == (uint32_t)BC_FRAME_OK)
+                {
+                    dbg_printf("[S3] %lu/%lu: OK %c", (unsigned long)k, (unsigned long)n, now.last_letter);
+                }
+                else
+                {
+                    dbg_printf("[S3] %lu/%lu: refused %s", (unsigned long)k, (unsigned long)n, k_s3_res[r]);
+                }
+            }
+        }
+        prev = now;
+    }
+    dbg_printf("[S3] <<< %s: %s (%lu of %lu reads)", p_tag, (k < n) ? "time is up" : "done",
+               (unsigned long)k, (unsigned long)n);
+    s3_snap(p_b);
+}
+
+/* Reads in a step: correct letter, any other letter, refused, overflow. */
 typedef struct
 {
     uint32_t correct;
@@ -150,36 +208,37 @@ static void s3_u03(uint32_t *p_pass, uint32_t *p_fail)
 {
     uint32_t test_pass_ = *p_pass;
     uint32_t test_fail_ = *p_fail;
-    uint32_t e0;
-    uint32_t d0;
-    bool     lvl_white;
-    bool     lvl_black;
+    uint32_t   e0;
+    uint32_t   d0;
+    bool       lvl_white;
+    bool       lvl_black;
+    bc_stats_t sa;
+    bc_stats_t sb;
 
     TEST_CHECK("S3-U03", drv_bc_is_ready() && bc_task_is_running(),
                "(a) GP27 handler registered, Barcode task running");
 
-    s3_countdown("U03 prep", "WHITE paper under the barcode sensor, keep still", 15U);
+    s3_countdown("U03 prep", "NO barcode yet: plain WHITE paper under the sensor", 15U);
     e0 = drv_bc_edge_count();
-    s3_countdown("U03 white", "keep still over WHITE", 10U);
+    s3_countdown("U03 white", "plain WHITE under the sensor, touch nothing", 10U);
     lvl_white = drv_bc_level();
     dbg_printf("[S3] white: edges=%lu level=%u", (unsigned long)(drv_bc_edge_count() - e0),
                lvl_white ? 1U : 0U);
     TEST_CHECK("S3-U03", drv_bc_edge_count() == e0, "(b) 0 edges in 10 s over white");
 
-    s3_countdown("U03 prep", "BLACK tape under the barcode sensor, keep still", 15U);
+    s3_countdown("U03 prep", "NO barcode: put the BLACK square under the sensor", 15U);
     e0 = drv_bc_edge_count();
-    s3_countdown("U03 black", "keep still over BLACK", 10U);
+    s3_countdown("U03 black", "BLACK square under the sensor, touch nothing", 10U);
     lvl_black = drv_bc_level();
     dbg_printf("[S3] black: edges=%lu level=%u", (unsigned long)(drv_bc_edge_count() - e0),
                lvl_black ? 1U : 0U);
     TEST_CHECK("S3-U03", (drv_bc_edge_count() == e0) && (lvl_black != lvl_white),
                "(c) 0 edges over black, level differs from white");
 
-    s3_countdown("U03 prep", "back to WHITE, hold the 20 mm black strip ready", 10U);
+    s3_countdown("U03 prep", "back to WHITE; NO barcode: get the 20 mm black STRIP", 10U);
     e0 = drv_bc_edge_count();
     d0 = drv_bc_glitch_count();
-    s3_countdown("U03 strip", "slide the black strip under the sensor 5 times", 20U);
-    (void)tk_dly_tsk(S3_SETTLE_MS);
+    s3_count_reads("U03 strip", "slide the STRIP across 5 times, same way", 5U, 60U, &sa, &sb);
     dbg_printf("[S3] strip: edges=%lu glitches=%lu", (unsigned long)(drv_bc_edge_count() - e0),
                (unsigned long)(drv_bc_glitch_count() - d0));
     TEST_CHECK("S3-U03", (drv_bc_edge_count() - e0) == 10U, "(d) 5 strip passes = exactly 10 edges");
@@ -205,14 +264,12 @@ static void s3_u04(uint32_t *p_pass, uint32_t *p_fail)
             uint32_t   ovf_a;
             char       what[DBG_LINE_MAX];
 
-            (void)snprintf(what, sizeof(what), "card *%c*, slide it %s 10 times", k_cards[c],
+            (void)snprintf(what, sizeof(what), "card *%c*, slide it %s", k_cards[c],
                            (dir == 0U) ? "LEFT-TO-RIGHT" : "RIGHT-TO-LEFT");
-            s3_countdown("U04 prep", "get the card ready, bars across the slide", 15U);
-            s3_snap(&a);
+            s3_countdown("U04 prep", (dir == 0U) ? "take the card named next, slides not counted yet"
+                                                 : "same card, other direction next", 10U);
             ovf_a = drv_bc_overflow_count();
-            s3_countdown("U04 slide", what, 60U);
-            (void)tk_dly_tsk(S3_SETTLE_MS);
-            s3_snap(&b);
+            s3_count_reads("U04 slide", what, S3_COUNT_MAX, 120U, &a, &b);
 
             s3_tally_t const t = s3_tally(&a, &b, k_cards[c], ovf_a, drv_bc_overflow_count());
             TEST_CHECK("S3-U04", (t.correct >= S3_MIN_CORRECT) && (t.wrong == 0U) && (t.ovf == 0U),
@@ -235,20 +292,14 @@ static void s3_u06_bench(uint32_t *p_pass, uint32_t *p_fail)
     bc_task_set_speed_override(S3_BENCH_SPEED_MMPS);
 
     s3_countdown("U06 prep", "card *A*: next, slide it only HALFWAY and pull it back", 15U);
-    s3_snap(&a);
-    s3_countdown("U06 half", "halfway in, then back out: 3 times", 30U);
-    (void)tk_dly_tsk(S3_SETTLE_MS);
-    s3_snap(&b);
+    s3_count_reads("U06 half", "card *A* halfway in, then back out", 3U, 60U, &a, &b);
     dbg_printf("[S3] half: ok=%lu refused=%lu", (unsigned long)(s3_ok_total(&b) - s3_ok_total(&a)),
                (unsigned long)(s3_fail_total(&b) - s3_fail_total(&a)));
     TEST_CHECK("S3-U06", (s3_ok_total(&b) == s3_ok_total(&a)) && (s3_fail_total(&b) > s3_fail_total(&a)),
                "(a) half pass: no letter, invalid read logged");
 
     s3_countdown("U06 prep", "cover the LAST 10 mm (stop char) of card *A* with white paper", 20U);
-    s3_snap(&a);
-    s3_countdown("U06 cover", "slide the covered card fully across: 3 times", 30U);
-    (void)tk_dly_tsk(S3_SETTLE_MS);
-    s3_snap(&b);
+    s3_count_reads("U06 cover", "slide the covered card *A* fully across", 3U, 60U, &a, &b);
     dbg_printf("[S3] covered: ok=%lu refused=%lu", (unsigned long)(s3_ok_total(&b) - s3_ok_total(&a)),
                (unsigned long)(s3_fail_total(&b) - s3_fail_total(&a)));
     TEST_CHECK("S3-U06", (s3_ok_total(&b) == s3_ok_total(&a)) && (s3_fail_total(&b) > s3_fail_total(&a)),
