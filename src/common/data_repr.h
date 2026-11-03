@@ -688,6 +688,9 @@ static inline bool drep_edge_pop(drep_edge_ring_t *p_ring, uint32_t *p_gap_us)
     {
         return false;
     }
+    /* Read the slot only after head says it is filled: the pair of the
+     * ISR's barrier before its head store (drep_edge_push). */
+    DREP_COMPILER_BARRIER();
     *p_gap_us = drep_edge_load(p_ring, tail);
     DREP_COMPILER_BARRIER();
     p_ring->tail = (uint8_t)(tail + 1U);

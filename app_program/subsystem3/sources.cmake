@@ -3,11 +3,17 @@
 # ROBOCAR_SOURCES        = SDK-side drv_*.c files (SDK headers only, never subsystem3.h). Never both.
 # bc_decode.c and bc_frame.c are pure C (no kernel or SDK header; host-tested
 # by tests/host/test_bc_decode.c and test_bc_frame.c); they sit on the kernel
-# side with their caller, the Barcode Decode task.
+# side with their caller, the Barcode Decode task.  bc_edge.c is pure C too
+# (tests/host/test_bc_edge.c); it sits on the SDK side with its caller, the
+# GP27 handler in drv_bc.c.
 list(APPEND ROBOCAR_KERNEL_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3.c"
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3_test.c"
     "${CMAKE_CURRENT_LIST_DIR}/bc_decode.c"
-    "${CMAKE_CURRENT_LIST_DIR}/bc_frame.c")
+    "${CMAKE_CURRENT_LIST_DIR}/bc_frame.c"
+    "${CMAKE_CURRENT_LIST_DIR}/task_bc.c")
 # SDK-side drivers:
-list(APPEND ROBOCAR_SOURCES "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c")
+list(APPEND ROBOCAR_SOURCES
+    "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c"
+    "${CMAKE_CURRENT_LIST_DIR}/drv_bc.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bc_edge.c")

@@ -27,6 +27,10 @@
 #define BC_CHAR_STRIDE              (BC_CHAR_ELEMENTS + 1U)
 /** Elements that carry data (the 2 gaps between characters excluded). */
 #define BC_CODED_ELEMENTS           (BC_SYMBOL_CHARS * BC_CHAR_ELEMENTS)
+/** Bars per character (elements 0, 2, 4, 6, 8) and spaces (1, 3, 5, 7). */
+#define BC_CHAR_BARS                ((BC_CHAR_ELEMENTS + 1U) / 2U)
+#define BC_CODED_BARS               (BC_SYMBOL_CHARS * BC_CHAR_BARS)
+#define BC_CODED_SPACES             (BC_CODED_ELEMENTS - BC_CODED_BARS)
 /** Fixed-point scale of bc_cfg_t.wide_ratio_x100. */
 #define BC_RATIO_SCALE              (100U)
 
@@ -57,14 +61,16 @@ static bc_letter_t const s_letters[BC_LETTERS] =
     { 'Y', 0x190U }, { 'Z', 0x0D0U }
 };
 
-/* Median of the coded widths: an insertion-sorted copy, middle entry.  With
- * 27 elements of which 9 are wide, the median is always a narrow width. */
-static uint32_t bc_median_um(uint32_t const p_width[BC_CODED_ELEMENTS])
+/* Median of n widths (n <= BC_CODED_BARS): an insertion-sorted copy, the
+ * entry at n / 2.  In '*' and A-Z every character has 2 wide bars of 5 and
+ * 1 wide space of 4, so 6 of the 15 bars and 3 of the 12 spaces are wide:
+ * both medians are narrow widths. */
+static uint32_t bc_median_um(uint32_t const p_width[], uint32_t n)
 {
-    uint32_t sorted[BC_CODED_ELEMENTS];
+    uint32_t sorted[BC_CODED_BARS];
     uint32_t i;
 
-    for (i = 0U; i < BC_CODED_ELEMENTS; i++)
+    for (i = 0U; i < n; i++)
     {
         uint32_t const w = p_width[i];
         uint32_t       j = i;
@@ -77,7 +83,7 @@ static uint32_t bc_median_um(uint32_t const p_width[BC_CODED_ELEMENTS])
         sorted[j] = w;
     }
 
-    return sorted[BC_CODED_ELEMENTS / 2U];
+    return sorted[n / 2U];
 }
 
 /* Wide if width / median > ratio / 100.  64-bit products: the configuration
@@ -117,13 +123,24 @@ static uint32_t bc_mirror(uint32_t pattern)
 }
 
 /* Width of each of the 27 coded elements (each with its own speed, NFR9),
- * then narrow/wide by ratio to their median, packed first element first.
- * The gap after each character is skipped. */
+ * then narrow/wide by ratio to a median, packed first element first.  The
+ * gap after each character is skipped.
+ * Bars are judged against the median BAR and spaces against the median
+ * SPACE: a sensor threshold away from the 50 % point makes every bar look
+ * thinner (or thicker) and every space the opposite by the same amount
+ * (first desk run, 2 Nov 2026: narrow bars 4 ms, narrow spaces 20 ms), which
+ * cancels out only when like is compared with like.  Element 0 of every
+ * character is a bar in either scan direction (29 elements, bar first). */
 static void bc_classify(bc_element_t const p_elem[BC_SYMBOL_ELEMENTS], uint32_t ratio_x100,
                         uint32_t p_pattern[BC_SYMBOL_CHARS])
 {
     uint32_t width_um[BC_CODED_ELEMENTS];
-    uint32_t median_um;
+    uint32_t bar_um[BC_CODED_BARS];
+    uint32_t space_um[BC_CODED_SPACES];
+    uint32_t n_bar = 0U;
+    uint32_t n_space = 0U;
+    uint32_t bar_median_um;
+    uint32_t space_median_um;
     uint32_t c;
     uint32_t e;
 
@@ -132,18 +149,31 @@ static void bc_classify(bc_element_t const p_elem[BC_SYMBOL_ELEMENTS], uint32_t 
         for (e = 0U; e < BC_CHAR_ELEMENTS; e++)
         {
             bc_element_t const *p_el = &p_elem[(c * BC_CHAR_STRIDE) + e];
+            uint32_t const      w = bc_gap_to_width_um(p_el->gap_us, p_el->speed_mmps);
 
-            width_um[(c * BC_CHAR_ELEMENTS) + e] = bc_gap_to_width_um(p_el->gap_us, p_el->speed_mmps);
+            width_um[(c * BC_CHAR_ELEMENTS) + e] = w;
+            if ((e % 2U) == 0U)
+            {
+                bar_um[n_bar] = w;
+                n_bar++;
+            }
+            else
+            {
+                space_um[n_space] = w;
+                n_space++;
+            }
         }
     }
 
-    median_um = bc_median_um(width_um);
+    bar_median_um = bc_median_um(bar_um, n_bar);
+    space_median_um = bc_median_um(space_um, n_space);
     for (c = 0U; c < BC_SYMBOL_CHARS; c++)
     {
         p_pattern[c] = 0U;
         for (e = 0U; e < BC_CHAR_ELEMENTS; e++)
         {
-            bool const wide = bc_is_wide(width_um[(c * BC_CHAR_ELEMENTS) + e], median_um, ratio_x100);
+            uint32_t const median_um = ((e % 2U) == 0U) ? bar_median_um : space_median_um;
+            bool const     wide = bc_is_wide(width_um[(c * BC_CHAR_ELEMENTS) + e], median_um, ratio_x100);
 
             p_pattern[c] = (p_pattern[c] << 1U) | (wide ? 1U : 0U);
         }
