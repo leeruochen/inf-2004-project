@@ -4,14 +4,14 @@
 module instructor. It stays in the repo unchanged, as reference only: it is
 never built and never scanned by `check_rules`. This page lists what we took
 from it, what we did not, and why. The full list of deviations is the
-"Template deviations" table (T1-T7) in [ARCHITECTURE.md](../ARCHITECTURE.md).
+"Template deviations" table (T1-T8) in [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Patterns we kept
 
 | Pattern | Template source | Where it lives in our tree |
 |---|---|---|
 | Two-phase start: every `subsystemN_init()` creates objects, then every `subsystemN_start()` starts tasks, then the init task sleeps forever with `tk_slp_tsk(TMO_FEVR)` | `app_program/app_main.c`, `app_program/app.h` | `app_program/app_main.c` (`usermain()`), `app_program/app.h`. We add a step 0: `ipc_init()` creates every IPC object centrally before any `_init()` (Batch B) |
-| Cyclic-handler wake: `tk_cre_cyc` (created stopped, started in `_start()` once the task exists) calls `tk_wup_tsk()`; the task loops on `tk_slp_tsk(TMO_FEVR)` and discards queued wake-ups with `tk_can_wup()` | `app_program/subsystem1/subsystem1.c`, `app_program/subsystem1/task_led.c` | every periodic task (Motion 20 ms, Line 5 ms, IMU 10 ms, ObsScan 60 ms, Telemetry: period TODO(owner-to-confirm, buddy 1)) in Phase 2; one cyclic handler per subsystem in `TEAM.md` section 6 |
+| Cyclic-handler wake: `tk_cre_cyc` (created stopped, started in `_start()` once the task exists) calls `tk_wup_tsk()`; the task loops on `tk_slp_tsk(TMO_FEVR)` and discards queued wake-ups with `tk_can_wup()` | `app_program/subsystem1/subsystem1.c`, `app_program/subsystem1/task_led.c` | Not used after all: every periodic task (Motion 20 ms, Line 5 ms, IMU 10 ms, ObsScan 60 ms, Telemetry 20 ms) waits with `app_period_wait()` instead, deviation T8 in `ARCHITECTURE.md` |
 | IF-NN interface IDs, listed in the owning subsystem's `subsystemN.h` and in `TEAM.md` section 5 | `app_program/subsystemN/subsystemN.h`, `TEAM.md` | `app_program/subsystemN/subsystemN.h`, `TEAM.md`. Deviation: objects are created centrally by `ipc_init()`, so the headers list their IFs in comments and declare no object IDs yet |
 | Test IDs `S<N>-U<nn>`, `INT-<nn>`, `SYS-<nn>`, never reused; one `[TEST] <ID> PASS\|FAIL` console line per check; `TEST_INIT` / `TEST_CHECK` / `TEST_SUMMARY` | `app_program/test_report.h`, `testing/README.md` | `app_program/test_report.h` (output through the `dbg_` ring), `testing/` |
 | Team tables: members, pins, peripherals (one owning task each), priorities, interfaces, object budget | `TEAM.md` | `TEAM.md` (our data) |

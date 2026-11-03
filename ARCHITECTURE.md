@@ -133,6 +133,7 @@ we differ from it, and why (details in [docs/TEMPLATE_NOTES.md](docs/TEMPLATE_NO
 | T5 | Each subsystem creates the objects it owns in `subsystemN_init()` | `ipc_init()` creates every IPC object centrally in `usermain()` step 1, before any `subsystemN_init()` | Owner decision (merge brief): every object exists before any subsystem code runs, and the depths and timeouts of design.md 3.3 sit in one place. The receiving subsystem still owns the IF |
 | T6 | One `TASK_STACK_SIZE` (2 KB) for every task | Per-task stacks from `config/priorities.h` (+512 B interrupt margin) | Sized per task; fits the 96 KB kernel pool check |
 | T7 | libbsp (`gpio_set_pin`, `pwm_...`) and kernel `device/` drivers | SDK `hardware_*` in `drv_*.c` only; no libbsp, no device manager | `libbsp_pwm.c` clashes with the SDK PWM API (R4); the SDK owns the peripherals |
+| T8 | Periodic tasks woken by a cyclic handler (`tk_cre_cyc` → `tk_wup_tsk()`; the task loops on `tk_slp_tsk`, `tk_can_wup()`) | Each periodic task paces itself with `app_period_wait()` (`src/common/period.h`): drift-free releases on its own grid, missed periods counted. In use (3 Nov 2026): Motion (S2), Line-Following (S3), IMU (S4), Obstacle Scanning (S5), Telemetry (S1); no cyclic handler is created | One kernel object fewer per task, and no wake-up queue to discard. Recorded by Buddy 3 with LF-3.2 (S2 and S5 chose it first, HANDOVER.md section 3 point 7) |
 
 ## Rules enforced by the build
 

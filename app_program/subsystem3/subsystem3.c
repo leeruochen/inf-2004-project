@@ -4,13 +4,16 @@
  *  and starts its tasks.
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *
- *  Stub (Phase 1 skeleton).  See subsystem3.h for the tasks and interfaces.
+ *  See subsystem3.h for the tasks and interfaces.  Started so far: the
+ *  Line-Following task (task_lf.c, LF-3.2).  The Barcode Decode task is on
+ *  its own branch (BC-2A.2, PR #13).
  */
 
 #include "subsystem3.h"
 
 #include "config/pins.h"         /* IR_C_ADC_CH, IR_R_ADC_CH */
 #include "drv_ir.h"             /* kernel-free driver interface */
+#include "task_lf.h"
 
 /** Sanity verdict names for the boot log (lf_adc_status_t order). */
 static char const *const k_ir_verdict[5] =
@@ -45,15 +48,22 @@ int32_t subsystem3_init(void)
     s3_ir_boot_check("[S3] IR_C (GP28/ADC2) ADC sanity OK", "[S3] IR_C (GP28/ADC2) ADC sanity FAULT:",
                      IR_C_ADC_CH);
 
-    /* TODO(phase 2, buddy 3): Line-Following periodic wake (LF_SAMPLE_PERIOD_MS,
-     * 5 ms): cyclic handler or app_period_wait(), open decision (LF-3). */
+    /* The Line-Following task paces itself with app_period_wait()
+     * (ARCHITECTURE.md T8): no cyclic handler to create here. */
     return (int32_t)E_OK;
 }
 
 int32_t subsystem3_start(void)
 {
-    /* TODO(phase 2, buddy 3): app_start_task(LF task, TASK_PRI_LF,
-     * TASK_STACK_LF_BYTES, "lf") and app_start_task(BC task, TASK_PRI_BC,
-     * TASK_STACK_BC_BYTES, "bc"), then start the cyclic handler. */
+    /* Line-Following: calibrates at once (the car must be in the start
+     * pose at power-up), then samples every 5 ms. */
+    int32_t const lf_id = lf_task_start();
+
+    if (lf_id < 0)
+    {
+        return lf_id;
+    }
+    /* TODO(BC-2A.2, buddy 3): app_start_task(BC task, TASK_PRI_BC,
+     * TASK_STACK_BC_BYTES, "bc"), on branch buddy3/bc2a-hw (PR #13). */
     return (int32_t)E_OK;
 }
