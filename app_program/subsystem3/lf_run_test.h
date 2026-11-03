@@ -13,10 +13,11 @@
 
 #if APP_TEST
 /*
- * Operator-guided test of the running Line-Following task (prompts
- * "[LF] >>>"; guide .agents/tasks/s3-lf32-test.md).  Car on its wheels,
- * battery OFF, a paper strip with the line under the sensors.  Adds
- * its TEST_CHECK results to the caller's counters.
+ * Operator-guided test of the running Line-Following task on the track,
+ * motors live (prompts "[LF] >>>"; guide .agents/tasks/s3-lf32-test.md).
+ * Static levels, then six bounded drives (straight, three recovery starts,
+ * a cross junction, a line end); the test STOPs each drive at its limit.
+ * Adds its TEST_CHECK results to the caller's counters.
  */
 void lf_run_test(uint32_t *p_pass, uint32_t *p_fail);
 #endif /* APP_TEST */

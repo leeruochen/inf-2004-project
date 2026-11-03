@@ -32,7 +32,7 @@ void subsystem3_test(void)
     lf_hw_test(&test_pass_, &test_fail_);
 #endif
 
-    /* S3-U12: LF-3.2 Line-Following task, battery off (operator-guided). */
+    /* S3-U12: LF-3.2 Line-Following task on the track, motors live (operator-guided). */
     lf_run_test(&test_pass_, &test_fail_);
 
     TEST_SUMMARY("subsystem3");

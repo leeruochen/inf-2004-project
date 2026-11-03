@@ -1,23 +1,46 @@
-# Subsystem 3 LF-3.2: the Line-Following task on the car (S3-U12)
+# Subsystem 3 LF-3.2: the Line-Following task driving the car (S3-U12)
 
-Written 3 Nov 2026 by Buddy 3 (Jin Yong). Test: `testing/subsystem3/TEST_LOG.md` S3-U12. Code: `app_program/subsystem3/task_lf.c` (the task), `lf_run_test.c` (this test), plus the host-tested cores `lf_core.c` (S3-U10) and `lf_link.c` (S3-U11).
+Written 3 Nov 2026 by Buddy 3 (Jin Yong); rewritten 4 Nov 2026 for a moving car. Test: `testing/subsystem3/TEST_LOG.md` S3-U12. Code: `app_program/subsystem3/task_lf.c` (the task), `lf_run_test.c` (this test), plus the host-tested cores `lf_core.c` (S3-U10) and `lf_link.c` (S3-U11).
+
+The 3 Nov version of this test assumed that with the battery off the motors stay off. That is false: on the Robo Pico, USB alone powers the motors. Both runs of that version are recorded as INVALID in the TEST_LOG.
 
 ## Purpose
 
-This is the first time the line-following code runs as a real task, next to the real Vehicle Controller and Motion tasks. The run answers these questions:
+This is the first time the line-following code drives the car, together with the real Vehicle Controller (VC) and Motion tasks. The speed is the build's cruise speed: **200 mm/s** with the default bring-up speed set. 300 mm/s comes later, in a separate build, only after a clean 200 mm/s run.
 
 | Check | Question |
 |---|---|
 | (a) | Does the task sample every 5 ms without missing a period? |
 | (b) | Does the boot calibration accept the start pose? |
 | (c) | While the VC waits for START, does Line-Following stay silent? |
-| (d1–d3) | After START, does it track (ON_LINE), post exactly one steering command per 20 ms Motion period in Motion's post slot, steer right while CENTRE is on the line body, and set LINE_FOUND? |
-| (e) | With CENTRE on the line's right edge, is the steering near 0? |
-| (f1, f2) | With the line gone, does it go LINE_LOST → search → one TRACK_LOST exactly 2120 ms later, and does the VC stop? |
-| (g) | Does RIGHT read solid black as DARK at ride height? This is the residual risk from the S3-U09 waiver. Junctions depend on it. |
+| (g) | With the car standing still, does RIGHT read the black line as DARK at ride height? This is the residual risk from the S3-U09 waiver, and junctions depend on it. The test also prints both sensors' static levels and noise. |
+| (d1) | Straight drive: is the first steering to the right, and does CENTRE reach the line's right edge within 150 mm? This checks the steering direction. |
+| (d2) | Is exactly one steering command posted per 20 ms Motion period, in Motion's post slot, with none dropped? |
+| (d3) | Does it track the edge stably (at least 90 % of samples in the band), never lose the line, and set LINE_FOUND? |
+| (n) | With the motors running, does RIGHT stay LIGHT over white, with no false junction? The test prints RIGHT's moving noise against the static noise. |
+| (r1–r3) | From a small offset, does it find the line within 1 s and settle without losing it? |
+| (j) | At a cross junction: exactly one JUNCTION, RIGHT DARK on the cross line, and tracking again after it? |
+| (f1, f2) | At a line end: LINE_LOST, the search, exactly one TRACK_LOST 2120 ms later, the VC stops the car, and the wheels stand still? |
 | (h) | Over the whole run: no missed period, no dropped post, no failed event? |
 
-**The wheels do not move: the battery stays OFF for the whole run.** Motion and the VC run normally, but the motors get no power. This is safe: a stall sets only `EVF_SAFETY_FAULT_STALL`, which latches nothing.
+## Safety: what drives the car and what stops it
+
+- **The motors are live from the moment the board is powered.** Subsystem 2's tests spin the wheels about 10–14 s after boot, before this test starts.
+- **The test drives the car six times.** Each drive starts at the end of a 10 s count and **stops by itself**. The test sends STOP when the wheel travel or the time reaches the drive's limit:
+
+  | Drive | Limit |
+  |---|---|
+  | Straight | 700 mm |
+  | r1, r2, r3 | 500 mm each |
+  | Junction | 800 mm |
+  | Line end | 1200 mm / 7 s |
+
+  The time limit of each drive is its distance at cruise speed plus 1.5 s.
+- **The VC stops the car** on TRACK_LOST. Safety brakes on a collision spike above 2.5 g.
+- **To stop the car by hand, catch it and lift it by the chassis**, keeping your fingers away from the wheels. Lifting does not stop the motors: in the air the sensors read "black", and the wheels keep spinning at cruise speed until the drive's distance limit ends the drive. That takes at most a few seconds, 6 s in the worst case. A hard catch can latch a collision fault. The test then sends RESET before the next drive; keep the car still during the count, because the VC accepts RESET only after 0.5 s with the wheels still.
+- **Last resort:** unplug the USB cable. With USB as the only power source this stops everything.
+- **Obstacle avoidance (Subsystem 5) is live.** Anything within 25 cm ahead of the ultrasonic sensor (30–150° sweep) makes the VC hand the car to avoidance. The test then sends STOP and that drive fails. Walk **behind** the car, never in front of it.
+- Between drives the VC is READY and the motors are stopped. Hands near the car are safe then: the VC ignores avoidance while READY.
 
 ## Build
 
@@ -27,107 +50,110 @@ From the repo root, after the HANDOVER.md section 5 step 3 environment block:
 git status --short                 # only untracked session files
 git switch buddy3/lf3-link
 git log --oneline -1               # note the hash (it goes in the report)
-if (Test-Path build/s3-lf32) { Remove-Item -Recurse -Force build/s3-lf32 }
-& $CM -S . -B build/s3-lf32 @common -DDBG_BACKEND=USB -DAPP_TEST=ON 2>&1 | Tee-Object build/s3-lf32-configure.txt
-& $CM --build build/s3-lf32 2>&1 | Tee-Object build/s3-lf32-build.txt
-Select-String -Path build/s3-lf32-build.txt -Pattern 'warning' | Measure-Object | Select-Object -ExpandProperty Count   # expect 0
-Select-String -Path build/s3-lf32-configure.txt -Pattern 'check_rules: PASS'                                         # expect a match
+if (Test-Path build/s3-u12) { Remove-Item -Recurse -Force build/s3-u12 }
+& $CM -S . -B build/s3-u12 @common -DDBG_BACKEND=USB -DAPP_TEST=ON 2>&1 | Tee-Object build/s3-u12-configure.txt
+& $CM --build build/s3-u12 2>&1 | Tee-Object build/s3-u12-build.txt
+Select-String -Path build/s3-u12-build.txt -Pattern 'warning' | Measure-Object | Select-Object -ExpandProperty Count   # expect 0
+Select-String -Path build/s3-u12-configure.txt -Pattern 'check_rules: PASS'                                         # expect a match
 ```
 
-In Jin Yong's workspace the firmware is already built: `build/robocar-s3-lf32-wip-126af05.uf2` (the LF-3.2 working tree on `126af05`). The script `build/s3-lf32-run.ps1` flashes it and captures the console into `build/s3-lf32-run.txt`.
+Do not set `MOTION_BRINGUP_SPEEDS`: the default (1) gives 200 mm/s.
 
-## Physical setup (measure and write down, BEFORE flashing)
+In Jin Yong's workspace the firmware is already built: `build/robocar-s3-u12v2-wip-3a5d76a.uf2`. The script `build/s3-u12v2-run.ps1` flashes it and captures the console into a new file `build/s3-u12v2-run-<date>-<time>.txt` each time.
 
-1. **Battery OFF.** USB only. The wheels must stay still all through the run.
-2. **The test strip.** Cut a strip of white paper about 8 cm long (the car's travel direction) and 25 cm wide. Along its middle, in the travel direction, stick an 18 mm black line: black electrical tape (18–19 mm) or a piece of the real track. Say which one you used.
-3. **Lay it under the front of the car, under the two line sensors,** with the black line parallel to the car's heading. Nothing of the car (wheels, caster) may stand on the strip: it must slide sideways freely. The sensors then read it at their real ride height.
-4. **Ride height.** Measure each sensor face to the paper (mm). Measure the CENTRE–RIGHT spacing, centre to centre (mm).
-5. **Start pose (the boot calibration reads this pose):**
-   - CENTRE over the **middle** of the black line;
-   - RIGHT over white.
-   Keep the strip in this pose through the flash and the first 2 minutes.
+## Physical setup (before flashing)
+
+1. **The track.** It needs:
+   - **a straight of at least 1 m** of the 18 mm black line. The straight drive and the three recovery drives all start at its beginning.
+   - **a cross junction** with at least 40 cm of straight line before it and 40 cm after it. The car must arrive square to the cross line.
+   - **a line end.** If the track has none, make one: at least 50 cm of 18–19 mm black electrical tape on white paper or board, lying flat at floor level, with at least 30 cm of clear white around the end. At the end the car pivots left and right for about 2 s while it searches.
+2. **Clear space.** Nothing within 40 cm of the car's path: no walls, boxes, bags or feet.
+3. **Power and cable.** A USB cable of at least 2 m from the laptop. Hold it loosely, above and behind the car, so it never pulls the car. Write down the power setup: the battery (connected or not) and the position of the board's power switch.
+4. **Optional switch check (1 minute).** Do it if you want to know whether the switch cuts the motors. Hold the car in the air and power it from USB only, with the switch OFF. Watch the wheels about 10 s after boot. Repeat with the switch ON. Note the result.
+5. **Ride height.** Measure each sensor face to the floor (mm), and the CENTRE–RIGHT spacing, centre to centre (mm).
 6. **Lighting:** normal room light, no direct sun. Note it.
-7. **Photo:** the two sensors over the strip, from the front, with the ruler.
-8. GP28 VBAT jumper OPEN. The GY-511 IMU must be connected (Grove 2). If it is missing, Safety latches a fault and steps (c)–(h) cannot run.
+7. **Photo:** the two sensors over the line, from the front, with the ruler.
+8. GP28 VBAT jumper OPEN. The GY-511 IMU must be connected (Grove 2). Without it Safety latches a fault and steps 3–10 cannot run.
 
 ## Flash and capture
 
-1. Unplug the Pico W. Hold BOOTSEL, plug it in, release BOOTSEL. `RPI-RP2` appears.
-2. Copy the firmware and start the capture **at once**. The capture also shows every line on screen.
+1. Put the car on the track in the **start pose** at the beginning of the straight:
+   - car parallel to the line;
+   - CENTRE over the **middle** of the black line;
+   - RIGHT over white.
 
-```powershell
-$v = Get-Volume | Where-Object { $_.FileSystemLabel -eq 'RPI-RP2' }
-Copy-Item build/s3-lf32/robocar.uf2 "$($v.DriveLetter):\"
-powershell -ExecutionPolicy Bypass -File tools/serial_capture.ps1 -Seconds 900 -Out build/s3-lf32-run.txt
-```
+   The boot calibration reads this pose about 0.2 s after power-up.
+2. In PowerShell, from the repo root:
 
-The boot calibration runs about 0.2 s after the kernel starts. **Do not touch the strip until the first `[LF] >>>` prompt.**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File build\s3-u12v2-run.ps1
+   ```
+
+3. When the script asks, unplug the Pico W, hold BOOTSEL, plug it in and release BOOTSEL. The script flashes the firmware and starts the capture. Every line also shows on screen.
 
 ## Steps
 
-Subsystems 1 and 2 run their tests first, about 1–3 minutes. With the battery off, S2's motion tests print FAIL lines. That is expected and not part of this test.
-
-Early in the log, before the S1/S2 tests:
-
-- `[LF] boot calibration OK: C avg ~1100 (…), R avg ~140 (…)`
-- `[LF] cal white … black …`
-
-Then `[LF] S3-U12 LF task, battery OFF: follow the [LF] >>> prompts`.
-
 | # | Prompt / when | What the person does | Expected lines | PASS rule |
 |---|---|---|---|---|
-| 1 | (automatic, 1 s) | nothing | `[LF] 1 s: 200 samples, 0 missed so far`, `[TEST] S3-U12 PASS (a) …`, `[LF] boot cal: status 0 …`, `(b)` PASS | 195–205 samples, 0 missed; cal status 0 |
-| 2 | (automatic, 1 s) | nothing | `(c)` PASS | no posts, no events, IDLE |
-| 3 | `[LF] >>> START POSE …`, then `keep still: START comes next …` (10 s) | Check the start pose again: CENTRE on the middle of the line, RIGHT on white. Touch nothing. | `[LF] IDLE -> ON_LINE …`, `[LF] started: st=1 vc=4 …`, `[LF] after 2 s: …`, `[LF] 2 s: 100 slot posts, 0 or 1 entry posts since START, 0 dropped`, then `(d1)`, `(d2)`, `(d3)` PASS | VC state 4, LF ON_LINE, 99–101 slot posts, steering ≥ +32 (about +64), LINE_FOUND set |
-| 4 | `[LF] >>> NOW slide the strip SLOWLY to the car's LEFT (~1 cm/s)` | Slide the strip **to the car's left**, slowly and evenly: about 1 cm per second, about 3 cm in total. The line then moves out from under CENTRE (CENTRE crosses the line's right edge). Then hold still with both sensors over white. | `[LF] slide: …` every 0.2 s (dc falls from ~1000 to 0; steering falls from +64 through 0); `[LF] ON_LINE -> LINE_LOST`, `-> REACQUIRING`, `-> IDLE`; `[LF] at the edge: <n> polls, largest abs(steer) <k>`; `[LF] LINE_LOST at …, TRACK_LOST at …: 2120 ms`; then `(e)`, `(f1)`, `(f2)` PASS | (e): ≥ 3 polls at the edge, abs(steer) ≤ 24. (f1): one TRACK_LOST, 2110–2135 ms after LINE_LOST. (f2): VC READY (1), LF IDLE, LINE_FOUND clear |
-| 5 | `[LF] >>> strip under RIGHT ONLY (CENTRE on white), keep still` (10 s, then 3 s measuring) | Slide the strip so the black line is **under RIGHT only**: middle of the line under RIGHT, CENTRE on white. Hold still. | `[LF] RIGHT on black: raw <r> = <d> pm (DARK > 750)`, `[LF] CENTRE on white: raw …`, `(g)` PASS or FAIL | d > 750 |
-| 6 | (automatic) | nothing | `[LF] totals: …`, `(h)` PASS, then `[TEST] subsystem3 SUMMARY 11 passed, 0 failed` | exactly that summary |
+| 1 | Boot | Keep the car still in the start pose until `[LF] boot calibration OK …` **and** `[IMU] level reference …` have appeared (about 1 s). Then **lift the car**, held level with the wheels free, and keep it up. | `[LF] boot calibration OK: C avg …, R avg …`. Subsystem 1 and 2 tests (the wheels spin about 10–14 s after boot). Then `[LF] S3-U12 on the track, motors LIVE, cruise 200 mm/s` | Calibration OK; **cruise 200 mm/s** |
+| 2 | (automatic, 2 s) | Keep holding the car | `[LF] 1 s: 200 samples, 0 missed so far`; `(a)`, `(b)`, `(c)` PASS | 195–205 samples, 0 missed; cal status 0; no output while READY |
+| 3 | `[LF] >>> pose A: put the car down in the START POSE, hands off` (10 s, then 3 s measuring) | Put the car down in the start pose. Hands off by the end of the count. | `[LF] static pose A: C raw … = … pm`, `R raw … = … pm` | Measurement: C about 1000 pm, R about 0 pm |
+| 4 | `[LF] >>> pose B: RIGHT over the line middle, CENTRE on white, hands off` | Move the car **left** by the CENTRE–RIGHT spacing, so the line's middle is under RIGHT and CENTRE is on white. Hands off. | `[LF] static pose B: …`; `(g)` PASS or FAIL | RIGHT > 750 pm. A FAIL is a finding, not a mistake: write the numbers down |
+| 5 | `[LF] >>> straight: START POSE at the start of >= 1 m of straight line`, then `hands off at 0: the car DRIVES` | Start pose at the beginning of the straight. Hands off at 0, then walk behind the car. | `[LF] IDLE -> ON_LINE`; `[LF] d t=… mm=…` every 100 ms; `[LF] straight: end distance limit at … ms, 700 mm …`; speed, settle, R white moving vs static; `(d1)`, `(d2)`, `(d3)`, `(n)` PASS | First steer about +64; settle ≤ 150 mm; measured speed about 200 mm/s; R white never DARK |
+| 6 | `r1: car parallel to the line, CENTRE ~1 cm RIGHT of it (on white)` | Start pose, then move the car about 2 cm to the **right**, so CENTRE is 1 cm right of the line's right edge, over white. Car parallel. | `[LF] IDLE -> REACQUIRING`, then `-> ON_LINE`; `[LF] r1: …`; `(r1)` PASS | First steer negative (left); ON_LINE within 1 s |
+| 7 | `r2: nose ~15 deg LEFT of the line, CENTRE on the line middle` | CENTRE on the line middle, then turn the car about 15° nose-left around CENTRE | `(r2)` PASS | ON_LINE within 1 s, settles, never lost |
+| 8 | `r3: nose ~15 deg RIGHT of the line, CENTRE on the line middle` | Same, about 15° nose-right | `(r3)` PASS | Same |
+| 9 | `junction: START POSE, a cross junction 40 cm ahead, square to it` | Start pose 40 cm before a cross junction, car square to the cross line | `[LF] ON_LINE -> JUNCTION`, later `-> ON_LINE`; `[LF] junction: … jct 1 …`; `R peak raw … = … pm`; `(j)` PASS | Exactly one JUNCTION; RIGHT peak > 750 pm; ON_LINE at the end |
+| 10 | `line end: START POSE, the line's END 30 cm ahead (temporary line OK)` | Start pose 30 cm before the line's end (track or temporary line). Let the car search: it pivots left and right for about 2 s, then stops by itself. | `-> LINE_LOST`, `-> REACQUIRING`, `-> IDLE`; `[LF] line end: end TRACK_LOST …`; `[LF] line end: LINE_LOST to TRACK_LOST 2120 ms`; `(f1)`, `(f2)` PASS | 2110–2135 ms; VC READY; wheels still |
+| 11 | (automatic) | Nothing. Keep the car still. | `[LF] totals: …`, `(h)` PASS, `[LF] S3-U12 done`, then `[TEST] subsystem3 SUMMARY 15 passed, 0 failed` | Exactly that summary |
 
-After that, Subsystems 4 and 5 run their tests. Let the capture run on until `[STACK]` report lines have appeared at least twice after the SUMMARY.
+After that, Subsystems 4 and 5 run their tests; they don't drive the car. Let the capture run until `[STACK]` report lines have appeared at least twice after the SUMMARY.
 
-**If step 4 (e) fails with "at the edge: 0 polls" or 1–2 polls, the strip was slid too fast.** Note it, finish the run, and run it once more from the flash.
+All the S3 steps together take about 3 minutes. Each prompt gives 10 s: place the car in the first 5–6 s, then take your hands off.
 
-**If (g) FAILs, that is a real finding, not a mistake.** RIGHT reads black lower than CENTRE, and junctions would never fire on the track. Record the numbers: LF-3.3 fixes the calibration from them.
+## Stop conditions
+
+- **The car heads for an edge or an obstacle:** catch it and lift it. Note the drive's name. The drive fails; the test goes on to the next prompt.
+- **The car clearly steers away from the line on the straight** (a sign error): catch it, then stop the capture with Ctrl+C and send the log. Don't continue.
+- **`[capture] port lost` while the car is driving:** a brownout or the cable. Stop and send the log.
+- **`[LF] boot calibration REFUSED …`:** the start pose was wrong at power-up. Fix it and flash again.
+- **`(c-h) not run: VC not READY …` with `vc=3`:** Safety latched a fault before the test (look for `[SAFETY]` and `[IMU]` lines). Send the log.
+- **`[LF] <drive>: VC state 3, not READY: no START`:** a latched fault could not be RESET because the car moved during the count. That drive fails. Keep the car still during the next count.
+- **`end avoidance`:** something was within 25 cm ahead of the sensor. Clear the area. That drive fails.
 
 ## Check the log
 
 ```powershell
-Select-String build/s3-lf32-run.txt -Pattern '\[TEST\] S3-U12|\[TEST\] subsystem3'   # 11 S3-U12 lines + SUMMARY
-Select-String build/s3-lf32-run.txt -Pattern '\[LF\] (boot|cal|1 s|2 s|at the edge|LINE_LOST at|RIGHT on|CENTRE on|totals)'
-Select-String build/s3-lf32-run.txt -Pattern '\[LF\] [A-Z_]+ -> '                    # state changes
-Select-String build/s3-lf32-run.txt -Pattern '\[STACK\] lf' | Select-Object -Last 2
-Select-String build/s3-lf32-run.txt -Pattern '\[LF\] (period overrun|event send|EVF_NAV)'   # expect none
+$log = (Get-ChildItem build\s3-u12v2-run-*.txt | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
+Select-String $log -Pattern '\[TEST\] S3-U12|\[TEST\] subsystem3'      # 15 S3-U12 lines + SUMMARY
+Select-String $log -Pattern '\[LF\] (boot|cal|S3-U12 on|1 s|static|straight|r1|r2|r3|junction|line end|totals)'
+Select-String $log -Pattern '\[LF\] [A-Z_]+ -> '                       # state changes
+Select-String $log -Pattern '\[STACK\] (lf|app_test)' | Select-Object -Last 2
+Select-String $log -Pattern '\[LF\] (period overrun|event send|EVF_NAV)|capture\] port lost'   # expect none
 ```
 
 | # | Expected | Pass rule |
 |---|---|---|
-| 1 | `[TEST] subsystem3 SUMMARY 11 passed, 0 failed` | exactly |
-| 2 | `[STACK] lf: <used> of 1536 B used, <free> never used` | at least 256 B never used, and not `LOW` |
-| 3 | no `[LF] period overrun`, `event send` or `EVF_NAV` error line | none |
-
-## Stop conditions
-
-- The build has warnings or no `check_rules: PASS`: stop and send the build output.
-- `[LF] boot calibration REFUSED …`: the start pose was wrong (CENTRE not on black, or RIGHT not on white) or a sensor is unplugged. Fix the pose and flash again. Don't continue.
-- `(c-h) not run: VC not READY …` with `vc=3`: Safety latched a fault (look for `[SAFETY]` and `[S4] IMU` lines). Stop and send the log. It is not a Subsystem 3 problem.
-- The board resets (`[capture] port lost`, `FAULT`): stop and send the log.
-- The wheels turn at any time: the battery is on. Switch it off, flash again.
+| 1 | `[TEST] subsystem3 SUMMARY 15 passed, 0 failed` | Exactly |
+| 2 | `[STACK] lf: <used> of 1664 B used, <free> never used`, and the same for `app_test` | At least 256 B never used, and not `LOW` |
+| 3 | No `[LF] period overrun`, `event send` or `EVF_NAV` error line, and no `port lost` | None |
 
 ## What to send back
 
 Post this on the LF-3 PR when it exists; until then, send it to Jin Yong:
 
 ```text
-S3 LF-3.2 hardware run (S3-U12), <date>, by <name>
-Commit: <hash from Build>
+S3 LF-3.2 hardware run (S3-U12, moving), <date>, by <name>
+Commit / firmware: <hash or UF2 name>
 Build: warnings=<n>, check_rules=<PASS/FAIL>
-Setup: battery OFF; strip = <tape / real track>; sensor height C=<mm> R=<mm>; spacing C-R=<mm>; lighting <...>
+Setup: power <USB only / USB + battery>, switch <ON/OFF>; switch check <result or not done>;
+       sensor height C=<mm> R=<mm>; spacing C-R=<mm>; line end <track / temporary tape>; lighting <...>
 Result: [TEST] subsystem3 SUMMARY <p> passed, <f> failed
-FAILs: (each [TEST] S3-U12 FAIL line and the [LF] lines just above it)
-Numbers: (the [LF] boot calibration, 1 s, 2 s, at the edge, LINE_LOST at, RIGHT on black, CENTRE on white, totals lines; the last [STACK] lf line)
-Notes: (anything that went wrong, with the step number)
-Log: build/s3-lf32-run.txt (attach the whole file)
-Photo: sensors over the strip, front view, with the ruler
+FAILs: (each [TEST] S3-U12 FAIL line and the [LF] summary lines of that drive)
+Numbers: (the [LF] boot calibration, static pose A/B, each drive's summary lines, totals; the last [STACK] lf and app_test lines)
+Notes: (anything that went wrong, with the step number; any drive you had to catch)
+Log: build\s3-u12v2-run-<date>-<time>.txt (attach the whole file)
+Photo: sensors over the line, front view, with the ruler
 ```
 
 Jin Yong then saves the log as `testing/subsystem3/logs/<date>_s3_lf32_u12.txt`, adds the S3-U12 result row to `TEST_LOG.md`, and only then counts LF-3.2 as passed on hardware.
