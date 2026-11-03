@@ -29,7 +29,6 @@
 #define LF_N_SWAP       LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
 #define LF_N_STOP       LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
 #define LF_N_SIDE_MEM   LF_SAMPLES(LF_SIDE_MEMORY_MS)   /* 20  = 100 ms */
-#define LF_N_POST       LF_STEER_POST_EVERY_N_SAMPLES   /* 4   = 20 ms  */
 #define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 100 = 500 ms */
 
 /* r_quiet_n saturates here (anything above the side memory is "long ago"). */
@@ -41,7 +40,8 @@ _Static_assert(LF_LIGHT_MAX_PM < LF_EDGE_TARGET_PM, "edge target above LIGHT");
 _Static_assert(LF_EDGE_TARGET_PM < LF_DARK_MIN_PM, "edge target below DARK");
 _Static_assert(LF_DARK_MIN_PM < LF_PM_FULL, "DARK reachable");
 _Static_assert(LF_N_SWAP < LF_N_SEARCH, "the search swaps sides before T_search");
-_Static_assert(LF_N_POST > 0U, "steering post period >= sample period");
+_Static_assert(LF_STEER_POST_PERIOD_MS == MOTION_PERIOD_MS,
+               "one steering post per Motion period, in its post slot");
 _Static_assert(LF_STEER_FULL_Q7 <= DREP_STEER_Q7_MAX, "full steering fits Q7");
 _Static_assert((ENC_CPR > 0U) && (WHEEL_CIRC_MM > 0U), "encoder geometry known");
 _Static_assert(LF_D_JCT_LEAD_MM < LF_D_PIVOT_MM, "JUNCTION posted after detection");
@@ -230,7 +230,7 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
     p_lf->state = st;
     p_lf->timer_n = 0U;
     p_lf->lost_n = 0U;
-    p_lf->post_n = 0U;          /* post at once in the new state */
+    p_lf->post_now = true;      /* post at once in the new state */
 }
 
 /*
@@ -467,7 +467,7 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
         if (!p_lf->man_done)
         {
             p_lf->man_done = true;
-            p_lf->post_n = 0U;              /* post at once after the turn */
+            p_lf->post_now = true;          /* post at once after the turn */
         }
         p_lf->timer_n++;
         p_lf->steer_q7 = uturn ? LF_ACQUIRE_STEER_Q7 : 0;
@@ -714,12 +714,18 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
         }
     }
 
-    /* Steering post cadence: every LF_N_POST samples, at once on entry. */
+    /* Steering post timing (LF-3.1b): Motion acts on the newest command
+     * once per 20 ms, when it reads its queue.  Post in the post slot, the
+     * last sample before that read, so the steering Motion acts on is at
+     * most one sample old whatever the two tasks' phase.  Also post at
+     * once on entering a state: if the state changes again before the slot,
+     * Motion still gets this state's command; otherwise the slot's post
+     * replaces it before Motion reads. */
     p_out->post_steer = false;
-    if (may_post)
+    if (may_post && (p_lf->post_now || p_in->post_slot))
     {
-        p_out->post_steer = (p_lf->post_n == 0U);
-        p_lf->post_n = (p_lf->post_n + 1U) % LF_N_POST;
+        p_out->post_steer = true;
+        p_lf->post_now = false;
     }
 
     p_out->state = p_lf->state;

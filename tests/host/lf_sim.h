@@ -18,8 +18,10 @@
  *      U_TURN and a bounded pivot (90 or 180 degrees) at slow speed,
  *      without one -> FWD at cruise, straight; TRACK_LOST -> STOP.
  *    - Motion (task_motion.c): acts on the newest command at its next
- *      20 ms period (motion_phase sets how long a steering post waits for
- *      it: 0 = the period follows the post within the same 5 ms sample); STEER duty_l = base + base*arg/256, duty_r = base -
+ *      20 ms period (motion_phase sets which sample that period follows:
+ *      0 = within 5 ms after a sample whose step_n is a multiple of 4) and
+ *      publishes its release time tick_ms, motion_lag_ms (1..5) after that
+ *      sample's time; STEER duty_l = base + base*arg/256, duty_r = base -
  *      base*arg/256, so steer > 0 turns right; a STEER/FWD command is held
  *      MOTION_T_HOLD_MS, then the car stops; TURN_L drives the wheels
  *      -v/+v, TURN_R and UTURN +v/-v (a pivot about the axle midpoint),
@@ -27,7 +29,8 @@
  *      it publishes the encoder counts every period.  Wheel speeds follow
  *      the command with a first-order lag.
  *    - The Line-Following task: lf_link_step() on the published counts and
- *      the VC's turn state, then lf_core_step().
+ *      the VC's turn state, lf_link_post_slot() on the published tick_ms and
+ *      the sample time (step_n x 5 ms), then lf_core_step().
  *    - Differential drive: omega = (v_r - v_l) / track, track 114 mm
  *      (task_motion.c MOTION_EFF_TRACK_MM); encoder 4 x 616 counts per
  *      207 mm of wheel travel (config/thresholds.h).
@@ -102,6 +105,7 @@ typedef struct
     double      turn_mmps;      /* wheel speed in a pivot (VC: slow speed) */
     sim_bc_t    bc;             /* barcode command for the next junction */
     uint32_t    motion_phase;   /* 0..3: samples from a post to Motion's period */
+    uint32_t    motion_lag_ms;  /* 1..5: Motion's release after that sample's time */
 
     /* Car state. */
     double      x, y, th;       /* axle midpoint, heading */
@@ -120,6 +124,7 @@ typedef struct
     bool        have_cmd;       /* Motion is driving (not stopped) */
     uint32_t    hold_ms;        /* Motion: time since the command */
     int32_t     pub[2];         /* published counts [0] left, [1] right */
+    uint32_t    pub_tick_ms;    /* published release time (tick_ms) */
     int32_t     piv_start[2];
     double      piv_target_cnt;
     lf_link_t   link;
@@ -202,6 +207,7 @@ static inline void sim_init(sim_t *p_sim)
     p_sim->turn_mmps = (double)MOTION_SPEED_SLOW_CMPS * 10.0;
     p_sim->bc = SIM_BC_NONE;
     p_sim->motion_phase = 0U;
+    p_sim->motion_lag_ms = LF_SAMPLE_PERIOD_MS;   /* the next sample's ms; Motion runs first */
     p_sim->x = 0.0; p_sim->y = 0.0; p_sim->th = 0.0;
     p_sim->vl = 0.0; p_sim->vr = 0.0;
     p_sim->wl_mm = 0.0; p_sim->wr_mm = 0.0;
@@ -212,6 +218,7 @@ static inline void sim_init(sim_t *p_sim)
     p_sim->mc_type = SIM_MC_STOP; p_sim->cmd_arg = 0; p_sim->have_cmd = false;
     p_sim->hold_ms = 0U;
     p_sim->pub[0] = 0; p_sim->pub[1] = 0;
+    p_sim->pub_tick_ms = 0U;
     p_sim->piv_start[0] = 0; p_sim->piv_start[1] = 0;
     p_sim->piv_target_cnt = 0.0;
     lf_link_init(&p_sim->link);
@@ -282,6 +289,7 @@ static inline void sim_vc_send(sim_t *p_sim, sim_mc_t type, int32_t arg)
  * hold timeout and the pivot's completion check. */
 static inline void sim_motion_period(sim_t *p_sim)
 {
+    p_sim->pub_tick_ms = (p_sim->step_n * LF_SAMPLE_PERIOD_MS) + p_sim->motion_lag_ms;
     p_sim->pub[0] = (int32_t)lround(p_sim->wl_mm * SIM_CNT_PER_MM);
     p_sim->pub[1] = (int32_t)lround(p_sim->wr_mm * SIM_CNT_PER_MM);
 
@@ -370,6 +378,7 @@ static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out
     lf_link_step(&p_sim->link, p_sim->vc_man, p_sim->pub, &lk);
     p_in->manoeuvre = lk.manoeuvre;
     p_in->fwd_cnt = lk.fwd_cnt;
+    p_in->post_slot = lf_link_post_slot(p_sim->pub_tick_ms, p_sim->step_n * LF_SAMPLE_PERIOD_MS);
     p_in->raw_c = sim_raw(p_sim, 0.0);
     p_in->raw_r = sim_raw(p_sim, -p_sim->spacing_mm);
     lf_core_step(p_lf, p_in, p_out);

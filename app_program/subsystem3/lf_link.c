@@ -30,6 +30,9 @@
 _Static_assert(LF_T_TURN_STILL_MS > MOTION_PERIOD_MS,
                "stillness spans more than one Motion publication");
 _Static_assert(LF_N_TURN_STILL < LF_N_TURN_MAX, "still rule before the cap");
+_Static_assert((MOTION_PERIOD_MS > LF_SAMPLE_PERIOD_MS)
+               && ((MOTION_PERIOD_MS % LF_SAMPLE_PERIOD_MS) == 0U),
+               "a whole number of samples per Motion period: one post slot each");
 
 static int32_t count_change(int32_t now, int32_t before)
 {
@@ -127,4 +130,34 @@ void lf_link_step(lf_link_t *p_link, lf_manoeuvre_t vc_man,
         p_out->manoeuvre = turn_watch(p_link, vc_man, changed);
         p_out->fwd_cnt = p_link->fwd_cnt;
     }
+}
+
+/*
+ * Steering post slot.  Motion drains MBF_MOTION_CMD once per period, at its
+ * release, and publishes that release time as tick_ms; its next reads are
+ * tick_ms + k x MOTION_PERIOD_MS.  A post made in the slot (the last sample
+ * before a read) waits 1..5 ms for Motion instead of 0..20 ms, so Motion
+ * acts on steering a fixed, short time after the sensors saw the line.
+ *
+ * age = now - tick, as unsigned, so the kernel time may wrap.  Cast to
+ * int32: negative means Motion published after this sample's time was read
+ * (it preempted the task), so it has just read the queue: not the slot.
+ * age % 20 = time since Motion's latest read on its schedule (a stale
+ * tick_ms still predicts it); the slot is when that leaves 1..5 ms to the
+ * next read.  At age % 20 == 0 Motion is due now: with its higher priority
+ * it has read already (or reads before this post).  The 4 samples of each
+ * period fall on 4 different remainders 5 apart, so exactly one is the slot.
+ */
+bool lf_link_post_slot(uint32_t motion_tick_ms, uint32_t now_ms)
+{
+    uint32_t const age = now_ms - motion_tick_ms;
+    bool slot = false;
+
+    if ((int32_t)age >= 0)
+    {
+        uint32_t const since_read = age % MOTION_PERIOD_MS;
+
+        slot = (since_read >= (MOTION_PERIOD_MS - LF_SAMPLE_PERIOD_MS));
+    }
+    return slot;
 }

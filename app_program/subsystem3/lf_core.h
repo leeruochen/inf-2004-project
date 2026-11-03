@@ -194,13 +194,14 @@ typedef struct
     bool           avoid_active;    /**< EVF_NAV_AVOID_ACTIVE */
     bool           reacquired;      /**< EVF_NAV_LINE_REACQUIRED */
     uint32_t       fwd_cnt;         /**< forward travel, encoder counts, free-running (lf_link) */
+    bool           post_slot;       /**< the last sample before Motion reads its queue (lf_link_post_slot) */
 } lf_in_t;
 
 /** Result of one sample. */
 typedef struct
 {
     lf_state_t state;       /**< state after this sample */
-    bool       post_steer;  /**< post steer_q7 now (every LF_STEER_POST_PERIOD_MS) */
+    bool       post_steer;  /**< post steer_q7 now (in the post slot, or on state entry) */
     int32_t    steer_q7;    /**< -127..+127; > 0 = steer right */
     lf_event_t event;       /**< one-shot, LF_EV_NONE most samples */
     bool       line_found;  /**< EVF_NAV_LINE_FOUND: on the line (ON_LINE, or CENTRE DARK) */
@@ -231,7 +232,7 @@ typedef struct
     uint32_t       r_quiet_n;       /**< samples since RIGHT last read non-light */
     uint32_t       lost_n;          /**< consecutive samples with both LIGHT */
     uint32_t       timer_n;         /**< samples spent in the current state/phase */
-    uint32_t       post_n;          /**< steering post cadence counter */
+    bool           post_now;        /**< post at the next sample that may post (state entry) */
     int32_t        steer_q7;        /**< last computed steering */
     lf_manoeuvre_t man_seen;        /**< manoeuvre seen in JUNCTION (NONE = straight) */
     bool           man_done;        /**< that manoeuvre has finished */

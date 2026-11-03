@@ -9,8 +9,17 @@
  *  headers only, so tests/host/test_lf_link.c builds it unchanged.  The
  *  Line-Following task calls lf_link_step() once per 5 ms sample with the
  *  encoder counts from motion_get_state() (IF-08) and the manoeuvre implied
- *  by the Vehicle Controller's system state, then passes the result to
+ *  by the Vehicle Controller's system state, and lf_link_post_slot() with
+ *  motion_state_t.tick_ms and the sample's time, then passes the results to
  *  lf_core_step().
+ *
+ *  Why the post slot exists (LF-3.1b): Motion acts on a steering command
+ *  only when it drains MBF_MOTION_CMD, once per 20 ms period.  A post made
+ *  at a fixed cadence of its own would wait 0..20 ms depending on how the
+ *  two tasks' periods happen to line up at boot; in simulation that alone
+ *  took tracking at 300 mm/s from 2.5 to 8.6 mm off the edge and lost the
+ *  line at 400 mm/s.  Posting in the last sample before Motion's read makes
+ *  the wait 1..5 ms whatever the alignment.
  *
  *  Why the turn-done detector exists: on a JUNCTION with a barcode command
  *  pending, the Vehicle Controller enters NAV_TURN_LEFT / _RIGHT / U_TURN
@@ -89,5 +98,14 @@ void lf_link_init(lf_link_t *p_link);
  */
 void lf_link_step(lf_link_t *p_link, lf_manoeuvre_t vc_man,
                   int32_t const enc_count[2], lf_link_out_t *p_out);
+
+/*
+ * The steering post slot (LF-3.1b), stateless:
+ *   motion_tick_ms  motion_state_t.tick_ms (IF-08), Motion's last release;
+ *   now_ms          this sample's kernel time (its period release).
+ * Returns true if Motion's next queue read comes 1..LF_SAMPLE_PERIOD_MS ms
+ * after now_ms.
+ */
+bool lf_link_post_slot(uint32_t motion_tick_ms, uint32_t now_ms);
 
 #endif /* LF_LINK_H */

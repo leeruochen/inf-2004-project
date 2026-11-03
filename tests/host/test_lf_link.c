@@ -221,6 +221,63 @@ static void test_misc(void)
     CHECK(1);                               /* no crash */
 }
 
+/* Test 7 (LF-3.1b): the steering post slot.  Motion reads its command
+ * queue once per period, at the kernel time it publishes as tick_ms
+ * (task_motion.c: tick_ms = the release time, the queue drained in the same
+ * cycle), so it reads next at tick_ms + 20, + 40, ...  Motion's priority
+ * (3) is above Line-Following's (4): when both release on the same ms,
+ * Motion reads first.  The slot is the sample whose next Motion read comes
+ * 1..5 ms later, so a post waits at most one sample.  Worked by hand. */
+static void test_post_slot(void)
+{
+    /* Motion published at 1000 and reads next at 1020. */
+    CHECK(!lf_link_post_slot(1000U, 1000U));    /* same ms: Motion already read */
+    CHECK(!lf_link_post_slot(1000U, 1005U));    /* waits 15 ms */
+    CHECK(!lf_link_post_slot(1000U, 1010U));    /* waits 10 ms */
+    CHECK(!lf_link_post_slot(1000U, 1014U));    /* waits 6 ms */
+    CHECK(lf_link_post_slot(1000U, 1015U));     /* waits 5 ms */
+    CHECK(lf_link_post_slot(1000U, 1017U));     /* waits 3 ms */
+    CHECK(lf_link_post_slot(1000U, 1019U));     /* waits 1 ms */
+    CHECK(!lf_link_post_slot(1000U, 1020U));    /* Motion is due now and runs first */
+
+    /* tick_ms one period stale (read just before Motion's next publication):
+     * the schedule goes on, Motion reads at 1040. */
+    CHECK(lf_link_post_slot(1000U, 1035U));
+    CHECK(!lf_link_post_slot(1000U, 1030U));
+
+    /* Motion published after this sample's time was read (it preempted the
+     * task in between): it has just read the queue, so not the slot. */
+    CHECK(!lf_link_post_slot(1003U, 1000U));
+    CHECK(!lf_link_post_slot(1019U, 1000U));
+
+    /* Kernel time wraps at 2^32 ms (~49.7 days). */
+    CHECK(lf_link_post_slot(0xFFFFFFF0U, 0xFFFFFFFFU));    /* 15 ms after the tick */
+    CHECK(lf_link_post_slot(0xFFFFFFF0U, 0x00000002U));    /* 18 ms after */
+    CHECK(!lf_link_post_slot(0xFFFFFFF0U, 0x00000004U));   /* 20 ms: Motion due */
+
+    /* Every alignment of the 5 ms sample grid to Motion's 20 ms period
+     * gives exactly one slot in each 4 consecutive samples, and the post
+     * waits 1..5 ms. */
+    for (uint32_t off = 0U; off < 20U; off++)
+    {
+        uint32_t slots = 0U;
+
+        for (uint32_t k = 0U; k < 4U; k++)
+        {
+            uint32_t const now = 2000U + off + (5U * k);
+
+            if (lf_link_post_slot(2000U, now))
+            {
+                uint32_t const wait = 2020U + (((now - 2000U) / 20U) * 20U) - now;
+
+                slots++;
+                CHECK((wait >= 1U) && (wait <= 5U));
+            }
+        }
+        CHECK(slots == 1U);
+    }
+}
+
 int main(void)
 {
     test_constants();
@@ -229,5 +286,6 @@ int main(void)
     test_turn_not_started();
     test_turn_cap_and_change();
     test_misc();
+    test_post_slot();
     return TEST_RESULT("lf_link");
 }

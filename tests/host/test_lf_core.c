@@ -11,6 +11,8 @@
  *    - raw numbers: the LF-1 desk run (white ~140, black lying ~1100-1150);
  *    - steering sign: steer > 0 = steer right (data_repr.h; task_motion.c
  *      makes the left wheel faster);
+ *    - post timing (LF-3.1b): Motion reads its queue once per 20 ms at its
+ *      release (task_motion.c); posts go in the sample before that read;
  *    - closed-loop behaviour: the simulator in lf_sim.h (geometry, the
  *      Vehicle Controller and Motion rules from their code);
  *    - junction post distance: F = 70 mm from the sensing point to the
@@ -40,6 +42,14 @@
 static lf_cal_t const k_cal = { { 140U, 1140U }, { 140U, 1140U } };
 static lf_in_t        g_in;
 static uint32_t       g_fwd_step;   /* forward counts per sample (the car moving) */
+/* Post slots (lf_link_post_slot, LF-3.1b): one sample in every g_slot_every
+ * (0 = never), at sample indexes g_slot_off, + g_slot_every, ... counted from
+ * reset_inputs(). */
+static uint32_t       g_sample_n;
+static uint32_t       g_slot_every;
+static uint32_t       g_slot_off;
+static uint32_t       g_turn_phase; /* Motion phase for drive_turn() (test 21) */
+static uint32_t       g_turn_seed;  /* sensor noise seed for drive_turn(), 0 = default */
 
 /* Travel from junction detection to the JUNCTION post, encoder counts
  * (worked by hand, see the header). */
@@ -57,6 +67,9 @@ static lf_out_t feed(lf_core_t *p_lf, uint16_t dc, uint16_t dr)
     g_in.raw_c = raw_of(dc);
     g_in.raw_r = raw_of(dr);
     g_in.fwd_cnt += g_fwd_step;
+    g_in.post_slot = (g_slot_every != 0U)
+                     && (((g_sample_n + g_slot_every - (g_slot_off % g_slot_every)) % g_slot_every) == 0U);
+    g_sample_n++;
     memset(&out, 0xA5, sizeof(out));        /* every field must be written */
     lf_core_step(p_lf, &g_in, &out);
     return out;
@@ -130,6 +143,9 @@ static void reset_inputs(void)
     memset(&g_in, 0, sizeof(g_in));
     g_in.manoeuvre = LF_MAN_NONE;
     g_fwd_step = 12U;                       /* ~1 mm per 5 ms = 200 mm/s */
+    g_sample_n = 0U;
+    g_slot_every = 4U;                      /* Motion: 20 ms = 4 samples */
+    g_slot_off = 0U;
 }
 
 /* Calibrated core, car in the start pose (CENTRE on the line body, RIGHT on
@@ -387,7 +403,8 @@ static void test_idle_and_start(void)
     CHECK(r.last.d_r_pm == 0U);
 
     /* Run starts in the start pose: ON_LINE at once, posting from the first
-     * sample, then every 20 ms (4 samples); steers right towards the edge. */
+     * sample (state entry), then in each post slot (every 4th sample here,
+     * as Motion reads every 20 ms); steers right towards the edge. */
     g_in.running = true;
     r = run(&lf, 40U, 1000U, 0U);
     CHECK(r.last.state == LF_ST_ON_LINE);
@@ -1218,8 +1235,8 @@ static void test_sim_line_end(void)
  * 200 mm/s (bring-up cruise) and 300 mm/s (nominal cruise).  A wider sweep
  * (3 Nov 2026) turned cleanly for a real F of 62.5..75 mm at both speeds:
  * the pivot centre must land 0..+20 mm past the cross line's centre.
- * Checked here: the turn mechanics.  Tracking quality on the new branch
- * depends on Motion's period phase (test 12 runs at the best phase). */
+ * Checked here: the turn mechanics, at Motion phase 0 and the default
+ * noise; every phase and 10 noise seeds: test 21. */
 typedef struct
 {
     uint32_t   junctions;
@@ -1243,6 +1260,11 @@ static turn_run_t drive_turn(double speed, sim_bc_t bc, bool tee, double fwd_mm)
     double const secs = 2.0 + (1400.0 / speed);
 
     sim_init(&s);
+    s.motion_phase = g_turn_phase;
+    if (g_turn_seed != 0U)
+    {
+        s.rng = g_turn_seed;
+    }
     s.speed_mmps = speed;
     s.fwd_mm = fwd_mm;
     s.bc = bc;
@@ -1317,6 +1339,180 @@ static void test_sim_turns(void)
     }
 }
 
+/* Test 20 (LF-3.1b): steering posts land in Motion's post slot.  Motion
+ * reads its queue once per 20 ms period; a post waits for that read, so the
+ * core posts on the slot sample (the last one before the read: in.post_slot,
+ * from lf_link_post_slot) and, on entering a state, at once.  An entry post
+ * is never worse: the slot post in the same period replaces it. */
+static void test_post_slot(void)
+{
+    lf_core_t lf;
+    run_t r;
+
+    /* Start in the start pose with the slot on sample index 2 of each 4:
+     * post at once on entry (sample 0), then on samples 2, 6, 10, ... */
+    reset_inputs();
+    g_slot_off = 2U;
+    lf_core_init(&lf, &k_cal);
+    g_in.running = true;
+    {
+        uint32_t posted_at[12];
+        uint32_t n_posts = 0U;
+
+        for (uint32_t i = 0U; i < 20U; i++)
+        {
+            if (feed(&lf, 1000U, 0U).post_steer && (n_posts < 12U))
+            {
+                posted_at[n_posts++] = i;
+            }
+        }
+        CHECK(n_posts == 6U);                   /* 0, then 2 6 10 14 18 */
+        CHECK(posted_at[0] == 0U);
+        CHECK(posted_at[1] == 2U);
+        CHECK(posted_at[2] == 6U);
+        CHECK(posted_at[5] == 18U);
+    }
+
+    /* Each of the 4 slot positions: one post per 4 samples while tracking,
+     * always on the slot. */
+    for (uint32_t off = 0U; off < 4U; off++)
+    {
+        uint32_t bad = 0U;
+        uint32_t n_posts = 0U;
+
+        start_tracking(&lf);
+        g_slot_off = off;
+        g_sample_n = 0U;
+        for (uint32_t i = 0U; i < 40U; i++)
+        {
+            lf_out_t const o = feed(&lf, 500U, 0U);
+
+            if (o.post_steer)
+            {
+                n_posts++;
+                bad += ((i % 4U) != off) ? 1U : 0U;
+            }
+        }
+        CHECK(n_posts == 10U);
+        CHECK(bad == 0U);
+    }
+
+    /* No slot at all (Motion's tick_ms never fits): only the entry post. */
+    reset_inputs();
+    g_slot_every = 0U;
+    lf_core_init(&lf, &k_cal);
+    g_in.running = true;
+    r = run(&lf, 100U, 1000U, 0U);
+    CHECK(r.last.state == LF_ST_ON_LINE);
+    CHECK(r.posts == 1U);
+    CHECK(r.first_post_at == 0);
+
+    /* State entry posts at once even with no slot: lose the line, wait out
+     * the 120 ms stop (no posts), then the search posts on entry. */
+    start_tracking(&lf);
+    g_slot_every = 0U;
+    (void)until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 100U);
+    r = run(&lf, 30U, 0U, 0U);
+    CHECK(r.last.state == LF_ST_REACQUIRING);
+    CHECK(r.posts == 1U);
+}
+
+/* Test 21 (LF-3.1b): closed loop at every Motion phase.  Before LF-3.1b
+ * a post waited 0..20 ms for Motion depending on the phase: at 300 mm/s
+ * CENTRE strayed 2.5 mm (phase 0) to 8.6 mm (phase 2) from the edge, at
+ * 400-500 mm/s phases 1-2 left the line, and of test 19's junction turns
+ * over 10 noise seeds only 150/360 (phase 1) to 349/360 (phase 0) were
+ * clean (sim, 3 Nov 2026).  With posts in the slot every phase must do as
+ * well as the best one did:
+ *   - straight: test 12's limits (5 mm up to 300 mm/s, 9 mm above), never
+ *     off the line, at both ends of Motion's release within the sample;
+ *   - junction turns (test 19's cases) x 10 noise seeds: at 200 mm/s
+ *     (bring-up cruise) every one clean; at 300 mm/s at least 160 of 180.
+ * Known limit at 300 mm/s (about 1 turn in 16, at every phase, also at the
+ * old best phase): the car's edge-tracking swing can bring it to the cross
+ * line at an angle; RIGHT then leaves the cross line before CENTRE, which
+ * reads as "the line goes on", so at a T junction the core edge-tracks onto
+ * nothing before the JUNCTION post.  Not a timing problem; open for LF-3.3. */
+static void test_sim_phases(void)
+{
+    double const speeds[5] = { 100.0, 200.0, 300.0, 400.0, 500.0 };
+    double const tol_mm[5] = { 5.0, 5.0, 5.0, 9.0, 9.0 };
+    uint32_t const lags[2] = { 1U, 5U };
+
+    for (uint32_t ph = 0U; ph < 4U; ph++)
+    {
+        for (int k = 0; k < 2; k++)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                sim_t s;
+                loop_t l;
+
+                sim_init(&s);
+                s.speed_mmps = speeds[i];
+                s.motion_phase = ph;
+                s.motion_lag_ms = lags[k];
+                l = drive_straight(&s, 0.0, 0.0, 6.0, 1.0, 5000.0);
+                CHECK(l.always_on_line);
+                CHECK(l.max_err_mm <= tol_mm[i]);
+                CHECK(s.n_line_lost == 0U);
+                CHECK(s.n_junction == 0U);
+                CHECK(s.n_track_lost == 0U);
+                if (k == 1)
+                {
+                    printf("  phase %u %3.0f mm/s: max |CENTRE - edge| %.1f mm (limit %.0f)\n",
+                           ph, speeds[i], l.max_err_mm, tol_mm[i]);
+                }
+            }
+        }
+    }
+    for (g_turn_phase = 0U; g_turn_phase < 4U; g_turn_phase++)
+    {
+        uint32_t clean[2] = { 0U, 0U };     /* [0] 200 mm/s, [1] 300 mm/s */
+
+        for (uint32_t seed = 0U; seed < 10U; seed++)
+        {
+            g_turn_seed = 12345U + (seed * 7919U);
+            for (int tee = 0; tee <= 1; tee++)
+            {
+                for (int bc = 1; bc <= 3; bc++)
+                {
+                    for (int sp = 0; sp < 2; sp++)
+                    {
+                        for (double f = 65.0; f <= 75.0; f += 5.0)
+                        {
+                            turn_run_t const t = drive_turn((sp == 0) ? 200.0 : 300.0,
+                                                            (sim_bc_t)bc, tee != 0, f);
+                            bool ok = (t.junctions == 1U) && (t.turns == 1U)
+                                      && (t.track_lost == 0U) && t.direct;
+
+                            if (bc == SIM_BC_LEFT)
+                            {
+                                ok = ok && (fabs(t.cx - 800.0) < 20.0) && (t.cy > 300.0);
+                            }
+                            else if (bc == SIM_BC_RIGHT)
+                            {
+                                ok = ok && (fabs(t.cx - 800.0) < 20.0) && (t.cy < -300.0);
+                            }
+                            else
+                            {
+                                ok = ok && (fabs(t.cy) < 20.0) && (t.cx < 400.0);
+                            }
+                            clean[sp] += ok ? 1U : 0U;
+                        }
+                    }
+                }
+            }
+        }
+        CHECK(clean[0] == 180U);
+        CHECK(clean[1] >= 160U);
+        printf("  phase %u: junction turns clean %u/180 at 200 mm/s, %u/180 at 300 mm/s\n",
+               g_turn_phase, clean[0], clean[1]);
+    }
+    g_turn_phase = 0U;
+    g_turn_seed = 0U;
+}
+
 int main(void)
 {
     test_constants();
@@ -1338,5 +1534,7 @@ int main(void)
     test_sim_knock();
     test_sim_line_end();
     test_sim_turns();
+    test_post_slot();
+    test_sim_phases();
     return TEST_RESULT("lf_core");
 }
