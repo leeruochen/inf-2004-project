@@ -12,14 +12,25 @@
  *      radius r and reads white + (fraction of spot on black) x span, plus
  *      uniform noise.  White 140 raw and span ~1000 raw are the LF-1 desk
  *      numbers (testing/subsystem3/logs/2026-11-03_s3_lf1_run2.txt).
- *    - The Vehicle Controller: steer_q7 x 2 -> DREP_MC_STEER at cruise
- *      (task_vc.c handle_line_msg).
- *    - Motion: duty_l = base + base*arg/256, duty_r = base - base*arg/256
- *      (task_motion.c, DREP_MC_STEER), so steer > 0 turns right; the last
- *      command is held MOTION_T_HOLD_MS, then the car stops; wheel speeds
- *      follow the command with a first-order lag.
+ *    - The Vehicle Controller (task_vc.c handle_line_msg): steering post
+ *      -> NAV_LINE_TRACKING, steer_q7 x 2 -> DREP_MC_STEER at cruise;
+ *      JUNCTION with a barcode command pending -> NAV_TURN_LEFT / _RIGHT /
+ *      U_TURN and a bounded pivot (90 or 180 degrees) at slow speed,
+ *      without one -> FWD at cruise, straight; TRACK_LOST -> STOP.
+ *    - Motion (task_motion.c): acts on the newest command at its next
+ *      20 ms period (motion_phase sets how long a steering post waits for
+ *      it: 0 = the period follows the post within the same 5 ms sample); STEER duty_l = base + base*arg/256, duty_r = base -
+ *      base*arg/256, so steer > 0 turns right; a STEER/FWD command is held
+ *      MOTION_T_HOLD_MS, then the car stops; TURN_L drives the wheels
+ *      -v/+v, TURN_R and UTURN +v/-v (a pivot about the axle midpoint),
+ *      stopping when the mean wheel travel reaches pi x track x angle/360;
+ *      it publishes the encoder counts every period.  Wheel speeds follow
+ *      the command with a first-order lag.
+ *    - The Line-Following task: lf_link_step() on the published counts and
+ *      the VC's turn state, then lf_core_step().
  *    - Differential drive: omega = (v_r - v_l) / track, track 114 mm
- *      (task_motion.c MOTION_EFF_TRACK_MM).
+ *      (task_motion.c MOTION_EFF_TRACK_MM); encoder 4 x 616 counts per
+ *      207 mm of wheel travel (config/thresholds.h).
  *  Coordinates: x forward along the start line, y to the LEFT, heading
  *  theta counter-clockwise (so a right turn makes theta decrease).
  */
@@ -31,8 +42,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "config/thresholds.h"
 #include "config/timing.h"
 #include "app_program/subsystem3/lf_core.h"
+#include "app_program/subsystem3/lf_link.h"
 
 #define SIM_LINE_HALF_MM    (9.0)       /* 18 mm line */
 #define SIM_TRACK_MM        (114.0)     /* MOTION_EFF_TRACK_MM */
@@ -40,6 +53,26 @@
 #define SIM_MAX_STRIPS      (8)
 #define SIM_DT_S            ((double)LF_SAMPLE_PERIOD_MS / 1000.0)
 #define SIM_PI              (3.14159265358979)
+#define SIM_CNT_PER_MM      (((double)ENC_QUAD_MULT * (double)ENC_CPR) / (double)WHEEL_CIRC_MM)
+#define SIM_MOTION_EVERY    (MOTION_PERIOD_MS / LF_SAMPLE_PERIOD_MS)   /* 4 samples */
+
+/* Barcode command pending at the VC when the junction comes. */
+typedef enum
+{
+    SIM_BC_NONE = 0,
+    SIM_BC_LEFT,
+    SIM_BC_RIGHT,
+    SIM_BC_UTURN
+} sim_bc_t;
+
+/* Motion's active command. */
+typedef enum
+{
+    SIM_MC_STOP = 0,
+    SIM_MC_STEER,           /* also FWD (arg 0) */
+    SIM_MC_PIVOT_L,
+    SIM_MC_PIVOT_R
+} sim_mc_t;
 
 typedef enum
 {
@@ -66,20 +99,38 @@ typedef struct
     double      noise_raw;      /* uniform +- noise */
     double      speed_mmps;     /* cruise speed */
     double      lag_s;          /* wheel response time constant */
+    double      turn_mmps;      /* wheel speed in a pivot (VC: slow speed) */
+    sim_bc_t    bc;             /* barcode command for the next junction */
+    uint32_t    motion_phase;   /* 0..3: samples from a post to Motion's period */
 
     /* Car state. */
     double      x, y, th;       /* axle midpoint, heading */
     double      vl, vr;         /* actual wheel speeds */
-    int32_t     cmd_arg;        /* last DREP_MC_STEER argument */
-    double      hold_s;         /* time since the last command */
-    bool        have_cmd;
+    double      wl_mm, wr_mm;   /* wheel travel (encoder) */
     uint32_t    rng;
+    uint32_t    step_n;
+
+    /* Vehicle Controller -> Motion. */
+    lf_manoeuvre_t vc_man;      /* VC in NAV_TURN_x / U_TURN */
+    bool        q_new;          /* a command waits for Motion's next period */
+    sim_mc_t    q_type;
+    int32_t     q_arg;
+    sim_mc_t    mc_type;        /* Motion's active command */
+    int32_t     cmd_arg;        /* its argument (STEER: -256..+254) */
+    bool        have_cmd;       /* Motion is driving (not stopped) */
+    uint32_t    hold_ms;        /* Motion: time since the command */
+    int32_t     pub[2];         /* published counts [0] left, [1] right */
+    int32_t     piv_start[2];
+    double      piv_target_cnt;
+    lf_link_t   link;
 
     /* Results. */
     uint32_t    posts;
     uint32_t    n_junction;
     uint32_t    n_track_lost;
     uint32_t    n_line_lost;    /* entries into LINE_LOST */
+    uint32_t    n_turns;        /* pivots Motion finished */
+    double      piv_x, piv_y;   /* axle when the last pivot ended (its centre) */
     lf_state_t  last_state;
 } sim_t;
 
@@ -142,18 +193,31 @@ static inline void sim_init(sim_t *p_sim)
 {
     p_sim->n_strips = 0;
     p_sim->spacing_mm = 22.0;
-    p_sim->fwd_mm = 60.0;
+    p_sim->fwd_mm = (double)LF_D_PIVOT_MM;   /* measured F = 70 mm */
     p_sim->spot_mm = 3.0;
     p_sim->span_raw = 1000.0;
     p_sim->noise_raw = 30.0;
     p_sim->speed_mmps = 200.0;
     p_sim->lag_s = 0.04;
+    p_sim->turn_mmps = (double)MOTION_SPEED_SLOW_CMPS * 10.0;
+    p_sim->bc = SIM_BC_NONE;
+    p_sim->motion_phase = 0U;
     p_sim->x = 0.0; p_sim->y = 0.0; p_sim->th = 0.0;
     p_sim->vl = 0.0; p_sim->vr = 0.0;
-    p_sim->cmd_arg = 0; p_sim->hold_s = 0.0; p_sim->have_cmd = false;
+    p_sim->wl_mm = 0.0; p_sim->wr_mm = 0.0;
     p_sim->rng = 12345U;
+    p_sim->step_n = 0U;
+    p_sim->vc_man = LF_MAN_NONE;
+    p_sim->q_new = false; p_sim->q_type = SIM_MC_STOP; p_sim->q_arg = 0;
+    p_sim->mc_type = SIM_MC_STOP; p_sim->cmd_arg = 0; p_sim->have_cmd = false;
+    p_sim->hold_ms = 0U;
+    p_sim->pub[0] = 0; p_sim->pub[1] = 0;
+    p_sim->piv_start[0] = 0; p_sim->piv_start[1] = 0;
+    p_sim->piv_target_cnt = 0.0;
+    lf_link_init(&p_sim->link);
     p_sim->posts = 0U; p_sim->n_junction = 0U; p_sim->n_track_lost = 0U;
-    p_sim->n_line_lost = 0U;
+    p_sim->n_line_lost = 0U; p_sim->n_turns = 0U;
+    p_sim->piv_x = 0.0; p_sim->piv_y = 0.0;
     p_sim->last_state = LF_ST_IDLE;
 }
 
@@ -206,13 +270,106 @@ static inline void sim_centre_xy(sim_t const *p_sim, double *p_x, double *p_y)
     sim_sensor_xy(p_sim, 0.0, p_x, p_y);
 }
 
-/* One 5 ms sample: sensors -> core -> VC -> Motion -> car. */
+/* The VC posts a command to Motion (the newest one wins). */
+static inline void sim_vc_send(sim_t *p_sim, sim_mc_t type, int32_t arg)
+{
+    p_sim->q_new = true;
+    p_sim->q_type = type;
+    p_sim->q_arg = arg;
+}
+
+/* One Motion period: publish the counts, take the newest command, run the
+ * hold timeout and the pivot's completion check. */
+static inline void sim_motion_period(sim_t *p_sim)
+{
+    p_sim->pub[0] = (int32_t)lround(p_sim->wl_mm * SIM_CNT_PER_MM);
+    p_sim->pub[1] = (int32_t)lround(p_sim->wr_mm * SIM_CNT_PER_MM);
+
+    if (p_sim->q_new)
+    {
+        p_sim->q_new = false;
+        p_sim->mc_type = p_sim->q_type;
+        p_sim->cmd_arg = p_sim->q_arg;
+        p_sim->have_cmd = (p_sim->q_type != SIM_MC_STOP);
+        p_sim->hold_ms = 0U;
+        if ((p_sim->q_type == SIM_MC_PIVOT_L) || (p_sim->q_type == SIM_MC_PIVOT_R))
+        {
+            double const deg = (double)p_sim->q_arg;
+
+            p_sim->piv_start[0] = p_sim->pub[0];
+            p_sim->piv_start[1] = p_sim->pub[1];
+            p_sim->piv_target_cnt = ((SIM_PI * SIM_TRACK_MM * deg) / 360.0) * SIM_CNT_PER_MM;
+        }
+    }
+    else if (p_sim->have_cmd)
+    {
+        if ((p_sim->mc_type == SIM_MC_PIVOT_L) || (p_sim->mc_type == SIM_MC_PIVOT_R))
+        {
+            double const dl = fabs((double)(p_sim->pub[0] - p_sim->piv_start[0]));
+            double const dr = fabs((double)(p_sim->pub[1] - p_sim->piv_start[1]));
+
+            if (((dl + dr) / 2.0) >= p_sim->piv_target_cnt)
+            {
+                p_sim->have_cmd = false;
+                p_sim->mc_type = SIM_MC_STOP;
+                p_sim->n_turns++;
+                p_sim->piv_x = p_sim->x;    /* the axle: the pivot centre */
+                p_sim->piv_y = p_sim->y;
+            }
+        }
+        else
+        {
+            p_sim->hold_ms += MOTION_PERIOD_MS;
+            if (p_sim->hold_ms >= MOTION_T_HOLD_MS)
+            {
+                p_sim->have_cmd = false;    /* hold expired -> stop */
+                p_sim->mc_type = SIM_MC_STOP;
+            }
+        }
+    }
+    else
+    {
+        /* stopped */
+    }
+}
+
+/* The VC on a JUNCTION message (task_vc.c handle_line_msg). */
+static inline void sim_vc_junction(sim_t *p_sim)
+{
+    switch (p_sim->bc)
+    {
+        case SIM_BC_LEFT:
+            p_sim->vc_man = LF_MAN_TURN;
+            sim_vc_send(p_sim, SIM_MC_PIVOT_L, 90);
+            break;
+        case SIM_BC_RIGHT:
+            p_sim->vc_man = LF_MAN_TURN;
+            sim_vc_send(p_sim, SIM_MC_PIVOT_R, 90);
+            break;
+        case SIM_BC_UTURN:
+            p_sim->vc_man = LF_MAN_UTURN;
+            sim_vc_send(p_sim, SIM_MC_PIVOT_R, 180);
+            break;
+        case SIM_BC_NONE:
+        default:
+            sim_vc_send(p_sim, SIM_MC_STEER, 0);    /* GO_STRAIGHT: FWD */
+            break;
+    }
+    p_sim->bc = SIM_BC_NONE;
+}
+
+/* One 5 ms sample: Motion (every 4th) -> sensors -> link -> core -> VC ->
+ * car. */
 static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out_t *p_out)
 {
-    double tl = 0.0;
-    double tr = 0.0;
-    double a;
+    double        tl = 0.0;
+    double        tr = 0.0;
+    double        a;
+    lf_link_out_t lk;
 
+    lf_link_step(&p_sim->link, p_sim->vc_man, p_sim->pub, &lk);
+    p_in->manoeuvre = lk.manoeuvre;
+    p_in->fwd_cnt = lk.fwd_cnt;
     p_in->raw_c = sim_raw(p_sim, 0.0);
     p_in->raw_r = sim_raw(p_sim, -p_sim->spacing_mm);
     lf_core_step(p_lf, p_in, p_out);
@@ -220,11 +377,13 @@ static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out
     if (p_out->event == LF_EV_JUNCTION)
     {
         p_sim->n_junction++;
+        sim_vc_junction(p_sim);
     }
     if (p_out->event == LF_EV_TRACK_LOST)
     {
         p_sim->n_track_lost++;
-        p_sim->have_cmd = false;            /* VC: STOP */
+        p_sim->vc_man = LF_MAN_NONE;
+        sim_vc_send(p_sim, SIM_MC_STOP, 0);     /* VC: STOP */
     }
     if ((p_out->state == LF_ST_LINE_LOST) && (p_sim->last_state != LF_ST_LINE_LOST))
     {
@@ -235,29 +394,46 @@ static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out
     if (p_out->post_steer)
     {
         p_sim->posts++;
-        p_sim->cmd_arg = p_out->steer_q7 * 2;  /* task_vc.c: Q7 -> -256..+254 */
-        p_sim->hold_s = 0.0;
-        p_sim->have_cmd = true;
+        p_sim->vc_man = LF_MAN_NONE;            /* VC: NAV_LINE_TRACKING */
+        sim_vc_send(p_sim, SIM_MC_STEER, p_out->steer_q7 * 2);  /* Q7 -> -256..+254 */
     }
-    else
+
+    /* Motion's period comes after this sample's post when motion_phase is
+     * 0 (the post waits < 5 ms), up to 3 samples later (15 ms). */
+    if (((p_sim->step_n + p_sim->motion_phase) % SIM_MOTION_EVERY) == 0U)
     {
-        p_sim->hold_s += SIM_DT_S;
-        if (p_sim->hold_s >= ((double)MOTION_T_HOLD_MS / 1000.0))
-        {
-            p_sim->have_cmd = false;        /* Motion: hold expired -> stop */
-        }
+        sim_motion_period(p_sim);
     }
+    p_sim->step_n++;
 
     if (p_sim->have_cmd)
     {
         double const base = p_sim->speed_mmps;
 
-        tl = base + ((base * (double)p_sim->cmd_arg) / 256.0);
-        tr = base - ((base * (double)p_sim->cmd_arg) / 256.0);
+        switch (p_sim->mc_type)
+        {
+            case SIM_MC_STEER:
+                tl = base + ((base * (double)p_sim->cmd_arg) / 256.0);
+                tr = base - ((base * (double)p_sim->cmd_arg) / 256.0);
+                break;
+            case SIM_MC_PIVOT_L:
+                tl = -p_sim->turn_mmps;
+                tr = p_sim->turn_mmps;
+                break;
+            case SIM_MC_PIVOT_R:
+                tl = p_sim->turn_mmps;
+                tr = -p_sim->turn_mmps;
+                break;
+            case SIM_MC_STOP:
+            default:
+                break;
+        }
     }
     a = SIM_DT_S / (p_sim->lag_s + SIM_DT_S);
     p_sim->vl += a * (tl - p_sim->vl);
     p_sim->vr += a * (tr - p_sim->vr);
+    p_sim->wl_mm += p_sim->vl * SIM_DT_S;
+    p_sim->wr_mm += p_sim->vr * SIM_DT_S;
 
     {
         double const v = 0.5 * (p_sim->vl + p_sim->vr);

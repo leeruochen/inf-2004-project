@@ -29,6 +29,17 @@
  *    RIGHT is also the side memory: the line was lost to the right if RIGHT
  *    saw it shortly before CENTRE lost it, otherwise to the left.
  *
+ *  Junction post distance: Motion turns by pivoting about the axle
+ *  midpoint, F = LF_D_PIVOT_MM behind the sensors.  So JUNCTION is posted
+ *  only after the car has travelled about F past the cross line (encoder
+ *  counts from lf_link.h): if the Vehicle Controller then turns, the axle
+ *  is on the cross line and the sensors land on the new branch.  Until the
+ *  post the core drives straight over the cross line, then tracks the line
+ *  if it goes on (straight if not: a T junction), and never reports the
+ *  line ending.  Simulated (S3-U10 test 19): the turn lands cleanly while
+ *  the pivot centre is 0..+20 mm past the cross line's centre, i.e. for a
+ *  real F of 62.5..75 mm at 200 and 300 mm/s.
+ *
  *  Capture rule: CENTRE's edge is trusted only after CENTRE has seen solid
  *  black (zone DARK).  From the line body, "darker -> steer right" walks
  *  CENTRE out over the RIGHT edge, the stable one; the left edge is an
@@ -41,6 +52,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "config/thresholds.h"
 #include "config/timing.h"
 #include "src/common/data_repr.h"
 #include "app_program/subsystem3/lf_sanity.h"
@@ -78,6 +90,24 @@
 /** LINE_LOST posts nothing for this long, so Motion's hold timeout
  *  (MOTION_T_HOLD_MS) stops the car before the search starts. */
 #define LF_T_STOP_MS            (MOTION_T_HOLD_MS + MOTION_PERIOD_MS)
+
+/** Sensing point of the line sensors to the wheel axle, which is Motion's
+ *  pivot centre for a turn (task_motion.c TURN_L/TURN_R/UTURN drive the
+ *  wheels in opposite directions).  Measured on the car, 3 Nov 2026. */
+#define LF_D_PIVOT_MM           (70U)
+/** JUNCTION is posted this much before the axle reaches the cross line,
+ *  for the car's travel while the turn command takes effect (Motion's
+ *  next 20 ms period, then the wheels slowing). TUNE */
+#define LF_D_JCT_LEAD_MM        (0U)
+/** Travel from junction detection to the JUNCTION post. */
+#define LF_D_JCT_POST_MM        (LF_D_PIVOT_MM - LF_D_JCT_LEAD_MM)
+/** The same in encoder counts: ENC_QUAD_MULT x ENC_CPR counts per wheel
+ *  turn of WHEEL_CIRC_MM (config/thresholds.h). */
+#define LF_D_JCT_POST_CNT       ((LF_D_JCT_POST_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+/** JUNCTION is posted after this long even if the odometer has not moved
+ *  (an encoder fault); at cruise the travel takes 233 ms (300 mm/s) to
+ *  350 ms (bring-up 200 mm/s). TUNE */
+#define LF_T_JCT_MAX_MS         (500U)
 
 /* Times as sample counts (one lf_core_step() call = LF_SAMPLE_PERIOD_MS). */
 #define LF_SAMPLES(ms)          ((uint32_t)(ms) / LF_SAMPLE_PERIOD_MS)
@@ -163,6 +193,7 @@ typedef struct
     lf_manoeuvre_t manoeuvre;       /**< junction turn in progress */
     bool           avoid_active;    /**< EVF_NAV_AVOID_ACTIVE */
     bool           reacquired;      /**< EVF_NAV_LINE_REACQUIRED */
+    uint32_t       fwd_cnt;         /**< forward travel, encoder counts, free-running (lf_link) */
 } lf_in_t;
 
 /** Result of one sample. */
@@ -204,6 +235,9 @@ typedef struct
     int32_t        steer_q7;        /**< last computed steering */
     lf_manoeuvre_t man_seen;        /**< manoeuvre seen in JUNCTION (NONE = straight) */
     bool           man_done;        /**< that manoeuvre has finished */
+    bool           jct_pending;     /**< junction detected, JUNCTION not yet posted */
+    bool           jct_line_ahead;  /**< the line was seen going on past the cross line */
+    uint32_t       jct_cnt0;        /**< fwd_cnt when the junction was detected */
 } lf_core_t;
 
 /* ---------------------------------------------------------------------------

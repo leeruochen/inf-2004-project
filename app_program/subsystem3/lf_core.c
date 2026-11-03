@@ -30,6 +30,7 @@
 #define LF_N_STOP       LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
 #define LF_N_SIDE_MEM   LF_SAMPLES(LF_SIDE_MEMORY_MS)   /* 20  = 100 ms */
 #define LF_N_POST       LF_STEER_POST_EVERY_N_SAMPLES   /* 4   = 20 ms  */
+#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 100 = 500 ms */
 
 /* r_quiet_n saturates here (anything above the side memory is "long ago"). */
 #define LF_QUIET_MAX    (LF_N_SIDE_MEM + 1U)
@@ -42,6 +43,10 @@ _Static_assert(LF_DARK_MIN_PM < LF_PM_FULL, "DARK reachable");
 _Static_assert(LF_N_SWAP < LF_N_SEARCH, "the search swaps sides before T_search");
 _Static_assert(LF_N_POST > 0U, "steering post period >= sample period");
 _Static_assert(LF_STEER_FULL_Q7 <= DREP_STEER_Q7_MAX, "full steering fits Q7");
+_Static_assert((ENC_CPR > 0U) && (WHEEL_CIRC_MM > 0U), "encoder geometry known");
+_Static_assert(LF_D_JCT_LEAD_MM < LF_D_PIVOT_MM, "JUNCTION posted after detection");
+_Static_assert(((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) < LF_T_JCT_MAX_MS,
+               "at cruise the travel ends before the time cap");
 
 /* ---------------------------------------------------------------------------
  * Calibration, normalisation, zones, edge steering
@@ -310,14 +315,14 @@ static void enter_turn(lf_core_t *p_lf, lf_manoeuvre_t man)
     enter(p_lf, LF_ST_JUNCTION);
     p_lf->man_seen = man;
     p_lf->man_done = false;
+    p_lf->jct_pending = false;
 }
 
 /* ---------------------------------------------------------------------------
  * States.  Each returns true if steering may be posted this sample.
  * ------------------------------------------------------------------------- */
 
-static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
-                       lf_out_t *p_out)
+static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
 {
     bool may_post = true;
 
@@ -334,9 +339,11 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
         }
         if (p_lf->junction_armed && (p_v->zc == LF_ZONE_DARK) && (p_v->zr == LF_ZONE_DARK))
         {
-            p_out->event = LF_EV_JUNCTION;
             p_lf->junction_armed = false;
-            enter_turn(p_lf, LF_MAN_NONE);      /* straight unless the VC turns */
+            enter_turn(p_lf, LF_MAN_NONE);      /* straight; JUNCTION after F */
+            p_lf->jct_pending = true;
+            p_lf->jct_line_ahead = false;
+            p_lf->jct_cnt0 = p_in->fwd_cnt;
             p_lf->steer_q7 = 0;
         }
         else if (lost_check(p_lf, p_v))
@@ -353,14 +360,72 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
     return may_post;
 }
 
+/* What RIGHT saw was the cross line, not the line we follow: forget it,
+ * or a slide off to the right just after the junction would search the
+ * wrong way. */
+static void forget_cross_line(lf_core_t *p_lf)
+{
+    p_lf->r_quiet_n = LF_QUIET_MAX;
+    p_lf->side = LF_SIDE_LEFT;
+}
+
 /*
- * JUNCTION_DETECTED.  man_seen NONE: straight across (steer 0) until RIGHT
- * is off the cross line.  Otherwise the Vehicle Controller is turning: post
- * nothing while it turns, then wait T_turn (T_uturn) for CENTRE to see solid
- * black.  After a u-turn the line is to the right of CENTRE: steer gently
- * right meanwhile.
+ * Junction detected, JUNCTION not posted yet: keep driving (steering is
+ * posted, so Motion's hold never stops the car) until the car has
+ * travelled LF_D_JCT_POST_CNT counts, or LF_N_JCT_MAX samples if the
+ * odometer is stuck.  On the cross line: straight (steer 0).  Once the
+ * line is seen going on past it (CENTRE on it, RIGHT white), track it as
+ * in ON_LINE, so the car is aligned with it at the pivot point, and a
+ * drift off it is steered back (the cross line is first wiped from the
+ * side memory).  No line ahead (a T junction): straight.  The line ending
+ * is not LINE_LOST here.
+ * Returns true if steering may be posted this sample: not in the sample
+ * of the post, so the Vehicle Controller acts on JUNCTION before any
+ * steering (it runs at a higher priority, so the next sample already sees
+ * its turn state).
  */
-static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
+static bool jct_travel(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
+                       lf_out_t *p_out)
+{
+    bool may_post = true;
+
+    if (!p_lf->jct_line_ahead && (p_v->c_now != LF_ZONE_LIGHT)
+        && (p_v->r_now == LF_ZONE_LIGHT))
+    {
+        p_lf->jct_line_ahead = true;
+        forget_cross_line(p_lf);
+    }
+    if (p_lf->jct_line_ahead)
+    {
+        online_steer(p_lf, p_v);
+    }
+    else
+    {
+        p_lf->steer_q7 = 0;
+    }
+    p_lf->timer_n++;
+    if (((p_in->fwd_cnt - p_lf->jct_cnt0) >= LF_D_JCT_POST_CNT)
+        || (p_lf->timer_n >= LF_N_JCT_MAX))
+    {
+        p_out->event = LF_EV_JUNCTION;
+        p_lf->jct_pending = false;
+        forget_cross_line(p_lf);
+        may_post = false;
+    }
+
+    return may_post;
+}
+
+/*
+ * JUNCTION_DETECTED.  man_seen NONE: straight on (steer 0); first the
+ * travel to the JUNCTION post (jct_travel), then, if the Vehicle Controller
+ * did not turn, back to ON_LINE once RIGHT is white and CENTRE is on the
+ * line.  Otherwise the Vehicle Controller is turning: post nothing while it
+ * turns, then wait T_turn (T_uturn) for CENTRE to see solid black.  After a
+ * u-turn the line is to the right of CENTRE: steer gently right meanwhile.
+ */
+static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
+                        lf_out_t *p_out)
 {
     bool may_post = false;
 
@@ -368,19 +433,19 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
     {
         p_lf->man_seen = p_in->manoeuvre;
         p_lf->man_done = false;
+        p_lf->jct_pending = false;          /* the VC turned anyway: no post */
         p_lf->timer_n = 0U;
     }
     else if (p_lf->man_seen == LF_MAN_NONE)
     {
         p_lf->steer_q7 = 0;
         may_post = true;
-        if (p_v->zr == LF_ZONE_LIGHT)
+        if (p_lf->jct_pending)
         {
-            /* What RIGHT saw was the cross line, not the line we follow:
-             * forget it, or a slide off to the right just after the
-             * junction would search the wrong way. */
-            p_lf->r_quiet_n = LF_QUIET_MAX;
-            p_lf->side = LF_SIDE_LEFT;
+            may_post = jct_travel(p_lf, p_in, p_v, p_out);
+        }
+        else if ((p_v->zr == LF_ZONE_LIGHT) && (p_v->zc != LF_ZONE_LIGHT))
+        {
             p_lf->junction_armed = true;
             enter_on_line(p_lf, p_v);
         }
@@ -529,6 +594,9 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->steer_q7 = 0;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
+    p_lf->jct_pending = false;
+    p_lf->jct_line_ahead = false;
+    p_lf->jct_cnt0 = 0U;
     enter(p_lf, LF_ST_IDLE);
 }
 
@@ -610,10 +678,10 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
         switch (p_lf->state)
         {
             case LF_ST_ON_LINE:
-                may_post = st_on_line(p_lf, p_in, &v, p_out);
+                may_post = st_on_line(p_lf, p_in, &v);
                 break;
             case LF_ST_JUNCTION:
-                may_post = st_junction(p_lf, p_in, &v);
+                may_post = st_junction(p_lf, p_in, &v, p_out);
                 break;
             case LF_ST_LINE_LOST:
                 if (p_in->manoeuvre != LF_MAN_NONE)

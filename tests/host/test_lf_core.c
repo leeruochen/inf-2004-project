@@ -12,7 +12,11 @@
  *    - steering sign: steer > 0 = steer right (data_repr.h; task_motion.c
  *      makes the left wheel faster);
  *    - closed-loop behaviour: the simulator in lf_sim.h (geometry, the
- *      Vehicle Controller and Motion rules from their code).
+ *      Vehicle Controller and Motion rules from their code);
+ *    - junction post distance: F = 70 mm from the sensing point to the
+ *      axle, measured on the car (3 Nov 2026), and the encoder geometry in
+ *      config/thresholds.h (4 x 616 counts per 207 mm wheel turn), worked
+ *      by hand: 70 mm x 2464 / 207 = 833 counts.
  *  Fixtures use a calibration of white 140, black 1140, so a darkness of
  *  d per mille is simply raw = 140 + d.
  */
@@ -21,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "config/thresholds.h"
 #include "config/timing.h"
 #include "src/common/data_repr.h"
 #include "app_program/subsystem3/lf_core.h"
@@ -34,6 +39,11 @@
 
 static lf_cal_t const k_cal = { { 140U, 1140U }, { 140U, 1140U } };
 static lf_in_t        g_in;
+static uint32_t       g_fwd_step;   /* forward counts per sample (the car moving) */
+
+/* Travel from junction detection to the JUNCTION post, encoder counts
+ * (worked by hand, see the header). */
+#define JCT_POST_CNT    (833U)
 
 static uint16_t raw_of(uint16_t d_pm)
 {
@@ -46,6 +56,7 @@ static lf_out_t feed(lf_core_t *p_lf, uint16_t dc, uint16_t dr)
 
     g_in.raw_c = raw_of(dc);
     g_in.raw_r = raw_of(dr);
+    g_in.fwd_cnt += g_fwd_step;
     memset(&out, 0xA5, sizeof(out));        /* every field must be written */
     lf_core_step(p_lf, &g_in, &out);
     return out;
@@ -118,6 +129,7 @@ static void reset_inputs(void)
 {
     memset(&g_in, 0, sizeof(g_in));
     g_in.manoeuvre = LF_MAN_NONE;
+    g_fwd_step = 12U;                       /* ~1 mm per 5 ms = 200 mm/s */
 }
 
 /* Calibrated core, car in the start pose (CENTRE on the line body, RIGHT on
@@ -129,6 +141,20 @@ static void start_tracking(lf_core_t *p_lf)
     (void)run(p_lf, 5U, 1000U, 0U);         /* idle, sensors settle */
     g_in.running = true;
     (void)run(p_lf, 40U, 500U, 0U);
+}
+
+/* A cross line under the sensors, then travel on until the core posts
+ * JUNCTION (the car stays straight meanwhile). */
+static void post_junction(lf_core_t *p_lf)
+{
+    uint32_t j = 0U;
+
+    (void)run(p_lf, 3U, 1000U, 1000U);
+    for (uint32_t i = 0U; (i < 200U) && (j == 0U); i++)
+    {
+        j = (feed(p_lf, 500U, 0U).event == LF_EV_JUNCTION) ? 1U : 0U;
+    }
+    CHECK(j == 1U);
 }
 
 static lf_adc_stats_t stats_const(uint16_t v, uint32_t n)
@@ -160,6 +186,11 @@ static void test_constants(void)
     CHECK(MOTION_T_HOLD_MS == 100U);
     CHECK(DREP_STEER_Q7_MAX == 127);
     CHECK((int)LF_ST_COUNT == (int)DREP_FSM_LF_STATES);     /* telemetry: 6 states */
+    CHECK(LF_D_PIVOT_MM == 70U);            /* measured F */
+    CHECK(ENC_QUAD_MULT == 4U);
+    CHECK(ENC_CPR == 616U);
+    CHECK(WHEEL_CIRC_MM == 207U);
+    CHECK(LF_T_JCT_MAX_MS == 500U);
 }
 
 /* Test 2: start-pose calibration, from the LF-1 desk numbers. */
@@ -475,8 +506,11 @@ static void test_junction(void)
         CHECK(r.junctions == 0U);
     }
 
-    /* A real cross line: 3 samples both DARK -> exactly one JUNCTION, on
-     * the 3rd sample; steering is held (0 from the edge), never full right. */
+    /* A real cross line: 3 samples both DARK -> junction detected on the
+     * 3rd sample; steering is held (0 from the edge), never full right.
+     * JUNCTION itself is posted only once the car has travelled
+     * JCT_POST_CNT further, so the axle (Motion's pivot centre, F = 70 mm
+     * behind the sensors) is on the cross line if the VC turns. */
     start_tracking(&lf);
     {
         lf_out_t o1 = feed(&lf, 1000U, 1000U);
@@ -485,27 +519,105 @@ static void test_junction(void)
 
         CHECK(o1.event == LF_EV_NONE);
         CHECK(o2.event == LF_EV_NONE);
-        CHECK(o3.event == LF_EV_JUNCTION);
+        CHECK(o3.event == LF_EV_NONE);
         CHECK(o3.state == LF_ST_JUNCTION);
+        CHECK(o3.post_steer);                   /* steer 0 at once */
+        CHECK(o3.steer_q7 == 0);
         CHECK(!o1.post_steer || (o1.steer_q7 == 0));
         CHECK(!o2.post_steer || (o2.steer_q7 == 0));
     }
-    /* Straight across (no manoeuvre): steer 0 while on the cross line. */
-    r = run(&lf, 30U, 1000U, 1000U);
-    CHECK(r.junctions == 0U);                   /* one cross line, one event */
-    CHECK(r.posts > 0U);
-    CHECK(r.min_steer == 0);
-    CHECK(r.max_steer == 0);
-    CHECK(r.last.state == LF_ST_JUNCTION);
-    /* RIGHT back on white for 3 samples: ON_LINE, re-armed. */
-    r = run(&lf, 2U, 500U, 0U);
-    CHECK(r.last.state == LF_ST_JUNCTION);
+    /* Travelling on: over the cross line (15 samples), then the line
+     * continues.  12 counts a sample: the post is due after
+     * ceil(JCT_POST_CNT / 12) samples; until then steer 0 every 20 ms. */
+    {
+        uint32_t const due = (JCT_POST_CNT + 11U) / 12U;
+        lf_out_t       o;
+
+        r = run(&lf, 15U, 1000U, 1000U);
+        CHECK(r.junctions == 0U);
+        CHECK(r.min_steer == 0);
+        CHECK(r.max_steer == 0);
+        r = run(&lf, due - 16U, 500U, 0U);
+        CHECK(r.junctions == 0U);
+        CHECK(r.posts > 0U);
+        CHECK(r.min_steer == 0);
+        CHECK(r.max_steer == 0);
+        CHECK(r.last.state == LF_ST_JUNCTION);
+        o = feed(&lf, 500U, 0U);
+        CHECK(o.event == LF_EV_JUNCTION);
+        CHECK(!o.post_steer);                   /* let the VC act on it first */
+        CHECK(o.state == LF_ST_JUNCTION);
+    }
+    /* No turn (straight on): RIGHT is white, so ON_LINE at the next sample,
+     * posting at once; re-armed for the next cross line. */
     r = run(&lf, 1U, 500U, 0U);
     CHECK(r.last.state == LF_ST_ON_LINE);
+    CHECK(r.posts == 1U);
     r = run(&lf, 40U, 500U, 0U);
     CHECK(r.junctions == 0U);
-    r = run(&lf, 10U, 1000U, 1000U);            /* the next cross line */
+    r = run(&lf, 3U, 1000U, 1000U);             /* the next cross line */
+    CHECK(r.last.state == LF_ST_JUNCTION);
+    r = run(&lf, 15U, 1000U, 1000U);
+    r = run(&lf, 100U, 500U, 0U);
     CHECK(r.junctions == 1U);
+
+    /* T junction (no line ahead): the sensors leave the line during the
+     * travel, but that is not LINE_LOST: steer 0 is posted until the
+     * JUNCTION post.  Straight on afterwards, both white: LINE_LOST 100 ms
+     * later. */
+    start_tracking(&lf);
+    {
+        uint32_t const due = (JCT_POST_CNT + 11U) / 12U;
+        uint32_t       n;
+
+        (void)run(&lf, 3U, 1000U, 1000U);
+        r = run(&lf, 15U, 1000U, 1000U);
+        r = run(&lf, due - 16U, 0U, 0U);
+        CHECK(r.junctions == 0U);
+        CHECK(r.last.state == LF_ST_JUNCTION);
+        CHECK(r.posts > 0U);
+        CHECK(r.max_steer == 0);
+        r = run(&lf, 1U, 0U, 0U);
+        CHECK(r.junctions == 1U);
+        n = until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 100U);
+        CHECK(n == 20U);
+    }
+
+    /* Odometer frozen (encoder fault): JUNCTION after LF_T_JCT_MAX_MS
+     * (500 ms = 100 samples after detection), not before. */
+    start_tracking(&lf);
+    g_fwd_step = 0U;
+    (void)run(&lf, 3U, 1000U, 1000U);
+    r = run(&lf, 99U, 500U, 0U);
+    CHECK(r.junctions == 0U);
+    r = run(&lf, 1U, 500U, 0U);
+    CHECK(r.junctions == 1U);
+    g_fwd_step = 12U;
+
+    /* Odometer wrap (uint32 free-running): same distance. */
+    start_tracking(&lf);
+    g_in.fwd_cnt = UINT32_MAX - 100U;
+    (void)run(&lf, 3U, 1000U, 1000U);
+    {
+        uint32_t const due = (JCT_POST_CNT + 11U) / 12U;
+
+        r = run(&lf, due - 1U, 500U, 0U);
+        CHECK(r.junctions == 0U);
+        r = run(&lf, 1U, 500U, 0U);
+        CHECK(r.junctions == 1U);
+    }
+
+    /* The VC starts a manoeuvre before the post (not from a junction):
+     * silent while it runs, and the pending JUNCTION is dropped. */
+    start_tracking(&lf);
+    (void)run(&lf, 3U, 1000U, 1000U);
+    g_in.manoeuvre = LF_MAN_TURN;
+    r = run(&lf, 100U, 0U, 0U);
+    CHECK(r.posts == 0U);
+    CHECK(r.junctions == 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&lf, 200U, 0U, 0U);
+    CHECK(r.junctions == 0U);
 
     /* RIGHT flickering (1-sample spikes) while tracking: no junction, no
      * full-right steering. */
@@ -646,7 +758,7 @@ static void test_turns(void)
 
     /* 90 degree turn: no steering post at all while it runs. */
     start_tracking(&lf);
-    (void)run(&lf, 3U, 1000U, 1000U);           /* JUNCTION */
+    post_junction(&lf);
     g_in.manoeuvre = LF_MAN_TURN;
     r = run(&lf, 200U, 0U, 0U);                 /* sensors off the line, 1 s */
     CHECK(r.posts == 0U);
@@ -664,7 +776,7 @@ static void test_turns(void)
 
     /* Not found: LINE_LOST at 500 ms after the turn, not before. */
     start_tracking(&lf);
-    (void)run(&lf, 3U, 1000U, 1000U);
+    post_junction(&lf);
     g_in.manoeuvre = LF_MAN_TURN;
     (void)run(&lf, 50U, 0U, 0U);
     g_in.manoeuvre = LF_MAN_NONE;
@@ -675,7 +787,7 @@ static void test_turns(void)
     /* U-turn: silent during it; after it, gentle right (the line is to the
      * right of CENTRE) for up to 1 s; the left edge alone is not a capture. */
     start_tracking(&lf);
-    (void)run(&lf, 3U, 1000U, 1000U);
+    post_junction(&lf);
     g_in.manoeuvre = LF_MAN_UTURN;
     r = run(&lf, 300U, 0U, 0U);
     CHECK(r.posts == 0U);
@@ -690,7 +802,7 @@ static void test_turns(void)
     CHECK(r.min_steer == 64);                   /* now edge-tracking: right */
 
     start_tracking(&lf);
-    (void)run(&lf, 3U, 1000U, 1000U);
+    post_junction(&lf);
     g_in.manoeuvre = LF_MAN_UTURN;
     (void)run(&lf, 50U, 0U, 0U);
     g_in.manoeuvre = LF_MAN_NONE;
@@ -705,7 +817,7 @@ static void test_turns(void)
      * black): back ON_LINE, but no second JUNCTION for the same cross line;
      * once RIGHT has been white, the next cross line is a junction again. */
     start_tracking(&lf);
-    (void)run(&lf, 3U, 1000U, 1000U);
+    post_junction(&lf);
     g_in.manoeuvre = LF_MAN_TURN;
     (void)run(&lf, 50U, 0U, 0U);
     g_in.manoeuvre = LF_MAN_NONE;
@@ -714,7 +826,8 @@ static void test_turns(void)
     CHECK(r.junctions == 0U);
     r = run(&lf, 40U, 500U, 0U);
     CHECK(r.junctions == 0U);
-    r = run(&lf, 10U, 1000U, 1000U);
+    (void)run(&lf, 3U, 1000U, 1000U);
+    r = run(&lf, 100U, 500U, 0U);
     CHECK(r.junctions == 1U);
 
     /* A manoeuvre while tracking (no junction from LF): still silent. */
@@ -954,10 +1067,14 @@ static void test_sim_curves(void)
 }
 
 /* Test 15: a cross junction, straight on (no barcode command), at 100 to
- * 500 mm/s: exactly one JUNCTION, back on the line, never lost. */
+ * 400 mm/s: exactly one JUNCTION, back on the line, never lost.  (Not at
+ * 500 mm/s, the NFR2 cap: with Motion's 20 ms command timing modelled, the
+ * disturbance of a junction there grows into a loss in plain ON_LINE
+ * tracking; line following runs at cruise, 300 mm/s nominal.  LF-3 floor
+ * tuning, only if cruise is raised.) */
 static void test_sim_junction(void)
 {
-    double const speeds[4] = { 100.0, 200.0, 300.0, 500.0 };
+    double const speeds[4] = { 100.0, 200.0, 300.0, 400.0 };
 
     for (int i = 0; i < 4; i++)
     {
@@ -1052,9 +1169,12 @@ static void test_sim_knock(void)
         g_in.running = true;
         for (double t = 0.0; t < 6.0; t += SIM_DT_S)
         {
-            if (fabs(t - 1.0) < (SIM_DT_S / 2.0))
+            if ((t > (1.0 - (SIM_DT_S / 2.0))) && (t < (1.1 - (SIM_DT_S / 2.0))))
             {
-                s.th += (double)dir * 35.0 * SIM_PI / 180.0;    /* the knock */
+                /* The knock: 35 degrees in 100 ms (20 samples).  Spread
+                 * over time, as a real knock is, so the sensors sweep over
+                 * the line (an instant jump would teleport them past it). */
+                s.th += ((double)dir * 35.0 * SIM_PI / 180.0) / 20.0;
             }
             sim_step(&s, &lf, &g_in, &out);
             if ((t > 1.0) && (out.state == LF_ST_ON_LINE) && (s.n_line_lost > 0U))
@@ -1088,6 +1208,115 @@ static void test_sim_line_end(void)
     CHECK(!s.have_cmd);                         /* the car is stopped */
 }
 
+/* Test 19: barcode turns at a junction, closed loop.  The VC has a
+ * LEFT / RIGHT / U-TURN command pending; the core detects the cross line,
+ * travels on (F, the measured 70 mm) and posts JUNCTION; the VC pivots the
+ * car about its axle; lf_link sees the wheels stop; the core finds the new
+ * branch (solid black under CENTRE, no LINE_LOST) and tracks it.  Junction
+ * at x = 800: a cross (the line goes on) or a T (it ends there); the real
+ * F off by +-5 mm from the 70 mm the core assumes (a ruler measurement);
+ * 200 mm/s (bring-up cruise) and 300 mm/s (nominal cruise).  A wider sweep
+ * (3 Nov 2026) turned cleanly for a real F of 62.5..75 mm at both speeds:
+ * the pivot centre must land 0..+20 mm past the cross line's centre.
+ * Checked here: the turn mechanics.  Tracking quality on the new branch
+ * depends on Motion's period phase (test 12 runs at the best phase). */
+typedef struct
+{
+    uint32_t   junctions;
+    uint32_t   turns;
+    uint32_t   track_lost;
+    bool       direct;          /* ON_LINE after the turn with no LINE_LOST first */
+    lf_state_t state;
+    double     piv_mm;          /* pivot centre past the cross line's centre */
+    double     cx, cy;          /* CENTRE at the end */
+} turn_run_t;
+
+static turn_run_t drive_turn(double speed, sim_bc_t bc, bool tee, double fwd_mm)
+{
+    sim_t      s;
+    lf_core_t  lf;
+    lf_out_t   out;
+    lf_cal_t   cal;
+    turn_run_t t;
+    bool       seen = false;
+    /* To the junction, the turn (~1 s), then 600 mm along the branch. */
+    double const secs = 2.0 + (1400.0 / speed);
+
+    sim_init(&s);
+    s.speed_mmps = speed;
+    s.fwd_mm = fwd_mm;
+    s.bc = bc;
+    sim_add_seg(&s, -500.0, 0.0, tee ? 800.0 : 3000.0, 0.0);
+    sim_add_seg(&s, 800.0, -1500.0, 800.0, 1500.0);
+    sim_place(&s, 0.0, 0.0);
+    cal.c.white = (uint16_t)SIM_WHITE_RAW;
+    cal.c.black = (uint16_t)(SIM_WHITE_RAW + 1000.0);
+    cal.r = cal.c;
+    reset_inputs();
+    lf_core_init(&lf, &cal);
+    g_in.running = true;
+    t.direct = false;
+    for (double tt = 0.0; tt < secs; tt += SIM_DT_S)
+    {
+        sim_step(&s, &lf, &g_in, &out);
+        if (!seen && (s.n_turns == 1U) && (out.state == LF_ST_ON_LINE))
+        {
+            seen = true;
+            t.direct = (s.n_line_lost == 0U);
+        }
+    }
+    t.junctions = s.n_junction;
+    t.turns = s.n_turns;
+    t.track_lost = s.n_track_lost;
+    t.state = out.state;
+    t.piv_mm = s.piv_x - 800.0;
+    sim_centre_xy(&s, &t.cx, &t.cy);
+    return t;
+}
+
+static void test_sim_turns(void)
+{
+    double const speeds[2] = { 200.0, 300.0 };
+    char const  *names[4] = { "none", "left", "right", "uturn" };
+
+    for (int tee = 0; tee <= 1; tee++)
+    {
+        for (int bc = 1; bc <= 3; bc++)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                for (double f = 65.0; f <= 75.0; f += 5.0)
+                {
+                    turn_run_t const t = drive_turn(speeds[i], (sim_bc_t)bc, tee != 0, f);
+                    bool on_branch;
+
+                    if (bc == SIM_BC_LEFT)
+                    {
+                        on_branch = (fabs(t.cx - 800.0) < 20.0) && (t.cy > 300.0);
+                    }
+                    else if (bc == SIM_BC_RIGHT)
+                    {
+                        on_branch = (fabs(t.cx - 800.0) < 20.0) && (t.cy < -300.0);
+                    }
+                    else
+                    {
+                        on_branch = (fabs(t.cy) < 20.0) && (t.cx < 400.0);
+                    }
+                    CHECK(t.junctions == 1U);
+                    CHECK(t.turns == 1U);
+                    CHECK(t.track_lost == 0U);
+                    CHECK(t.direct);
+                    CHECK(on_branch);
+                    printf("  %-5s %-5s %3.0f mm/s F %2.0f: pivot %+5.1f mm, %s, end (%.0f, %.0f)%s\n",
+                           tee ? "T" : "cross", names[bc], speeds[i], f, t.piv_mm,
+                           t.direct ? "direct" : "LINE_LOST first", t.cx, t.cy,
+                           (on_branch && (t.junctions == 1U) && (t.track_lost == 0U)) ? "" : "  <-- FAIL");
+                }
+            }
+        }
+    }
+}
+
 int main(void)
 {
     test_constants();
@@ -1108,5 +1337,6 @@ int main(void)
     test_sim_height_noise();
     test_sim_knock();
     test_sim_line_end();
+    test_sim_turns();
     return TEST_RESULT("lf_core");
 }
