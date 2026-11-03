@@ -81,3 +81,24 @@ target_include_directories(test_tel PRIVATE "${ROBOCAR_ROOT}")
 target_compile_options(test_tel PRIVATE -Wall -Wextra -Werror)
 set_target_properties(test_tel PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME tel COMMAND test_tel)
+
+# Line sensor ADC statistics and sanity decision (app_program/subsystem3/
+# lf_sanity.c, pure C): Subsystem 3 test S3-U08.
+add_executable(test_lf_sanity host/test_lf_sanity.c
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_sanity.c")
+target_include_directories(test_lf_sanity PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_lf_sanity PRIVATE -Wall -Wextra -Werror)
+set_target_properties(test_lf_sanity PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME lf_sanity COMMAND test_lf_sanity)
+
+# Line-following core (app_program/subsystem3/lf_core.c + lf_sanity.c, pure
+# C): Subsystem 3 test S3-U10.  Includes a closed-loop simulator of the car,
+# track and sensors (host/lf_sim.h, needs libm).
+add_executable(test_lf_core host/test_lf_core.c
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_core.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_sanity.c")
+target_include_directories(test_lf_core PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_lf_core PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_lf_core PRIVATE m)
+set_target_properties(test_lf_core PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME lf_core COMMAND test_lf_core)

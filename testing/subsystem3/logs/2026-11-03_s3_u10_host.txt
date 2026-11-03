@@ -1,0 +1,51 @@
+S3-U10 host run, commit 21cc788 (branch buddy3/lf1-adc), 2026-11-03
+Host: gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, WSL2
+Command: cmake -S tests -B ~/robocar-build/hl-u10 -G Ninja && cmake --build ~/robocar-build/hl-u10 && ctest --test-dir ~/robocar-build/hl-u10 --output-on-failure
+
+host build: 0 warnings, 0 errors
+Internal ctest changing into directory: /home/jy/robocar-build/hl-u10
+Test project /home/jy/robocar-build/hl-u10
+    Start 1: dbg_ring
+1/9 Test #1: dbg_ring .........................   Passed    0.00 sec
+    Start 2: crc32
+2/9 Test #2: crc32 ............................   Passed    0.00 sec
+    Start 3: period
+3/9 Test #3: period ...........................   Passed    0.00 sec
+    Start 4: data_repr
+4/9 Test #4: data_repr ........................   Passed    0.00 sec
+    Start 5: bc_decode
+5/9 Test #5: bc_decode ........................   Passed    0.00 sec
+    Start 6: bc_frame
+6/9 Test #6: bc_frame .........................   Passed    0.18 sec
+    Start 7: tel
+7/9 Test #7: tel ..............................   Passed    0.00 sec
+    Start 8: lf_sanity
+8/9 Test #8: lf_sanity ........................   Passed    0.00 sec
+    Start 9: lf_core
+9/9 Test #9: lf_core ..........................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =   0.21 sec
+
+$ ~/robocar-build/hl-u10/test_lf_core
+  straight 100 mm/s: max |CENTRE - edge| 0.3 mm (limit 5)
+  straight 200 mm/s: max |CENTRE - edge| 0.2 mm (limit 5)
+  straight 300 mm/s: max |CENTRE - edge| 0.4 mm (limit 5)
+  straight 400 mm/s: max |CENTRE - edge| 5.9 mm (limit 9)
+  straight 500 mm/s: max |CENTRE - edge| 8.0 mm (limit 9)
+lf_core: 544 checks, 0 failed
+
+Firmware gates on the same tree (bash ~/pico-1.5.1/gates.sh u10; Pico SDK 1.5.1, GCC 10.3.1):
+===== EXIT cfg u10 = 0
+-- check_rules: PASS (113 files scanned)
+===== EXIT build u10 = 0
+-- check_rules_selftest: PASS
+===== EXIT selftest = 0
+===== EXIT cfg u10-test = 0
+-- check_rules: PASS (113 files scanned)
+===== EXIT build u10-test = 0
+===== EXIT cfg u10-rel = 0
+-- check_rules: PASS (113 files scanned)
+===== EXIT build u10-rel = 0
+compiler warnings: 0
