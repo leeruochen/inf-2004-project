@@ -7,7 +7,12 @@
 list(APPEND ROBOCAR_KERNEL_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3.c"
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3_test.c"
+    "${CMAKE_CURRENT_LIST_DIR}/lf_hw_test.c"
     "${CMAKE_CURRENT_LIST_DIR}/bc_decode.c"
     "${CMAKE_CURRENT_LIST_DIR}/bc_frame.c")
 # SDK-side drivers:
-list(APPEND ROBOCAR_SOURCES "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c")
+# lf_sanity.c is pure C (host-tested by tests/host/test_lf_sanity.c); it sits
+# on the SDK side with its caller, drv_ir.c.
+list(APPEND ROBOCAR_SOURCES
+    "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c"
+    "${CMAKE_CURRENT_LIST_DIR}/lf_sanity.c")

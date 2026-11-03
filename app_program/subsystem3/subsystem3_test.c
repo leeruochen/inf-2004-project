@@ -14,12 +14,14 @@
 
 #if APP_TEST
 
+#include "lf_hw_test.h"
+
 void subsystem3_test(void)
 {
     TEST_INIT();
 
-    /* TODO(phase 2, buddy 3): S3-U01 ... (define the IDs in
-     * testing/subsystem3/TEST_LOG.md first). */
+    /* S3-U09: LF-1 line sensor measurement (operator-guided). */
+    lf_hw_test(&test_pass_, &test_fail_);
 
     TEST_SUMMARY("subsystem3");
 }
