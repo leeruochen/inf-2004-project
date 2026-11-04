@@ -67,23 +67,37 @@
 #define LF_LIGHT_MAX_PM         (250U)
 /** Above this darkness a sensor is DARK (over the line body). TUNE */
 #define LF_DARK_MIN_PM          (750U)
-/** CENTRE's target darkness: half over the line's right edge. */
-#define LF_EDGE_TARGET_PM       (500U)
+/** CENTRE's target darkness: just starting to feel the line's right edge,
+ *  on the black side of it (LF-3.3).  The sensor spot is only ~2.4 mm wide
+ *  and the motors answer ~110 ms after a command, so a target on the middle
+ *  of the edge puts CENTRE on white for longer than LF_T_LOST_MS on every
+ *  correction.  On the black side the car has the line's width to spare. */
+#define LF_EDGE_TARGET_PM       (900U)
 
 /** Calibration refused if black - white is smaller than this (raw counts;
  *  same contrast rule as S3-U09, about 10 % of the 12-bit scale). */
 #define LF_MIN_SPAN_RAW         (400U)
 
-/** Steering at CENTRE fully black (+) or fully white (-), Q7. TUNE */
-#define LF_KP_Q7                (64)
+/** Steering per LF_KP_SPAN_PM of darkness away from the target, Q7.  Low on
+ *  purpose (LF-3.3): the sensors sit 70 mm ahead of the axle, so a turn
+ *  swings them sideways at once, and steering at 64 oscillated across the
+ *  whole line on the car.  At 24 the host model settles with no oscillation
+ *  and with Kp 16 it failed the 15 degree start.  TUNE */
+#define LF_KP_Q7                (24)
+/** Darkness span that LF_KP_Q7 applies to. */
+#define LF_KP_SPAN_PM           (500)
 /** Full steering, Q7 (DREP_STEER_Q7_MAX). */
 #define LF_STEER_FULL_Q7        (127)
+/** Steering while CENTRE is off the line and the line is not lost yet, Q7.
+ *  It carries on from lf_edge_steer() at the LIGHT limit (-31), so leaving
+ *  the edge is no jump.  At 127 it crossed the 18 mm line in ~100 ms. TUNE */
+#define LF_RECOVER_Q7           (32)
+/** Steering while searching for a lost line, Q7.  Enough to come back within
+ *  LF_T_SEARCH_MS; at 127 the car reached the line too fast to stay on it. TUNE */
+#define LF_SEARCH_Q7            (64)
 /** Gentle right turn while looking for the line after a u-turn, Q7. TUNE */
 #define LF_ACQUIRE_STEER_Q7     (32)
 
-/** RIGHT saw darkness at most this long before CENTRE lost the line ->
- *  the line was lost to the right. TUNE */
-#define LF_SIDE_MEMORY_MS       (100U)
 /** Search the remembered side this long, then the other side until
  *  LF_T_SEARCH_MS. TUNE */
 #define LF_SEARCH_SWAP_MS       (700U)
@@ -229,7 +243,6 @@ typedef struct
     bool           prev_running;
     bool           junction_armed;  /**< false from a junction until RIGHT is LIGHT */
     lf_side_t      side;            /**< side memory */
-    uint32_t       r_quiet_n;       /**< samples since RIGHT last read non-light */
     uint32_t       lost_n;          /**< consecutive samples with both LIGHT */
     uint32_t       timer_n;         /**< samples spent in the current state/phase */
     bool           post_now;        /**< post at the next sample that may post (state entry) */
@@ -274,7 +287,8 @@ lf_zone_t lf_zone_update(lf_zone_filt_t *p_f, uint16_t d_pm);
 
 /*
  * Edge-tracking steering from CENTRE's darkness alone:
- * LF_KP_Q7 * (d - 500) / 500, clamped to +-LF_STEER_FULL_Q7.
+ * LF_KP_Q7 * (d - LF_EDGE_TARGET_PM) / LF_KP_SPAN_PM, clamped to
+ * +-LF_STEER_FULL_Q7.
  */
 int32_t lf_edge_steer(uint16_t d_c_pm);
 

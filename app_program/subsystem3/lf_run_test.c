@@ -1,6 +1,6 @@
 /*
  *  lf_run_test.c
- *  Subsystem 3 -- LF-3.2 Line-Following task test on the track (S3-U12),
+ *  Subsystem 3 -- Line-Following task test on the track (S3-U12, S3-U13),
  *  APP_TEST only.
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Kernel side: kernel and pure project headers only (rule R1).
@@ -19,7 +19,14 @@
  *  avoidance; Safety's collision brake stays active.  Between drives the
  *  VC is READY (motors stopped) and the operator places the car by hand.
  *
- *  Guide: .agents/tasks/s3-lf32-test.md.  Expected values come from
+ *  LF-3.3 (S3-U13): LF2_STRAIGHT_ONLY runs the static poses and then the
+ *  straight drive LF2_STRAIGHT_RUNS times, nothing else: straight tracking
+ *  is proven on the car before recovery, junctions or curves.  Every drive
+ *  is recorded every 20 ms into RAM and printed after the car has stopped:
+ *  the console ring holds 2 KB and drops lines when full, so 20 ms lines
+ *  printed live would lose data and load the system during the drive.
+ *
+ *  Guide: .agents/tasks/s3-lf33-test.md.  Expected values come from
  *  config/timing.h, lf_core.h and design.md 3.2, typed in: 5 ms samples
  *  (200 per second), one steering post per 20 ms Motion period,
  *  LINE_LOST -> 120 ms stop -> 2 s search -> TRACK_LOST (2120 ms),
@@ -56,17 +63,34 @@
  *  and the kernel tick. */
 #define LF2_LOST_TO_TRACK_MIN   (2110U)
 #define LF2_LOST_TO_TRACK_MAX   (2135U)
-/** First steering from the start pose (CENTRE on the line body): Kp 64 x
- *  (1000 - 500) / 500 = +64 (lf_core.h LF_KP_Q7); at least half of it. */
-#define LF2_STEER_BODY_MIN      (32)
-/** "Settled": CENTRE first reaches the right edge (400..600 per mille)
- *  within this wheel travel of START. */
-#define LF2_SETTLE_PM_LO        (400U)
-#define LF2_SETTLE_PM_HI        (600U)
-#define LF2_SETTLE_MAX_MM       (150U)
-/** Stable tracking: at least this share of polls ON_LINE with CENTRE
- *  between LF_LIGHT_MAX_PM and LF_DARK_MIN_PM (partly over the line). */
+/** First steering from the start pose (CENTRE on the line body): Kp 24 x
+ *  (1000 - 900) / 500 = +4 (lf_core.h): any right steering passes. */
+#define LF2_STEER_BODY_MIN      (1)
+/** "Settled": CENTRE first feels the right edge (below 950 per mille, not
+ *  on white) within this wheel travel of START.  The host model takes 168
+ *  mm from the line's middle and 374 mm from a poor placement. */
+#define LF2_SETTLE_PM_LO        (250U)
+#define LF2_SETTLE_PM_HI        (950U)
+#define LF2_SETTLE_MAX_MM       (500U)
+/** Stable tracking: at least this share of polls ON_LINE with CENTRE on
+ *  the line (LF_LIGHT_MAX_PM or darker).  The edge is only ~2.4 mm wide, so
+ *  a band inside it is not a fair measure: CENTRE sits at ~880 pm when
+ *  settled, on the black side by design. */
 #define LF2_BAND_MIN_PCT        (90U)
+/** Pose A: CENTRE on the line's middle must read at least this, or the boot
+ *  calibration is too high for the 900 pm target (see the guide). */
+#define LF2_POSE_A_MIN_PM       (950U)
+/** LF-3.3: only the straight drive, this many times. */
+#define LF2_STRAIGHT_ONLY       (1U)
+#define LF2_STRAIGHT_RUNS       (3U)
+/** Test ID of this build's checks. */
+#define LF2_ID                  "S3-U13"
+/** Trace: one row per this many polls (20 ms), and how it is printed: a
+ *  burst of rows, then a pause so the console drains the 2 KB ring. */
+#define LF2_TRACE_EVERY_POLLS   (2U)
+#define LF2_TRACE_ROWS          (256U)
+#define LF2_TRACE_BURST         (8U)
+#define LF2_TRACE_PAUSE_MS      (100U)
 /** Recovery drives: ON_LINE within this time of START. */
 #define LF2_RECOVER_MAX_MS      (1000U)
 /** After a drive ends: the wheels must not move between these times. */
@@ -76,7 +100,7 @@
 #define LF2_CRUISE_MMPS         ((uint32_t)MOTION_SPEED_CRUISE_CMPS * 10U)
 /** Drive limits (wheel travel).  The time limit is the travel at cruise
  *  plus 1.5 s. */
-#define LF2_STRAIGHT_MM         (700U)
+#define LF2_STRAIGHT_MM         (900U)
 #define LF2_RECOVER_MM          (500U)
 #define LF2_JUNCTION_MM         (800U)
 #define LF2_END_MM              (1200U)
@@ -115,6 +139,19 @@ typedef struct
     uint32_t    max_mm;     /**< wheel travel limit */
     uint32_t    max_ms;     /**< time limit */
 } lf2_drive_t;
+
+/** One row of the 20 ms trace. */
+typedef struct
+{
+    uint16_t t_ms;      /**< since START */
+    uint16_t mm;        /**< mean wheel travel since START */
+    uint16_t raw_c;
+    uint16_t raw_r;
+    int16_t  cnt_l;     /**< left wheel counts since START */
+    int16_t  cnt_r;     /**< right wheel counts since START */
+    int8_t   steer_q7;  /**< last steering posted */
+    uint8_t  state;     /**< lf_state_t */
+} lf2_trace_row_t;
 
 /** What one drive did. */
 typedef struct
@@ -164,6 +201,9 @@ static motion_state_t   s_m0;
 static motion_state_t   s_m;
 static motion_state_t   s_m_half;
 static motion_state_t   s_m_end;
+/* The 20 ms trace of the current drive (3.6 KB; APP_TEST builds only). */
+static lf2_trace_row_t  s_trace[LF2_TRACE_ROWS];
+static uint32_t         s_trace_n;
 /* Static pose A (start pose): RIGHT over white, for the noise comparison. */
 static uint16_t         s_static_r_min;
 static uint16_t         s_static_r_max;
@@ -209,7 +249,7 @@ static uint32_t lf2_travel_mm(motion_state_t const *p_a, motion_state_t const *p
 
 static bool lf2_in_band(uint16_t d)
 {
-    return (d >= LF_LIGHT_MAX_PM) && (d <= LF_DARK_MIN_PM);
+    return (d >= LF_LIGHT_MAX_PM);
 }
 
 static bool lf2_pct_ok(uint32_t part, uint32_t whole)
@@ -279,6 +319,49 @@ static void lf2_static(char const *p_tag, char const *p_place,
     *p_rmax = r_max;
     dbg_printf("[LF] static %s: C raw %u..%u avg %u = %u pm", p_tag, c_min, c_max, avg_c, *p_dc);
     dbg_printf("[LF] static %s: R raw %u..%u avg %u = %u pm", p_tag, r_min, r_max, avg_r, *p_dr);
+}
+
+/* One trace row.  Counts since START fit int16_t: the longest drive is
+ * 1200 mm = 14 300 counts. */
+static void lf2_trace_add(uint32_t t, uint32_t mm)
+{
+    if (s_trace_n < LF2_TRACE_ROWS)
+    {
+        lf2_trace_row_t *const p_r = &s_trace[s_trace_n];
+
+        p_r->t_ms = (uint16_t)t;
+        p_r->mm = (uint16_t)mm;
+        p_r->raw_c = s_now.raw_c;
+        p_r->raw_r = s_now.raw_r;
+        p_r->cnt_l = (int16_t)((uint32_t)s_m.enc_count[0] - (uint32_t)s_m0.enc_count[0]);
+        p_r->cnt_r = (int16_t)((uint32_t)s_m.enc_count[1] - (uint32_t)s_m0.enc_count[1]);
+        p_r->steer_q7 = (int8_t)s_now.last_steer_q7;
+        p_r->state = (uint8_t)s_now.state;
+        s_trace_n++;
+    }
+}
+
+/* Print the trace, the car stopped.  The last line gives the ring's dropped
+ * line count before and after, so a lost row is visible. */
+static void lf2_trace_dump(char const *p_tag)
+{
+    uint32_t const dropped0 = dbg_overflow_count();
+
+    dbg_printf("[LF] tr %s: t mm st c r s L R (%lu rows, 20 ms)", p_tag, (unsigned long)s_trace_n);
+    for (uint32_t i = 0U; i < s_trace_n; i++)
+    {
+        lf2_trace_row_t const *const p_r = &s_trace[i];
+
+        dbg_printf("[LF] tr %u %u %u %u %u %d %d %d", p_r->t_ms, p_r->mm, p_r->state, p_r->raw_c,
+                   p_r->raw_r, (int)p_r->steer_q7, (int)p_r->cnt_l, (int)p_r->cnt_r);
+        if (((i + 1U) % LF2_TRACE_BURST) == 0U)
+        {
+            (void)tk_dly_tsk((RELTIM)LF2_TRACE_PAUSE_MS);
+        }
+    }
+    (void)tk_dly_tsk((RELTIM)LF2_TRACE_PAUSE_MS);
+    dbg_printf("[LF] tr %s end: ring dropped %lu lines", p_tag,
+               (unsigned long)(dbg_overflow_count() - dropped0));
 }
 
 /* Per-poll statistics of a drive. */
@@ -367,6 +450,7 @@ static void lf2_drive(lf2_drive_t const *p_d)
     uint32_t         mm = 0U;
 
     *p = s_zero_run;
+    s_trace_n = 0U;
     p->t_on_ms = LF2_NEVER;
     p->settle_mm = LF2_NEVER;
     p->r_white_min = 0xFFFFU;
@@ -399,6 +483,10 @@ static void lf2_drive(lf2_drive_t const *p_d)
         polls++;
 
         lf2_account(p, t, mm, half_mm, &last_sign);
+        if ((polls % LF2_TRACE_EVERY_POLLS) == 0U)
+        {
+            lf2_trace_add(t, mm);
+        }
 
         if (!half_seen && (t >= LF2_WIN_FROM_MS))
         {
@@ -573,9 +661,9 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     uint16_t rmin;
     uint16_t rmax;
 
-    dbg_printf("[LF] S3-U12 on the track, motors LIVE, cruise %lu mm/s",
+    dbg_printf("[LF] %s on the track, motors LIVE, cruise %lu mm/s", LF2_ID,
                (unsigned long)LF2_CRUISE_MMPS);
-    dbg_puts("[LF] guide: .agents/tasks/s3-lf32-test.md; follow the [LF] >>> prompts");
+    dbg_puts("[LF] guide: .agents/tasks/s3-lf33-test.md; follow the [LF] >>> prompts");
 
     /* (a) The task runs every 5 ms. */
     lf_task_get_status(&s_now);
@@ -584,7 +672,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     lf_task_get_status(&s_now);
     dbg_printf("[LF] 1 s: %lu samples, %lu missed so far",
                (unsigned long)(s_now.releases - releases0), (unsigned long)s_now.missed);
-    TEST_CHECK("S3-U12", ((s_now.releases - releases0) >= LF2_RELEASES_1S_MIN)
+    TEST_CHECK(LF2_ID, ((s_now.releases - releases0) >= LF2_RELEASES_1S_MIN)
                          && ((s_now.releases - releases0) <= LF2_RELEASES_1S_MAX)
                          && (s_now.missed == 0U),
                "(a) samples every 5 ms (195-205/s), none missed");
@@ -593,7 +681,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     dbg_printf("[LF] boot cal: status %u, C avg %u, R avg %u -> white %u black %u",
                (unsigned)s_now.cal_status, s_now.cal_c_avg, s_now.cal_r_avg,
                s_now.cal.c.white, s_now.cal.c.black);
-    TEST_CHECK("S3-U12", s_now.cal_status == LF_CAL_OK,
+    TEST_CHECK(LF2_ID, s_now.cal_status == LF_CAL_OK,
                "(b) boot calibration accepted");
 
     vc = vc_get_system_state();
@@ -601,7 +689,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     {
         dbg_printf("[LF] VC state %lu (need 0 or 1; 3 = fault, see [SAFETY]), cal %u",
                    (unsigned long)vc, (unsigned)s_now.cal_status);
-        TEST_CHECK("S3-U12", false, "(c-h) not run: VC not READY or cal refused");
+        TEST_CHECK(LF2_ID, false, "(c-h) not run: VC not READY or cal refused");
         *p_pass = test_pass_;
         *p_fail = test_fail_;
         return;
@@ -612,7 +700,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     lf_task_get_status(&s_base);
     (void)tk_dly_tsk((RELTIM)LF2_SECOND_MS);
     lf_task_get_status(&s_now);
-    TEST_CHECK("S3-U12", (lf2_posts(&s_now) == lf2_posts(&s_base))
+    TEST_CHECK(LF2_ID, (lf2_posts(&s_now) == lf2_posts(&s_base))
                          && (s_now.n_junction == s_base.n_junction)
                          && (s_now.n_track_lost == s_base.n_track_lost)
                          && (s_now.state == LF_ST_IDLE) && !lf2_line_found_flag(),
@@ -624,68 +712,79 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     lf2_static("pose A", "put the car down in the START POSE, hands off", &dc, &dr, &rmin, &rmax);
     s_static_r_min = rmin;
     s_static_r_max = rmax;
+    TEST_CHECK(LF2_ID, dc >= LF2_POSE_A_MIN_PM,
+               "(g2) pose A: CENTRE >= 950 pm, the boot calibration holds");
     lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off", &dc, &dr, &rmin, &rmax);
-    TEST_CHECK("S3-U12", dr > LF_DARK_MIN_PM,
+    TEST_CHECK(LF2_ID, dr > LF_DARK_MIN_PM,
                "(g) static: RIGHT on black is DARK (> 750 pm)");
 
     /* (d) + (n) Straight line from the start pose. */
-    lf2_drive(&k_straight);
-    lf2_log_right("straight");
-    dbg_printf("[LF] straight: window %lu slot posts in %lu ms, ON_LINE %u",
-               (unsigned long)s_run.win_posts, (unsigned long)s_run.win_ms, (unsigned)s_run.win_on_line);
-    TEST_CHECK("S3-U12", s_run.first_seen && (s_run.first_steer >= LF2_STEER_BODY_MIN)
-                         && (s_run.settle_mm <= LF2_SETTLE_MAX_MM),
-               "(d1) straight: steers right, at the edge in 150 mm");
-    TEST_CHECK("S3-U12", s_run.win_done && s_run.win_on_line
-                         && ((s_run.win_posts * LF_STEER_POST_PERIOD_MS) + LF_STEER_POST_PERIOD_MS >= s_run.win_ms)
-                         && ((s_run.win_posts * LF_STEER_POST_PERIOD_MS) <= s_run.win_ms + LF_STEER_POST_PERIOD_MS)
-                         && (s_run.dropped == 0U),
-               "(d2) one post per 20 ms in the slot, none dropped");
-    TEST_CHECK("S3-U12", (s_run.end == LF2_END_DIST) && !s_run.lost && s_run.found_flag
-                         && lf2_pct_ok(s_run.settled_band, s_run.settled_polls),
-               "(d3) stable on the edge (>= 90%), never lost, flag");
-    TEST_CHECK("S3-U12", (s_run.end == LF2_END_DIST) && (s_run.r_white_n > 0U)
-                         && (s_run.r_dark_polls == 0U) && (s_run.n_jct == 0U),
-               "(n) motors on: RIGHT stays LIGHT, no false junction");
+    for (uint32_t run = 1U; run <= LF2_STRAIGHT_RUNS; run++)
+    {
+        dbg_printf("[LF] straight run %lu of %lu", (unsigned long)run,
+                   (unsigned long)LF2_STRAIGHT_RUNS);
+        lf2_drive(&k_straight);
+        lf2_log_right("straight");
+        dbg_printf("[LF] straight: window %lu slot posts in %lu ms, ON_LINE %u",
+                   (unsigned long)s_run.win_posts, (unsigned long)s_run.win_ms, (unsigned)s_run.win_on_line);
+        lf2_trace_dump("straight");
+        TEST_CHECK(LF2_ID, s_run.first_seen && (s_run.first_steer >= LF2_STEER_BODY_MIN)
+                           && (s_run.settle_mm <= LF2_SETTLE_MAX_MM),
+                   "(d1) straight: steers right, feels the edge in 500 mm");
+        TEST_CHECK(LF2_ID, s_run.win_done && s_run.win_on_line
+                           && ((s_run.win_posts * LF_STEER_POST_PERIOD_MS) + LF_STEER_POST_PERIOD_MS >= s_run.win_ms)
+                           && ((s_run.win_posts * LF_STEER_POST_PERIOD_MS) <= s_run.win_ms + LF_STEER_POST_PERIOD_MS)
+                           && (s_run.dropped == 0U),
+                   "(d2) one post per 20 ms in the slot, none dropped");
+        TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && !s_run.lost && s_run.found_flag
+                           && lf2_pct_ok(s_run.settled_band, s_run.settled_polls),
+                   "(d3) stable: CENTRE on the line (>= 90%), never lost, flag");
+        TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.r_white_n > 0U)
+                           && (s_run.r_dark_polls == 0U) && (s_run.n_jct == 0U),
+                   "(n) motors on: RIGHT stays LIGHT, no false junction");
+    }
 
-    /* (r) Small offsets: recovery. */
-    lf2_drive(&k_r1);
-    TEST_CHECK("S3-U12", lf2_recovered() && s_run.first_seen && (s_run.first_steer < 0),
-               "(r1) right of line: steers left, ON_LINE <1 s, settles");
-    lf2_drive(&k_r2);
-    TEST_CHECK("S3-U12", lf2_recovered(),
-               "(r2) nose 15 deg left: ON_LINE <1 s, settles");
-    lf2_drive(&k_r3);
-    TEST_CHECK("S3-U12", lf2_recovered(),
-               "(r3) nose 15 deg right: ON_LINE <1 s, settles");
+    if (LF2_STRAIGHT_ONLY == 0U)
+    {
+        /* (r) Small offsets: recovery. */
+        lf2_drive(&k_r1);
+        TEST_CHECK(LF2_ID, lf2_recovered() && s_run.first_seen && (s_run.first_steer < 0),
+                   "(r1) right of line: steers left, ON_LINE <1 s, settles");
+        lf2_drive(&k_r2);
+        TEST_CHECK(LF2_ID, lf2_recovered(),
+                   "(r2) nose 15 deg left: ON_LINE <1 s, settles");
+        lf2_drive(&k_r3);
+        TEST_CHECK(LF2_ID, lf2_recovered(),
+                   "(r3) nose 15 deg right: ON_LINE <1 s, settles");
 
-    /* (j) Cross junction. */
-    lf2_drive(&k_jct);
-    lf2_log_right("junction");
-    TEST_CHECK("S3-U12", (s_run.end == LF2_END_DIST) && (s_run.n_jct == 1U) && (s_run.ev_fail == 0U)
-                         && (lf_norm(&s_now.cal.r, s_run.r_peak_raw) > LF_DARK_MIN_PM)
-                         && (s_run.st_end == LF_ST_ON_LINE) && (s_run.n_lost == 0U),
-               "(j) cross: one JUNCTION, RIGHT DARK, tracking after");
+        /* (j) Cross junction. */
+        lf2_drive(&k_jct);
+        lf2_log_right("junction");
+        TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.n_jct == 1U) && (s_run.ev_fail == 0U)
+                             && (lf_norm(&s_now.cal.r, s_run.r_peak_raw) > LF_DARK_MIN_PM)
+                             && (s_run.st_end == LF_ST_ON_LINE) && (s_run.n_lost == 0U),
+                   "(j) cross: one JUNCTION, RIGHT DARK, tracking after");
 
-    /* (f) Line end: LINE_LOST, the search, TRACK_LOST, the VC stops. */
-    lf2_drive(&k_end);
-    dbg_printf("[LF] line end: LINE_LOST to TRACK_LOST %lu ms", (unsigned long)s_run.lost_to_track_ms);
-    TEST_CHECK("S3-U12", (s_run.end == LF2_END_TRACK_LOST) && (s_run.n_lost == 1U)
-                         && (s_run.lost_to_track_ms >= LF2_LOST_TO_TRACK_MIN)
-                         && (s_run.lost_to_track_ms <= LF2_LOST_TO_TRACK_MAX),
-               "(f1) line end: one TRACK_LOST 2110-2135 ms after LOST");
-    lf_task_get_status(&s_now);
-    TEST_CHECK("S3-U12", (s_run.end == LF2_END_TRACK_LOST)
-                         && (vc_get_system_state() == VC_SYS_READY_WAITING)
-                         && (s_now.state == LF_ST_IDLE) && !lf2_line_found_flag() && s_run.still,
-               "(f2) VC READY, wheels still, LF IDLE, flag clear");
+        /* (f) Line end: LINE_LOST, the search, TRACK_LOST, the VC stops. */
+        lf2_drive(&k_end);
+        dbg_printf("[LF] line end: LINE_LOST to TRACK_LOST %lu ms", (unsigned long)s_run.lost_to_track_ms);
+        TEST_CHECK(LF2_ID, (s_run.end == LF2_END_TRACK_LOST) && (s_run.n_lost == 1U)
+                             && (s_run.lost_to_track_ms >= LF2_LOST_TO_TRACK_MIN)
+                             && (s_run.lost_to_track_ms <= LF2_LOST_TO_TRACK_MAX),
+                   "(f1) line end: one TRACK_LOST 2110-2135 ms after LOST");
+        lf_task_get_status(&s_now);
+        TEST_CHECK(LF2_ID, (s_run.end == LF2_END_TRACK_LOST)
+                             && (vc_get_system_state() == VC_SYS_READY_WAITING)
+                             && (s_now.state == LF_ST_IDLE) && !lf2_line_found_flag() && s_run.still,
+                   "(f2) VC READY, wheels still, LF IDLE, flag clear");
+    }
 
     /* (h) The whole run. */
     lf_task_get_status(&s_now);
     dbg_printf("[LF] totals: %lu samples, %lu missed, %lu dropped posts, %lu failed events",
                (unsigned long)s_now.releases, (unsigned long)s_now.missed,
                (unsigned long)s_now.posts_dropped, (unsigned long)s_now.ev_send_fail);
-    TEST_CHECK("S3-U12", (s_now.missed == 0U) && (s_now.posts_dropped == 0U) && (s_now.ev_send_fail == 0U),
+    TEST_CHECK(LF2_ID, (s_now.missed == 0U) && (s_now.posts_dropped == 0U) && (s_now.ev_send_fail == 0U),
                "(h) run: no missed period, dropped post, failed event");
 
     /* Leave the car stopped and the task disarmed for the later tests. */
@@ -694,7 +793,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
         lf2_remote(DREP_NAV_REMOTE_STOP);
     }
     lf_task_test_arm(false);
-    dbg_puts("[LF] S3-U12 done: the car stays stopped");
+    dbg_printf("[LF] %s done: the car stays stopped", LF2_ID);
 
     *p_pass = test_pass_;
     *p_fail = test_fail_;

@@ -10,7 +10,7 @@
  *
  *  Integer widths: raw ADC <= 4095 and darkness <= 1000, so
  *  (raw - white) * 1000 <= 4 095 000 fits uint32_t; steering products
- *  (d - 500) * LF_KP_Q7 stay within +-64 000 in int32_t.
+ *  (d - LF_EDGE_TARGET_PM) * LF_KP_Q7 stay within +-21 600 in int32_t.
  */
 
 #include <stdbool.h>
@@ -28,16 +28,14 @@
 #define LF_N_SEARCH     LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
 #define LF_N_SWAP       LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
 #define LF_N_STOP       LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
-#define LF_N_SIDE_MEM   LF_SAMPLES(LF_SIDE_MEMORY_MS)   /* 20  = 100 ms */
 #define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 100 = 500 ms */
-
-/* r_quiet_n saturates here (anything above the side memory is "long ago"). */
-#define LF_QUIET_MAX    (LF_N_SIDE_MEM + 1U)
 
 _Static_assert((uint32_t)LF_ST_COUNT == DREP_FSM_LF_STATES,
                "lf_state_t is the telemetry LF FSM code");
 _Static_assert(LF_LIGHT_MAX_PM < LF_EDGE_TARGET_PM, "edge target above LIGHT");
-_Static_assert(LF_EDGE_TARGET_PM < LF_DARK_MIN_PM, "edge target below DARK");
+_Static_assert(LF_EDGE_TARGET_PM < LF_PM_FULL, "the line's body steers right");
+_Static_assert(LF_RECOVER_Q7 <= LF_SEARCH_Q7, "the search is never gentler than recovery");
+_Static_assert(LF_SEARCH_Q7 <= LF_STEER_FULL_Q7, "the search fits full steering");
 _Static_assert(LF_DARK_MIN_PM < LF_PM_FULL, "DARK reachable");
 _Static_assert(LF_N_SWAP < LF_N_SEARCH, "the search swaps sides before T_search");
 _Static_assert(LF_STEER_POST_PERIOD_MS == MOTION_PERIOD_MS,
@@ -182,7 +180,7 @@ lf_zone_t lf_zone_update(lf_zone_filt_t *p_f, uint16_t d_pm)
 int32_t lf_edge_steer(uint16_t d_c_pm)
 {
     int32_t const d = (d_c_pm > LF_PM_FULL) ? (int32_t)LF_PM_FULL : (int32_t)d_c_pm;
-    int32_t s = ((d - (int32_t)LF_EDGE_TARGET_PM) * LF_KP_Q7) / (int32_t)LF_EDGE_TARGET_PM;
+    int32_t s = ((d - (int32_t)LF_EDGE_TARGET_PM) * LF_KP_Q7) / LF_KP_SPAN_PM;
 
     if (s > LF_STEER_FULL_Q7)
     {
@@ -241,9 +239,9 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
  *      cross line arriving (or an angled line) -> hold the last steering
  *      until the junction is confirmed or rejected.  CENTRE's extra darkness
  *      there is the cross line, not a drift.
- *   2. CENTRE white: off the line -> full steer towards the remembered side.
- *      This includes the overshoot left across the whole line: RIGHT then
- *      sees the line, and update_side() has made the side RIGHT.
+ *   2. CENTRE white: off the line -> recovery steer towards the remembered
+ *      side.  This includes the overshoot left across the whole line: RIGHT
+ *      then sees the line, and update_side() has made the side RIGHT.
  *   3. Otherwise: proportional edge steering from CENTRE.
  */
 static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
@@ -254,7 +252,7 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     }
     else if (p_v->c_now == LF_ZONE_LIGHT)
     {
-        p_lf->steer_q7 = side_steer(p_lf->side, LF_STEER_FULL_Q7);
+        p_lf->steer_q7 = side_steer(p_lf->side, LF_RECOVER_Q7);
     }
     else
     {
@@ -262,19 +260,25 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     }
 }
 
-/* Side memory.  While CENTRE is on the line, the side is RIGHT if RIGHT saw
- * darkness within LF_SIDE_MEMORY_MS, else LEFT (CENTRE slid off its edge).
- * Once CENTRE is off the line the side is kept; RIGHT seeing the line then
- * still makes it RIGHT. */
+/* Side memory: the line is on the side of the sensor that saw it last.
+ * RIGHT sits right of CENTRE, so RIGHT on the line means the line is to the
+ * right; CENTRE on it with RIGHT off means that if CENTRE now slides off, it
+ * leaves to the right and the line is to the left.  With both off, the side
+ * is kept.  Which sensor saw the line last is what counts, not how long ago:
+ * coming back from the left, RIGHT crosses the line first, then CENTRE, and
+ * CENTRE can cross all 18 mm in 25 ms.  A rule based on time still said
+ * "right" after that and drove the car away from the line (S3-U12, 4 Nov).
+ * Between CENTRE leaving to the left and RIGHT arriving (the 22 mm spacing
+ * less the line) the side is briefly wrong: RIGHT corrects it within 4 mm. */
 static void update_side(lf_core_t *p_lf, lf_view_t const *p_v)
 {
-    if (p_v->c_now != LF_ZONE_LIGHT)
-    {
-        p_lf->side = (p_lf->r_quiet_n <= LF_N_SIDE_MEM) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
-    }
-    else if (p_v->r_now != LF_ZONE_LIGHT)
+    if (p_v->r_now != LF_ZONE_LIGHT)
     {
         p_lf->side = LF_SIDE_RIGHT;
+    }
+    else if (p_v->c_now != LF_ZONE_LIGHT)
+    {
+        p_lf->side = LF_SIDE_LEFT;
     }
     else
     {
@@ -307,7 +311,7 @@ static void enter_search(lf_core_t *p_lf)
 {
     enter(p_lf, LF_ST_REACQUIRING);
     p_lf->timer_n = 1U;         /* this sample is the search's first */
-    p_lf->steer_q7 = side_steer(p_lf->side, LF_STEER_FULL_Q7);
+    p_lf->steer_q7 = side_steer(p_lf->side, LF_SEARCH_Q7);
 }
 
 static void enter_turn(lf_core_t *p_lf, lf_manoeuvre_t man)
@@ -365,7 +369,6 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
  * wrong way. */
 static void forget_cross_line(lf_core_t *p_lf)
 {
-    p_lf->r_quiet_n = LF_QUIET_MAX;
     p_lf->side = LF_SIDE_LEFT;
 }
 
@@ -519,7 +522,7 @@ static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
     return may_post;
 }
 
-/* REACQUIRING_TRACK: full steer towards the remembered side, then the other
+/* REACQUIRING_TRACK: search steer towards the remembered side, then the other
  * side, until CENTRE sees solid black or T_search runs out. */
 static bool st_search(lf_core_t *p_lf, lf_view_t const *p_v, lf_out_t *p_out)
 {
@@ -541,7 +544,7 @@ static bool st_search(lf_core_t *p_lf, lf_view_t const *p_v, lf_out_t *p_out)
     {
         lf_side_t const s = (p_lf->timer_n > LF_N_SWAP) ? other_side(p_lf->side) : p_lf->side;
 
-        p_lf->steer_q7 = side_steer(s, LF_STEER_FULL_Q7);
+        p_lf->steer_q7 = side_steer(s, LF_SEARCH_Q7);
     }
 
     return may_post;
@@ -590,7 +593,6 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->prev_running = false;
     p_lf->junction_armed = true;
     p_lf->side = LF_SIDE_LEFT;
-    p_lf->r_quiet_n = LF_QUIET_MAX;
     p_lf->steer_q7 = 0;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
@@ -614,25 +616,13 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
     bool      may_post = false;
     bool      rising;
 
-    /* Sensors: darkness, instant zones, confirmed zones, RIGHT's age. */
+    /* Sensors: darkness, instant zones, confirmed zones, the side. */
     v.d_c = p_lf->cal_ok ? lf_norm(&p_lf->cal.c, p_in->raw_c) : 0U;
     v.d_r = p_lf->cal_ok ? lf_norm(&p_lf->cal.r, p_in->raw_r) : 0U;
     v.c_now = lf_zone_of(v.d_c);
     v.r_now = lf_zone_of(v.d_r);
     v.zc = lf_zone_update(&p_lf->zc, v.d_c);
     v.zr = lf_zone_update(&p_lf->zr, v.d_r);
-    if (v.r_now != LF_ZONE_LIGHT)
-    {
-        p_lf->r_quiet_n = 0U;
-    }
-    else if (p_lf->r_quiet_n < LF_QUIET_MAX)
-    {
-        p_lf->r_quiet_n++;
-    }
-    else
-    {
-        /* saturated */
-    }
     update_side(p_lf, &v);
 
     rising = p_in->running && !p_lf->prev_running;
