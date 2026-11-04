@@ -132,6 +132,17 @@
 #define LF2_JMAT_AFTER_MAX_MM   (35U)
 /** Time to measure the car where it stopped, before the next drive. */
 #define LF2_JMAT_MEASURE_S      (45U)
+/** Time to place the car by the live CENTRE reading, and how often it prints.
+ *  Hands off for the last LF2_JMAT_HANDS_OFF_S seconds. */
+#define LF2_JMAT_PLACE_S        (25U)
+#define LF2_JMAT_HANDS_OFF_S    (4U)
+#define LF2_JMAT_LIVE_MS        (500U)
+/** CENTRE's start: find the line's right edge by the reading (this band),
+ *  then nudge back onto solid black.  In the host model a start 1-4 mm inside
+ *  the edge gives the best launch; on the grey itself it is much worse, and
+ *  below LF_DARK_MIN_PM the core starts by searching. */
+#define LF2_JMAT_EDGE_PM_LO     (700U)
+#define LF2_JMAT_EDGE_PM_HI     (980U)
 
 /** Drive limits (wheel travel).  The time limit is the travel at cruise
  *  plus 1.5 s. */
@@ -151,6 +162,8 @@
 
 _Static_assert((LF2_JMAT_DELAY_MIN_MM < LF_D_JCT_POST_MM) && (LF_D_JCT_POST_MM < LF2_JMAT_DELAY_MAX_MM),
                "the (j2) window brackets the junction post distance");
+_Static_assert((LF2_JMAT_EDGE_PM_LO < LF_EDGE_TARGET_PM) && (LF_EDGE_TARGET_PM < LF2_JMAT_EDGE_PM_HI),
+               "the placement band holds the edge target");
 
 /** Why a drive ended. */
 typedef enum
@@ -246,6 +259,7 @@ typedef struct
     uint32_t  tail_c_on;        /**< ... with CENTRE on the line */
     uint32_t  tail_r_dark;      /**< ... with RIGHT not white */
     uint32_t  vc_end;           /**< VC state at the end */
+    uint16_t  start_c_pm;       /**< CENTRE darkness at START */
 } lf2_run_t;
 
 /* The test task's stack is small: the snapshots live here. */
@@ -336,6 +350,61 @@ static void lf2_place(char const *p_tag, char const *p_place, bool drives)
             lf2_remote(DREP_NAV_REMOTE_RESET);
         }
         (void)tk_dly_tsk((RELTIM)LF2_SECOND_MS);
+    }
+}
+
+/* What the live CENTRE reading means.  Both edges read the same grey, so the
+ * operator always comes from solid black, sliding the car to its right. */
+static char const *lf2_edge_hint(uint16_t d_c)
+{
+    char const *p_hint = "AT THE EDGE: nudge LEFT about 2 mm, back to black";
+
+    if (d_c > LF2_JMAT_EDGE_PM_HI)
+    {
+        p_hint = "black: if the edge was found, stop here; if not, slide RIGHT";
+    }
+    else if (d_c < LF2_JMAT_EDGE_PM_LO)
+    {
+        p_hint = "too far: slide back LEFT onto the edge";
+    }
+    else
+    {
+        /* in the band */
+    }
+    return p_hint;
+}
+
+/* Place the car by the live CENTRE reading, then count down.  The VC is
+ * READY meanwhile (motors stopped).  A latched fault is RESET as in
+ * lf2_place(). */
+static void lf2_place_live(char const *p_tag, char const *p_place)
+{
+    uint32_t const ticks = (LF2_JMAT_PLACE_S * LF2_SECOND_MS) / LF2_JMAT_LIVE_MS;
+    uint32_t const off_ticks = (LF2_JMAT_HANDS_OFF_S * LF2_SECOND_MS) / LF2_JMAT_LIVE_MS;
+
+    dbg_printf("[LF] >>> %s: %s", p_tag, p_place);
+    dbg_puts("[LF] >>> CENTRE on black, slide RIGHT to AT THE EDGE, then nudge LEFT 2 mm to black");
+    for (uint32_t left = ticks; left > 0U; left--)
+    {
+        uint16_t d_c;
+        uint16_t d_r;
+
+        lf_task_get_status(&s_now);
+        d_c = lf_norm(&s_now.cal.c, s_now.raw_c);
+        d_r = lf_norm(&s_now.cal.r, s_now.raw_r);
+        dbg_printf("[LF] place %lu s: CENTRE %u pm, RIGHT %u pm: %s",
+                   (unsigned long)((left * LF2_JMAT_LIVE_MS) / LF2_SECOND_MS), d_c, d_r,
+                   lf2_edge_hint(d_c));
+        if (left == off_ticks)
+        {
+            dbg_puts("[LF] >>> HANDS OFF NOW: the car DRIVES at 0 (catch and lift it to stop)");
+            if (vc_get_system_state() == VC_SYS_SAFETY_FAULT_LATCHED)
+            {
+                dbg_puts("[LF] fault latched: test sends RESET (car must be still)");
+                lf2_remote(DREP_NAV_REMOTE_RESET);
+            }
+        }
+        (void)tk_dly_tsk((RELTIM)LF2_JMAT_LIVE_MS);
     }
 }
 
@@ -544,7 +613,14 @@ static void lf2_drive(lf2_drive_t const *p_d)
     p->r_white_min = 0xFFFFU;
     p->win_on_line = true;
 
-    lf2_place(p_d->p_tag, p_d->p_place, true);
+    if (p_d->jmat)
+    {
+        lf2_place_live(p_d->p_tag, p_d->p_place);
+    }
+    else
+    {
+        lf2_place(p_d->p_tag, p_d->p_place, true);
+    }
     if (vc_get_system_state() != VC_SYS_READY_WAITING)
     {
         p->end = LF2_END_NOT_READY;
@@ -554,6 +630,7 @@ static void lf2_drive(lf2_drive_t const *p_d)
     }
 
     lf_task_get_status(&s_base);
+    p->start_c_pm = lf_norm(&s_base.cal.c, s_base.raw_c);
     (void)motion_get_state(&s_m0);
     t0 = app_period_now_ms();
     lf2_remote(DREP_NAV_REMOTE_START);
@@ -720,6 +797,8 @@ static void lf2_jmat_report(uint32_t run)
     lf2_run_t const *const p = &s_run;
     uint32_t const total = p->mm_end + p->mm_stop;
 
+    dbg_printf("[LF] jmat: START with CENTRE at %u pm (edge band %u-%u)", p->start_c_pm,
+               LF2_JMAT_EDGE_PM_LO, LF2_JMAT_EDGE_PM_HI);
     dbg_printf("[LF] jmat: detected %lu mm at %lu ms, JUNCTION %lu mm at %lu ms, delay %lu mm %lu ms",
                (unsigned long)p->mm_det, (unsigned long)p->t_det_ms, (unsigned long)p->mm_post,
                (unsigned long)p->t_post_ms, (unsigned long)(p->mm_post - p->mm_det),

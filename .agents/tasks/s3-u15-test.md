@@ -15,18 +15,30 @@ It also checks whether the wheel distance is accurate. Left, right, U-turn, curv
 ## Setup
 
 1. **Track:** standalone junction mat, approaching from the long side. The line ends about 140 mm past the cross.
-2. **Power:** battery disconnected, USB only, so unplugging stops everything. Long cable, held loosely above and behind the car.
-3. **Space:** keep hands and objects 25 cm clear in front of the car. Cables clear of the sonar.
-4. **Ruler marks:** have tape, a pen and a ruler ready.
+2. **Power:** battery disconnected, USB only, so unplugging stops everything. Long cable, **held slack, overhead and behind the car, on every drive.** It must never pull on the car.
+3. **Wires:** tie them clear, so nothing can touch or pull on the right wheel. With the cable loose, the right wheel ran about 45 mm/s slow past the cross; held clear, it did not.
+4. **Space:** keep hands and objects 25 cm clear in front of the car. Cables clear of the sonar.
+5. **Ruler marks:** have tape, a pen and a ruler ready.
 
 ## Start pose
 
-- **CENTRE on black, RIGHT on white.**
-- CENTRE sensing point 250-270 mm before the centre of the cross, the same distance every drive.
-- CENTRE slightly right of the line's middle, as in the S3-U13i run.
-- Car parallel to the line.
+- **Boot and pose A:** CENTRE on black, in the line's middle, RIGHT on white.
+- **Pose B:** CENTRE on white, RIGHT on black.
+- **Each drive:** CENTRE on black just inside the line's RIGHT edge, placed by the live reading below, RIGHT on white, car parallel to the line, CENTRE sensing point 250-270 mm before the centre of the cross, the same distance every drive.
 
-Boot, pose A and every drive use this pose. Pose B: **CENTRE on white, RIGHT on black.**
+### Placing CENTRE on the right edge
+
+The log prints a `[LF] place` line twice a second for 25 s:
+
+1. Put the car down with CENTRE clearly on black.
+2. Slide the car slowly to its RIGHT, keeping it parallel to the line, until the line says `AT THE EDGE` (CENTRE 700-980 pm).
+3. Nudge the car about 2 mm back to its LEFT, until the reading says `black` again. Stop there. CENTRE should now be 1-4 mm inside the right edge.
+4. If it says `too far`, slide back left and start again from step 2.
+5. `HANDS OFF NOW` comes 4 s before the car drives.
+
+Do not leave CENTRE on the grey: in the host model that start is much worse than solid black just inside the edge.
+
+Always come from black. The left edge reads the same grey, so a reading alone cannot tell the two edges apart.
 
 ## Each drive
 
