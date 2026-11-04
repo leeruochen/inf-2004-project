@@ -9,25 +9,27 @@
  *  Line-Following task (LF-3) will call lf_core_step() once per 5 ms sample
  *  and act on the result; nothing here sends a message or touches the ADC.
  *
- *  Geometry (ARCHITECTURE.md D11; measured on the car, 3 Nov 2026):
- *    CENTRE and RIGHT sensors ~22 mm apart, centre to centre; black line
- *    18 mm wide; black reads HIGHER than white (LF-1, S3-U09).
+ *  Geometry (ARCHITECTURE.md D11; ruler on the car, 4 Nov 2026):
+ *    CENTRE and RIGHT sensors 26 mm apart, centre to centre, both 10 mm
+ *    above the track; black line 18 mm wide; black reads HIGHER than white
+ *    (LF-1, S3-U09).
  *
  *  How it follows the line ("edge following"):
- *    CENTRE rides on the line's RIGHT edge, half over black.  Its darkness
- *    d (0..1000 per mille of the calibrated white..black span) is the error:
- *      d > 500  car drifted left   -> steer right (steer > 0)
- *      d < 500  car drifted right  -> steer left  (steer < 0)
+ *    CENTRE rides just inside the line's RIGHT edge, nearly all over black.
+ *    Its darkness d (0..1000 per mille of the calibrated white..black span)
+ *    against LF_EDGE_TARGET_PM is the error:
+ *      d > target  car drifted left   -> steer right (steer > 0)
+ *      d < target  car drifted right  -> steer left  (steer < 0)
  *    Steering sign: steer > 0 = steer right (data_repr.h, task_motion.c).
- *    RIGHT is never on the line while CENTRE tracks the edge (it sits 22 mm
+ *    RIGHT is never on the line while CENTRE tracks the edge (it sits 26 mm
  *    to the right, the line is 18 mm wide; CENTRE has left the line before
  *    RIGHT can reach it), so any darkness under RIGHT means something:
  *      - CENTRE on the line too: a cross line arriving -> hold the steering;
  *        both solid black for 3 samples -> JUNCTION;
  *      - CENTRE off the line: the car overshot left across the whole line
- *        -> full right.
- *    RIGHT is also the side memory: the line was lost to the right if RIGHT
- *    saw it shortly before CENTRE lost it, otherwise to the left.
+ *        -> recovery steering to the right (LF_RECOVER_Q7).
+ *    RIGHT is also the side memory: whichever sensor saw the line last
+ *    names the side it was lost on (update_side() in lf_core.c).
  *
  *  Junction post distance: Motion turns by pivoting about the axle
  *  midpoint, F = LF_D_PIVOT_MM behind the sensors.  So JUNCTION is posted
@@ -36,9 +38,11 @@
  *  is on the cross line and the sensors land on the new branch.  Until the
  *  post the core drives straight over the cross line, then tracks the line
  *  if it goes on (straight if not: a T junction), and never reports the
- *  line ending.  Simulated (S3-U10 test 19): the turn lands cleanly while
- *  the pivot centre is 0..+20 mm past the cross line's centre, i.e. for a
- *  real F of 62.5..75 mm at 200 and 300 mm/s.
+ *  line ending.  Simulated at 200 mm/s (4 Nov 2026): left and right turns
+ *  end on the branch for a real F of 95..145 mm, the pivot centre landing
+ *  -20..+30 mm from the cross line's centre (+5 at the measured 120).  In
+ *  the model the turn overruns, so most turns go LINE_LOST and search
+ *  before finding the branch; the real overrun is not measured yet.
  *
  *  Capture rule: CENTRE's edge is trusted only after CENTRE has seen solid
  *  black (zone DARK).  From the line body, "darker -> steer right" walks
@@ -79,10 +83,10 @@
 #define LF_MIN_SPAN_RAW         (400U)
 
 /** Steering per LF_KP_SPAN_PM of darkness away from the target, Q7.  Low on
- *  purpose (LF-3.3): the sensors sit 70 mm ahead of the axle, so a turn
+ *  purpose (LF-3.3): the sensors sit 120 mm ahead of the axle, so a turn
  *  swings them sideways at once, and steering at 64 oscillated across the
- *  whole line on the car.  At 24 the host model settles with no oscillation
- *  and with Kp 16 it failed the 15 degree start.  TUNE */
+ *  whole line on the car.  At 24 the host model settles with no oscillation;
+ *  Kp 16 failed the 15 degree start when this was tuned.  TUNE */
 #define LF_KP_Q7                (24)
 /** Darkness span that LF_KP_Q7 applies to. */
 #define LF_KP_SPAN_PM           (500)
@@ -107,8 +111,8 @@
 
 /** Sensing point of the line sensors to the wheel axle, which is Motion's
  *  pivot centre for a turn (task_motion.c TURN_L/TURN_R/UTURN drive the
- *  wheels in opposite directions).  Measured on the car, 3 Nov 2026. */
-#define LF_D_PIVOT_MM           (70U)
+ *  wheels in opposite directions).  Ruler on the car, 4 Nov 2026. */
+#define LF_D_PIVOT_MM           (120U)
 /** JUNCTION is posted this much before the axle reaches the cross line,
  *  for the car's travel while the turn command takes effect (Motion's
  *  next 20 ms period, then the wheels slowing). TUNE */
@@ -119,9 +123,9 @@
  *  turn of WHEEL_CIRC_MM (config/thresholds.h). */
 #define LF_D_JCT_POST_CNT       ((LF_D_JCT_POST_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 /** JUNCTION is posted after this long even if the odometer has not moved
- *  (an encoder fault); at cruise the travel takes 233 ms (300 mm/s) to
- *  350 ms (bring-up 200 mm/s). TUNE */
-#define LF_T_JCT_MAX_MS         (500U)
+ *  (an encoder fault); at cruise the travel takes 400 ms (300 mm/s) to
+ *  600 ms (bring-up 200 mm/s). TUNE */
+#define LF_T_JCT_MAX_MS         (900U)
 
 /* Times as sample counts (one lf_core_step() call = LF_SAMPLE_PERIOD_MS). */
 #define LF_SAMPLES(ms)          ((uint32_t)(ms) / LF_SAMPLE_PERIOD_MS)

@@ -67,8 +67,8 @@
  *  (1000 - 900) / 500 = +4 (lf_core.h): any right steering passes. */
 #define LF2_STEER_BODY_MIN      (1)
 /** "Settled": CENTRE first feels the right edge (below 950 per mille, not
- *  on white) within this wheel travel of START.  The host model takes 168
- *  mm from the line's middle and 374 mm from a poor placement. */
+ *  on white) within this wheel travel of START.  The host model takes 132
+ *  mm from the line's middle and 192 mm from 5 mm left of it. */
 #define LF2_SETTLE_PM_LO        (250U)
 #define LF2_SETTLE_PM_HI        (950U)
 #define LF2_SETTLE_MAX_MM       (500U)

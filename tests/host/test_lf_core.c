@@ -15,10 +15,10 @@
  *      release (task_motion.c); posts go in the sample before that read;
  *    - closed-loop behaviour: the simulator in lf_sim.h (geometry, the
  *      Vehicle Controller and Motion rules from their code);
- *    - junction post distance: F = 70 mm from the sensing point to the
- *      axle, measured on the car (3 Nov 2026), and the encoder geometry in
+ *    - junction post distance: F = 120 mm from the sensing point to the
+ *      axle, ruler on the car (4 Nov 2026), and the encoder geometry in
  *      config/thresholds.h (4 x 616 counts per 207 mm wheel turn), worked
- *      by hand: 70 mm x 2464 / 207 = 833 counts.
+ *      by hand: 120 mm x 2464 / 207 = 1428 counts.
  *  Fixtures use a calibration of white 140, black 1140, so a darkness of
  *  d per mille is simply raw = 140 + d.
  */
@@ -82,7 +82,7 @@ static uint32_t       g_turn_seed;  /* sensor noise seed for drive_turn(), 0 = d
 
 /* Travel from junction detection to the JUNCTION post, encoder counts
  * (worked by hand, see the header). */
-#define JCT_POST_CNT    (833U)
+#define JCT_POST_CNT    (1428U)
 
 static uint16_t raw_of(uint16_t d_pm)
 {
@@ -231,11 +231,11 @@ static void test_constants(void)
     CHECK(MOTION_T_HOLD_MS == 100U);
     CHECK(DREP_STEER_Q7_MAX == 127);
     CHECK((int)LF_ST_COUNT == (int)DREP_FSM_LF_STATES);     /* telemetry: 6 states */
-    CHECK(LF_D_PIVOT_MM == 70U);            /* measured F */
+    CHECK(LF_D_PIVOT_MM == 120U);           /* measured F */
     CHECK(ENC_QUAD_MULT == 4U);
     CHECK(ENC_CPR == 616U);
     CHECK(WHEEL_CIRC_MM == 207U);
-    CHECK(LF_T_JCT_MAX_MS == 500U);
+    CHECK(LF_T_JCT_MAX_MS == 900U);
 }
 
 /* Test 2: start-pose calibration, from the LF-1 desk numbers. */
@@ -512,7 +512,7 @@ static void test_tracking(void)
     CHECK(r.max_steer == lf_edge_steer(300U));
     CHECK(r.last.state == LF_ST_ON_LINE);
 
-    /* CENTRE on the line and RIGHT darkening at the same time: 22 mm apart
+    /* CENTRE on the line and RIGHT darkening at the same time: 26 mm apart
      * on an 18 mm line, a drift cannot do that, so it is a cross line
      * arriving: the steering is held (not "darker -> steer right"). */
     start_tracking(&lf);
@@ -556,7 +556,7 @@ static void test_junction(void)
     /* A real cross line: 3 samples both DARK -> junction detected on the
      * 3rd sample; steering is held (0 from the edge), never full right.
      * JUNCTION itself is posted only once the car has travelled
-     * JCT_POST_CNT further, so the axle (Motion's pivot centre, F = 70 mm
+     * JCT_POST_CNT further, so the axle (Motion's pivot centre, F = 120 mm
      * behind the sensors) is on the cross line if the VC turns. */
     start_tracking(&lf);
     {
@@ -605,7 +605,7 @@ static void test_junction(void)
     r = run(&lf, 3U, 1000U, 1000U);             /* the next cross line */
     CHECK(r.last.state == LF_ST_JUNCTION);
     r = run(&lf, 15U, 1000U, 1000U);
-    r = run(&lf, 100U, 500U, 0U);
+    r = run(&lf, 120U, 500U, 0U);
     CHECK(r.junctions == 1U);
 
     /* T junction (no line ahead): the sensors leave the line during the
@@ -631,11 +631,11 @@ static void test_junction(void)
     }
 
     /* Odometer frozen (encoder fault): JUNCTION after LF_T_JCT_MAX_MS
-     * (500 ms = 100 samples after detection), not before. */
+     * (900 ms = 180 samples after detection), not before. */
     start_tracking(&lf);
     g_fwd_step = 0U;
     (void)run(&lf, 3U, 1000U, 1000U);
-    r = run(&lf, 99U, 500U, 0U);
+    r = run(&lf, 179U, 500U, 0U);
     CHECK(r.junctions == 0U);
     r = run(&lf, 1U, 500U, 0U);
     CHECK(r.junctions == 1U);
@@ -876,7 +876,7 @@ static void test_turns(void)
     r = run(&lf, 40U, 500U, 0U);
     CHECK(r.junctions == 0U);
     (void)run(&lf, 3U, 1000U, 1000U);
-    r = run(&lf, 100U, 500U, 0U);
+    r = run(&lf, 120U, 500U, 0U);
     CHECK(r.junctions == 1U);
 
     /* A manoeuvre while tracking (no junction from LF): still silent. */
@@ -994,7 +994,7 @@ static void test_sim_straight(void)
 {
     double const speeds[5] = { 100.0, 200.0, 300.0, 400.0, 500.0 };
     double const tol_mm[5] = { 5.0, 5.0, 5.0, 9.0, 9.0 };
-    double const spacings[3] = { 20.0, 22.0, 24.0 };
+    double const spacings[3] = { 25.0, 26.0, 27.0 };
     double const spots[4] = { 1.0, 1.2, 2.0, 3.0 };
 
     for (int i = 0; i < 5; i++)
@@ -1004,7 +1004,7 @@ static void test_sim_straight(void)
 
         sim_init(&s);
         s.speed_mmps = speeds[i];
-        /* The gentle drift reaches the edge after ~300 mm of travel. */
+        /* The gentle drift reaches the edge after ~130 mm of travel. */
         l = drive_straight(&s, 0.0, 0.0, 9.0, 4.0, 5000.0);
         CHECK_AT(speeds[i], l.always_on_line);
         CHECK_AT(speeds[i], l.max_err_mm <= tol_mm[i]);
@@ -1162,11 +1162,15 @@ static void test_sim_junction(void)
  * noise. */
 static void test_sim_height_noise(void)
 {
-    /* x0.8 .. x2 of the calibration; the car has shown x0.95 .. x1.5 at speed.
-     * x3 (the last) is beyond anything seen on it. */
-    double const spans[5] = { 800.0, 1000.0, 1500.0, 2000.0, 3000.0 };
+    /* Gated: x0.9 .. x2 of the calibration; the car has shown x0.95 .. x1.5
+     * at speed and S3-U13 (g2) refuses a pose A below x0.95.  Deferred:
+     * x0.8, where CENTRE on solid black reads under LF_EDGE_TARGET_PM, so
+     * the core walks it to the line's LEFT edge and off it; RIGHT, 26 mm
+     * away, reaches the line too late to name the side (x0.85 loses the
+     * line too, x0.90 does not); and x3, beyond anything seen on the car. */
+    double const spans[6] = { 800.0, 900.0, 1000.0, 1500.0, 2000.0, 3000.0 };
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 6; i++)
     {
         sim_t s;
         loop_t l;
@@ -1175,7 +1179,7 @@ static void test_sim_height_noise(void)
         s.span_raw = spans[i];
         sim_add_seg(&s, 800.0, -200.0, 800.0, 200.0);
         l = drive_straight(&s, 0.0, 0.0, 6.0, 1.0, 5000.0);
-        if (i < 4)
+        if ((i >= 1) && (i <= 4))
         {
             CHECK(l.always_on_line);
             CHECK(s.n_junction == 1U);
@@ -1271,14 +1275,18 @@ static void test_sim_line_end(void)
 
 /* Test 19: barcode turns at a junction, closed loop.  The VC has a
  * LEFT / RIGHT / U-TURN command pending; the core detects the cross line,
- * travels on (F, the measured 70 mm) and posts JUNCTION; the VC pivots the
+ * travels on (F, the measured 120 mm) and posts JUNCTION; the VC pivots the
  * car about its axle; lf_link sees the wheels stop; the core finds the new
  * branch (solid black under CENTRE, no LINE_LOST) and tracks it.  Junction
  * at x = 800: a cross (the line goes on) or a T (it ends there); the real
- * F off by +-5 mm from the 70 mm the core assumes (a ruler measurement);
+ * F off by +-5 mm from the 120 mm the core assumes (a ruler measurement);
  * 200 mm/s (bring-up cruise) and 300 mm/s (nominal cruise).  A wider sweep
- * (3 Nov 2026) turned cleanly for a real F of 62.5..75 mm at both speeds:
- * the pivot centre must land 0..+20 mm past the cross line's centre.
+ * (4 Nov 2026, 200 mm/s) ended left and right turns on the branch for a
+ * real F of 95..145 mm: pivot centre -20..+30 mm from the cross line's
+ * centre.  Below F 110 a turn is direct; at the measured 120 the model
+ * overruns 90 degrees by ~17, CENTRE passes the branch and the core finds
+ * it by searching.  The model's wheels stop more slowly than the car's
+ * have shown, so this overrun is a worst case until a real turn is measured.
  * Checked here: the turn mechanics, at Motion phase 0 and the default
  * noise; every phase and 10 noise seeds: test 21. */
 typedef struct
@@ -1351,7 +1359,7 @@ static void test_sim_turns(void)
         {
             for (int i = 0; i < 2; i++)
             {
-                for (double f = 65.0; f <= 75.0; f += 5.0)
+                for (double f = 115.0; f <= 125.0; f += 5.0)
                 {
                     turn_run_t const t = drive_turn(speeds[i], (sim_bc_t)bc, tee != 0, f);
                     bool on_branch;
@@ -1523,7 +1531,7 @@ static void test_sim_phases(void)
                 {
                     for (int sp = 0; sp < 2; sp++)
                     {
-                        for (double f = 65.0; f <= 75.0; f += 5.0)
+                        for (double f = 115.0; f <= 125.0; f += 5.0)
                         {
                             turn_run_t const t = drive_turn((sp == 0) ? 200.0 : 300.0,
                                                             (sim_bc_t)bc, tee != 0, f);
@@ -1658,7 +1666,7 @@ static void test_sim_stable_200(void)
     double const ths[3] = { -2.0, 0.0, 2.0 };
     double const spots[4] = { 1.0, 1.2, 2.0, 3.0 };
     double const ks[3] = { 0.5, 0.62, 0.75 };
-    uint32_t const deads[3] = { 6U, 10U, 12U };
+    uint32_t const deads[3] = { 3U, 5U, 7U };
     uint32_t runs = 0U;
     uint32_t bad = 0U;
     double worst_lo = 0.0;

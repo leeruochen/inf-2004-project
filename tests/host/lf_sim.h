@@ -7,8 +7,9 @@
  *  What it models, and where each rule comes from:
  *    - The track: black strips 18 mm wide (straight segments and circular
  *      arcs) on white; the module's track spec (line width 18 mm).
- *    - The sensors: CENTRE and RIGHT, LF_SIM spacing apart (measured
- *      ~22 mm), F mm in front of the wheel axle; each sees a 1-D spot of
+ *    - The sensors: CENTRE and RIGHT, spacing_mm apart (ruler, 26 mm),
+ *      fwd_mm in front of the wheel axle (ruler, F = 120 mm, the core's
+ *      LF_D_PIVOT_MM); each sees a 1-D spot of
  *      radius r and reads white + (fraction of spot on black) x span, plus
  *      uniform noise.  White 140 raw and span ~1000 raw are the LF-1 desk
  *      numbers (testing/subsystem3/logs/2026-11-03_s3_lf1_run2.txt).  The
@@ -35,13 +36,12 @@
  *      not modelled: line following only sends STEER.
  *    - The motors: wheel speed follows K x duty after a dead time, with a
  *      first-order lag.  All three are fitted to the 4 Nov 2026 hardware
- *      runs (S3-U12): at steer +127 the wheels ran at 378 and 90 mm/s (sim
- *      369 and 79); from a standing start the car had moved 35, 61, 86 and
- *      114 mm at 220, 330, 440 and 550 ms (sim 34, 60, 85, 110); and RIGHT
- *      reached the line after 330-560 ms of the oscillation (sim ~400).
- *      A lag alone cannot do it: it matches the distances but filters the
- *      steering, and the oscillation stays +-3 mm instead of crossing the
- *      line.  The dead time stands for backlash and stiction.
+ *      runs (S3-U12) at the measured geometry: at steer +127 the wheels ran
+ *      at 378 and 90 mm/s (sim 369 and 79); from a standing start the car
+ *      had moved 35, 61, 86 and 114 mm at 220, 330, 440 and 550 ms (sim 35,
+ *      60, 85, 110); and RIGHT reached the line after 330-560 ms of the
+ *      oscillation (sim ~450).  The dead time stands for backlash and
+ *      stiction.  Not fitted: how fast the wheels stop (see test 19).
  *    - The Line-Following task: lf_link_step() on the published counts and
  *      the VC's turn state, lf_link_post_slot() on the published tick_ms and
  *      the sample time (step_n x 5 ms), then lf_core_step().
@@ -83,8 +83,8 @@
 #define SIM_DUTY_MAX_PM     ((int32_t)MOTOR_DUTY_MAX_PCT * 10)
 /* Fitted to the hardware (file header). */
 #define SIM_MOTOR_K         (0.62)      /* mm/s per permille of duty */
-#define SIM_MOTOR_LAG_S     (0.060)
-#define SIM_MOTOR_DEAD_N    (10U)       /* samples: 50 ms */
+#define SIM_MOTOR_LAG_S     (0.085)
+#define SIM_MOTOR_DEAD_N    (5U)        /* samples: 25 ms */
 #define SIM_SPOT_MM         (1.2)
 #define SIM_DEAD_MAX        (32U)       /* samples of dead-time history */
 
@@ -234,8 +234,8 @@ static inline void sim_add_arc(sim_t *p_sim, double cx, double cy, double r)
 static inline void sim_init(sim_t *p_sim)
 {
     p_sim->n_strips = 0;
-    p_sim->spacing_mm = 22.0;
-    p_sim->fwd_mm = (double)LF_D_PIVOT_MM;   /* measured F = 70 mm */
+    p_sim->spacing_mm = 26.0;
+    p_sim->fwd_mm = (double)LF_D_PIVOT_MM;   /* measured F = 120 mm */
     p_sim->spot_mm = SIM_SPOT_MM;
     p_sim->span_raw = 1000.0;
     p_sim->noise_raw = 30.0;

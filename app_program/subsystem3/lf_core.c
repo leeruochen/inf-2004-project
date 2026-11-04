@@ -28,7 +28,7 @@
 #define LF_N_SEARCH     LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
 #define LF_N_SWAP       LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
 #define LF_N_STOP       LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
-#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 100 = 500 ms */
+#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 180 = 900 ms */
 
 _Static_assert((uint32_t)LF_ST_COUNT == DREP_FSM_LF_STATES,
                "lf_state_t is the telemetry LF FSM code");
@@ -234,7 +234,7 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
 /*
  * ON_LINE steering, in priority order:
  *   1. CENTRE on the line (not LIGHT) and RIGHT seeing darkness right now:
- *      with the sensors 22 mm apart on an 18 mm line this never comes from a
+ *      with the sensors 26 mm apart on an 18 mm line this never comes from a
  *      drift (CENTRE has left the line before RIGHT can reach it), so it is a
  *      cross line arriving (or an angled line) -> hold the last steering
  *      until the junction is confirmed or rejected.  CENTRE's extra darkness
@@ -268,8 +268,8 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
  * coming back from the left, RIGHT crosses the line first, then CENTRE, and
  * CENTRE can cross all 18 mm in 25 ms.  A rule based on time still said
  * "right" after that and drove the car away from the line (S3-U12, 4 Nov).
- * Between CENTRE leaving to the left and RIGHT arriving (the 22 mm spacing
- * less the line) the side is briefly wrong: RIGHT corrects it within 4 mm. */
+ * Between CENTRE leaving to the left and RIGHT arriving (the 26 mm spacing
+ * less the line) the side is briefly wrong: RIGHT corrects it within 8 mm. */
 static void update_side(lf_core_t *p_lf, lf_view_t const *p_v)
 {
     if (p_v->r_now != LF_ZONE_LIGHT)
