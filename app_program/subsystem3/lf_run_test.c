@@ -131,14 +131,11 @@
 /** JUNCTION to standing still at most, wheel travel. */
 #define LF2_JMAT_AFTER_MAX_MM   (35U)
 /** Start guard: a jmat drive starts only with CENTRE steady on black and
- *  RIGHT on white.  Black is judged against pose A of this boot, not a fixed
- *  per mille, because the boot calibration can read high (02:42: the line's
- *  middle read 940 pm).  Lifted, the sensors read far above black, so the
- *  upper limit also catches a car still in the hand. */
-#define LF2_JMAT_BLACK_MIN_PCT  (90U)
-#define LF2_JMAT_BLACK_MAX_PCT  (125U)
-/** Whatever the reference, the core itself must see DARK to start tracking. */
+ *  RIGHT on white.  CENTRE must read dark enough for the core to start
+ *  tracking, with a margin.  It must not read far above calibrated black:
+ *  that is a car still in the hand. */
 #define LF2_JMAT_BLACK_MIN_PM   (LF_DARK_MIN_PM + 50U)
+#define LF2_JMAT_LIFTED_PCT     (125U)
 /** Good readings needed before the warning, then from the warning to START.
  *  A bad reading in either starts the count again. */
 #define LF2_JMAT_STEADY_S       (3U)
@@ -279,9 +276,6 @@ static uint32_t         s_trace_n;
 /* Static pose A (start pose): RIGHT over white, for the noise comparison. */
 static uint16_t         s_static_r_min;
 static uint16_t         s_static_r_max;
-/* CENTRE's average in the last static pose, and in pose A: black, this boot. */
-static uint16_t         s_static_c_avg;
-static uint16_t         s_black_raw;
 
 static bool lf2_line_found_flag(void)
 {
@@ -362,11 +356,10 @@ static void lf2_place(char const *p_tag, char const *p_place, bool drives)
 static bool lf2_start_ok(uint16_t raw_c, uint16_t raw_r)
 {
     uint32_t const white = s_now.cal.c.white;
-    uint32_t const span = (s_black_raw > white) ? ((uint32_t)s_black_raw - white) : 0U;
-    uint32_t const lo = white + ((span * LF2_JMAT_BLACK_MIN_PCT) / 100U);
-    uint32_t const hi = white + ((span * LF2_JMAT_BLACK_MAX_PCT) / 100U);
+    uint32_t const span = (uint32_t)s_now.cal.c.black - white;
+    uint32_t const lifted = white + ((span * LF2_JMAT_LIFTED_PCT) / 100U);
 
-    return (raw_c >= lo) && (raw_c <= hi)
+    return (raw_c <= lifted)
            && (lf_norm(&s_now.cal.c, raw_c) >= LF2_JMAT_BLACK_MIN_PM)
            && (lf_norm(&s_now.cal.r, raw_r) < LF_LIGHT_MAX_PM);
 }
@@ -416,7 +409,8 @@ static bool lf2_place_guard(char const *p_tag, char const *p_place)
             }
             good = 0U;
         }
-        dbg_printf("[LF] place: CENTRE %u, RIGHT %u: %s", s_now.raw_c, s_now.raw_r,
+        dbg_printf("[LF] place: CENTRE %u pm, RIGHT %u pm: %s", lf_norm(&s_now.cal.c, s_now.raw_c),
+                   lf_norm(&s_now.cal.r, s_now.raw_r),
                    ok ? (moved ? "OK, keep still" : "lift the car and put it at the start")
                       : "NOT READY: CENTRE on black, RIGHT on white");
         if (!ready)
@@ -458,7 +452,6 @@ static void lf2_static(char const *p_tag, char const *p_place,
     }
     avg_c = (uint16_t)(sum_c / n);
     avg_r = (uint16_t)(sum_r / n);
-    s_static_c_avg = avg_c;
     *p_dc = lf_norm(&s_now.cal.c, avg_c);
     *p_dr = lf_norm(&s_now.cal.r, avg_r);
     *p_rmin = r_min;
@@ -823,7 +816,7 @@ static void lf2_jmat_report(uint32_t run)
     lf2_run_t const *const p = &s_run;
     uint32_t const total = p->mm_end + p->mm_stop;
 
-    dbg_printf("[LF] jmat: START with CENTRE at %u pm, black this boot raw %u", p->start_c_pm, s_black_raw);
+    dbg_printf("[LF] jmat: START with CENTRE at %u pm", p->start_c_pm);
     dbg_printf("[LF] jmat: detected %lu mm at %lu ms, JUNCTION %lu mm at %lu ms, delay %lu mm %lu ms",
                (unsigned long)p->mm_det, (unsigned long)p->t_det_ms, (unsigned long)p->mm_post,
                (unsigned long)p->t_post_ms, (unsigned long)(p->mm_post - p->mm_det),
@@ -891,6 +884,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     uint16_t dr;
     uint16_t rmin;
     uint16_t rmax;
+    bool     pose_a_ok;
 
     dbg_printf("[LF] %s on the track, motors LIVE, cruise %lu mm/s", LF2_ID,
                (unsigned long)LF2_CRUISE_MMPS);
@@ -943,12 +937,20 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     lf2_static("pose A", "put the car down in the START POSE, hands off", &dc, &dr, &rmin, &rmax);
     s_static_r_min = rmin;
     s_static_r_max = rmax;
-    s_black_raw = s_static_c_avg;
-    TEST_CHECK(LF2_ID, dc >= LF2_POSE_A_MIN_PM,
+    pose_a_ok = (dc >= LF2_POSE_A_MIN_PM);
+    TEST_CHECK(LF2_ID, pose_a_ok,
                "(g2) pose A: CENTRE >= 950 pm, the boot calibration holds");
-    lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off", &dc, &dr, &rmin, &rmax);
-    TEST_CHECK(LF2_ID, dr > LF_DARK_MIN_PM,
-               "(g) static: RIGHT on black is DARK (> 750 pm)");
+    if (pose_a_ok)
+    {
+        lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off", &dc, &dr, &rmin, &rmax);
+        TEST_CHECK(LF2_ID, dr > LF_DARK_MIN_PM,
+                   "(g) static: RIGHT on black is DARK (> 750 pm)");
+    }
+    else
+    {
+        dbg_puts("[LF] >>> STOP: no drives.  Pose A was not on black, or the boot calibration is wrong.");
+        dbg_puts("[LF] >>> Unplug.  Car flat on the mat, CENTRE on black, RIGHT on white.  Flash again.");
+    }
 
     /* (d) + (n) Straight line from the start pose. */
     for (uint32_t run = 1U; run <= straight_runs; run++)
@@ -977,7 +979,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     }
 
     /* (j) The junction mat: detection, the delayed event, straight through. */
-    if (LF2_JMAT_ONLY != 0U)
+    if ((LF2_JMAT_ONLY != 0U) && pose_a_ok)
     {
         for (uint32_t run = 1U; run <= LF2_JMAT_RUNS; run++)
         {

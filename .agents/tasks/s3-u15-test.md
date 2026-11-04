@@ -22,7 +22,7 @@ It also checks whether the wheel distance is accurate. Left, right, U-turn, curv
 
 ## Start position
 
-- **Boot and pose A:** CENTRE on black, in the line's middle, RIGHT on white.
+- **Boot and pose A:** CENTRE on black, in the line's middle, RIGHT on white. At power-up the car must sit flat on the mat with nothing lifting it: rest the cable loosely, take your hands off, and only hold it up from pose A on. The boot sets the calibration; a car tilted at power-up reads both sensors high.
 - **Pose B:** CENTRE on white, RIGHT on black.
 - **Each drive:** CENTRE on the right half of the black line, not on the black/white border. RIGHT on white. Car parallel to the line, CENTRE sensing point 250-270 mm before the centre of the cross.
 
@@ -71,4 +71,4 @@ The ruler numbers do not decide this test, but the next stage needs them: distan
 
 - **Car leaves the mat or heads for something:** catch it by the chassis, fingers away from the wheels.
 - **`encL` or `encR` stays near 0 at `[MOT] S2-U16`:** unplug the USB and stop.
-- **`(g2)` fails:** unplug and restart in the start pose.
+- **`(g2)` fails:** the test prints `STOP: no drives`. Unplug, set the car flat in the start pose, and flash again.
