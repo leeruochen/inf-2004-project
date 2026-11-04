@@ -1,0 +1,1278 @@
+03:10:21.785  [capture] COM5 for 600 s -> build\s3-u15-run-20261105-0310.txt
+03:10:21.809  pre-kernel ok
+03:10:21.816  
+03:10:21.816  
+03:10:21.816  microT-Kernel Version 3.00
+03:10:21.816  
+03:10:21.816  [IPC] kernel spec version 3.00 OK
+03:10:21.816  [IPC] 8 objects created, MBF depth self-check OK
+03:10:21.825  [S3] IR_R (GP26/ADC0) ADC sanity OK
+03:10:21.825  [S3] IR_C (GP28/ADC2) ADC sanity OK
+03:10:21.825  [S4] IMU init OK
+03:10:21.825  [S4] tasks started
+03:10:21.825  [SAFETY] task started
+03:10:21.825  [IMU] task started
+03:10:21.832  [IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+03:10:21.832  [IMU] chip LSM303D, accel+mag at 0x1D
+03:10:21.832  [TEL] backend: console ([TEL] <topic> <hex>)
+03:10:21.960  [TEL] link DISCONNECTED -> CONNECTING
+03:10:21.978  [TEL] link CONNECTING -> CONNECTED
+03:10:21.978  [TEST] S1-U01 PASS  Telemetry task running, link CONNECTED
+03:10:22.007  [TEL] car/telemetry/barcode 0103042a000002
+03:10:22.087  [TEST] S1-U02 PASS  event -> frame -> sent within 100 ms
+03:10:22.103  [LF] boot calibration OK: C avg 2458 (2360..2502), R avg 174 (153..198)
+03:10:22.103  [LF] cal white 174 black 2458 (both sensors)
+03:10:22.198  [TEST] S1-U03 PASS  invalid tel_evt_t counted, never framed
+03:10:22.296  [TEST] S1-U04 64 posts in 187 us, 32 queued, 32 dropped
+03:10:22.299  [TEST] S1-U04 PASS  64 posts never block; full queue = counted drop
+03:10:22.301  [TEL] cmd car/cmd/stop -> VC
+03:10:22.301  [TEST] S1-U05 PASS  car/cmd/stop accepted -> MBF_NAV_IN
+03:10:22.301  [TEL] cmd rejected: BAD_VERSION (3 B)
+03:10:22.301  [TEL] cmd rejected: BAD_LENGTH (4 B)
+03:10:22.305  [TEL] cmd rejected: UNKNOWN_TYPE (3 B)
+03:10:22.306  [TEL] cmd rejected: TOPIC_MISMATCH (3 B)
+03:10:22.306  [TEL] cmd rejected: NOT_COMMAND (9 B)
+03:10:22.308  [TEST] S1-U06 PASS  5 malformed commands rejected, none posted
+03:10:22.309  [TEST] S1-U07 PASS  sensor snapshot clamps to wire fields
+03:10:22.309  [TEL] car/telemetry/obstacle 0105086801001e8c828a0c
+03:10:22.389  [TEST] S1-U08 PASS  obstacle profile framed once
+03:10:22.389  [TEST] S1-U09 PASS  FAULT_WIFI_LOSS clear while connected
+03:10:22.849  [IMU] level reference: board at 9 half-deg when flat (1 tries)
+03:10:22.932  [TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+03:10:22.948  [TEL] car/telemetry/sensor 01020ae80300ffbf07904d4b00
+03:10:23.396  [TEST] S1-U10 50 wakes in 1 s, 0 overruns
+03:10:23.396  [TEST] S1-U10 PASS  20 ms wake grid held, no overruns
+03:10:23.396  [TEST] subsystem1 SUMMARY 10 passed, 0 failed
+03:10:23.450  [TEST] S2-U01 PASS  Motor PWM slices 4 and 5 configured at 20 kHz +-1%
+03:10:23.450  [TEST] S2-U02 PASS  Motor duty capped at MOTOR_DUTY_MAX_PCT
+03:10:23.471  [TEST] S2-U06 PASS  motion_emergency_brake drives all four channels LOW without Motion task
+03:10:23.471  [TEST] S2-U09 PASS  enc_get_count is non-blocking (< 10 us avg over 1000 calls)
+03:10:23.945  [TEL] car/telemetry/motion 01010fd00700000000000000000000000000
+03:10:23.945  [TEL] car/telemetry/sensor 01020ad00700ffbf07904d4b00
+03:10:24.948  [TEL] car/telemetry/motion 01010fb80b00000000000000000000000000
+03:10:24.950  [TEL] car/telemetry/sensor 01020ab80b00ffbf07904d4b00
+03:10:25.938  [TEL] car/telemetry/motion 01010fa00f00000000000000000000000000
+03:10:25.938  [TEL] car/telemetry/sensor 01020aa00f00ffbf07904d4b00
+03:10:26.943  [TEL] car/telemetry/motion 01010f881300000000000000000000000000
+03:10:26.943  [TEL] car/telemetry/sensor 01020a881300ffbf07904d4b00
+03:10:26.943  [TEL] car/telemetry/heartbeat 010706881300000100
+03:10:27.951  [TEL] car/telemetry/motion 01010f701700000000000000000000000000
+03:10:27.953  [TEL] car/telemetry/sensor 01020a701700ffbf07904d4b00
+03:10:28.950  [TEL] car/telemetry/motion 01010f581b00000000000000000000000000
+03:10:28.950  [TEL] car/telemetry/sensor 01020a581b00ffbf07904d4b00
+03:10:29.953  [TEL] car/telemetry/motion 01010f401f00000000000000000000000000
+03:10:29.953  [TEL] car/telemetry/sensor 01020a401f00ffbf07904d4b00
+03:10:30.948  [TEL] car/telemetry/motion 01010f282300000000000000000000000000
+03:10:30.958  [TEL] car/telemetry/sensor 01020a282300ffbf07904d4b00
+03:10:31.820  [DBG] alive: SDK timer 11405 ms, kernel time 9879 ms, difference 1526 ms
+03:10:31.943  [TEL] car/telemetry/motion 01010f102700000000000000000000000000
+03:10:31.947  [TEL] car/telemetry/sensor 01020a102700ffbf07904d4b00
+03:10:31.947  [TEL] car/telemetry/heartbeat 010706102700000100
+03:10:32.948  [TEL] car/telemetry/motion 01010ff82a00000000000000000000000000
+03:10:32.950  [TEL] car/telemetry/sensor 01020af82a00ffbf07904d4b00
+03:10:33.480  [TEST] S2-U12 PASS  Motion period: 500 +- 1 releases in 10 s, 0 missed
+03:10:33.505  [MOT] invalid motion_cmd_t rejected
+03:10:33.509  [TEST] S2-U13 PASS  Motion rejects invalid motion_cmd_t and keeps setpoint
+03:10:33.626  [TEST] S2-U14 PASS  Motion holds setpoint for MOTION_T_HOLD_MS then stops
+03:10:33.668  [MOT] invalid motion_cmd_t rejected
+03:10:33.685  [TEST] S2-U15 PASS  Motion caps speed at MOTION_SPEED_MAX_CMPS (50 cm/s)
+03:10:33.827  [MOT] S2-U16 dt=100 ms dist=2->5 cm encL=417->789 encR=358->680
+03:10:33.829  [TEST] S2-U16 PASS  motion_state_t published under MTX_MOTION advances over 100 ms
+03:10:33.829  [VC] invalid nav_input_t rejected
+03:10:33.829  [TEST] S2-U22 PASS  VC rejects invalid nav_input_t and sends no motion_cmd_t
+03:10:33.848  [TEL] car/telemetry/heartbeat 0107067c2e00000100
+03:10:33.848  [TEST] S2-U23 PASS  VC precedence: AVOID overrides LINE while authority is AVOID
+03:10:33.860  [TEL] car/telemetry/heartbeat 010706902e00000300
+03:10:33.860  [TEST] S2-U24 PASS  VC commands stop/brake when EVF_SAFETY_FAULT_LATCHED is set
+03:10:33.947  [TEL] car/telemetry/motion 01010fe02e000014008c100000d80c000000
+03:10:33.955  [TEL] car/telemetry/sensor 01020ae02e00ffbf07904d4b00
+03:10:34.453  [TEL] car/telemetry/heartbeat 010706d43000000100
+03:10:34.453  [TEST] S2-U25 FAIL  VC clears FAULT_LATCHED only after SAFETY_T_STILL_MS stationary   (subsystem
+03:10:34.453  [TEL] car/telemetry/heartbeat 010706e83000000400
+03:10:34.469  [TEST] S2-U26 PASS  System FSM transitions INITIALISING -> READY -> NAV_LINE_TRACKING
+03:10:34.485  [TEL] car/telemetry/heartbeat 010706fc3000000100
+03:10:34.485  [TEST] S2-U27 PASS  System FSM returns to READY and stops on TRACK_LOST and STOP
+03:10:34.605  [TEST] S2-U28 PASS  Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_c
+03:10:34.611  [TEST] subsystem2 SUMMARY 15 passed, 1 failed
+03:10:34.612  [LF] S3-U15 on the track, motors LIVE, cruise 200 mm/s
+03:10:34.612  [LF] guide: .agents/tasks/s3-u15-test.md; follow the [LF] >>> prompts
+03:10:34.935  [TEL] car/telemetry/motion 01010fc83200001800901100002c0d000000
+03:10:34.950  [TEL] car/telemetry/sensor 01020ac83200ffbf07904d4b00
+03:10:35.608  [LF] 1 s: 200 samples, 0 missed so far
+03:10:35.608  [TEST] S3-U15 PASS  (a) samples every 5 ms (195-205/s), none missed
+03:10:35.608  [LF] boot cal: status 0, C avg 2458, R avg 174 -> white 174 black 2458
+03:10:35.608  [TEST] S3-U15 PASS  (b) boot calibration accepted
+03:10:35.944  [TEL] car/telemetry/motion 01010fb03600001800901100002c0d000000
+03:10:35.952  [TEL] car/telemetry/sensor 01020ab03600ffbf07904d4b00
+03:10:36.609  [TEST] S3-U15 PASS  (c) VC READY: no posts, no events, IDLE, flag clear
+03:10:36.609  [LF] >>> pose A: put the car down in the START POSE, hands off
+03:10:36.947  [TEL] car/telemetry/motion 01010f983a00001800901100002c0d000000
+03:10:36.947  [TEL] car/telemetry/sensor 01020a983a00ffbf07904d4b00
+03:10:36.947  [TEL] car/telemetry/heartbeat 010706983a00000100
+03:10:37.950  [TEL] car/telemetry/motion 01010f803e00001800901100002c0d000000
+03:10:37.950  [TEL] car/telemetry/sensor 01020a803e00ffbf07904d4b00
+03:10:38.952  [TEL] car/telemetry/motion 01010f684200001800901100002c0d000000
+03:10:38.955  [TEL] car/telemetry/sensor 01020a684200ffbf07904d4b00
+03:10:39.953  [TEL] car/telemetry/motion 01010f504600001800901100002c0d000000
+03:10:39.953  [TEL] car/telemetry/sensor 01020a504600ffbf07904d4b00
+03:10:40.954  [TEL] car/telemetry/motion 01010f384a00001800901100002c0d000000
+03:10:40.954  [TEL] car/telemetry/sensor 01020a384a00ffbf07904d4b00
+03:10:41.610  [LF] ... 5
+03:10:41.834  [DBG] alive: SDK timer 21416 ms, kernel time 19890 ms, difference 1526 ms
+03:10:41.937  [TEL] car/telemetry/motion 01010f204e00001800901100002c0d000000
+03:10:41.937  [TEL] car/telemetry/sensor 01020a204e00ffbf07904d4b00
+03:10:41.937  [TEL] car/telemetry/heartbeat 010706204e00000100
+03:10:42.947  [TEL] car/telemetry/motion 01010f085200001800901100002c0d000000
+03:10:42.949  [TEL] car/telemetry/sensor 01020a085200ffbf07904d4b00
+03:10:43.603  [LF] ... 3
+03:10:43.937  [TEL] car/telemetry/motion 01010ff05500001800901100002c0d000000
+03:10:43.949  [TEL] car/telemetry/sensor 01020af05500ffbf07904d4b00
+03:10:44.618  [LF] ... 2
+03:10:44.950  [TEL] car/telemetry/motion 01010fd85900001800901100002c0d000000
+03:10:44.951  [TEL] car/telemetry/sensor 01020ad85900ffbf07904d4b00
+03:10:45.609  [LF] ... 1
+03:10:45.945  [TEL] car/telemetry/motion 01010fc05d00001800901100002c0d000000
+03:10:45.952  [TEL] car/telemetry/sensor 01020ac05d00ffbf07904d4b00
+03:10:46.943  [TEL] car/telemetry/motion 01010fa86100001800901100002c0d000000
+03:10:46.953  [TEL] car/telemetry/sensor 01020aa86100ffbf07904d4b00
+03:10:46.953  [TEL] car/telemetry/heartbeat 010706a86100000100
+03:10:47.951  [TEL] car/telemetry/motion 01010f906500001800901100002c0d000000
+03:10:47.951  [TEL] car/telemetry/sensor 01020a906500ffbf07904d4b00
+03:10:48.942  [TEL] car/telemetry/motion 01010f786900001800901100002c0d000000
+03:10:48.942  [TEL] car/telemetry/sensor 01020a786900ffbf07904d4b00
+03:10:49.910  [LF] static pose A: C raw 225..284 avg 255 = 35 pm
+03:10:49.923  [LF] static pose A: R raw 122..170 avg 147 = 0 pm
+03:10:49.923  [TEST] S3-U15 FAIL  (g2) pose A: CENTRE >= 950 pm, the boot calibration holds   (lf_run_test.c:9
+03:10:49.923  [LF] >>> pose B: RIGHT over the line middle, CENTRE on white, hands off
+03:10:49.942  [TEL] car/telemetry/motion 01010f606d00001800901100002c0d000000
+03:10:49.955  [TEL] car/telemetry/sensor 01020a606d00ffbf07904d4b00
+03:10:50.954  [TEL] car/telemetry/motion 01010f487100001800901100002c0d000000
+03:10:50.954  [TEL] car/telemetry/sensor 01020a487100ffbf07904d4b00
+03:10:51.834  [DBG] alive: SDK timer 31416 ms, kernel time 29890 ms, difference 1526 ms
+03:10:51.932  [TEL] car/telemetry/motion 01010f307500001800901100002c0d000000
+03:10:51.948  [TEL] car/telemetry/sensor 01020a307500ffbf07904d4b00
+03:10:51.948  [TEL] car/telemetry/heartbeat 010706307500000100
+03:10:52.942  [TEL] car/telemetry/motion 01010f187900001800901100002c0d000000
+03:10:52.942  [TEL] car/telemetry/sensor 01020a187900ffbf07904d4b00
+03:10:53.943  [TEL] car/telemetry/motion 01010f007d00001800901100002c0d000000
+03:10:53.943  [TEL] car/telemetry/sensor 01020a007d00ffbf07904d4b00
+03:10:54.926  [LF] ... 5
+03:10:54.949  [TEL] car/telemetry/motion 01010fe88000001800901100002c0d000000
+03:10:54.949  [TEL] car/telemetry/sensor 01020ae88000ffbf07904d4b00
+03:10:55.947  [TEL] car/telemetry/motion 01010fd08400001800901100002c0d000000
+03:10:55.947  [TEL] car/telemetry/sensor 01020ad08400ffbf07904d4b00
+03:10:56.929  [LF] ... 3
+03:10:56.943  [TEL] car/telemetry/motion 01010fb88800001800901100002c0d000000
+03:10:56.943  [TEL] car/telemetry/sensor 01020ab88800ffbf07904d4b00
+03:10:56.943  [TEL] car/telemetry/heartbeat 010706b88800000100
+03:10:57.927  [LF] ... 2
+03:10:57.943  [TEL] car/telemetry/motion 01010fa08c00001800901100002c0d000000
+03:10:57.943  [TEL] car/telemetry/sensor 01020aa08c00ffbf07904d4b00
+03:10:58.916  [LF] ... 1
+03:10:58.948  [TEL] car/telemetry/motion 01010f889000001800901100002c0d000000
+03:10:58.948  [TEL] car/telemetry/sensor 01020a889000ffbf07904d4b00
+03:10:59.955  [TEL] car/telemetry/motion 01010f709400001800901100002c0d000000
+03:10:59.957  [TEL] car/telemetry/sensor 01020a709400ffbf07904d4b00
+03:11:00.952  [TEL] car/telemetry/motion 01010f589800001800901100002c0d000000
+03:11:00.952  [TEL] car/telemetry/sensor 01020a589800ffbf07904d4b00
+03:11:01.834  [DBG] alive: SDK timer 41416 ms, kernel time 39890 ms, difference 1526 ms
+03:11:01.941  [TEL] car/telemetry/motion 01010f409c00001800901100002c0d000000
+03:11:01.941  [TEL] car/telemetry/sensor 01020a409c00ffbf07904d4b00
+03:11:01.941  [TEL] car/telemetry/heartbeat 010706409c00000100
+03:11:02.946  [TEL] car/telemetry/motion 01010f28a000001800901100002c0d000000
+03:11:02.946  [TEL] car/telemetry/sensor 01020a28a000ffbf07904d4b00
+03:11:03.221  [LF] static pose B: C raw 117..179 avg 151 = 0 pm
+03:11:03.221  [LF] static pose B: R raw 1461..1510 avg 1485 = 573 pm
+03:11:03.221  [TEST] S3-U15 FAIL  (g) static: RIGHT on black is DARK (> 750 pm)   (lf_run_test.c:950)
+03:11:03.237  [LF] jmat run 1 of 3
+03:11:03.237  [LF] >>> jmat: junction mat: CENTRE on the right half of the line, RIGHT on white, parallel
+03:11:03.237  [LF] >>> put the car against the tape, hands off: it starts when CENTRE is steady on black
+03:11:03.237  [LF] place: CENTRE 178, RIGHT 1501: NOT READY: CENTRE on black, RIGHT on white
+03:11:03.733  [LF] place: CENTRE 132, RIGHT 1470: NOT READY: CENTRE on black, RIGHT on white
+03:11:03.944  [TEL] car/telemetry/motion 01010f10a400001800901100002c0d000000
+03:11:03.944  [TEL] car/telemetry/sensor 01020a10a400ffbf07904d4b00
+03:11:04.228  [LF] place: CENTRE 141, RIGHT 1485: NOT READY: CENTRE on black, RIGHT on white
+03:11:04.732  [LF] place: CENTRE 132, RIGHT 1489: NOT READY: CENTRE on black, RIGHT on white
+03:11:04.935  [TEL] car/telemetry/motion 01010ff8a700001800901100002c0d000000
+03:11:04.935  [TEL] car/telemetry/sensor 01020af8a700ffbf07904d4b00
+03:11:05.235  [LF] place: CENTRE 153, RIGHT 1459: NOT READY: CENTRE on black, RIGHT on white
+03:11:05.741  [LF] place: CENTRE 163, RIGHT 1424: NOT READY: CENTRE on black, RIGHT on white
+03:11:05.942  [TEL] car/telemetry/motion 01010fe0ab00001800901100002c0d000000
+03:11:05.952  [TEL] car/telemetry/sensor 01020ae0ab00ffbf07904d4b00
+03:11:06.236  [LF] place: CENTRE 134, RIGHT 1444: NOT READY: CENTRE on black, RIGHT on white
+03:11:06.739  [LF] place: CENTRE 204, RIGHT 174: NOT READY: CENTRE on black, RIGHT on white
+03:11:06.943  [TEL] car/telemetry/motion 01010fc8af00001800901100002c0d000000
+03:11:06.954  [TEL] car/telemetry/sensor 01020ac8af00ffbf07904d4b00
+03:11:06.954  [TEL] car/telemetry/heartbeat 010706c8af00000100
+03:11:07.237  [LF] place: CENTRE 213, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:11:07.735  [LF] place: CENTRE 1904, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:11:07.945  [TEL] car/telemetry/motion 01010fb0b300001800901100002c0d000000
+03:11:07.945  [TEL] car/telemetry/sensor 01020ab0b300ffbf07904d4b00
+03:11:08.232  [LF] place: CENTRE 1877, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:11:08.746  [LF] place: CENTRE 1901, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:11:08.955  [TEL] car/telemetry/motion 01010f98b70000180090110000200d000000
+03:11:08.955  [TEL] car/telemetry/sensor 01020a98b700ffbf07904d4b00
+03:11:09.245  [LF] place: CENTRE 1902, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:11:09.746  [LF] place: CENTRE 1899, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:11:09.948  [TEL] car/telemetry/motion 01010f80bb0000180090110000200d000000
+03:11:09.957  [TEL] car/telemetry/sensor 01020a80bb00ffbf07904d4b00
+03:11:10.243  [LF] place: CENTRE 1903, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:11:10.745  [LF] place: CENTRE 1932, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:11:10.947  [TEL] car/telemetry/motion 01010f68bf0000180090110000200d000000
+03:11:10.949  [TEL] car/telemetry/sensor 01020a68bf00ffbf07904d4b00
+03:11:11.250  [LF] place: CENTRE 1903, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:11:11.747  [LF] place: CENTRE 1928, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:11:11.827  [DBG] alive: SDK timer 51417 ms, kernel time 49891 ms, difference 1526 ms
+03:11:11.938  [TEL] car/telemetry/motion 01010f50c30000180090110000200d000000
+03:11:11.938  [TEL] car/telemetry/sensor 01020a50c300ffbf07904d4b00
+03:11:11.938  [TEL] car/telemetry/heartbeat 01070650c300000100
+03:11:12.246  [LF] place: CENTRE 1887, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:11:12.747  [LF] place: CENTRE 1862, RIGHT 136: NOT READY: CENTRE on black, RIGHT on white
+03:11:12.938  [TEL] car/telemetry/motion 01010f38c70000180090110000200d000000
+03:11:12.938  [TEL] car/telemetry/sensor 01020a38c700ffbf07904d4b00
+03:11:13.247  [LF] place: CENTRE 1866, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:11:13.751  [LF] place: CENTRE 1766, RIGHT 155: NOT READY: CENTRE on black, RIGHT on white
+03:11:13.948  [TEL] car/telemetry/motion 01010f20cb0000180090110000200d000000
+03:11:13.950  [TEL] car/telemetry/sensor 01020a20cb00ffbf07904d4b00
+03:11:14.255  [LF] place: CENTRE 1738, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:11:14.763  [LF] place: CENTRE 1898, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:11:14.948  [TEL] car/telemetry/motion 01010f08cf0000180090110000200d000000
+03:11:14.948  [TEL] car/telemetry/sensor 01020a08cf00ffbf07904d4b00
+03:11:15.245  [LF] place: CENTRE 1972, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:11:15.763  [LF] place: CENTRE 493, RIGHT 155: NOT READY: CENTRE on black, RIGHT on white
+03:11:15.951  [TEL] car/telemetry/motion 01010ff0d20000180090110000200d000000
+03:11:15.953  [TEL] car/telemetry/sensor 01020af0d200ffbf07904d4b00
+03:11:16.248  [LF] place: CENTRE 202, RIGHT 170: NOT READY: CENTRE on black, RIGHT on white
+03:11:16.763  [LF] place: CENTRE 595, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:11:16.950  [TEL] car/telemetry/motion 01010fd8d60000180090110000200d000000
+03:11:16.950  [TEL] car/telemetry/sensor 01020ad8d600ffbf07904d4b00
+03:11:16.950  [TEL] car/telemetry/heartbeat 010706d8d600000100
+03:11:17.254  [LF] place: CENTRE 889, RIGHT 140: NOT READY: CENTRE on black, RIGHT on white
+03:11:17.760  [LF] place: CENTRE 894, RIGHT 124: NOT READY: CENTRE on black, RIGHT on white
+03:11:17.946  [TEL] car/telemetry/motion 01010fc0da0000180090110000200d000000
+03:11:17.954  [TEL] car/telemetry/sensor 01020ac0da00ffbf07904d4b00
+03:11:18.247  [LF] place: CENTRE 893, RIGHT 130: NOT READY: CENTRE on black, RIGHT on white
+03:11:18.764  [LF] place: CENTRE 848, RIGHT 145: NOT READY: CENTRE on black, RIGHT on white
+03:11:18.944  [TEL] car/telemetry/motion 01010fa8de0000180090110000200d000000
+03:11:18.956  [TEL] car/telemetry/sensor 01020aa8de00ffbf07904d4b00
+03:11:19.261  [LF] place: CENTRE 588, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:11:19.766  [LF] place: CENTRE 700, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:11:19.951  [TEL] car/telemetry/motion 01010f90e20000180090110000200d000000
+03:11:19.951  [TEL] car/telemetry/sensor 01020a90e200ffbf07904d4b00
+03:11:20.274  [LF] place: CENTRE 755, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:11:20.763  [LF] place: CENTRE 776, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:11:20.955  [TEL] car/telemetry/motion 01010f78e60000180090110000200d000000
+03:11:20.955  [TEL] car/telemetry/sensor 01020a78e600ffbf07904d4b00
+03:11:21.271  [LF] place: CENTRE 767, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:11:21.767  [LF] place: CENTRE 767, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:11:21.832  [DBG] alive: SDK timer 61427 ms, kernel time 59901 ms, difference 1526 ms
+03:11:21.849  [STACK] init: 360 of 1152 B used, 792 never used
+03:11:21.849  [STACK] dbg_drain: 632 of 1664 B used, 1032 never used
+03:11:21.849  [STACK] tel: 416 of 4736 B used, 4320 never used
+03:11:21.849  [STACK] vc: 420 of 1664 B used, 1244 never used
+03:11:21.849  [STACK] motion: 232 of 1664 B used, 1432 never used
+03:11:21.849  [STACK] lf: 572 of 1664 B used, 1092 never used
+03:11:21.849  [STACK] safety: 372 of 1664 B used, 1292 never used
+03:11:21.849  [STACK] imu: 548 of 2176 B used, 1628 never used
+03:11:21.856  [STACK] obs_scan: 436 of 1664 B used, 1228 never used
+03:11:21.856  [STACK] obs_avoid: 420 of 1664 B used, 1244 never used
+03:11:21.856  [STACK] app_test: 700 of 1664 B used, 964 never used
+03:11:21.856  [STACK] stack top check: 0 mismatches
+03:11:21.856  [MBF] nav_in: 64 B buffer, 64 B free
+03:11:21.869  [MBF] motion_cmd: 32 B buffer, 32 B free
+03:11:21.869  [MBF] obstacle: 24 B buffer, 24 B free
+03:11:21.869  [MBF] telemetry: 384 B buffer, 384 B free
+03:11:21.943  [TEL] car/telemetry/motion 01010f60ea0000180090110000200d000000
+03:11:21.943  [TEL] car/telemetry/sensor 01020a60ea00ffbf07904d4b00
+03:11:21.943  [TEL] car/telemetry/heartbeat 01070660ea00000100
+03:11:21.943  [TEL] CONNECTED tx=139 txf=0 off=1 ev=45 bad=33 qd=32 od=0 cmd=1/5
+03:11:22.263  [LF] place: CENTRE 745, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:11:22.770  [LF] place: CENTRE 771, RIGHT 156: NOT READY: CENTRE on black, RIGHT on white
+03:11:22.943  [TEL] car/telemetry/motion 01010f48ee0000180090110000200d000000
+03:11:22.951  [TEL] car/telemetry/sensor 01020a48ee00ffbf07904d4b00
+03:11:23.271  [LF] place: CENTRE 779, RIGHT 130: NOT READY: CENTRE on black, RIGHT on white
+03:11:23.765  [LF] place: CENTRE 739, RIGHT 165: NOT READY: CENTRE on black, RIGHT on white
+03:11:23.948  [TEL] car/telemetry/motion 01010f30f20000180090110000200d000000
+03:11:23.952  [TEL] car/telemetry/sensor 01020a30f200ffbf07904d4b00
+03:11:24.266  [LF] place: CENTRE 782, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:11:24.775  [LF] place: CENTRE 776, RIGHT 137: NOT READY: CENTRE on black, RIGHT on white
+03:11:24.951  [TEL] car/telemetry/motion 01010f18f60000180090110000200d000000
+03:11:24.954  [TEL] car/telemetry/sensor 01020a18f600ffbf07904d4b00
+03:11:25.282  [LF] place: CENTRE 795, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:11:25.775  [LF] place: CENTRE 745, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:11:25.946  [TEL] car/telemetry/motion 01010f00fa0000180090110000200d000000
+03:11:25.954  [TEL] car/telemetry/sensor 01020a00fa00ffbf07904d4b00
+03:11:26.275  [LF] place: CENTRE 733, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:11:26.776  [LF] place: CENTRE 502, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:11:26.944  [TEL] car/telemetry/motion 01010fe8fd0000180090110000200d000000
+03:11:26.944  [TEL] car/telemetry/sensor 01020ae8fd00ffbf07904d4b00
+03:11:26.944  [TEL] car/telemetry/heartbeat 010706e8fd00000100
+03:11:27.279  [LF] place: CENTRE 511, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:11:27.773  [LF] place: CENTRE 562, RIGHT 130: NOT READY: CENTRE on black, RIGHT on white
+03:11:27.949  [TEL] car/telemetry/motion 01010fd0010100180090110000200d000000
+03:11:27.955  [TEL] car/telemetry/sensor 01020ad00101ffbf07904d4b00
+03:11:28.273  [LF] place: CENTRE 589, RIGHT 170: NOT READY: CENTRE on black, RIGHT on white
+03:11:28.789  [LF] place: CENTRE 606, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:11:28.951  [TEL] car/telemetry/motion 01010fb8050100180090110000200d000000
+03:11:28.957  [TEL] car/telemetry/sensor 01020ab80501ffbf07904d4b00
+03:11:29.287  [LF] place: CENTRE 594, RIGHT 128: NOT READY: CENTRE on black, RIGHT on white
+03:11:29.790  [LF] place: CENTRE 518, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:11:29.945  [TEL] car/telemetry/motion 01010fa0090100180090110000200d000000
+03:11:29.948  [TEL] car/telemetry/sensor 01020aa00901ffbf07904d4b00
+03:11:30.285  [LF] place: CENTRE 580, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:11:30.792  [LF] place: CENTRE 576, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:11:30.944  [TEL] car/telemetry/motion 01010f880d0100180090110000200d000000
+03:11:30.948  [TEL] car/telemetry/sensor 01020a880d01ffbf07904d4b00
+03:11:31.281  [LF] place: CENTRE 532, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:11:31.784  [LF] place: CENTRE 234, RIGHT 150: NOT READY: CENTRE on black, RIGHT on white
+03:11:31.848  [DBG] alive: SDK timer 71429 ms, kernel time 69903 ms, difference 1526 ms
+03:11:31.943  [TEL] car/telemetry/motion 01010f70110100180090110000200d000000
+03:11:31.948  [TEL] car/telemetry/sensor 01020a701101ffbf07904d4b00
+03:11:31.950  [TEL] car/telemetry/heartbeat 010706701101000100
+03:11:32.287  [LF] place: CENTRE 178, RIGHT 249: NOT READY: CENTRE on black, RIGHT on white
+03:11:32.792  [LF] place: CENTRE 130, RIGHT 1760: NOT READY: CENTRE on black, RIGHT on white
+03:11:32.937  [TEL] car/telemetry/motion 01010f58150100180090110000200d000000
+03:11:32.937  [TEL] car/telemetry/sensor 01020a581501ffbf07904d4b00
+03:11:33.278  [LF] place: CENTRE 160, RIGHT 1798: NOT READY: CENTRE on black, RIGHT on white
+03:11:33.787  [LF] place: CENTRE 143, RIGHT 1776: NOT READY: CENTRE on black, RIGHT on white
+03:11:33.943  [TEL] car/telemetry/motion 01010f40190100180090110000200d000000
+03:11:33.951  [TEL] car/telemetry/sensor 01020a401901ffbf07904d4b00
+03:11:34.293  [LF] place: CENTRE 131, RIGHT 1769: NOT READY: CENTRE on black, RIGHT on white
+03:11:34.791  [LF] place: CENTRE 168, RIGHT 1734: NOT READY: CENTRE on black, RIGHT on white
+03:11:34.943  [TEL] car/telemetry/motion 01010f281d0100180090110000200d000000
+03:11:34.951  [TEL] car/telemetry/sensor 01020a281d01ffbf07904d4b00
+03:11:35.293  [LF] place: CENTRE 173, RIGHT 1809: NOT READY: CENTRE on black, RIGHT on white
+03:11:35.792  [LF] place: CENTRE 171, RIGHT 192: NOT READY: CENTRE on black, RIGHT on white
+03:11:35.947  [TEL] car/telemetry/motion 01010f10210100180090110000200d000000
+03:11:35.947  [TEL] car/telemetry/sensor 01020a102101ffbf07904d4b00
+03:11:36.302  [LF] place: CENTRE 226, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:11:36.796  [LF] place: CENTRE 213, RIGHT 171: NOT READY: CENTRE on black, RIGHT on white
+03:11:36.952  [TEL] car/telemetry/motion 01010ff8240100180090110000200d000000
+03:11:36.952  [TEL] car/telemetry/sensor 01020af82401ffbf07904d4b00
+03:11:36.954  [TEL] car/telemetry/heartbeat 010706f82401000100
+03:11:37.296  [LF] place: CENTRE 298, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:11:37.791  [LF] place: CENTRE 1732, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:11:37.952  [TEL] car/telemetry/motion 01010fe0280100180090110000200d000000
+03:11:37.952  [TEL] car/telemetry/sensor 01020ae02801ffbf07904d4b00
+03:11:38.305  [LF] place: CENTRE 1686, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:11:38.789  [LF] place: CENTRE 1872, RIGHT 142: NOT READY: CENTRE on black, RIGHT on white
+03:11:38.955  [TEL] car/telemetry/motion 01010fc82c0100180090110000200d000000
+03:11:38.955  [TEL] car/telemetry/sensor 01020ac82c01ffbf07904d4b00
+03:11:39.307  [LF] place: CENTRE 1846, RIGHT 149: NOT READY: CENTRE on black, RIGHT on white
+03:11:39.805  [LF] place: CENTRE 1873, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:11:39.946  [TEL] car/telemetry/motion 01010fb0300100180090110000200d000000
+03:11:39.946  [TEL] car/telemetry/sensor 01020ab03001ffbf07904d4b00
+03:11:40.304  [LF] place: CENTRE 1798, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:11:40.810  [LF] place: CENTRE 411, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:11:40.936  [TEL] car/telemetry/motion 01010f98340100180090110000200d000000
+03:11:40.936  [TEL] car/telemetry/sensor 01020a983401ffbf07904d4b00
+03:11:41.305  [LF] place: CENTRE 1170, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:11:41.810  [LF] place: CENTRE 1109, RIGHT 137: NOT READY: CENTRE on black, RIGHT on white
+03:11:41.855  [DBG] alive: SDK timer 81439 ms, kernel time 79913 ms, difference 1526 ms
+03:11:41.938  [TEL] car/telemetry/motion 01010f80380100180090110000200d000000
+03:11:41.948  [TEL] car/telemetry/sensor 01020a803801ffbf07904d4b00
+03:11:41.948  [TEL] car/telemetry/heartbeat 010706803801000100
+03:11:42.298  [LF] place: CENTRE 209, RIGHT 175: NOT READY: CENTRE on black, RIGHT on white
+03:11:42.815  [LF] place: CENTRE 251, RIGHT 172: NOT READY: CENTRE on black, RIGHT on white
+03:11:42.944  [TEL] car/telemetry/motion 01010f683c0100180090110000200d000000
+03:11:42.944  [TEL] car/telemetry/sensor 01020a683c01ffbf07904d4b00
+03:11:43.307  [LF] place: CENTRE 1563, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:11:43.808  [LF] place: CENTRE 1818, RIGHT 156: NOT READY: CENTRE on black, RIGHT on white
+03:11:43.947  [TEL] car/telemetry/motion 01010f50400100180090110000200d000000
+03:11:43.947  [TEL] car/telemetry/sensor 01020a504001ffbf07904d4b00
+03:11:44.299  [LF] place: CENTRE 1981, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:11:44.817  [LF] place: CENTRE 2137, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:11:44.944  [TEL] car/telemetry/motion 01010f38440100180090110000200d000000
+03:11:44.944  [TEL] car/telemetry/sensor 01020a384401ffbf07904d4b00
+03:11:45.323  [LF] place: CENTRE 2147, RIGHT 171: NOT READY: CENTRE on black, RIGHT on white
+03:11:45.820  [LF] place: CENTRE 2120, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:11:45.950  [TEL] car/telemetry/motion 01010f20480100180090110000200d000000
+03:11:45.953  [TEL] car/telemetry/sensor 01020a204801ffbf07904d4b00
+03:11:46.323  [LF] place: CENTRE 1986, RIGHT 155: NOT READY: CENTRE on black, RIGHT on white
+03:11:46.818  [LF] place: CENTRE 1933, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:11:46.950  [TEL] car/telemetry/motion 01010f084c0100180090110000200d000000
+03:11:46.953  [TEL] car/telemetry/sensor 01020a084c01ffbf07904d4b00
+03:11:46.953  [TEL] car/telemetry/heartbeat 010706084c01000100
+03:11:47.320  [LF] place: CENTRE 1907, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:11:47.819  [LF] place: CENTRE 1883, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:11:47.953  [TEL] car/telemetry/motion 01010ff04f0100180090110000200d000000
+03:11:47.955  [TEL] car/telemetry/sensor 01020af04f01ffbf07904d4b00
+03:11:48.318  [LF] place: CENTRE 1935, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:11:48.821  [LF] place: CENTRE 1912, RIGHT 136: NOT READY: CENTRE on black, RIGHT on white
+03:11:48.954  [TEL] car/telemetry/motion 01010fd8530100180090110000200d000000
+03:11:48.956  [TEL] car/telemetry/sensor 01020ad85301ffbf07904d4b00
+03:11:49.328  [LF] place: CENTRE 1887, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:11:49.822  [LF] place: CENTRE 1888, RIGHT 145: NOT READY: CENTRE on black, RIGHT on white
+03:11:49.950  [TEL] car/telemetry/motion 01010fc0570100180090110000200d000000
+03:11:49.956  [TEL] car/telemetry/sensor 01020ac05701ffbf07904d4b00
+03:11:50.323  [LF] place: CENTRE 1861, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:11:50.832  [LF] place: CENTRE 1877, RIGHT 128: NOT READY: CENTRE on black, RIGHT on white
+03:11:50.952  [TEL] car/telemetry/motion 01010fa85b0100180090110000200d000000
+03:11:50.952  [TEL] car/telemetry/sensor 01020aa85b01ffbf07904d4b00
+03:11:51.327  [LF] place: CENTRE 1850, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:11:51.832  [LF] place: CENTRE 1862, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:11:51.867  [DBG] alive: SDK timer 91449 ms, kernel time 89923 ms, difference 1526 ms
+03:11:51.943  [TEL] car/telemetry/motion 01010f905f0100180090110000200d000000
+03:11:51.943  [TEL] car/telemetry/sensor 01020a905f01ffbf07904d4b00
+03:11:51.943  [TEL] car/telemetry/heartbeat 010706905f01000100
+03:11:52.331  [LF] place: CENTRE 1888, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:11:52.837  [LF] place: CENTRE 1851, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:11:52.947  [TEL] car/telemetry/motion 01010f78630100180090110000200d000000
+03:11:52.948  [TEL] car/telemetry/sensor 01020a786301ffbf07904d4b00
+03:11:53.325  [LF] place: CENTRE 1885, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:11:53.838  [LF] place: CENTRE 1886, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:11:53.942  [TEL] car/telemetry/motion 01010f60670100180090110000200d000000
+03:11:53.950  [TEL] car/telemetry/sensor 01020a606701ffbf07904d4b00
+03:11:54.334  [LF] place: CENTRE 1884, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:11:54.839  [LF] place: CENTRE 1854, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:11:54.935  [TEL] car/telemetry/motion 01010f486b0100180090110000200d000000
+03:11:54.953  [TEL] car/telemetry/sensor 01020a486b01ffbf07904d4b00
+03:11:55.335  [LF] place: CENTRE 1872, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:11:55.832  [LF] place: CENTRE 1895, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:11:55.940  [TEL] car/telemetry/motion 01010f306f0100180088110000200d000000
+03:11:55.953  [TEL] car/telemetry/sensor 01020a306f01ffbf07904d4b00
+03:11:56.329  [LF] place: CENTRE 354, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:11:56.840  [LF] place: CENTRE 1222, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:11:56.952  [TEL] car/telemetry/motion 01010f18730100180088110000200d000000
+03:11:56.952  [TEL] car/telemetry/sensor 01020a187301ffbf07904d4b00
+03:11:56.957  [TEL] car/telemetry/heartbeat 010706187301000100
+03:11:57.348  [LF] place: CENTRE 1730, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:11:57.833  [LF] place: CENTRE 1721, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:11:57.952  [TEL] car/telemetry/motion 01010f00770100180088110000200d000000
+03:11:57.955  [TEL] car/telemetry/sensor 01020a007701ffbf07904d4b00
+03:11:58.348  [LF] place: CENTRE 1720, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:11:58.844  [LF] place: CENTRE 1721, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:11:58.939  [TEL] car/telemetry/motion 01010fe87a0100180088110000200d000000
+03:11:58.956  [TEL] car/telemetry/sensor 01020ae87a01ffbf07904d4b00
+03:11:59.346  [LF] place: CENTRE 1726, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:11:59.839  [LF] place: CENTRE 1737, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:11:59.953  [TEL] car/telemetry/motion 01010fd07e0100180088110000200d000000
+03:11:59.956  [TEL] car/telemetry/sensor 01020ad07e01ffbf07904d4b00
+03:11:59.956  [S5] coarse hit 166 mm @ 150 deg, fine scan
+03:12:00.350  [LF] place: CENTRE 1731, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:12:00.658  [S5] obstacle 155 mm @ 150 deg w=94 clrL=635 clrR=635
+03:12:00.661  [S5] avoid -> SLOW (3000 ms)
+03:12:00.663  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:00.663  [S5] avoid -> IDLE (reacquired=0)
+03:12:00.846  [LF] place: CENTRE 1713, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:12:00.945  [TEL] car/telemetry/motion 01010fb8820100180088110000200d000000
+03:12:00.945  [TEL] car/telemetry/sensor 01020ab88201ffbf07904d4b00
+03:12:01.344  [LF] place: CENTRE 1740, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:12:01.841  [LF] place: CENTRE 1700, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:12:01.856  [DBG] alive: SDK timer 101450 ms, kernel time 99924 ms, difference 1526 ms
+03:12:01.872  [S5] coarse hit 161 mm @ 140 deg, fine scan
+03:12:01.938  [TEL] car/telemetry/motion 01010fa0860100180088110000200d000000
+03:12:01.938  [TEL] car/telemetry/sensor 01020aa08601ffbf07904d4b00
+03:12:01.938  [TEL] car/telemetry/heartbeat 010706a08601000100
+03:12:02.350  [LF] place: CENTRE 1713, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:12:02.847  [LF] place: CENTRE 1720, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:12:02.942  [TEL] car/telemetry/motion 01010f888a0100180088110000200d000000
+03:12:02.942  [TEL] car/telemetry/sensor 01020a888a01ffbf07904d4b00
+03:12:03.341  [LF] place: CENTRE 1739, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:12:03.858  [LF] place: CENTRE 1706, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:12:03.949  [TEL] car/telemetry/motion 01010f708e0100180088110000200d000000
+03:12:03.949  [TEL] car/telemetry/sensor 01020a708e01ffbf07904d4b00
+03:12:04.350  [LF] place: CENTRE 1706, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:12:04.851  [LF] place: CENTRE 1724, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:12:04.944  [TEL] car/telemetry/motion 01010f58920100180088110000200d000000
+03:12:04.944  [TEL] car/telemetry/sensor 01020a589201ffbf07904d4b00
+03:12:05.311  [S5] coarse hit 161 mm @ 120 deg, fine scan
+03:12:05.347  [LF] place: CENTRE 1693, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:12:05.855  [LF] place: CENTRE 1699, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:12:05.950  [TEL] car/telemetry/motion 01010f40960100180088110000200d000000
+03:12:05.950  [TEL] car/telemetry/sensor 01020a409601ffbf07904d4b00
+03:12:05.953  [S5] obstacle 160 mm @ 130 deg w=69 clrL=635 clrR=84
+03:12:05.953  [S5] avoid -> SLOW (3000 ms)
+03:12:05.953  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:05.953  [S5] avoid -> IDLE (reacquired=0)
+03:12:06.352  [LF] place: CENTRE 1707, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:12:06.864  [LF] place: CENTRE 1740, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:12:06.943  [TEL] car/telemetry/motion 01010f289a0100180088110000200d000000
+03:12:06.955  [TEL] car/telemetry/sensor 01020a289a01ffbf07904d4b00
+03:12:06.955  [TEL] car/telemetry/heartbeat 010706289a01000100
+03:12:07.038  [S5] coarse hit 160 mm @ 130 deg, fine scan
+03:12:07.356  [LF] place: CENTRE 1733, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:12:07.451  [S5] obstacle 157 mm @ 120 deg w=189 clrL=635 clrR=635
+03:12:07.451  [S5] avoid -> SLOW (3000 ms)
+03:12:07.451  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:07.451  [S5] avoid -> IDLE (reacquired=0)
+03:12:07.866  [LF] place: CENTRE 1727, RIGHT 127: NOT READY: CENTRE on black, RIGHT on white
+03:12:07.953  [TEL] car/telemetry/motion 01010f109e0100180088110000200d000000
+03:12:07.954  [TEL] car/telemetry/sensor 01020a109e01ffbf07904d4b00
+03:12:08.361  [LF] place: CENTRE 1709, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:12:08.654  [S5] coarse hit 157 mm @ 120 deg, fine scan
+03:12:08.862  [LF] place: CENTRE 1733, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:12:08.954  [TEL] car/telemetry/motion 01010ff8a10100180088110000200d000000
+03:12:08.954  [TEL] car/telemetry/sensor 01020af8a101ffbf07904d4b00
+03:12:09.135  [S5] obstacle 244 mm @ 130 deg w=106 clrL=635 clrR=635
+03:12:09.145  [S5] avoid -> SLOW (3000 ms)
+03:12:09.145  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:09.145  [S5] avoid -> IDLE (reacquired=0)
+03:12:09.360  [LF] place: CENTRE 1716, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:12:09.866  [LF] place: CENTRE 1721, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:12:09.954  [TEL] car/telemetry/motion 01010fe0a50100180088110000200d000000
+03:12:09.954  [TEL] car/telemetry/sensor 01020ae0a501ffbf07904d4b00
+03:12:10.363  [LF] place: CENTRE 1697, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:12:10.523  [S5] coarse hit 244 mm @ 130 deg, fine scan
+03:12:10.867  [LF] place: CENTRE 1738, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:12:10.944  [TEL] car/telemetry/motion 01010fc8a90100180088110000200d000000
+03:12:10.944  [TEL] car/telemetry/sensor 01020ac8a901ffbf07904d4b00
+03:12:11.373  [LF] place: CENTRE 1734, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:12:11.866  [LF] place: CENTRE 1734, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:12:11.866  [DBG] alive: SDK timer 111450 ms, kernel time 109924 ms, difference 1526 ms
+03:12:11.943  [TEL] car/telemetry/motion 01010fb0ad0100180088110000200d000000
+03:12:11.947  [TEL] car/telemetry/sensor 01020ab0ad01ffbf07904d4b00
+03:12:11.947  [TEL] car/telemetry/heartbeat 010706b0ad01000100
+03:12:12.375  [LF] place: CENTRE 1699, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:12:12.861  [LF] place: CENTRE 1732, RIGHT 155: NOT READY: CENTRE on black, RIGHT on white
+03:12:12.936  [TEL] car/telemetry/motion 01010f98b10100180088110000200d000000
+03:12:12.950  [TEL] car/telemetry/sensor 01020a98b101ffbf07904d4b00
+03:12:13.367  [LF] place: CENTRE 1720, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:12:13.873  [LF] place: CENTRE 1717, RIGHT 128: NOT READY: CENTRE on black, RIGHT on white
+03:12:13.942  [TEL] car/telemetry/motion 01010f80b50100180088110000200d000000
+03:12:13.942  [TEL] car/telemetry/sensor 01020a80b501ffbf07904d4b00
+03:12:14.374  [LF] place: CENTRE 1740, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:12:14.872  [LF] place: CENTRE 1738, RIGHT 156: NOT READY: CENTRE on black, RIGHT on white
+03:12:14.936  [TEL] car/telemetry/motion 01010f68b90100180088110000200d000000
+03:12:14.953  [TEL] car/telemetry/sensor 01020a68b901ffbf07904d4b00
+03:12:15.367  [LF] place: CENTRE 1726, RIGHT 146: NOT READY: CENTRE on black, RIGHT on white
+03:12:15.879  [LF] place: CENTRE 1721, RIGHT 145: NOT READY: CENTRE on black, RIGHT on white
+03:12:15.942  [TEL] car/telemetry/motion 01010f50bd0100180088110000200d000000
+03:12:15.942  [TEL] car/telemetry/sensor 01020a50bd01ffbf07904d4b00
+03:12:16.373  [LF] place: CENTRE 1709, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:12:16.873  [LF] place: CENTRE 1724, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:12:16.952  [TEL] car/telemetry/motion 01010f38c10100180088110000200d000000
+03:12:16.953  [TEL] car/telemetry/sensor 01020a38c101ffbf07904d4b00
+03:12:16.955  [TEL] car/telemetry/heartbeat 01070638c101000100
+03:12:17.368  [LF] place: CENTRE 1732, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:12:17.885  [LF] place: CENTRE 1704, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:12:17.942  [TEL] car/telemetry/motion 01010f20c50100180088110000200d000000
+03:12:17.954  [TEL] car/telemetry/sensor 01020a20c501ffbf07904d4b00
+03:12:18.371  [LF] place: CENTRE 1697, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:12:18.887  [LF] place: CENTRE 1741, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:12:18.944  [TEL] car/telemetry/motion 01010f08c90100180088110000200d000000
+03:12:18.944  [TEL] car/telemetry/sensor 01020a08c901ffbf07904d4b00
+03:12:19.370  [LF] place: CENTRE 1734, RIGHT 144: NOT READY: CENTRE on black, RIGHT on white
+03:12:19.879  [LF] place: CENTRE 1744, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:12:19.942  [TEL] car/telemetry/motion 01010ff0cc0100180088110000200d000000
+03:12:19.942  [TEL] car/telemetry/sensor 01020af0cc01ffbf07904d4b00
+03:12:20.376  [LF] place: CENTRE 1706, RIGHT 146: NOT READY: CENTRE on black, RIGHT on white
+03:12:20.879  [LF] place: CENTRE 1723, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:12:20.945  [TEL] car/telemetry/motion 01010fd8d00100180088110000200d000000
+03:12:20.945  [TEL] car/telemetry/sensor 01020ad8d001ffbf07904d4b00
+03:12:21.278  [S5] coarse hit 142 mm @ 150 deg, fine scan
+03:12:21.386  [LF] place: CENTRE 1706, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:12:21.847  [S5] obstacle 131 mm @ 150 deg w=125 clrL=635 clrR=635
+03:12:21.859  [S5] avoid -> SLOW (3000 ms)
+03:12:21.859  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:21.863  [S5] avoid -> IDLE (reacquired=0)
+03:12:21.878  [DBG] alive: SDK timer 121460 ms, kernel time 119934 ms, difference 1526 ms
+03:12:21.878  [STACK] init: 360 of 1152 B used, 792 never used
+03:12:21.878  [STACK] dbg_drain: 908 of 1664 B used, 756 never used
+03:12:21.878  [STACK] tel: 620 of 4736 B used, 4116 never used
+03:12:21.878  [STACK] vc: 428 of 1664 B used, 1236 never used
+03:12:21.878  [STACK] motion: 240 of 1664 B used, 1424 never used
+03:12:21.878  [STACK] lf: 572 of 1664 B used, 1092 never used
+03:12:21.878  [STACK] safety: 372 of 1664 B used, 1292 never used
+03:12:21.878  [STACK] imu: 548 of 2176 B used, 1628 never used
+03:12:21.878  [STACK] obs_scan: 608 of 1664 B used, 1056 never used
+03:12:21.878  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+03:12:21.878  [STACK] app_test: 700 of 1664 B used, 964 never used
+03:12:21.878  [STACK] stack top check: 0 mismatches
+03:12:21.878  [MBF] nav_in: 64 B buffer, 64 B free
+03:12:21.878  [MBF] motion_cmd: 32 B buffer, 32 B free
+03:12:21.878  [MBF] obstacle: 24 B buffer, 24 B free
+03:12:21.878  [MBF] telemetry: 384 B buffer, 384 B free
+03:12:21.894  [LF] place: CENTRE 1733, RIGHT 140: NOT READY: CENTRE on black, RIGHT on white
+03:12:21.942  [TEL] car/telemetry/motion 01010fc0d40100180088110000200d000000
+03:12:21.942  [TEL] car/telemetry/sensor 01020ac0d401ffbf07904d4b00
+03:12:21.942  [TEL] car/telemetry/heartbeat 010706c0d401000100
+03:12:21.942  [TEL] CONNECTED tx=271 txf=0 off=1 ev=45 bad=33 qd=32 od=0 cmd=1/5
+03:12:22.386  [LF] place: CENTRE 1700, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:12:22.882  [LF] place: CENTRE 1707, RIGHT 155: NOT READY: CENTRE on black, RIGHT on white
+03:12:22.949  [TEL] car/telemetry/motion 01010fa8d80100180088110000200d000000
+03:12:22.952  [TEL] car/telemetry/sensor 01020aa8d801ffbf07904d4b00
+03:12:22.992  [S5] coarse hit 113 mm @ 130 deg, fine scan
+03:12:23.390  [LF] place: CENTRE 1710, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:12:23.485  [S5] obstacle 127 mm @ 90 deg w=24 clrL=47 clrR=635
+03:12:23.485  [S5] avoid -> SLOW (3000 ms)
+03:12:23.485  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:23.485  [S5] avoid -> IDLE (reacquired=0)
+03:12:23.883  [LF] place: CENTRE 1709, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:12:23.945  [TEL] car/telemetry/motion 01010f90dc0100180088110000200d000000
+03:12:23.952  [TEL] car/telemetry/sensor 01020a90dc01ffbf07904d4b00
+03:12:24.389  [LF] place: CENTRE 1744, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:12:24.595  [S5] coarse hit 122 mm @ 140 deg, fine scan
+03:12:24.895  [LF] place: CENTRE 1731, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:12:24.943  [TEL] car/telemetry/motion 01010f78e00100180088110000200d000000
+03:12:24.943  [TEL] car/telemetry/sensor 01020a78e001ffbf07904d4b00
+03:12:25.037  [S5] obstacle 116 mm @ 130 deg w=131 clrL=635 clrR=635
+03:12:25.041  [S5] avoid -> SLOW (3000 ms)
+03:12:25.041  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:25.041  [S5] avoid -> IDLE (reacquired=0)
+03:12:25.388  [LF] place: CENTRE 1702, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:12:25.895  [LF] place: CENTRE 1708, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:12:25.943  [TEL] car/telemetry/motion 01010f60e40100180088110000200d000000
+03:12:25.943  [TEL] car/telemetry/sensor 01020a60e401ffbf07904d4b00
+03:12:26.239  [S5] coarse hit 121 mm @ 120 deg, fine scan
+03:12:26.404  [LF] place: CENTRE 1728, RIGHT 137: NOT READY: CENTRE on black, RIGHT on white
+03:12:26.661  [S5] obstacle 115 mm @ 130 deg w=70 clrL=635 clrR=635
+03:12:26.661  [S5] avoid -> SLOW (3000 ms)
+03:12:26.661  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:26.661  [S5] avoid -> IDLE (reacquired=0)
+03:12:26.899  [LF] place: CENTRE 1731, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:12:26.947  [TEL] car/telemetry/motion 01010f48e80100180088110000200d000000
+03:12:26.947  [TEL] car/telemetry/sensor 01020a48e801ffbf07904d4b00
+03:12:26.947  [TEL] car/telemetry/heartbeat 01070648e801000100
+03:12:27.393  [LF] place: CENTRE 1732, RIGHT 146: NOT READY: CENTRE on black, RIGHT on white
+03:12:27.865  [S5] coarse hit 115 mm @ 130 deg, fine scan
+03:12:27.898  [LF] place: CENTRE 1744, RIGHT 137: NOT READY: CENTRE on black, RIGHT on white
+03:12:27.944  [TEL] car/telemetry/motion 01010f30ec0100180088110000200d000000
+03:12:27.944  [TEL] car/telemetry/sensor 01020a30ec01ffbf07904d4b00
+03:12:28.387  [S5] obstacle 122 mm @ 140 deg w=74 clrL=635 clrR=635
+03:12:28.395  [S5] avoid -> SLOW (3000 ms)
+03:12:28.395  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:28.395  [S5] avoid -> IDLE (reacquired=0)
+03:12:28.403  [LF] place: CENTRE 1713, RIGHT 124: NOT READY: CENTRE on black, RIGHT on white
+03:12:28.900  [LF] place: CENTRE 1729, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:12:28.947  [TEL] car/telemetry/motion 01010f18f00100180088110000200d000000
+03:12:28.958  [TEL] car/telemetry/sensor 01020a18f001ffbf07904d4b00
+03:12:29.397  [LF] place: CENTRE 1713, RIGHT 170: NOT READY: CENTRE on black, RIGHT on white
+03:12:29.535  [S5] coarse hit 122 mm @ 130 deg, fine scan
+03:12:29.898  [LF] place: CENTRE 1713, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:12:29.945  [TEL] car/telemetry/motion 01010f00f40100180088110000200d000000
+03:12:29.945  [TEL] car/telemetry/sensor 01020a00f401ffbf07904d4b00
+03:12:29.962  [S5] obstacle 122 mm @ 130 deg w=95 clrL=635 clrR=635
+03:12:29.962  [S5] avoid -> SLOW (3000 ms)
+03:12:29.962  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:29.962  [S5] avoid -> IDLE (reacquired=0)
+03:12:30.404  [LF] place: CENTRE 1737, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:12:30.912  [LF] place: CENTRE 1721, RIGHT 149: NOT READY: CENTRE on black, RIGHT on white
+03:12:30.943  [TEL] car/telemetry/motion 01010fe8f70100180088110000200d000000
+03:12:30.943  [TEL] car/telemetry/sensor 01020ae8f701ffbf07904d4b00
+03:12:31.090  [S5] coarse hit 121 mm @ 130 deg, fine scan
+03:12:31.407  [LF] place: CENTRE 1707, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:12:31.546  [S5] obstacle 118 mm @ 140 deg w=72 clrL=635 clrR=635
+03:12:31.555  [S5] avoid -> SLOW (3000 ms)
+03:12:31.557  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:31.557  [S5] avoid -> IDLE (reacquired=0)
+03:12:31.877  [DBG] alive: SDK timer 131462 ms, kernel time 129936 ms, difference 1526 ms
+03:12:31.910  [LF] place: CENTRE 1713, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:12:31.942  [TEL] car/telemetry/motion 01010fd0fb0100180088110000200d000000
+03:12:31.949  [TEL] car/telemetry/sensor 01020ad0fb01ffbf07904d4b00
+03:12:31.949  [TEL] car/telemetry/heartbeat 010706d0fb01000100
+03:12:32.402  [LF] place: CENTRE 1747, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:12:32.772  [S5] coarse hit 121 mm @ 130 deg, fine scan
+03:12:32.916  [LF] place: CENTRE 1744, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:12:32.945  [TEL] car/telemetry/motion 01010fb8ff0100180088110000200d000000
+03:12:32.945  [TEL] car/telemetry/sensor 01020ab8ff01ffbf07904d4b00
+03:12:33.278  [S5] obstacle 127 mm @ 140 deg w=77 clrL=635 clrR=635
+03:12:33.278  [S5] avoid -> SLOW (3000 ms)
+03:12:33.278  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:33.278  [S5] avoid -> IDLE (reacquired=0)
+03:12:33.406  [LF] place: CENTRE 1733, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:12:33.903  [LF] place: CENTRE 1722, RIGHT 151: NOT READY: CENTRE on black, RIGHT on white
+03:12:33.949  [TEL] car/telemetry/motion 01010fa0030200180088110000200d000000
+03:12:33.949  [TEL] car/telemetry/sensor 01020aa00302ffbf07904d4b00
+03:12:34.411  [LF] place: CENTRE 1748, RIGHT 156: NOT READY: CENTRE on black, RIGHT on white
+03:12:34.456  [S5] coarse hit 125 mm @ 130 deg, fine scan
+03:12:34.873  [S5] obstacle 120 mm @ 130 deg w=115 clrL=635 clrR=635
+03:12:34.873  [S5] avoid -> SLOW (3000 ms)
+03:12:34.873  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:34.873  [S5] avoid -> IDLE (reacquired=0)
+03:12:34.904  [LF] place: CENTRE 1761, RIGHT 129: NOT READY: CENTRE on black, RIGHT on white
+03:12:34.935  [TEL] car/telemetry/motion 01010f88070200180088110000200d000000
+03:12:34.950  [TEL] car/telemetry/sensor 01020a880702ffbf07904d4b00
+03:12:35.410  [LF] place: CENTRE 1714, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:12:35.916  [LF] place: CENTRE 1715, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:12:35.948  [TEL] car/telemetry/motion 01010f700b0200180088110000200d000000
+03:12:35.948  [TEL] car/telemetry/sensor 01020a700b02ffbf07904d4b00
+03:12:36.060  [S5] coarse hit 120 mm @ 120 deg, fine scan
+03:12:36.423  [LF] place: CENTRE 1744, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:12:36.486  [S5] obstacle 122 mm @ 120 deg w=95 clrL=635 clrR=635
+03:12:36.502  [S5] avoid -> SLOW (3000 ms)
+03:12:36.506  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:36.506  [S5] avoid -> IDLE (reacquired=0)
+03:12:36.916  [LF] place: CENTRE 1705, RIGHT 144: NOT READY: CENTRE on black, RIGHT on white
+03:12:36.948  [TEL] car/telemetry/motion 01010f580f0200180088110000200d000000
+03:12:36.948  [TEL] car/telemetry/sensor 01020a580f02ffbf07904d4b00
+03:12:36.948  [TEL] car/telemetry/heartbeat 010706580f02000100
+03:12:37.423  [LF] place: CENTRE 1713, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:12:37.724  [S5] coarse hit 122 mm @ 120 deg, fine scan
+03:12:37.915  [LF] place: CENTRE 1753, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:12:37.947  [TEL] car/telemetry/motion 01010f40130200180088110000200d000000
+03:12:37.947  [TEL] car/telemetry/sensor 01020a401302ffbf07904d4b00
+03:12:38.217  [S5] obstacle 116 mm @ 130 deg w=70 clrL=635 clrR=635
+03:12:38.217  [S5] avoid -> SLOW (3000 ms)
+03:12:38.217  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:38.217  [S5] avoid -> IDLE (reacquired=0)
+03:12:38.423  [LF] place: CENTRE 1732, RIGHT 128: NOT READY: CENTRE on black, RIGHT on white
+03:12:38.915  [LF] place: CENTRE 1730, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:12:38.947  [TEL] car/telemetry/motion 01010f28170200180088110000200d000000
+03:12:38.947  [TEL] car/telemetry/sensor 01020a281702ffbf07904d4b00
+03:12:39.312  [S5] coarse hit 116 mm @ 130 deg, fine scan
+03:12:39.423  [LF] place: CENTRE 1730, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:12:39.851  [S5] obstacle 114 mm @ 140 deg w=69 clrL=635 clrR=52
+03:12:39.858  [S5] avoid -> SLOW (3000 ms)
+03:12:39.858  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:39.858  [S5] avoid -> IDLE (reacquired=0)
+03:12:39.914  [LF] place: CENTRE 1724, RIGHT 165: NOT READY: CENTRE on black, RIGHT on white
+03:12:39.946  [TEL] car/telemetry/motion 01010f101b0200180088110000200d000000
+03:12:39.957  [TEL] car/telemetry/sensor 01020a101b02ffbf07904d4b00
+03:12:40.420  [LF] place: CENTRE 1745, RIGHT 148: NOT READY: CENTRE on black, RIGHT on white
+03:12:40.929  [LF] place: CENTRE 1733, RIGHT 148: NOT READY: CENTRE on black, RIGHT on white
+03:12:40.945  [TEL] car/telemetry/motion 01010ff81e0200180088110000200d000000
+03:12:40.945  [TEL] car/telemetry/sensor 01020af81e02ffbf07904d4b00
+03:12:40.993  [S5] coarse hit 122 mm @ 130 deg, fine scan
+03:12:41.418  [LF] place: CENTRE 1722, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:12:41.418  [S5] obstacle 121 mm @ 130 deg w=95 clrL=635 clrR=635
+03:12:41.418  [S5] avoid -> SLOW (3000 ms)
+03:12:41.433  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:41.433  [S5] avoid -> IDLE (reacquired=0)
+03:12:41.884  [DBG] alive: SDK timer 141472 ms, kernel time 139946 ms, difference 1526 ms
+03:12:41.925  [LF] place: CENTRE 1728, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:12:41.941  [TEL] car/telemetry/motion 01010fe0220200180088110000200d000000
+03:12:41.947  [TEL] car/telemetry/sensor 01020ae02202ffbf07904d4b00
+03:12:41.947  [TEL] car/telemetry/heartbeat 010706e02202000100
+03:12:42.429  [LF] place: CENTRE 1710, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:12:42.671  [S5] coarse hit 122 mm @ 130 deg, fine scan
+03:12:42.924  [LF] place: CENTRE 1713, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:12:42.939  [TEL] car/telemetry/motion 01010fc8260200180088110000200d000000
+03:12:42.939  [TEL] car/telemetry/sensor 01020ac82602ffbf07904d4b00
+03:12:43.130  [S5] obstacle 121 mm @ 130 deg w=95 clrL=635 clrR=635
+03:12:43.130  [S5] avoid -> SLOW (3000 ms)
+03:12:43.130  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:43.130  [S5] avoid -> IDLE (reacquired=0)
+03:12:43.430  [LF] place: CENTRE 1747, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:12:43.938  [LF] place: CENTRE 1741, RIGHT 155: NOT READY: CENTRE on black, RIGHT on white
+03:12:43.940  [TEL] car/telemetry/motion 01010fb02a0200180088110000200d000000
+03:12:43.940  [TEL] car/telemetry/sensor 01020ab02a02ffbf07904d4b00
+03:12:44.350  [S5] coarse hit 116 mm @ 130 deg, fine scan
+03:12:44.430  [LF] place: CENTRE 1756, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:12:44.762  [S5] obstacle 117 mm @ 120 deg w=132 clrL=635 clrR=635
+03:12:44.762  [S5] avoid -> SLOW (3000 ms)
+03:12:44.762  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:44.778  [S5] avoid -> IDLE (reacquired=0)
+03:12:44.936  [LF] place: CENTRE 1748, RIGHT 144: NOT READY: CENTRE on black, RIGHT on white
+03:12:44.936  [TEL] car/telemetry/motion 01010f982e0200180088110000200d000000
+03:12:44.936  [TEL] car/telemetry/sensor 01020a982e02ffbf07904d4b00
+03:12:45.428  [LF] place: CENTRE 1730, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:12:45.933  [LF] place: CENTRE 1760, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:12:45.949  [TEL] car/telemetry/motion 01010f80320200180088110000200d000000
+03:12:45.949  [TEL] car/telemetry/sensor 01020a803202ffbf07904d4b00
+03:12:45.966  [S5] coarse hit 114 mm @ 120 deg, fine scan
+03:12:46.391  [S5] obstacle 117 mm @ 120 deg w=112 clrL=635 clrR=635
+03:12:46.394  [S5] avoid -> SLOW (3000 ms)
+03:12:46.396  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:46.397  [S5] avoid -> IDLE (reacquired=0)
+03:12:46.436  [LF] place: CENTRE 1752, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:12:46.941  [LF] place: CENTRE 1715, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:12:46.953  [TEL] car/telemetry/motion 01010f68360200180088110000200d000000
+03:12:46.955  [TEL] car/telemetry/sensor 01020a683602ffbf07904d4b00
+03:12:46.957  [TEL] car/telemetry/heartbeat 010706683602000100
+03:12:47.448  [LF] place: CENTRE 1724, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:12:47.634  [S5] coarse hit 117 mm @ 120 deg, fine scan
+03:12:47.932  [LF] place: CENTRE 1758, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:12:47.946  [TEL] car/telemetry/motion 01010f503a0200180088110000200d000000
+03:12:47.946  [TEL] car/telemetry/sensor 01020a503a02ffbf07904d4b00
+03:12:48.122  [S5] obstacle 117 mm @ 120 deg w=112 clrL=635 clrR=635
+03:12:48.122  [S5] avoid -> SLOW (3000 ms)
+03:12:48.122  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:48.137  [S5] avoid -> IDLE (reacquired=0)
+03:12:48.450  [LF] place: CENTRE 1758, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:12:48.944  [LF] place: CENTRE 1752, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:12:48.954  [TEL] car/telemetry/motion 01010f383e0200180088110000200d000000
+03:12:48.957  [TEL] car/telemetry/sensor 01020a383e02ffbf07904d4b00
+03:12:49.220  [S5] coarse hit 117 mm @ 120 deg, fine scan
+03:12:49.450  [LF] place: CENTRE 1716, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:12:49.638  [S5] obstacle 114 mm @ 120 deg w=109 clrL=635 clrR=635
+03:12:49.641  [S5] avoid -> SLOW (3000 ms)
+03:12:49.643  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:49.646  [S5] avoid -> IDLE (reacquired=0)
+03:12:49.946  [LF] place: CENTRE 1716, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:12:49.949  [TEL] car/telemetry/motion 01010f20420200180088110000200d000000
+03:12:49.951  [TEL] car/telemetry/sensor 01020a204202ffbf07904d4b00
+03:12:50.447  [LF] place: CENTRE 1728, RIGHT 142: NOT READY: CENTRE on black, RIGHT on white
+03:12:50.848  [S5] coarse hit 114 mm @ 120 deg, fine scan
+03:12:50.947  [LF] place: CENTRE 1721, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:12:50.949  [TEL] car/telemetry/motion 01010f08460200180088110000200d000000
+03:12:50.949  [TEL] car/telemetry/sensor 01020a084602ffbf07904d4b00
+03:12:51.376  [S5] obstacle 114 mm @ 120 deg w=109 clrL=635 clrR=635
+03:12:51.378  [S5] avoid -> SLOW (3000 ms)
+03:12:51.380  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:51.382  [S5] avoid -> IDLE (reacquired=0)
+03:12:51.453  [LF] place: CENTRE 1724, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:12:51.894  [DBG] alive: SDK timer 151474 ms, kernel time 149948 ms, difference 1526 ms
+03:12:51.949  [TEL] car/telemetry/motion 01010ff0490200180088110000200d000000
+03:12:51.951  [TEL] car/telemetry/sensor 01020af04902ffbf07904d4b00
+03:12:51.953  [TEL] car/telemetry/heartbeat 010706f04902000100
+03:12:51.955  [LF] place: CENTRE 1705, RIGHT 136: NOT READY: CENTRE on black, RIGHT on white
+03:12:52.455  [LF] place: CENTRE 1719, RIGHT 140: NOT READY: CENTRE on black, RIGHT on white
+03:12:52.458  [S5] coarse hit 114 mm @ 120 deg, fine scan
+03:12:52.872  [S5] obstacle 117 mm @ 120 deg w=112 clrL=635 clrR=635
+03:12:52.874  [S5] avoid -> SLOW (3000 ms)
+03:12:52.876  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:52.877  [S5] avoid -> IDLE (reacquired=0)
+03:12:52.950  [TEL] car/telemetry/motion 01010fd84d0200180088110000200d000000
+03:12:52.952  [TEL] car/telemetry/sensor 01020ad84d02ffbf07904d4b00
+03:12:52.953  [LF] place: CENTRE 1721, RIGHT 124: NOT READY: CENTRE on black, RIGHT on white
+03:12:53.456  [LF] place: CENTRE 1741, RIGHT 148: NOT READY: CENTRE on black, RIGHT on white
+03:12:53.950  [TEL] car/telemetry/motion 01010fc0510200180088110000200d000000
+03:12:53.952  [TEL] car/telemetry/sensor 01020ac05102ffbf07904d4b00
+03:12:53.953  [LF] place: CENTRE 1721, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:12:54.104  [S5] coarse hit 117 mm @ 120 deg, fine scan
+03:12:54.457  [LF] place: CENTRE 1715, RIGHT 129: NOT READY: CENTRE on black, RIGHT on white
+03:12:54.610  [S5] obstacle 112 mm @ 120 deg w=107 clrL=635 clrR=635
+03:12:54.613  [S5] avoid -> SLOW (3000 ms)
+03:12:54.615  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:54.616  [S5] avoid -> IDLE (reacquired=0)
+03:12:54.951  [TEL] car/telemetry/motion 01010fa8550200180088110000200d000000
+03:12:54.952  [TEL] car/telemetry/sensor 01020aa85502ffbf07904d4b00
+03:12:54.962  [LF] place: CENTRE 1743, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:12:55.458  [LF] place: CENTRE 1729, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:12:55.753  [S5] coarse hit 112 mm @ 120 deg, fine scan
+03:12:55.953  [TEL] car/telemetry/motion 01010f90590200180088110000200d000000
+03:12:55.954  [TEL] car/telemetry/sensor 01020a905902ffbf07904d4b00
+03:12:55.963  [LF] place: CENTRE 1706, RIGHT 137: NOT READY: CENTRE on black, RIGHT on white
+03:12:56.173  [S5] obstacle 117 mm @ 120 deg w=112 clrL=635 clrR=635
+03:12:56.174  [S5] avoid -> SLOW (3000 ms)
+03:12:56.176  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:56.178  [S5] avoid -> IDLE (reacquired=0)
+03:12:56.453  [LF] place: CENTRE 1718, RIGHT 124: NOT READY: CENTRE on black, RIGHT on white
+03:12:56.942  [TEL] car/telemetry/motion 01010f785d0200180088110000200d000000
+03:12:56.942  [TEL] car/telemetry/sensor 01020a785d02ffbf07904d4b00
+03:12:56.957  [TEL] car/telemetry/heartbeat 010706785d02000100
+03:12:56.957  [LF] place: CENTRE 1715, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:12:57.404  [S5] coarse hit 117 mm @ 120 deg, fine scan
+03:12:57.456  [LF] place: CENTRE 1754, RIGHT 127: NOT READY: CENTRE on black, RIGHT on white
+03:12:57.906  [S5] obstacle 121 mm @ 120 deg w=116 clrL=635 clrR=635
+03:12:57.914  [S5] avoid -> SLOW (3000 ms)
+03:12:57.915  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:57.916  [S5] avoid -> IDLE (reacquired=0)
+03:12:57.946  [TEL] car/telemetry/motion 01010f60610200180088110000200d000000
+03:12:57.946  [TEL] car/telemetry/sensor 01020a606102ffbf07904d4b00
+03:12:57.963  [LF] place: CENTRE 1724, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:12:58.458  [LF] place: CENTRE 1711, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:12:58.956  [TEL] car/telemetry/motion 01010f48650200180088110000200d000000
+03:12:58.959  [TEL] car/telemetry/sensor 01020a486502ffbf07904d4b00
+03:12:58.967  [LF] place: CENTRE 1736, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:12:59.054  [S5] coarse hit 118 mm @ 120 deg, fine scan
+03:12:59.463  [LF] place: CENTRE 1716, RIGHT 171: NOT READY: CENTRE on black, RIGHT on white
+03:12:59.479  [S5] obstacle 118 mm @ 120 deg w=113 clrL=635 clrR=635
+03:12:59.479  [S5] avoid -> SLOW (3000 ms)
+03:12:59.479  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:12:59.489  [S5] avoid -> IDLE (reacquired=0)
+03:12:59.938  [TEL] car/telemetry/motion 01010f30690200180088110000200d000000
+03:12:59.938  [TEL] car/telemetry/sensor 01020a306902ffbf07904d4b00
+03:12:59.955  [LF] place: CENTRE 1754, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:13:00.463  [LF] place: CENTRE 1732, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:13:00.748  [S5] coarse hit 118 mm @ 140 deg, fine scan
+03:13:00.946  [TEL] car/telemetry/motion 01010f186d0200180088110000200d000000
+03:13:00.946  [TEL] car/telemetry/sensor 01020a186d02ffbf07904d4b00
+03:13:00.968  [LF] place: CENTRE 1704, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:13:01.466  [LF] place: CENTRE 1728, RIGHT 145: NOT READY: CENTRE on black, RIGHT on white
+03:13:01.639  [S5] obstacle 140 mm @ 100 deg w=36 clrL=635 clrR=635
+03:13:01.639  [S5] avoid -> SLOW (3000 ms)
+03:13:01.639  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:13:01.639  [S5] avoid -> IDLE (reacquired=0)
+03:13:01.900  [DBG] alive: SDK timer 161484 ms, kernel time 159958 ms, difference 1526 ms
+03:13:01.940  [TEL] car/telemetry/motion 01010f00710200180088110000200d000000
+03:13:01.949  [TEL] car/telemetry/sensor 01020a007102ffbf07904d4b00
+03:13:01.951  [TEL] car/telemetry/heartbeat 010706007102000100
+03:13:01.956  [LF] place: CENTRE 1710, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:13:02.467  [LF] place: CENTRE 1735, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:13:02.944  [S5] coarse hit 124 mm @ 60 deg, fine scan
+03:13:02.944  [TEL] car/telemetry/motion 01010fe8740200180088110000200d000000
+03:13:02.944  [TEL] car/telemetry/sensor 01020ae87402ffbf07904d4b00
+03:13:02.962  [LF] place: CENTRE 1694, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:13:03.436  [S5] obstacle 140 mm @ 100 deg w=36 clrL=635 clrR=635
+03:13:03.436  [S5] avoid -> SLOW (3000 ms)
+03:13:03.446  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:13:03.446  [S5] avoid -> IDLE (reacquired=0)
+03:13:03.465  [LF] place: CENTRE 1714, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:13:03.944  [TEL] car/telemetry/motion 01010fd0780200180088110000200d000000
+03:13:03.944  [TEL] car/telemetry/sensor 01020ad07802ffbf07904d4b00
+03:13:03.971  [LF] place: CENTRE 1712, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:13:04.468  [LF] place: CENTRE 1259, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:13:04.753  [S5] coarse hit 140 mm @ 100 deg, fine scan
+03:13:04.949  [TEL] car/telemetry/motion 01010fb87c020018008c110000200d000000
+03:13:04.949  [TEL] car/telemetry/sensor 01020ab87c02ffbf07904d4b00
+03:13:04.963  [LF] place: CENTRE 1771, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:13:05.466  [LF] place: CENTRE 1795, RIGHT 161: NOT READY: CENTRE on black, RIGHT on white
+03:13:05.942  [TEL] car/telemetry/motion 01010fa080020018008c110000200d000000
+03:13:05.942  [TEL] car/telemetry/sensor 01020aa08002ffbf07904d4b00
+03:13:05.974  [LF] place: CENTRE 241, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:13:06.478  [LF] place: CENTRE 1476, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:13:06.942  [TEL] car/telemetry/motion 01010f8884020018008c110000200d000000
+03:13:06.954  [TEL] car/telemetry/sensor 01020a888402ffbf07904d4b00
+03:13:06.954  [TEL] car/telemetry/heartbeat 010706888402000100
+03:13:06.974  [LF] place: CENTRE 1834, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:13:07.465  [LF] place: CENTRE 1811, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:13:07.943  [TEL] car/telemetry/motion 01010f7088020018008c110000200d000000
+03:13:07.956  [TEL] car/telemetry/sensor 01020a708802ffbf07904d4b00
+03:13:07.982  [LF] place: CENTRE 2030, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:13:08.466  [LF] place: CENTRE 1674, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:13:08.953  [TEL] car/telemetry/motion 01010f588c020018008c110000200d000000
+03:13:08.956  [TEL] car/telemetry/sensor 01020a588c02ffbf07904d4b00
+03:13:08.985  [LF] place: CENTRE 1704, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:13:09.473  [LF] place: CENTRE 1765, RIGHT 165: NOT READY: CENTRE on black, RIGHT on white
+03:13:09.945  [TEL] car/telemetry/motion 01010f4090020018008c110000200d000000
+03:13:09.945  [TEL] car/telemetry/sensor 01020a409002ffbf07904d4b00
+03:13:09.977  [LF] place: CENTRE 2140, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:13:10.166  [IMU] hump pitch=-10 half-deg
+03:13:10.182  [TEL] car/telemetry/hump 010405269102007b
+03:13:10.483  [LF] place: CENTRE 893, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:13:10.947  [TEL] car/telemetry/motion 01010f2894020018008c110000080d000000
+03:13:10.947  [TEL] car/telemetry/sensor 01020a289402ffbf07904d4b00
+03:13:10.980  [LF] place: CENTRE 950, RIGHT 140: NOT READY: CENTRE on black, RIGHT on white
+03:13:11.492  [LF] place: CENTRE 901, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:13:11.906  [DBG] alive: SDK timer 171494 ms, kernel time 169968 ms, difference 1526 ms
+03:13:11.944  [TEL] car/telemetry/motion 01010f1098020018008c110000080d000000
+03:13:11.944  [TEL] car/telemetry/sensor 01020a109802ffbf07904d4b00
+03:13:11.944  [TEL] car/telemetry/heartbeat 010706109802000100
+03:13:11.982  [LF] place: CENTRE 1759, RIGHT 142: NOT READY: CENTRE on black, RIGHT on white
+03:13:12.493  [LF] place: CENTRE 1779, RIGHT 165: NOT READY: CENTRE on black, RIGHT on white
+03:13:12.780  [IMU] hump pitch=-12 half-deg
+03:13:12.784  [TEL] car/telemetry/hump 0104054e9b02007a
+03:13:12.946  [TEL] car/telemetry/motion 01010ff89b020018008c110000080d000000
+03:13:12.946  [TEL] car/telemetry/sensor 01020af89b02ffbf07904d4b00
+03:13:12.986  [LF] place: CENTRE 198, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:13:13.497  [LF] place: CENTRE 825, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:13:13.939  [TEL] car/telemetry/motion 01010fe09f0200180090110000080d000000
+03:13:13.939  [TEL] car/telemetry/sensor 01020ae09f02ffbf07904d4b00
+03:13:13.990  [LF] place: CENTRE 1348, RIGHT 124: NOT READY: CENTRE on black, RIGHT on white
+03:13:14.498  [LF] place: CENTRE 470, RIGHT 145: NOT READY: CENTRE on black, RIGHT on white
+03:13:14.944  [TEL] car/telemetry/motion 01010fc8a30200180094110000040d000000
+03:13:14.944  [TEL] car/telemetry/sensor 01020ac8a302ffbf07904d4b00
+03:13:14.993  [LF] place: CENTRE 482, RIGHT 129: NOT READY: CENTRE on black, RIGHT on white
+03:13:15.500  [LF] place: CENTRE 448, RIGHT 130: NOT READY: CENTRE on black, RIGHT on white
+03:13:15.950  [TEL] car/telemetry/motion 01010fb0a70200180094110000040d000000
+03:13:15.950  [TEL] car/telemetry/sensor 01020ab0a702ffbf07904d4b00
+03:13:15.994  [LF] place: CENTRE 443, RIGHT 129: NOT READY: CENTRE on black, RIGHT on white
+03:13:16.490  [LF] place: CENTRE 492, RIGHT 128: NOT READY: CENTRE on black, RIGHT on white
+03:13:16.939  [TEL] car/telemetry/motion 01010f98ab0200180094110000040d000000
+03:13:16.939  [TEL] car/telemetry/sensor 01020a98ab02ffbf07904d4b00
+03:13:16.939  [TEL] car/telemetry/heartbeat 01070698ab02000100
+03:13:17.008  [LF] place: CENTRE 433, RIGHT 159: NOT READY: CENTRE on black, RIGHT on white
+03:13:17.500  [LF] place: CENTRE 446, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:13:17.952  [TEL] car/telemetry/motion 01010f80af0200180094110000040d000000
+03:13:17.953  [TEL] car/telemetry/sensor 01020a80af02ffbf07904d4b00
+03:13:18.007  [LF] place: CENTRE 480, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:13:18.503  [LF] place: CENTRE 458, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:13:18.948  [TEL] car/telemetry/motion 01010f68b30200180094110000040d000000
+03:13:18.954  [TEL] car/telemetry/sensor 01020a68b302ffbf07904d4b00
+03:13:19.004  [LF] place: CENTRE 451, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:13:19.504  [LF] place: CENTRE 460, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:13:19.951  [TEL] car/telemetry/motion 01010f50b70200180094110000040d000000
+03:13:19.951  [TEL] car/telemetry/sensor 01020a50b702ffbf07904d4b00
+03:13:19.999  [LF] place: CENTRE 446, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:13:20.493  [LF] place: CENTRE 465, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:13:20.942  [TEL] car/telemetry/motion 01010f38bb0200180094110000040d000000
+03:13:20.956  [TEL] car/telemetry/sensor 01020a38bb02ffbf07904d4b00
+03:13:21.003  [LF] place: CENTRE 451, RIGHT 143: NOT READY: CENTRE on black, RIGHT on white
+03:13:21.504  [LF] place: CENTRE 468, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:13:21.918  [DBG] alive: SDK timer 181504 ms, kernel time 179978 ms, difference 1526 ms
+03:13:21.918  [STACK] init: 360 of 1152 B used, 792 never used
+03:13:21.918  [STACK] dbg_drain: 908 of 1664 B used, 756 never used
+03:13:21.918  [STACK] tel: 620 of 4736 B used, 4116 never used
+03:13:21.931  [STACK] vc: 428 of 1664 B used, 1236 never used
+03:13:21.931  [STACK] motion: 248 of 1664 B used, 1416 never used
+03:13:21.931  [STACK] lf: 572 of 1664 B used, 1092 never used
+03:13:21.931  [STACK] safety: 372 of 1664 B used, 1292 never used
+03:13:21.931  [STACK] imu: 556 of 2176 B used, 1620 never used
+03:13:21.931  [STACK] obs_scan: 608 of 1664 B used, 1056 never used
+03:13:21.931  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+03:13:21.931  [STACK] app_test: 900 of 1664 B used, 764 never used
+03:13:21.931  [STACK] stack top check: 0 mismatches
+03:13:21.931  [MBF] nav_in: 64 B buffer, 64 B free
+03:13:21.931  [MBF] motion_cmd: 32 B buffer, 32 B free
+03:13:21.931  [MBF] obstacle: 24 B buffer, 24 B free
+03:13:21.931  [MBF] telemetry: 384 B buffer, 384 B free
+03:13:21.946  [TEL] car/telemetry/motion 01010f20bf0200180094110000040d000000
+03:13:21.946  [TEL] car/telemetry/sensor 01020a20bf02ffbf07904d4b00
+03:13:21.946  [TEL] car/telemetry/heartbeat 01070620bf02000100
+03:13:21.951  [TEL] CONNECTED tx=405 txf=0 off=1 ev=47 bad=33 qd=32 od=0 cmd=1/5
+03:13:22.010  [LF] place: CENTRE 443, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:13:22.505  [LF] place: CENTRE 449, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:13:22.939  [TEL] car/telemetry/motion 01010f08c30200180094110000040d000000
+03:13:22.939  [TEL] car/telemetry/sensor 01020a08c302ffbf07904d4b00
+03:13:23.005  [LF] place: CENTRE 434, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:13:23.503  [LF] place: CENTRE 468, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:13:23.945  [TEL] car/telemetry/motion 01010ff0c60200180094110000040d000000
+03:13:23.945  [TEL] car/telemetry/sensor 01020af0c602ffbf07904d4b00
+03:13:24.009  [LF] place: CENTRE 453, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:13:24.513  [LF] place: CENTRE 443, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:13:24.947  [TEL] car/telemetry/motion 01010fd8ca0200180094110000040d000000
+03:13:24.947  [TEL] car/telemetry/sensor 01020ad8ca02ffbf07904d4b00
+03:13:25.005  [LF] place: CENTRE 475, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:13:25.514  [LF] place: CENTRE 468, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:13:25.955  [TEL] car/telemetry/motion 01010fc0ce0200180094110000040d000000
+03:13:25.955  [TEL] car/telemetry/sensor 01020ac0ce02ffbf07904d4b00
+03:13:26.010  [LF] place: CENTRE 435, RIGHT 122: NOT READY: CENTRE on black, RIGHT on white
+03:13:26.520  [LF] place: CENTRE 438, RIGHT 142: NOT READY: CENTRE on black, RIGHT on white
+03:13:26.955  [TEL] car/telemetry/motion 01010fa8d20200180094110000040d000000
+03:13:26.957  [TEL] car/telemetry/sensor 01020aa8d202ffbf07904d4b00
+03:13:26.957  [TEL] car/telemetry/heartbeat 010706a8d202000100
+03:13:27.018  [LF] place: CENTRE 426, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:13:27.513  [LF] place: CENTRE 466, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:13:27.943  [TEL] car/telemetry/motion 01010f90d60200180094110000040d000000
+03:13:27.958  [TEL] car/telemetry/sensor 01020a90d602ffbf07904d4b00
+03:13:28.022  [LF] place: CENTRE 456, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:13:28.520  [LF] place: CENTRE 397, RIGHT 145: NOT READY: CENTRE on black, RIGHT on white
+03:13:28.940  [TEL] car/telemetry/motion 01010f78da0200180090110000040d000000
+03:13:28.948  [TEL] car/telemetry/sensor 01020a78da02ffbf07904d4b00
+03:13:29.021  [LF] place: CENTRE 273, RIGHT 140: NOT READY: CENTRE on black, RIGHT on white
+03:13:29.526  [LF] place: CENTRE 1397, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:13:29.941  [TEL] car/telemetry/motion 01010f60de0200180090110000040d000000
+03:13:29.941  [TEL] car/telemetry/sensor 01020a60de02ffbf07904d4b00
+03:13:30.023  [LF] place: CENTRE 2267, RIGHT 175: NOT READY: CENTRE on black, RIGHT on white
+03:13:30.530  [LF] place: CENTRE 1952, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:13:30.949  [TEL] car/telemetry/motion 01010f48e20200180090110000040d000000
+03:13:30.949  [TEL] car/telemetry/sensor 01020a48e202ffbf07904d4b00
+03:13:31.022  [LF] place: CENTRE 1502, RIGHT 130: NOT READY: CENTRE on black, RIGHT on white
+03:13:31.525  [LF] place: CENTRE 509, RIGHT 148: NOT READY: CENTRE on black, RIGHT on white
+03:13:31.921  [DBG] alive: SDK timer 191507 ms, kernel time 189981 ms, difference 1526 ms
+03:13:31.938  [TEL] car/telemetry/motion 01010f30e60200180090110000040d000000
+03:13:31.938  [TEL] car/telemetry/sensor 01020a30e602ffbf07904d4b00
+03:13:31.938  [TEL] car/telemetry/heartbeat 01070630e602000100
+03:13:32.033  [LF] place: CENTRE 235, RIGHT 149: NOT READY: CENTRE on black, RIGHT on white
+03:13:32.532  [LF] place: CENTRE 448, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:13:32.949  [TEL] car/telemetry/motion 01010f18ea0200180090110000040d000000
+03:13:32.953  [TEL] car/telemetry/sensor 01020a18ea02ffbf07904d4b00
+03:13:33.035  [LF] place: CENTRE 1195, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:13:33.530  [LF] place: CENTRE 1381, RIGHT 142: NOT READY: CENTRE on black, RIGHT on white
+03:13:33.952  [TEL] car/telemetry/motion 01010f00ee0200180090110000040d000000
+03:13:33.953  [TEL] car/telemetry/sensor 01020a00ee02ffbf07904d4b00
+03:13:34.039  [LF] place: CENTRE 1386, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:13:34.530  [LF] place: CENTRE 1376, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:13:34.944  [TEL] car/telemetry/motion 01010fe8f10200180090110000040d000000
+03:13:34.944  [TEL] car/telemetry/sensor 01020ae8f102ffbf07904d4b00
+03:13:35.038  [LF] place: CENTRE 299, RIGHT 136: NOT READY: CENTRE on black, RIGHT on white
+03:13:35.535  [LF] place: CENTRE 195, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:13:35.949  [TEL] car/telemetry/motion 01010fd0f50200180090110000040d000000
+03:13:35.949  [TEL] car/telemetry/sensor 01020ad0f502ffbf07904d4b00
+03:13:36.035  [LF] place: CENTRE 217, RIGHT 148: NOT READY: CENTRE on black, RIGHT on white
+03:13:36.530  [LF] place: CENTRE 226, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:13:36.948  [TEL] car/telemetry/motion 01010fb8f90200180090110000040d000000
+03:13:36.955  [TEL] car/telemetry/sensor 01020ab8f902ffbf07904d4b00
+03:13:36.955  [TEL] car/telemetry/heartbeat 010706b8f902000100
+03:13:37.035  [LF] place: CENTRE 218, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:13:37.547  [LF] place: CENTRE 206, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:13:37.954  [TEL] car/telemetry/motion 01010fa0fd0200180090110000040d000000
+03:13:37.957  [TEL] car/telemetry/sensor 01020aa0fd02ffbf07904d4b00
+03:13:38.042  [LF] place: CENTRE 214, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:13:38.548  [LF] place: CENTRE 248, RIGHT 131: NOT READY: CENTRE on black, RIGHT on white
+03:13:38.956  [TEL] car/telemetry/motion 01010f88010300180090110000040d000000
+03:13:38.959  [TEL] car/telemetry/sensor 01020a880103ffbf07904d4b00
+03:13:39.044  [LF] place: CENTRE 244, RIGHT 136: NOT READY: CENTRE on black, RIGHT on white
+03:13:39.539  [LF] place: CENTRE 1117, RIGHT 173: NOT READY: CENTRE on black, RIGHT on white
+03:13:39.935  [TEL] car/telemetry/motion 01010f70050300180090110000040d000000
+03:13:39.935  [TEL] car/telemetry/sensor 01020a700503ffbf07904d4b00
+03:13:40.041  [LF] place: CENTRE 2205, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:13:40.540  [LF] place: CENTRE 1835, RIGHT 163: NOT READY: CENTRE on black, RIGHT on white
+03:13:40.944  [TEL] car/telemetry/motion 01010f58090300180090110000080d000000
+03:13:40.950  [TEL] car/telemetry/sensor 01020a580903ffbf07904d4b00
+03:13:41.041  [LF] place: CENTRE 1876, RIGHT 124: NOT READY: CENTRE on black, RIGHT on white
+03:13:41.550  [LF] place: CENTRE 1856, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:13:41.933  [DBG] alive: SDK timer 201517 ms, kernel time 199991 ms, difference 1526 ms
+03:13:41.947  [TEL] car/telemetry/motion 01010f400d0300180090110000080d000000
+03:13:41.947  [TEL] car/telemetry/sensor 01020a400d03ffbf07904d4b00
+03:13:41.947  [TEL] car/telemetry/heartbeat 010706400d03000100
+03:13:42.047  [LF] place: CENTRE 1870, RIGHT 153: NOT READY: CENTRE on black, RIGHT on white
+03:13:42.553  [LF] place: CENTRE 1865, RIGHT 148: NOT READY: CENTRE on black, RIGHT on white
+03:13:42.941  [TEL] car/telemetry/motion 01010f2811030018008c110000080d000000
+03:13:42.941  [TEL] car/telemetry/sensor 01020a281103ffbf07904d4b00
+03:13:43.048  [LF] place: CENTRE 310, RIGHT 156: NOT READY: CENTRE on black, RIGHT on white
+03:13:43.547  [LF] place: CENTRE 1918, RIGHT 146: NOT READY: CENTRE on black, RIGHT on white
+03:13:43.944  [TEL] car/telemetry/motion 01010f1015030018008c110000040d000000
+03:13:43.944  [TEL] car/telemetry/sensor 01020a101503ffbf07904d4b00
+03:13:44.051  [LF] place: CENTRE 1922, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:13:44.549  [LF] place: CENTRE 1910, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:13:44.944  [TEL] car/telemetry/motion 01010ff818030018008c110000040d000000
+03:13:44.944  [TEL] car/telemetry/sensor 01020af81803ffbf07904d4b00
+03:13:45.056  [LF] place: CENTRE 1872, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:13:45.548  [LF] place: CENTRE 1890, RIGHT 140: NOT READY: CENTRE on black, RIGHT on white
+03:13:45.945  [TEL] car/telemetry/motion 01010fe01c030018008c110000040d000000
+03:13:45.945  [TEL] car/telemetry/sensor 01020ae01c03ffbf07904d4b00
+03:13:46.059  [LF] place: CENTRE 1873, RIGHT 141: NOT READY: CENTRE on black, RIGHT on white
+03:13:46.378  [S5] coarse hit 248 mm @ 90 deg, fine scan
+03:13:46.550  [LF] place: CENTRE 1888, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:13:46.952  [TEL] car/telemetry/motion 01010fc820030018008c110000040d000000
+03:13:46.952  [TEL] car/telemetry/sensor 01020ac82003ffbf07904d4b00
+03:13:46.952  [TEL] car/telemetry/heartbeat 010706c82003000100
+03:13:47.060  [LF] place: CENTRE 1871, RIGHT 149: NOT READY: CENTRE on black, RIGHT on white
+03:13:47.554  [LF] place: CENTRE 1906, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:13:47.953  [TEL] car/telemetry/motion 01010fb024030018008c110000040d000000
+03:13:47.953  [TEL] car/telemetry/sensor 01020ab02403ffbf07904d4b00
+03:13:48.065  [LF] place: CENTRE 1901, RIGHT 133: NOT READY: CENTRE on black, RIGHT on white
+03:13:48.558  [LF] place: CENTRE 1873, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:13:48.943  [TEL] car/telemetry/motion 01010f9828030018008c110000040d000000
+03:13:48.943  [TEL] car/telemetry/sensor 01020a982803ffbf07904d4b00
+03:13:49.057  [LF] place: CENTRE 1877, RIGHT 137: NOT READY: CENTRE on black, RIGHT on white
+03:13:49.571  [LF] place: CENTRE 1859, RIGHT 156: NOT READY: CENTRE on black, RIGHT on white
+03:13:49.947  [TEL] car/telemetry/motion 01010f802c030018008c110000040d000000
+03:13:49.947  [TEL] car/telemetry/sensor 01020a802c03ffbf07904d4b00
+03:13:50.067  [LF] place: CENTRE 1894, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:13:50.564  [LF] place: CENTRE 1869, RIGHT 165: NOT READY: CENTRE on black, RIGHT on white
+03:13:50.937  [TEL] car/telemetry/motion 01010f6830030018008c110000040d000000
+03:13:50.949  [TEL] car/telemetry/sensor 01020a683003ffbf07904d4b00
+03:13:51.060  [LF] place: CENTRE 1870, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:13:51.573  [LF] place: CENTRE 1909, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:13:51.936  [TEL] car/telemetry/motion 01010f5034030018008c110000040d000000
+03:13:51.936  [TEL] car/telemetry/sensor 01020a503403ffbf07904d4b00
+03:13:51.951  [TEL] car/telemetry/heartbeat 010706503403000100
+03:13:51.951  [DBG] alive: SDK timer 211527 ms, kernel time 210001 ms, difference 1526 ms
+03:13:52.068  [LF] place: CENTRE 1908, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:13:52.573  [LF] place: CENTRE 1866, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:13:52.941  [TEL] car/telemetry/motion 01010f3838030018008c110000040d000000
+03:13:52.941  [TEL] car/telemetry/sensor 01020a383803ffbf07904d4b00
+03:13:53.066  [LF] place: CENTRE 1910, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:13:53.575  [LF] place: CENTRE 1888, RIGHT 165: NOT READY: CENTRE on black, RIGHT on white
+03:13:53.948  [TEL] car/telemetry/motion 01010f203c030018008c110000040d000000
+03:13:53.948  [TEL] car/telemetry/sensor 01020a203c03ffbf07904d4b00
+03:13:54.079  [LF] place: CENTRE 1905, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:13:54.576  [LF] place: CENTRE 1872, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:13:54.951  [TEL] car/telemetry/motion 01010f0840030018008c110000040d000000
+03:13:54.953  [TEL] car/telemetry/sensor 01020a084003ffbf07904d4b00
+03:13:55.081  [LF] place: CENTRE 1905, RIGHT 144: NOT READY: CENTRE on black, RIGHT on white
+03:13:55.577  [LF] place: CENTRE 1874, RIGHT 144: NOT READY: CENTRE on black, RIGHT on white
+03:13:55.941  [TEL] car/telemetry/motion 01010ff043030018008c110000040d000000
+03:13:55.941  [TEL] car/telemetry/sensor 01020af04303ffbf07904d4b00
+03:13:56.070  [LF] place: CENTRE 1896, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:13:56.578  [LF] place: CENTRE 1880, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:13:56.952  [TEL] car/telemetry/motion 01010fd847030018008c110000040d000000
+03:13:56.955  [TEL] car/telemetry/sensor 01020ad84703ffbf07904d4b00
+03:13:56.955  [TEL] car/telemetry/heartbeat 010706d84703000100
+03:13:57.073  [LF] place: CENTRE 1864, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:13:57.579  [LF] place: CENTRE 1864, RIGHT 162: NOT READY: CENTRE on black, RIGHT on white
+03:13:57.954  [TEL] car/telemetry/motion 01010fc04b030018008c110000040d000000
+03:13:57.954  [TEL] car/telemetry/sensor 01020ac04b03ffbf07904d4b00
+03:13:58.080  [LF] place: CENTRE 1874, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:13:58.577  [LF] place: CENTRE 1906, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:13:58.945  [TEL] car/telemetry/motion 01010fa84f030018008c110000040d000000
+03:13:58.945  [TEL] car/telemetry/sensor 01020aa84f03ffbf07904d4b00
+03:13:59.074  [LF] place: CENTRE 1905, RIGHT 138: NOT READY: CENTRE on black, RIGHT on white
+03:13:59.587  [LF] place: CENTRE 1859, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:13:59.953  [TEL] car/telemetry/motion 01010f9053030018008c110000040d000000
+03:13:59.953  [TEL] car/telemetry/sensor 01020a905303ffbf07904d4b00
+03:14:00.077  [LF] place: CENTRE 1865, RIGHT 165: NOT READY: CENTRE on black, RIGHT on white
+03:14:00.587  [LF] place: CENTRE 1907, RIGHT 130: NOT READY: CENTRE on black, RIGHT on white
+03:14:00.942  [TEL] car/telemetry/motion 01010f7857030018008c110000040d000000
+03:14:00.959  [TEL] car/telemetry/sensor 01020a785703ffbf07904d4b00
+03:14:01.084  [LF] place: CENTRE 1866, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:14:01.594  [LF] place: CENTRE 1894, RIGHT 151: NOT READY: CENTRE on black, RIGHT on white
+03:14:01.946  [TEL] car/telemetry/motion 01010f605b030018008c110000040d000000
+03:14:01.946  [TEL] car/telemetry/sensor 01020a605b03ffbf07904d4b00
+03:14:01.946  [TEL] car/telemetry/heartbeat 010706605b03000100
+03:14:01.946  [DBG] alive: SDK timer 221538 ms, kernel time 220012 ms, difference 1526 ms
+03:14:02.086  [LF] place: CENTRE 1865, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:14:02.598  [LF] place: CENTRE 1866, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:14:02.940  [TEL] car/telemetry/motion 01010f485f030018008c110000040d000000
+03:14:02.951  [TEL] car/telemetry/sensor 01020a485f03ffbf07904d4b00
+03:14:03.087  [LF] place: CENTRE 1890, RIGHT 152: NOT READY: CENTRE on black, RIGHT on white
+03:14:03.587  [LF] jmat: never placed: no START
+03:14:03.598  [LF] jmat: START with CENTRE at 0 pm, black this boot raw 255
+03:14:03.598  [LF] jmat: detected 0 mm at 0 ms, JUNCTION 0 mm at 0 ms, delay 0 mm 0 ms
+03:14:03.598  [LF] jmat: past the cross 0/0 polls CENTRE on, RIGHT dark 0, state 0, vc 0
+03:14:03.598  [LF] RULER run 1: wheel travel START to standstill 0 mm, after JUNCTION 0 mm
+03:14:03.598  [LF] tr jmat: t mm st c r s L R (0 rows, 20 ms)
+03:14:03.696  [LF] tr jmat end: ring dropped 0 lines
+03:14:03.696  [TEST] S3-U15 FAIL  (j0) on the line up to the cross, never LINE_LOST   (lf_run_test.c:988)
+03:14:03.696  [TEST] S3-U15 FAIL  (j1) cross detected at 230-320 mm, one JUNCTION   (lf_run_test.c:990)
+03:14:03.696  [TEST] S3-U15 FAIL  (j2) JUNCTION 110-135 mm after detection, by the odometer   (lf_run_test.c:9
+03:14:03.696  [TEST] S3-U15 FAIL  (j3) straight through: back ON_LINE, on the line past the cross   (lf_run_te
+03:14:03.696  [TEST] S3-U15 FAIL  (j4) stopped right after JUNCTION, wheels still   (lf_run_test.c:1004)
+03:14:03.696  [LF] jmat run 2 of 3
+03:14:03.703  [LF] >>> jmat: junction mat: CENTRE on the right half of the line, RIGHT on white, parallel
+03:14:03.703  [LF] >>> put the car against the tape, hands off: it starts when CENTRE is steady on black
+03:14:03.703  [LF] place: CENTRE 1889, RIGHT 160: NOT READY: CENTRE on black, RIGHT on white
+03:14:03.948  [TEL] car/telemetry/motion 01010f3063030018008c110000040d000000
+03:14:03.953  [TEL] car/telemetry/sensor 01020a306303ffbf07904d4b00
+03:14:04.185  [LF] place: CENTRE 1870, RIGHT 124: NOT READY: CENTRE on black, RIGHT on white
+03:14:04.413  [S5] coarse hit 169 mm @ 120 deg, fine scan
+03:14:04.698  [LF] place: CENTRE 1870, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:14:04.951  [TEL] car/telemetry/motion 01010f1867030018008c110000040d000000
+03:14:04.951  [TEL] car/telemetry/sensor 01020a186703ffbf07904d4b00
+03:14:04.988  [S5] obstacle 172 mm @ 140 deg w=45 clrL=635 clrR=635
+03:14:04.988  [S5] avoid -> SLOW (3000 ms)
+03:14:04.988  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:14:04.988  [S5] avoid -> IDLE (reacquired=0)
+03:14:05.193  [LF] place: CENTRE 1882, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:14:05.700  [LF] place: CENTRE 1886, RIGHT 154: NOT READY: CENTRE on black, RIGHT on white
+03:14:05.952  [TEL] car/telemetry/motion 01010f006b030018008c110000040d000000
+03:14:05.954  [TEL] car/telemetry/sensor 01020a006b03ffbf07904d4b00
+03:14:06.197  [LF] place: CENTRE 1859, RIGHT 125: NOT READY: CENTRE on black, RIGHT on white
+03:14:06.256  [S5] coarse hit 172 mm @ 140 deg, fine scan
+03:14:06.702  [LF] place: CENTRE 1901, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:14:06.942  [S5] obstacle 213 mm @ 160 deg w=55 clrL=635 clrR=635
+03:14:06.956  [S5] avoid -> SLOW (3000 ms)
+03:14:06.956  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:14:06.958  [S5] avoid -> IDLE (reacquired=0)
+03:14:06.958  [TEL] car/telemetry/motion 01010fe86e030018008c110000040d000000
+03:14:06.958  [TEL] car/telemetry/sensor 01020ae86e03ffbf07904d4b00
+03:14:06.958  [TEL] car/telemetry/heartbeat 010706e86e03000100
+03:14:07.199  [LF] place: CENTRE 1857, RIGHT 159: NOT READY: CENTRE on black, RIGHT on white
+03:14:07.698  [LF] place: CENTRE 1901, RIGHT 134: NOT READY: CENTRE on black, RIGHT on white
+03:14:07.946  [TEL] car/telemetry/motion 01010fd072030018008c110000040d000000
+03:14:07.957  [TEL] car/telemetry/sensor 01020ad07203ffbf07904d4b00
+03:14:08.203  [LF] place: CENTRE 1857, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:14:08.697  [LF] place: CENTRE 1867, RIGHT 147: NOT READY: CENTRE on black, RIGHT on white
+03:14:08.836  [S5] coarse hit 196 mm @ 150 deg, fine scan
+03:14:08.948  [TEL] car/telemetry/motion 01010fb876030018008c110000040d000000
+03:14:08.959  [TEL] car/telemetry/sensor 01020ab87603ffbf07904d4b00
+03:14:09.209  [LF] place: CENTRE 1869, RIGHT 157: NOT READY: CENTRE on black, RIGHT on white
+03:14:09.616  [S5] obstacle 196 mm @ 160 deg w=85 clrL=635 clrR=635
+03:14:09.616  [S5] avoid -> SLOW (3000 ms)
+03:14:09.616  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:14:09.616  [S5] avoid -> IDLE (reacquired=0)
+03:14:09.699  [LF] place: CENTRE 1861, RIGHT 164: NOT READY: CENTRE on black, RIGHT on white
+03:14:09.933  [TEL] car/telemetry/motion 01010fa07a030018008c110000040d000000
+03:14:09.949  [TEL] car/telemetry/sensor 01020aa07a03ffbf07904d4b00
+03:14:10.208  [LF] place: CENTRE 1877, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:14:10.697  [LF] place: CENTRE 1866, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:14:10.937  [TEL] car/telemetry/motion 01010f887e030018008c110000040d000000
+03:14:10.937  [TEL] car/telemetry/sensor 01020a887e03ffbf07904d4b00
+03:14:11.207  [LF] place: CENTRE 1899, RIGHT 140: NOT READY: CENTRE on black, RIGHT on white
+03:14:11.714  [LF] place: CENTRE 1875, RIGHT 139: NOT READY: CENTRE on black, RIGHT on white
+03:14:11.890  [S5] coarse hit 211 mm @ 150 deg, fine scan
+03:14:11.944  [TEL] car/telemetry/motion 01010f7082030018008c110000040d000000
+03:14:11.944  [TEL] car/telemetry/sensor 01020a708203ffbf07904d4b00
+03:14:11.951  [TEL] car/telemetry/heartbeat 010706708203000100
+03:14:11.958  [DBG] alive: SDK timer 231539 ms, kernel time 230013 ms, difference 1526 ms
+03:14:12.206  [LF] place: CENTRE 1892, RIGHT 148: NOT READY: CENTRE on black, RIGHT on white
+03:14:12.620  [S5] obstacle 111 mm @ 170 deg w=29 clrL=635 clrR=635
+03:14:12.620  [S5] avoid -> SLOW (3000 ms)
+03:14:12.620  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:14:12.620  [S5] avoid -> IDLE (reacquired=0)
+03:14:12.716  [LF] place: CENTRE 1858, RIGHT 126: NOT READY: CENTRE on black, RIGHT on white
+03:14:12.940  [TEL] car/telemetry/motion 01010f5886030018008c110000040d000000
+03:14:12.951  [TEL] car/telemetry/sensor 01020a588603ffbf07904d4b00
+03:14:13.212  [LF] place: CENTRE 1869, RIGHT 137: NOT READY: CENTRE on black, RIGHT on white
+03:14:13.716  [LF] place: CENTRE 1891, RIGHT 132: NOT READY: CENTRE on black, RIGHT on white
+03:14:13.748  [S5] coarse hit 104 mm @ 150 deg, fine scan
+03:14:13.952  [TEL] car/telemetry/motion 01010f408a030018008c110000040d000000
+03:14:13.954  [TEL] car/telemetry/sensor 01020a408a03ffbf07904d4b00
+03:14:14.208  [LF] place: CENTRE 1899, RIGHT 158: NOT READY: CENTRE on black, RIGHT on white
+03:14:14.225  [S5] obstacle 96 mm @ 150 deg w=92 clrL=635 clrR=635
+03:14:14.237  [S5] avoid -> SLOW (3000 ms)
+03:14:14.237  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:14:14.237  [S5] avoid -> IDLE (reacquired=0)
+03:14:14.720  [LF] place: CENTRE 1920, RIGHT 149: NOT READY: CENTRE on black, RIGHT on white
+03:14:14.942  [TEL] car/telemetry/motion 01010f288e030018008c110000040d000000
+03:14:14.942  [TEL] car/telemetry/sensor 01020a288e03ffbf07904d4b00
+03:14:15.211  [LF] place: CENTRE 1896, RIGHT 168: NOT READY: CENTRE on black, RIGHT on white
+03:14:15.432  [S5] coarse hit 104 mm @ 130 deg, fine scan
+03:14:15.721  [LF] place: CENTRE 1930, RIGHT 169: NOT READY: CENTRE on black, RIGHT on white
+03:14:15.929  [S5] obstacle 113 mm @ 150 deg w=10 clrL=635 clrR=635
+03:14:15.929  [S5] avoid -> SLOW (3000 ms)
+03:14:15.929  [S5] avoid ABORT in SLOW: bypass budget exhausted
+03:14:15.929  [S5] avoid -> IDLE (reacquired=0)
+03:14:15.941  [TEL] car/telemetry/motion 01010f1092030018008c110000040d000000
+03:14:15.941  [TEL] car/telemetry/sensor 01020a109203ffbf07904d4b00
+03:14:16.211  [LF] place: CENTRE 1897, RIGHT 166: NOT READY: CENTRE on black, RIGHT on white
+03:14:16.723  [LF] place: CENTRE 1915, RIGHT 128: NOT READY: CENTRE on black, RIGHT on white
+03:14:16.952  [TEL] car/telemetry/motion 01010ff895030018008c110000040d000000
+03:14:16.952  [TEL] car/telemetry/sensor 01020af89503ffbf07904d4b00
+03:14:16.952  [TEL] car/telemetry/heartbeat 010706f89503000100
+03:14:17.224  [LF] place: CENTRE 1926, RIGHT 136: NOT READY: CENTRE on black, RIGHT on white
+03:14:17.722  [LF] place: CENTRE 1916, RIGHT 144: NOT READY: CENTRE on black, RIGHT on white
