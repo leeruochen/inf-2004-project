@@ -1,0 +1,39 @@
+[S5] coarse hit 83 mm @ 150 deg, fine scan
+[S5] obstacle 82 mm @ 150 deg w=78 clrL=635 clrR=635
+[S5] avoid -> SLOW (3000 ms)
+[S5] avoid ABORT in SLOW: bypass budget exhausted
+[S5] avoid -> IDLE (reacquired=0)
+[S5] coarse hit 84 mm @ 130 deg, fine scan
+[S5] obstacle 87 mm @ 130 deg w=68 clrL=635 clrR=635
+[S5] avoid -> SLOW (3000 ms)
+[S5] avoid ABORT in SLOW: bypass budget exhausted
+[S5] avoid -> IDLE (reacquired=0)
+[S5] coarse hit 87 mm @ 130 deg, fine scan
+[TEST] subsystem3 SUMMARY 2 passed, 2 failed
+[TEST] subsystem4 SUMMARY 12 passed, 0 failed
+[TEST] S5-U01 PASS  servo angle to pulse: endpoints, centre, clamp
+[TEST] S5-U02 PASS  servo PWM slice 7 runs at SERVO_PWM_FREQ_HZ
+[TEST] S5-U03 PASS  slice 7 channel A (GP14, another owner) stays LOW
+[TEST] S5-U04 PASS  echo width to mm: zero, over-range, 1160 us = ~199 mm
+[TEST] S5-U05 PASS  echo handler registered and echo line idle LOW
+[TEST] S5-U06 PASS  cos/sin tables: 0, 90 and 180 degrees
+[TEST] S5-U07 PASS  lateral sign convention: positive is to the car's right
+[TEST] S5-U08 PASS  median of three samples ignores no-echo and rejects an outlier
+[TEST] S5-U09 PASS  an empty sweep is not an obstacle
+[TEST] S5-U10 PASS  one near bearing dead ahead: 150 mm at 90 degrees
+[TEST] S5-U11 PASS  a wide obstacle spans 60..120 degrees, centres on 90, reports >= 200 mm
+[TEST] S5-U12 PASS  with nothing beside it, both clearances saturate at 635 mm
+[TEST] S5-U13 PASS  an object 110 mm to the right cuts clear_R but not clear_L
+[TEST] S5-U14 PASS  profile round-trip: 20 cm at 90 degrees, sequence kept
+[TEST] S5-U15 PASS  a 0 degree bearing clamps to index 0 and flags OOR
+[TEST] S5-U16 PASS  an invalid result packs as distance 0 (no echo)
+[TEST] S5-U17 PASS  both sides clear, obstacle on the left: pass on the right
+[TEST] S5-U18 PASS  both sides clear, obstacle on the right: pass on the left
+[TEST] S5-U19 PASS  only the left has OBS_BYPASS_CLEAR_MIN_MM: pass on the left
+[TEST] S5-U20 PASS  neither side has room: the car reports blocked
+[S5] after 1800 ms: 237 sweeps, 3546 echoes, 30 misses
+[TEST] S5-U25 PASS  the scanner completes a coarse sweep on the 60 ms grid
+[TEST] S5-U26 PASS  the ultrasonic sensor returned at least one echo
+[TEST] subsystem5 SUMMARY 25 passed, 1 failed
+
+[exited with code 0]

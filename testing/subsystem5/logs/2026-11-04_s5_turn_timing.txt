@@ -1,0 +1,16 @@
+touch: Exception calling "Open" with "0" argument(s): "A device which does not exist was specified.
+"
+FLASHED
+CAPTURING
+[S5MT] 45 deg turn timing in 15 s -- car must be on the surface
+[MOT] invalid motion_cmd_t rejected
+[MOT] invalid motion_cmd_t rejected
+[MOT] S2-U16 dt=100 ms dist=2->4 cm encL=309->626 encR=347->677
+[S5MT] trial 0 LEFT: turn took 530 ms (encL 434 encR 1566)
+[S5MT] trial 0 RIGHT: turn took 500 ms (encL 968 encR 1006)
+[S5MT] trial 1 LEFT: turn took 470 ms (encL 474 encR 1604)
+[S5MT] trial 1 RIGHT: turn took 470 ms (encL 1014 encR 1034)
+[S5MT] trial 2 LEFT: turn took 500 ms (encL 508 encR 1638)
+[S5MT] trial 2 RIGHT: turn took 470 ms (encL 1063 encR 1067)
+[S5MT] done -- OBS_TURN_DWELL_MS is currently 700
+=== END ===
