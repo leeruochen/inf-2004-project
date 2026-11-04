@@ -20,34 +20,23 @@ It also checks whether the wheel distance is accurate. Left, right, U-turn, curv
 4. **Space:** keep hands and objects 25 cm clear in front of the car. Cables clear of the sonar.
 5. **Ruler marks:** have tape, a pen and a ruler ready.
 
-## Start pose
+## Start position
 
 - **Boot and pose A:** CENTRE on black, in the line's middle, RIGHT on white.
 - **Pose B:** CENTRE on white, RIGHT on black.
-- **Each drive:** CENTRE on black just inside the line's RIGHT edge, placed by the live reading below, RIGHT on white, car parallel to the line, CENTRE sensing point 250-270 mm before the centre of the cross, the same distance every drive.
+- **Each drive:** CENTRE on the right half of the black line, not on the black/white border. RIGHT on white. Car parallel to the line, CENTRE sensing point 250-270 mm before the centre of the cross.
 
-### Placing CENTRE on the right edge
-
-The log prints a `[LF] place` line twice a second for 25 s:
-
-1. Put the car down with CENTRE clearly on black.
-2. Slide the car slowly to its RIGHT, keeping it parallel to the line, until the line says `AT THE EDGE` (CENTRE 700-980 pm).
-3. Nudge the car about 2 mm back to its LEFT, until the reading says `black` again. Stop there. CENTRE should now be 1-4 mm inside the right edge.
-4. If it says `too far`, slide back left and start again from step 2.
-5. `HANDS OFF NOW` comes 4 s before the car drives.
-
-Do not leave CENTRE on the grey: in the host model that start is much worse than solid black just inside the edge.
-
-Always come from black. The left edge reads the same grey, so a reading alone cannot tell the two edges apart.
+Set this once, then put tape on the mat against the back and side of both wheels. Every drive goes back against the tape, so all three use the same position.
 
 ## Each drive
 
-1. Place the car. Put a tape mark on the mat beside a fixed point of the car, such as the front edge of the CENTRE sensor board.
-2. Hands off by 0. Stay ready to catch it.
-3. The car stops by itself just after the cross. Do not touch it. The log prints `MEASURE NOW` and gives you 45 s.
-4. Mark the same fixed point again. Write down the distance between the two marks: **real travel**.
-5. Measure from the left wheel hub to the centre of the cross arm, along the direction of travel, then the same for the right wheel. Past the cross is +, before it is -. The average is **A**. Averaging cancels a cross arm that is not square to the line.
-6. Put the car back when the next prompt asks.
+1. At `>>> jmat`, lift the car and put it against the tape. Take your hands off.
+2. The start guard watches CENTRE and RIGHT. Nothing moves until CENTRE is steady on black and RIGHT on white. `NOT READY` means reposition the car.
+3. `HANDS OFF` comes 3 s before the car drives. If the car moves in that time, the start is cancelled.
+4. The car crosses the junction, carries on straight and stops by itself. There is no turn in this test.
+5. Take your time. The guard waits up to 3 minutes, and only starts after the car has been lifted.
+
+**Once, on a clean drive:** mark a fixed point of the car before and after, and measure the distance between the marks: **real travel**. Also measure left and right wheel hub to the centre of the cross arm, along the direction of travel, past it +, before it -. The average is **A**.
 
 ## What to read in the log
 
@@ -58,12 +47,14 @@ Always come from black. The left edge reads the same grey, so a reading alone ca
 
 ## PASS
 
-All of these, on all 3 drives:
+Started by the guard on all 3 drives, and on all 3:
 
-- `[TEST] subsystem3 SUMMARY 21 passed, 0 failed`.
+- `(j1)` `(j2)` `(j3)` `(j4)` PASS.
 - `tr jmat end: ring dropped 0 lines`.
-- Distance ratio 0.97 to 1.03 (NFR4 allows +-3 %).
-- Axle at the event within +-9 mm of the cross centre, the half width of the cross line.
+
+That closes the straight-through junction stage. `(j0)` is logged but is a launch result, not a junction one: the launch loss from a start on black is known and tracked separately. A drive that stops before the cross did not test the junction: repeat that run.
+
+The ruler numbers do not decide this test, but the next stage needs them: distance ratio 0.97 to 1.03 (NFR4 allows +-3 %), axle at the event within +-9 mm of the cross centre.
 
 ## What a failure means
 
