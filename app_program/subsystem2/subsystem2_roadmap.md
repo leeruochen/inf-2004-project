@@ -21,6 +21,15 @@ Build note (Windows): the sandbox cannot run the SDK compiler (illegal DLL reloc
 Checked against HANDOVER.md, specs.md, TEAM.md, ARCHITECTURE.md, `docs/DATA_REPRESENTATION.md` and the repo headers.
 Folders you may edit: `app_program/subsystem2/`, `testing/subsystem2/`. Anything else (CMakeLists.txt, TEAM.md, config/*.h) needs team agreement.
 
+## Changes by other members
+
+Buddy 2 gives explicit permission for any member to edit Subsystem 2 when needed (HANDOVER.md
+section 0, rule 5). Record every such change here, newest last, and give the reason in the
+commit message too.
+
+| Date | Who | Files | What changed | Justification |
+|---|---|---|---|---|
+
 ## Open decisions (settle before or during the step shown)
 
 | # | Decision | Proposal | Step |

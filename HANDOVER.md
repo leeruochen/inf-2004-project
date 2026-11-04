@@ -28,6 +28,13 @@ Last updated: 2 Nov 2026, status of Subsystems 1, 3, 4 and 5 (section 1, and the
 5. **Do not write another member's subsystem code.** Each member writes and tests their own
    folder (section 3). An agent working for one member only edits that member's folder, plus
    shared files when the team has agreed.
+   - **Exception: Subsystem 2 is open to everyone (owner permission, Buddy 2 Ruo Chen, 4 Nov 2026).**
+     Any member, or an agent working for one, may edit `app_program/subsystem2/` (Motion and
+     Vehicle Controller) and `testing/subsystem2/` when integration needs it, without asking first.
+     For every such change: add a row to the "Changes by other members" table in
+     `app_program/subsystem2/subsystem2_roadmap.md` (date, who, files, what changed, why), say why
+     in the commit message, and keep the section 5 checks passing (0 warnings, `check_rules: PASS`).
+     Shared files (`config/*.h`, `CMakeLists.txt`, `TEAM.md`) still need team agreement.
 6. **Rules in section 6 are binding.** Owner decisions in section 7 are binding.
 7. When you finish a piece of work: run the checks in section 5, update section 1 and your
    own row in section 3 of this file, and record test results in `testing/`.
