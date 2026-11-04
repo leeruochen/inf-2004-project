@@ -100,9 +100,9 @@
 #define LF2_CRUISE_MMPS         ((uint32_t)MOTION_SPEED_CRUISE_CMPS * 10U)
 /** Drive limits (wheel travel).  The time limit is the travel at cruise
  *  plus 1.5 s. */
-/* INTERIM S3-U13i: 350 stops the car before the track's cross line, 410 mm
+/* INTERIM S3-U13i: 200 stops the car before the track's cross line, 250 mm
  * past the start.  The full S3-U13 needs 900 on >= 1.2 m of clear line. */
-#define LF2_STRAIGHT_MM         (350U)
+#define LF2_STRAIGHT_MM         (200U)
 #define LF2_RECOVER_MM          (500U)
 #define LF2_JUNCTION_MM         (800U)
 #define LF2_END_MM              (1200U)

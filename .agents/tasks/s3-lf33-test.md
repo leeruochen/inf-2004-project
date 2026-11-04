@@ -10,10 +10,10 @@ The firmware does the static poses, then the same straight drive three times.
 
 ## Interim short run (S3-U13i)
 
-Used while no 1.2 m clear line is available. The firmware stops each drive at 350 mm instead of 900 mm, so the car stops before the track's cross line (410 mm from the start; the line ends at 550 mm). Steering is the same as S3-U13.
+Used while no 1.2 m clear line is available. The firmware stops each drive at 200 mm instead of 900 mm, so the car stops before the track's cross line (250 mm from the start; the line ends at 390 mm). Steering is the same as S3-U13.
 
-- **Start:** measure with a ruler: CENTRE 410 mm before the cross line, on every drive. Earlier runs started about 10-12 cm closer; from there the car reaches the cross line before 350 mm and `(n)` fails.
-- **Result:** `SUMMARY 15 passed, 3 failed`, the 3 failures being `(d2)` only: its post window runs to 2500 ms and this drive ends at about 1.7 s.
+- **Start:** measure with a ruler: CENTRE 250 mm before the cross line, on every drive.
+- **Result:** `SUMMARY 15 passed, 3 failed`, the 3 failures being `(d2)` only: its post window runs to 2500 ms and this drive ends at about 1.0 s.
 - **This is not an S3-U13 pass.** S3-U13 needs 900 mm and stays open. The rest of this guide describes the full test.
 
 ## What should look different from the 4 Nov runs
