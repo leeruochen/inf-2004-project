@@ -1,7 +1,7 @@
 /*
  *  lf_run_test.c
  *  Subsystem 3 -- Line-Following task test on the track (S3-U12, S3-U13,
- *  S3-U15), APP_TEST only.
+ *  S3-U14, S3-U15), APP_TEST only.
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Kernel side: kernel and pure project headers only (rule R1).
  *
@@ -33,7 +33,13 @@
  *  line ends only 140 mm past the cross, so the stop follows the event, not
  *  a distance.  Turns are not tested here: the branches are too short.
  *
- *  Guides: .agents/tasks/s3-lf33-test.md, s3-u15-test.md.  Expected values come from
+ *  LF-3.4 (S3-U14): LF2_TURN_ONLY runs the static poses and then a junction
+ *  turn on the track, LF2_TURN_RUNS times: the test injects the turn command
+ *  a barcode would give (drep_nav_barcode) when the cross is detected, the
+ *  VC pivots at the JUNCTION post, and the core finds the branch and follows
+ *  it for LF2_TURN_BRANCH_MM.  No barcode is read.
+ *
+ *  Guides: .agents/tasks/s3-lf33-test.md, s3-u14-test.md, s3-u15-test.md.  Expected values come from
  *  config/timing.h, lf_core.h and design.md 3.2, typed in: 5 ms samples
  *  (200 per second), one steering post per 20 ms Motion period,
  *  LINE_LOST -> 120 ms stop -> 2 s search -> TRACK_LOST (2120 ms),
@@ -91,7 +97,7 @@
 #define LF2_STRAIGHT_ONLY       (1U)
 #define LF2_STRAIGHT_RUNS       (3U)
 /** Test ID of this build's checks. */
-#define LF2_ID                  "S3-U15"
+#define LF2_ID                  "S3-U14"
 /** Trace: one row per this many polls (20 ms), and how it is printed: a
  *  burst of rows, then a pause so the console drains the 2 KB ring. */
 #define LF2_TRACE_EVERY_POLLS   (2U)
@@ -106,7 +112,7 @@
 /** Cruise speed of this build, mm/s. */
 #define LF2_CRUISE_MMPS         ((uint32_t)MOTION_SPEED_CRUISE_CMPS * 10U)
 /** S3-U15, the junction mat: this replaces the straight drives. */
-#define LF2_JMAT_ONLY           (1U)
+#define LF2_JMAT_ONLY           (0U)
 #define LF2_JMAT_RUNS           (3U)
 /** Backstop if no JUNCTION comes.  The car's own logs put JUNCTION at up to
  *  420 mm of wheel travel from the mat's start and the line end at 437. */
@@ -144,6 +150,30 @@
 /** Give up on a drive after this long: it is not started, and fails. */
 #define LF2_JMAT_WAIT_S         (180U)
 
+/** S3-U14: a junction turn, in place of the straight and mat drives.  The
+ *  command is what a barcode would post; left first, right and U-turn later. */
+#define LF2_TURN_ONLY           (1U)
+#define LF2_TURN_RUNS           (3U)
+#define LF2_TURN_CMD            DREP_BC_CMD_LEFT
+#define LF2_TURN_VC_STATE       VC_SYS_NAV_TURN_LEFT
+#define LF2_TURN_NAME           "left"
+/** STOP this far along the branch, from the first ON_LINE after the turn. */
+#define LF2_TURN_BRANCH_MM      (300U)
+/** No cross by this much wheel travel: STOP.  The start is 300 mm before it. */
+#define LF2_TURN_NO_CROSS_MM    (420U)
+/** Whole drive limit: approach, pivot, search and branch, with room. */
+#define LF2_TURN_MS             (9000U)
+/** The turn as the encoders saw it: a wide sanity window, the real angle is
+ *  printed and judged by eye and against NFR4 (+-5 degrees). */
+#define LF2_TURN_DEG_MIN        (75U)
+#define LF2_TURN_DEG_MAX        (115U)
+/** The core must be tracking within T_turn + the stop + T_search. */
+#define LF2_TURN_FIND_MAX_MS    (LF_T_TURN_MS + LF_T_STOP_MS + LF_T_SEARCH_MS)
+/** The branch is judged from this far along it, once the car has settled. */
+#define LF2_TURN_TAIL_FROM_MM   (100U)
+/** Effective track x pi, mm: Motion's turn geometry (MOTION_EFF_TRACK_MM 114). */
+#define LF2_PI_TRACK_MM         (358U)
+
 /** Drive limits (wheel travel).  The time limit is the travel at cruise
  *  plus 1.5 s. */
 /* INTERIM S3-U13i: 200 stops the car before the track's cross line, 250 mm
@@ -176,13 +206,16 @@ typedef enum
     LF2_END_JCT,            /**< JUNCTION came: the test sent STOP */
     LF2_END_LOST,           /**< LINE_LOST on the mat: the test sent STOP */
     LF2_END_NOT_PLACED,     /**< the start guard never passed: no START sent */
+    LF2_END_BRANCH,         /**< followed the branch far enough: the test sent STOP */
+    LF2_END_NO_CROSS,       /**< no cross where it should be: the test sent STOP */
     LF2_END_COUNT
 } lf2_end_t;
 
 static char const * const k_end_name[LF2_END_COUNT] =
 {
     "distance limit", "time limit", "TRACK_LOST", "FAULT", "avoidance",
-    "VC stopped", "VC not READY", "after JUNCTION", "LINE_LOST", "not placed"
+    "VC stopped", "VC not READY", "after JUNCTION", "LINE_LOST", "not placed",
+    "along the branch", "no cross"
 };
 
 /** One bounded drive. */
@@ -193,6 +226,7 @@ typedef struct
     uint32_t    max_mm;     /**< wheel travel limit */
     uint32_t    max_ms;     /**< time limit */
     bool        jmat;       /**< junction mat: STOP on JUNCTION or LINE_LOST */
+    bool        turn;       /**< junction turn: inject the command, follow the branch */
 } lf2_drive_t;
 
 /** One row of the 20 ms trace. */
@@ -259,6 +293,18 @@ typedef struct
     uint32_t  tail_r_dark;      /**< ... with RIGHT not white */
     uint32_t  vc_end;           /**< VC state at the end */
     uint16_t  start_c_pm;       /**< CENTRE darkness at START */
+    bool      cmd_sent;         /**< the turn command was injected */
+    bool      turn_seen;        /**< the VC entered the turn state */
+    bool      turn_done;        /**< ... and left it */
+    uint32_t  t_turn_end_ms;    /**< START to the end of the turn */
+    int32_t   turn_dl;          /**< left counts over the turn */
+    int32_t   turn_dr;          /**< right counts over the turn */
+    uint32_t  turn_deg;         /**< the turn in degrees, from the counts */
+    bool      branch_on;        /**< ON_LINE after the turn */
+    uint32_t  t_branch_ms;      /**< START to that */
+    uint32_t  branch_mm;        /**< travel along the branch */
+    uint32_t  br_polls;         /**< polls along the branch, past the settling */
+    uint32_t  br_c_on;          /**< ... ON_LINE with CENTRE on the line */
 } lf2_run_t;
 
 /* The test task's stack is small: the snapshots live here. */
@@ -270,6 +316,8 @@ static motion_state_t   s_m0;
 static motion_state_t   s_m;
 static motion_state_t   s_m_half;
 static motion_state_t   s_m_end;
+static motion_state_t   s_m_turn;   /* at the JUNCTION post */
+static motion_state_t   s_m_branch; /* at the first ON_LINE after the turn */
 /* The 20 ms trace of the current drive (3.6 KB; APP_TEST builds only). */
 static lf2_trace_row_t  s_trace[LF2_TRACE_ROWS];
 static uint32_t         s_trace_n;
@@ -603,6 +651,59 @@ static void lf2_jmat_watch(lf2_run_t *p, uint32_t t, uint32_t mm)
     }
 }
 
+/* The turn in degrees, from the wheel counts either side of it: both wheels
+ * travel an arc of pi x track x angle / 360.  Counts are signed: a pivot runs
+ * the wheels in opposite directions, so lf2_travel_mm() cannot be used. */
+static uint32_t lf2_turn_deg(int32_t dl, int32_t dr)
+{
+    uint32_t const al = (dl < 0) ? (uint32_t)(-dl) : (uint32_t)dl;
+    uint32_t const ar = (dr < 0) ? (uint32_t)(-dr) : (uint32_t)dr;
+    uint32_t const mean = (al + ar) / 2U;
+
+    return (mean * WHEEL_CIRC_MM * 360U) / (ENC_QUAD_MULT * ENC_CPR * LF2_PI_TRACK_MM);
+}
+
+/* Junction turn: inject the command at detection, as a barcode read before
+ * the cross would have, then follow the turn and the branch. */
+static void lf2_turn_watch(lf2_run_t *p, uint32_t t, uint32_t vc)
+{
+    if (p->det_seen && !p->cmd_sent)
+    {
+        nav_input_t const m = drep_nav_barcode(LF2_TURN_CMD);
+
+        p->cmd_sent = (tk_snd_mbf(MBF_NAV_IN, &m, (INT)sizeof(m), (TMO)NAV_MBF_SEND_TMO_MS) == E_OK);
+    }
+    if (!p->turn_seen && (vc == LF2_TURN_VC_STATE))
+    {
+        p->turn_seen = true;
+        s_m_turn = s_m;
+    }
+    if (p->turn_seen && !p->turn_done && (vc != LF2_TURN_VC_STATE))
+    {
+        p->turn_done = true;
+        p->t_turn_end_ms = t;
+        p->turn_dl = (int32_t)((uint32_t)s_m.enc_count[0] - (uint32_t)s_m_turn.enc_count[0]);
+        p->turn_dr = (int32_t)((uint32_t)s_m.enc_count[1] - (uint32_t)s_m_turn.enc_count[1]);
+        p->turn_deg = lf2_turn_deg(p->turn_dl, p->turn_dr);
+    }
+    if (p->turn_done && !p->branch_on && (s_now.state == LF_ST_ON_LINE))
+    {
+        p->branch_on = true;
+        p->t_branch_ms = t;
+        s_m_branch = s_m;
+    }
+    if (p->branch_on)
+    {
+        p->branch_mm = lf2_travel_mm(&s_m_branch, &s_m);
+        if (p->branch_mm >= LF2_TURN_TAIL_FROM_MM)
+        {
+            p->br_polls++;
+            p->br_c_on += ((s_now.state == LF_ST_ON_LINE)
+                           && lf2_in_band(lf_norm(&s_now.cal.c, s_now.raw_c))) ? 1U : 0U;
+        }
+    }
+}
+
 /* One bounded drive: START, watch every 10 ms, STOP at a limit. */
 static void lf2_drive(lf2_drive_t const *p_d)
 {
@@ -627,7 +728,7 @@ static void lf2_drive(lf2_drive_t const *p_d)
     p->r_white_min = 0xFFFFU;
     p->win_on_line = true;
 
-    if (p_d->jmat)
+    if (p_d->jmat || p_d->turn)
     {
         if (!lf2_place_guard(p_d->p_tag, p_d->p_place))
         {
@@ -667,9 +768,13 @@ static void lf2_drive(lf2_drive_t const *p_d)
         polls++;
 
         lf2_account(p, t, mm, half_mm, &last_sign);
-        if (p_d->jmat)
+        if (p_d->jmat || p_d->turn)
         {
             lf2_jmat_watch(p, t, mm);
+        }
+        if (p_d->turn)
+        {
+            lf2_turn_watch(p, t, vc);
         }
         if ((polls % LF2_TRACE_EVERY_POLLS) == 0U)
         {
@@ -738,7 +843,17 @@ static void lf2_drive(lf2_drive_t const *p_d)
             lf2_remote(DREP_NAV_REMOTE_STOP);
             p->end = LF2_END_LOST;
         }
-        else if (mm >= p_d->max_mm)
+        else if (p_d->turn && (p->branch_mm >= LF2_TURN_BRANCH_MM))
+        {
+            lf2_remote(DREP_NAV_REMOTE_STOP);
+            p->end = LF2_END_BRANCH;
+        }
+        else if (p_d->turn && !p->det_seen && (mm >= LF2_TURN_NO_CROSS_MM))
+        {
+            lf2_remote(DREP_NAV_REMOTE_STOP);
+            p->end = LF2_END_NO_CROSS;
+        }
+        else if (!p_d->turn && (mm >= p_d->max_mm))
         {
             lf2_remote(DREP_NAV_REMOTE_STOP);
             p->end = LF2_END_DIST;
@@ -828,6 +943,29 @@ static void lf2_jmat_report(uint32_t run)
                (unsigned long)run, (unsigned long)total, (unsigned long)(total - p->mm_post));
 }
 
+/* What one junction turn did. */
+static void lf2_turn_report(uint32_t run)
+{
+    lf2_run_t const *const p = &s_run;
+
+    dbg_printf("[LF] turn %lu: START with CENTRE at %u pm, launch LINE_LOST %u", (unsigned long)run,
+               p->start_c_pm, (unsigned)p->lost_before);
+    dbg_printf("[LF] turn: detected %lu mm at %lu ms, JUNCTION %lu mm at %lu ms, delay %lu mm",
+               (unsigned long)p->mm_det, (unsigned long)p->t_det_ms, (unsigned long)p->mm_post,
+               (unsigned long)p->t_post_ms, (unsigned long)(p->mm_post - p->mm_det));
+    dbg_printf("[LF] turn: command sent %u, VC turned %u, ended %u at %lu ms",
+               (unsigned)p->cmd_sent, (unsigned)p->turn_seen, (unsigned)p->turn_done,
+               (unsigned long)p->t_turn_end_ms);
+    dbg_printf("[LF] turn: wheels L %ld R %ld counts = %lu degrees by the encoders",
+               (long)p->turn_dl, (long)p->turn_dr, (unsigned long)p->turn_deg);
+    dbg_printf("[LF] turn: back ON_LINE %ld ms after the turn, LINE_LOST on the way %u",
+               (long)(p->branch_on ? (int32_t)(p->t_branch_ms - p->t_turn_end_ms) : -1),
+               (unsigned)p->lost_after);
+    dbg_printf("[LF] turn: branch %lu mm, CENTRE on %lu/%lu polls past %lu mm",
+               (unsigned long)p->branch_mm, (unsigned long)p->br_c_on, (unsigned long)p->br_polls,
+               (unsigned long)LF2_TURN_TAIL_FROM_MM);
+}
+
 /* Recovery drive checks (r1..r3): ON_LINE soon, settled in the second
  * half, never lost, ended at the distance limit. */
 static bool lf2_recovered(void)
@@ -843,39 +981,44 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     static lf2_drive_t const k_straight =
     {
         "straight", "START POSE at the start of >= 1 m of straight line",
-        LF2_STRAIGHT_MM, LF2_MS_FOR(LF2_STRAIGHT_MM), false
+        LF2_STRAIGHT_MM, LF2_MS_FOR(LF2_STRAIGHT_MM), false, false
     };
     static lf2_drive_t const k_r1 =
     {
         "r1", "car parallel to the line, CENTRE ~1 cm RIGHT of it (on white)",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false
     };
     static lf2_drive_t const k_r2 =
     {
         "r2", "nose ~15 deg LEFT of the line, CENTRE on the line middle",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false
     };
     static lf2_drive_t const k_r3 =
     {
         "r3", "nose ~15 deg RIGHT of the line, CENTRE on the line middle",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false
     };
     static lf2_drive_t const k_jct =
     {
         "junction", "START POSE, a cross junction 40 cm ahead, square to it",
-        LF2_JUNCTION_MM, LF2_MS_FOR(LF2_JUNCTION_MM), false
+        LF2_JUNCTION_MM, LF2_MS_FOR(LF2_JUNCTION_MM), false, false
     };
     static lf2_drive_t const k_jmat =
     {
         "jmat", "junction mat: CENTRE on the right half of the line, RIGHT on white, parallel",
-        LF2_JMAT_LIMIT_MM, LF2_MS_FOR(LF2_JMAT_LIMIT_MM), true
+        LF2_JMAT_LIMIT_MM, LF2_MS_FOR(LF2_JMAT_LIMIT_MM), true, false
+    };
+    static lf2_drive_t const k_turn =
+    {
+        "turn", "CENTRE on the right half of the line, RIGHT on white, 30 cm before the cross",
+        LF2_TURN_NO_CROSS_MM, LF2_TURN_MS, false, true
     };
     static lf2_drive_t const k_end =
     {
         "line end", "START POSE, the line's END 30 cm ahead (temporary line OK)",
-        LF2_END_MM, LF2_END_MS, false
+        LF2_END_MM, LF2_END_MS, false, false
     };
-    uint32_t const straight_runs = (LF2_JMAT_ONLY != 0U) ? 0U : LF2_STRAIGHT_RUNS;
+    uint32_t const straight_runs = ((LF2_JMAT_ONLY != 0U) || (LF2_TURN_ONLY != 0U)) ? 0U : LF2_STRAIGHT_RUNS;
     uint32_t test_pass_ = *p_pass;
     uint32_t test_fail_ = *p_fail;
     uint32_t releases0;
@@ -888,7 +1031,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
 
     dbg_printf("[LF] %s on the track, motors LIVE, cruise %lu mm/s", LF2_ID,
                (unsigned long)LF2_CRUISE_MMPS);
-    dbg_puts("[LF] guide: .agents/tasks/s3-u15-test.md; follow the [LF] >>> prompts");
+    dbg_puts("[LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts");
 
     /* (a) The task runs every 5 ms. */
     lf_task_get_status(&s_now);
@@ -1006,6 +1149,34 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
             TEST_CHECK(LF2_ID, (s_run.end == LF2_END_JCT) && s_run.still
                                && (((s_run.mm_end + s_run.mm_stop) - s_run.mm_post) <= LF2_JMAT_AFTER_MAX_MM),
                        "(j4) stopped right after JUNCTION, wheels still");
+        }
+    }
+
+    /* (t) Junction turns: the injected command, the pivot, the branch. */
+    if ((LF2_TURN_ONLY != 0U) && pose_a_ok)
+    {
+        for (uint32_t run = 1U; run <= LF2_TURN_RUNS; run++)
+        {
+            dbg_printf("[LF] %s turn run %lu of %lu", LF2_TURN_NAME, (unsigned long)run,
+                       (unsigned long)LF2_TURN_RUNS);
+            lf2_drive(&k_turn);
+            lf2_turn_report(run);
+            lf2_trace_dump("turn");
+            TEST_CHECK(LF2_ID, s_run.det_seen && s_run.post_seen && (s_run.n_jct == 1U)
+                               && ((s_run.mm_post - s_run.mm_det) >= LF2_JMAT_DELAY_MIN_MM)
+                               && ((s_run.mm_post - s_run.mm_det) <= LF2_JMAT_DELAY_MAX_MM),
+                       "(t1) cross detected, one JUNCTION 110-135 mm later");
+            TEST_CHECK(LF2_ID, s_run.cmd_sent && s_run.turn_seen && s_run.turn_done,
+                       "(t2) the VC took the command and turned at the junction");
+            TEST_CHECK(LF2_ID, s_run.turn_done && (s_run.turn_deg >= LF2_TURN_DEG_MIN)
+                               && (s_run.turn_deg <= LF2_TURN_DEG_MAX),
+                       "(t3) the turn is 75-115 degrees by the encoders");
+            TEST_CHECK(LF2_ID, s_run.branch_on && (s_run.n_lost == 0U)
+                               && ((s_run.t_branch_ms - s_run.t_turn_end_ms) <= LF2_TURN_FIND_MAX_MS),
+                       "(t4) line found after the turn, no TRACK_LOST");
+            TEST_CHECK(LF2_ID, (s_run.end == LF2_END_BRANCH) && s_run.still
+                               && lf2_pct_ok(s_run.br_c_on, s_run.br_polls),
+                       "(t5) followed the branch 300 mm, CENTRE on the line >= 90%");
         }
     }
 
