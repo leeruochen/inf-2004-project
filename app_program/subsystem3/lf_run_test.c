@@ -1,7 +1,7 @@
 /*
  *  lf_run_test.c
- *  Subsystem 3 -- Line-Following task test on the track (S3-U12, S3-U13),
- *  APP_TEST only.
+ *  Subsystem 3 -- Line-Following task test on the track (S3-U12, S3-U13,
+ *  S3-U15), APP_TEST only.
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Kernel side: kernel and pure project headers only (rule R1).
  *
@@ -26,7 +26,14 @@
  *  the console ring holds 2 KB and drops lines when full, so 20 ms lines
  *  printed live would lose data and load the system during the drive.
  *
- *  Guide: .agents/tasks/s3-lf33-test.md.  Expected values come from
+ *  LF-3.3 (S3-U15): LF2_JMAT_ONLY runs the static poses and then the
+ *  junction drive on the standalone junction mat, LF2_JMAT_RUNS times, in
+ *  place of the straight drives: the cross is detected, JUNCTION comes F
+ *  later, the car goes on straight, and the test sends STOP at once.  The
+ *  line ends only 140 mm past the cross, so the stop follows the event, not
+ *  a distance.  Turns are not tested here: the branches are too short.
+ *
+ *  Guides: .agents/tasks/s3-lf33-test.md, s3-u15-test.md.  Expected values come from
  *  config/timing.h, lf_core.h and design.md 3.2, typed in: 5 ms samples
  *  (200 per second), one steering post per 20 ms Motion period,
  *  LINE_LOST -> 120 ms stop -> 2 s search -> TRACK_LOST (2120 ms),
@@ -84,7 +91,7 @@
 #define LF2_STRAIGHT_ONLY       (1U)
 #define LF2_STRAIGHT_RUNS       (3U)
 /** Test ID of this build's checks. */
-#define LF2_ID                  "S3-U13"
+#define LF2_ID                  "S3-U15"
 /** Trace: one row per this many polls (20 ms), and how it is printed: a
  *  burst of rows, then a pause so the console drains the 2 KB ring. */
 #define LF2_TRACE_EVERY_POLLS   (2U)
@@ -98,6 +105,34 @@
 #define LF2_STILL_TO_MS         (500U)
 /** Cruise speed of this build, mm/s. */
 #define LF2_CRUISE_MMPS         ((uint32_t)MOTION_SPEED_CRUISE_CMPS * 10U)
+/** S3-U15, the junction mat: this replaces the straight drives. */
+#define LF2_JMAT_ONLY           (1U)
+#define LF2_JMAT_RUNS           (3U)
+/** Backstop if no JUNCTION comes.  The car's own logs put JUNCTION at up to
+ *  420 mm of wheel travel from the mat's start and the line end at 437. */
+#define LF2_JMAT_LIMIT_MM       (430U)
+/** LINE_LOST past this travel: the line has run out, so stop rather than
+ *  search on a small mat.  Before it, the test lets the core recover. */
+#define LF2_JMAT_LOST_MM        (200U)
+/** Where detection may fall: ruler 250-270 mm, wheel travel read 1.00 to
+ *  1.15 of that, less the few mm before the cross line's centre. */
+#define LF2_JMAT_DET_MIN_MM     (230U)
+#define LF2_JMAT_DET_MAX_MM     (320U)
+/** Detection to JUNCTION: LF_D_JCT_POST_MM, +-2 polls of a published count.
+ *  The time checks that the odometer, not the time cap, ended the travel. */
+#define LF2_JMAT_DELAY_MIN_MM   (110U)
+#define LF2_JMAT_DELAY_MAX_MM   (135U)
+#define LF2_JMAT_DELAY_MIN_MS   (450U)
+#define LF2_JMAT_DELAY_MAX_MS   (800U)
+/** Past the cross line: CENTRE is judged from this far after detection. */
+#define LF2_JMAT_TAIL_FROM_MM   (60U)
+/** JUNCTION to STOP at most, if ON_LINE does not come first. */
+#define LF2_JMAT_THROUGH_MS     (40U)
+/** JUNCTION to standing still at most, wheel travel. */
+#define LF2_JMAT_AFTER_MAX_MM   (35U)
+/** Time to measure the car where it stopped, before the next drive. */
+#define LF2_JMAT_MEASURE_S      (45U)
+
 /** Drive limits (wheel travel).  The time limit is the travel at cruise
  *  plus 1.5 s. */
 /* INTERIM S3-U13i: 200 stops the car before the track's cross line, 250 mm
@@ -114,6 +149,9 @@
 #error "lf_run_test.c: MOTION_SPEED_CRUISE_CMPS must not be 0"
 #endif
 
+_Static_assert((LF2_JMAT_DELAY_MIN_MM < LF_D_JCT_POST_MM) && (LF_D_JCT_POST_MM < LF2_JMAT_DELAY_MAX_MM),
+               "the (j2) window brackets the junction post distance");
+
 /** Why a drive ended. */
 typedef enum
 {
@@ -124,13 +162,15 @@ typedef enum
     LF2_END_AVOID,          /**< obstacle avoidance took over: the test sent STOP */
     LF2_END_VC_STOP,        /**< the VC went READY by itself */
     LF2_END_NOT_READY,      /**< the VC was not READY: no START sent */
+    LF2_END_JCT,            /**< JUNCTION came: the test sent STOP */
+    LF2_END_LOST,           /**< LINE_LOST on the mat: the test sent STOP */
     LF2_END_COUNT
 } lf2_end_t;
 
 static char const * const k_end_name[LF2_END_COUNT] =
 {
     "distance limit", "time limit", "TRACK_LOST", "FAULT", "avoidance",
-    "VC stopped", "VC not READY"
+    "VC stopped", "VC not READY", "after JUNCTION", "LINE_LOST"
 };
 
 /** One bounded drive. */
@@ -140,6 +180,7 @@ typedef struct
     char const *p_place;    /**< how to place the car */
     uint32_t    max_mm;     /**< wheel travel limit */
     uint32_t    max_ms;     /**< time limit */
+    bool        jmat;       /**< junction mat: STOP on JUNCTION or LINE_LOST */
 } lf2_drive_t;
 
 /** One row of the 20 ms trace. */
@@ -192,6 +233,19 @@ typedef struct
     uint32_t  ev_fail;          /**< failed events in the drive */
     uint32_t  dropped;          /**< dropped steering posts in the drive */
     uint32_t  lost_to_track_ms; /**< LINE_LOST entry to TRACK_LOST */
+    bool      det_seen;         /**< junction detected (state JUNCTION) */
+    bool      lost_before;      /**< LINE_LOST entered before detection */
+    bool      lost_after;       /**< LINE_LOST entered after detection */
+    uint32_t  t_lost_det;       /**< LINE_LOST entry time as seen at detection */
+    uint32_t  t_det_ms;         /**< START to detection */
+    uint32_t  mm_det;           /**< wheel travel START to detection */
+    bool      post_seen;        /**< the JUNCTION event went out */
+    uint32_t  t_post_ms;        /**< START to JUNCTION */
+    uint32_t  mm_post;          /**< wheel travel START to JUNCTION */
+    uint32_t  tail_polls;       /**< polls past the cross line, before JUNCTION */
+    uint32_t  tail_c_on;        /**< ... with CENTRE on the line */
+    uint32_t  tail_r_dark;      /**< ... with RIGHT not white */
+    uint32_t  vc_end;           /**< VC state at the end */
 } lf2_run_t;
 
 /* The test task's stack is small: the snapshots live here. */
@@ -434,6 +488,38 @@ static void lf2_account(lf2_run_t *p, uint32_t t, uint32_t mm, uint32_t half_mm,
     p->r_peak_raw = (s_now.raw_r > p->r_peak_raw) ? s_now.raw_r : p->r_peak_raw;
 }
 
+/* Junction mat: note detection, the JUNCTION event and the line past the
+ * cross, one poll at a time. */
+static void lf2_jmat_watch(lf2_run_t *p, uint32_t t, uint32_t mm)
+{
+    uint32_t const t_lost = s_now.t_entry_ms[LF_ST_LINE_LOST];
+
+    if (!p->det_seen && (s_now.state == LF_ST_JUNCTION))
+    {
+        p->det_seen = true;
+        p->t_det_ms = t;
+        p->mm_det = mm;
+        p->t_lost_det = t_lost;
+        p->lost_before = (t_lost != s_base.t_entry_ms[LF_ST_LINE_LOST]);
+    }
+    if (p->det_seen && (t_lost != p->t_lost_det))
+    {
+        p->lost_after = true;
+    }
+    if (!p->post_seen && (s_now.n_junction != s_base.n_junction))
+    {
+        p->post_seen = true;
+        p->t_post_ms = t;
+        p->mm_post = mm;
+    }
+    if (p->det_seen && !p->post_seen && (mm >= (p->mm_det + LF2_JMAT_TAIL_FROM_MM)))
+    {
+        p->tail_polls++;
+        p->tail_c_on += lf2_in_band(lf_norm(&s_now.cal.c, s_now.raw_c)) ? 1U : 0U;
+        p->tail_r_dark += lf2_in_band(lf_norm(&s_now.cal.r, s_now.raw_r)) ? 1U : 0U;
+    }
+}
+
 /* One bounded drive: START, watch every 10 ms, STOP at a limit. */
 static void lf2_drive(lf2_drive_t const *p_d)
 {
@@ -485,6 +571,10 @@ static void lf2_drive(lf2_drive_t const *p_d)
         polls++;
 
         lf2_account(p, t, mm, half_mm, &last_sign);
+        if (p_d->jmat)
+        {
+            lf2_jmat_watch(p, t, mm);
+        }
         if ((polls % LF2_TRACE_EVERY_POLLS) == 0U)
         {
             lf2_trace_add(t, mm);
@@ -541,6 +631,17 @@ static void lf2_drive(lf2_drive_t const *p_d)
         {
             p->end = LF2_END_VC_STOP;
         }
+        else if (p_d->jmat && p->post_seen
+                 && ((s_now.state == LF_ST_ON_LINE) || ((t - p->t_post_ms) >= LF2_JMAT_THROUGH_MS)))
+        {
+            lf2_remote(DREP_NAV_REMOTE_STOP);
+            p->end = LF2_END_JCT;
+        }
+        else if (p_d->jmat && (s_now.state == LF_ST_LINE_LOST) && (mm >= LF2_JMAT_LOST_MM))
+        {
+            lf2_remote(DREP_NAV_REMOTE_STOP);
+            p->end = LF2_END_LOST;
+        }
         else if (mm >= p_d->max_mm)
         {
             lf2_remote(DREP_NAV_REMOTE_STOP);
@@ -555,6 +656,7 @@ static void lf2_drive(lf2_drive_t const *p_d)
         {
             done = false;
         }
+        p->vc_end = vc;
     }
 
     s_m_end = s_m;
@@ -612,6 +714,38 @@ static void lf2_log_right(char const *p_tag)
                lf_norm(&s_now.cal.r, p->r_peak_raw), (unsigned long)p->r_dark_polls);
 }
 
+/* What one junction mat drive did, with the numbers the ruler check needs. */
+static void lf2_jmat_report(uint32_t run)
+{
+    lf2_run_t const *const p = &s_run;
+    uint32_t const total = p->mm_end + p->mm_stop;
+
+    dbg_printf("[LF] jmat: detected %lu mm at %lu ms, JUNCTION %lu mm at %lu ms, delay %lu mm %lu ms",
+               (unsigned long)p->mm_det, (unsigned long)p->t_det_ms, (unsigned long)p->mm_post,
+               (unsigned long)p->t_post_ms, (unsigned long)(p->mm_post - p->mm_det),
+               (unsigned long)(p->t_post_ms - p->t_det_ms));
+    dbg_printf("[LF] jmat: past the cross %lu/%lu polls CENTRE on, RIGHT dark %lu, state %u, vc %lu",
+               (unsigned long)p->tail_c_on, (unsigned long)p->tail_polls,
+               (unsigned long)p->tail_r_dark, (unsigned)p->st_end, (unsigned long)p->vc_end);
+    dbg_printf("[LF] RULER run %lu: wheel travel START to standstill %lu mm, after JUNCTION %lu mm",
+               (unsigned long)run, (unsigned long)total, (unsigned long)(total - p->mm_post));
+}
+
+/* The car stands where it stopped: time to measure it. */
+static void lf2_jmat_measure(void)
+{
+    dbg_printf("[LF] >>> MEASURE NOW, leave the car where it stopped: %lu s",
+               (unsigned long)LF2_JMAT_MEASURE_S);
+    for (uint32_t left = LF2_JMAT_MEASURE_S; left > 0U; left--)
+    {
+        if ((left % 15U) == 0U)
+        {
+            dbg_printf("[LF] ... measure %lu", (unsigned long)left);
+        }
+        (void)tk_dly_tsk((RELTIM)LF2_SECOND_MS);
+    }
+}
+
 /* Recovery drive checks (r1..r3): ON_LINE soon, settled in the second
  * half, never lost, ended at the distance limit. */
 static bool lf2_recovered(void)
@@ -627,33 +761,39 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     static lf2_drive_t const k_straight =
     {
         "straight", "START POSE at the start of >= 1 m of straight line",
-        LF2_STRAIGHT_MM, LF2_MS_FOR(LF2_STRAIGHT_MM)
+        LF2_STRAIGHT_MM, LF2_MS_FOR(LF2_STRAIGHT_MM), false
     };
     static lf2_drive_t const k_r1 =
     {
         "r1", "car parallel to the line, CENTRE ~1 cm RIGHT of it (on white)",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM)
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false
     };
     static lf2_drive_t const k_r2 =
     {
         "r2", "nose ~15 deg LEFT of the line, CENTRE on the line middle",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM)
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false
     };
     static lf2_drive_t const k_r3 =
     {
         "r3", "nose ~15 deg RIGHT of the line, CENTRE on the line middle",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM)
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false
     };
     static lf2_drive_t const k_jct =
     {
         "junction", "START POSE, a cross junction 40 cm ahead, square to it",
-        LF2_JUNCTION_MM, LF2_MS_FOR(LF2_JUNCTION_MM)
+        LF2_JUNCTION_MM, LF2_MS_FOR(LF2_JUNCTION_MM), false
+    };
+    static lf2_drive_t const k_jmat =
+    {
+        "jmat", "START POSE on the junction mat, CENTRE 250 mm before the cross",
+        LF2_JMAT_LIMIT_MM, LF2_MS_FOR(LF2_JMAT_LIMIT_MM), true
     };
     static lf2_drive_t const k_end =
     {
         "line end", "START POSE, the line's END 30 cm ahead (temporary line OK)",
-        LF2_END_MM, LF2_END_MS
+        LF2_END_MM, LF2_END_MS, false
     };
+    uint32_t const straight_runs = (LF2_JMAT_ONLY != 0U) ? 0U : LF2_STRAIGHT_RUNS;
     uint32_t test_pass_ = *p_pass;
     uint32_t test_fail_ = *p_fail;
     uint32_t releases0;
@@ -665,7 +805,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
 
     dbg_printf("[LF] %s on the track, motors LIVE, cruise %lu mm/s", LF2_ID,
                (unsigned long)LF2_CRUISE_MMPS);
-    dbg_puts("[LF] guide: .agents/tasks/s3-lf33-test.md; follow the [LF] >>> prompts");
+    dbg_puts("[LF] guide: .agents/tasks/s3-u15-test.md; follow the [LF] >>> prompts");
 
     /* (a) The task runs every 5 ms. */
     lf_task_get_status(&s_now);
@@ -721,10 +861,10 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                "(g) static: RIGHT on black is DARK (> 750 pm)");
 
     /* (d) + (n) Straight line from the start pose. */
-    for (uint32_t run = 1U; run <= LF2_STRAIGHT_RUNS; run++)
+    for (uint32_t run = 1U; run <= straight_runs; run++)
     {
         dbg_printf("[LF] straight run %lu of %lu", (unsigned long)run,
-                   (unsigned long)LF2_STRAIGHT_RUNS);
+                   (unsigned long)straight_runs);
         lf2_drive(&k_straight);
         lf2_log_right("straight");
         dbg_printf("[LF] straight: window %lu slot posts in %lu ms, ON_LINE %u",
@@ -744,6 +884,38 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
         TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.r_white_n > 0U)
                            && (s_run.r_dark_polls == 0U) && (s_run.n_jct == 0U),
                    "(n) motors on: RIGHT stays LIGHT, no false junction");
+    }
+
+    /* (j) The junction mat: detection, the delayed event, straight through. */
+    if (LF2_JMAT_ONLY != 0U)
+    {
+        for (uint32_t run = 1U; run <= LF2_JMAT_RUNS; run++)
+        {
+            dbg_printf("[LF] jmat run %lu of %lu", (unsigned long)run, (unsigned long)LF2_JMAT_RUNS);
+            lf2_drive(&k_jmat);
+            lf2_jmat_report(run);
+            lf2_trace_dump("jmat");
+            TEST_CHECK(LF2_ID, s_run.det_seen && !s_run.lost_before,
+                       "(j0) on the line up to the cross, never LINE_LOST");
+            TEST_CHECK(LF2_ID, s_run.det_seen && (s_run.n_jct == 1U)
+                               && (s_run.mm_det >= LF2_JMAT_DET_MIN_MM)
+                               && (s_run.mm_det <= LF2_JMAT_DET_MAX_MM),
+                       "(j1) cross detected at 230-320 mm, one JUNCTION");
+            TEST_CHECK(LF2_ID, s_run.post_seen
+                               && ((s_run.mm_post - s_run.mm_det) >= LF2_JMAT_DELAY_MIN_MM)
+                               && ((s_run.mm_post - s_run.mm_det) <= LF2_JMAT_DELAY_MAX_MM)
+                               && ((s_run.t_post_ms - s_run.t_det_ms) >= LF2_JMAT_DELAY_MIN_MS)
+                               && ((s_run.t_post_ms - s_run.t_det_ms) <= LF2_JMAT_DELAY_MAX_MS),
+                       "(j2) JUNCTION 110-135 mm after detection, by the odometer");
+            TEST_CHECK(LF2_ID, s_run.post_seen && !s_run.lost_after && (s_run.st_end == LF_ST_ON_LINE)
+                               && (s_run.tail_r_dark == 0U)
+                               && lf2_pct_ok(s_run.tail_c_on, s_run.tail_polls),
+                       "(j3) straight through: back ON_LINE, on the line past the cross");
+            TEST_CHECK(LF2_ID, (s_run.end == LF2_END_JCT) && s_run.still
+                               && (((s_run.mm_end + s_run.mm_stop) - s_run.mm_post) <= LF2_JMAT_AFTER_MAX_MM),
+                       "(j4) stopped right after JUNCTION, wheels still");
+            lf2_jmat_measure();
+        }
     }
 
     if (LF2_STRAIGHT_ONLY == 0U)
