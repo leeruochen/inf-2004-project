@@ -14,7 +14,8 @@ Left turn first. With a turn command waiting, does the car pivot at the cross, f
 
 ## Position
 
-- **Power-up and pose A:** CENTRE on black in the line's middle, RIGHT on white, car flat, hands off at power-up.
+- **Power-up:** nothing special. The test no longer relies on the reading taken at power-up.
+- **Pose A:** CENTRE on black in the line's middle, RIGHT on white, flat, hands off. **The car calibrates here.** If it says `pose A not good`, fix the position: you get 3 tries.
 - **Pose B:** CENTRE on white, RIGHT on black.
 - **Each drive:** CENTRE on the right half of the black line, RIGHT on white, parallel to the line, CENTRE 30 cm before the cross. Set it once and tape the wheels' back and side.
 
@@ -34,4 +35,4 @@ Left turn first. With a turn command waiting, does the car pivot at the cross, f
 ## Stop conditions
 
 - Car heads off the mat: catch it by the chassis, fingers away from the wheels.
-- `STOP: no drives` after pose A: unplug, set the car flat, flash again.
+- `STOP: no drives`: pose A failed 3 times: check the car is on black and RIGHT on white, then flash again.

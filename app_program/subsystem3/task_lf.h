@@ -76,6 +76,15 @@ void lf_task_get_status(lf_task_status_t *p_out);
  * always armed.  Disarming clears LINE_FOUND.
  */
 void lf_task_test_arm(bool armed);
+
+/*
+ * Run the boot calibration again, now, and return when it is done.  The task
+ * does it, so nothing else touches the core or the ADC.  Only with the VC
+ * READY and the car in the start pose: it resets the core.  The power-up
+ * reading is taken with the car still being handled and has read up to 40 %
+ * high, so the on-track test calibrates at pose A instead.
+ */
+void lf_task_test_recalibrate(void);
 #endif /* APP_TEST */
 
 #endif /* TASK_LF_H */

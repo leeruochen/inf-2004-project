@@ -35,6 +35,8 @@
 /** Boot calibration: samples per sensor, one per LF_SAMPLE_PERIOD_MS
  *  (32 x 5 ms = 160 ms in the start pose). */
 #define LF_CAL_SAMPLES          (32U)
+/** The test waits at most this long for a recalibration: it takes 160 ms. */
+#define LF_RECAL_WAIT_MS        (1000U)
 
 /* The pure modules' state.  Static, not on the 1.5 KB task stack. */
 static lf_core_t        s_core;
@@ -46,6 +48,8 @@ static lf_task_status_t s_st;           /* written by this task only */
 /* Written by the test task (priority 11), read once per sample here: a
  * single aligned byte, so no lock; volatile so each sample re-reads it. */
 static volatile bool    s_armed = false;
+/* Set by the test task, cleared here when the calibration has run. */
+static volatile bool    s_recal = false;
 #else
 #define s_armed         (true)
 #endif
@@ -333,6 +337,16 @@ static void lf_task(INT stacd, void *p_exinf)
             s_st.missed += missed;
             dbg_printf("[LF] period overrun: %lu missed", (unsigned long)missed);
         }
+#if APP_TEST
+        if (s_recal)
+        {
+            /* Runs its own 5 ms grid for 160 ms: restart ours afterwards, or
+             * those periods would count as missed. */
+            lf_calibrate();
+            app_period_init(&per, LF_SAMPLE_PERIOD_MS);
+            s_recal = false;
+        }
+#endif
         lf_sample();
     }
     /* Never returns, never calls tk_ext_tsk() (rule R6). */
@@ -359,5 +373,17 @@ void lf_task_get_status(lf_task_status_t *p_out)
 void lf_task_test_arm(bool armed)
 {
     s_armed = armed;    /* the task clears LINE_FOUND itself on disarming */
+}
+
+void lf_task_test_recalibrate(void)
+{
+    uint32_t waited_ms = 0U;
+
+    s_recal = true;
+    while (s_recal && (waited_ms < LF_RECAL_WAIT_MS))
+    {
+        (void)tk_dly_tsk((RELTIM)LF_SAMPLE_PERIOD_MS);
+        waited_ms += LF_SAMPLE_PERIOD_MS;
+    }
 }
 #endif /* APP_TEST */

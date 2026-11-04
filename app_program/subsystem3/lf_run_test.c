@@ -93,6 +93,11 @@
 /** Pose A: CENTRE on the line's middle must read at least this, or the boot
  *  calibration is too high for the 900 pm target (see the guide). */
 #define LF2_POSE_A_MIN_PM       (950U)
+/** Pose A sets the calibration, so it needs a limit of its own: black has
+ *  read 1694-1967 on the mat, and grey would pass a check against itself. */
+#define LF2_POSE_A_MIN_RAW      (1500U)
+/** Tries at pose A before the test gives up. */
+#define LF2_POSE_A_TRIES        (3U)
 /** LF-3.3: only the straight drive, this many times. */
 #define LF2_STRAIGHT_ONLY       (1U)
 #define LF2_STRAIGHT_RUNS       (3U)
@@ -485,7 +490,10 @@ static void lf2_static(char const *p_tag, char const *p_place,
     uint16_t avg_c;
     uint16_t avg_r;
 
-    lf2_place(p_tag, p_place, false);
+    if (p_place != NULL)
+    {
+        lf2_place(p_tag, p_place, false);
+    }
     for (uint32_t t = 0U; t < LF2_STATIC_MS; t += LF2_POLL_MS)
     {
         lf_task_get_status(&s_now);
@@ -1077,12 +1085,26 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     /* (g) Static levels at ride height, motors stopped.  Pose A gives
      * RIGHT's resting noise over white; pose B RIGHT's black level (the
      * residual risk of the S3-U09 waiver). */
-    lf2_static("pose A", "put the car down in the START POSE, hands off", &dc, &dr, &rmin, &rmax);
-    s_static_r_min = rmin;
-    s_static_r_max = rmax;
-    pose_a_ok = (dc >= LF2_POSE_A_MIN_PM);
+    pose_a_ok = false;
+    for (uint32_t tries = 0U; (tries < LF2_POSE_A_TRIES) && !pose_a_ok; tries++)
+    {
+        lf2_place("pose A", "CENTRE on black in the middle of the line, RIGHT on white, hands off", false);
+        dbg_puts("[LF] calibrating here, keep the car still");
+        lf_task_test_recalibrate();
+        lf_task_get_status(&s_now);
+        lf2_static("pose A", NULL, &dc, &dr, &rmin, &rmax);
+        s_static_r_min = rmin;
+        s_static_r_max = rmax;
+        pose_a_ok = (s_now.cal_status == LF_CAL_OK) && (s_now.cal_c_avg >= LF2_POSE_A_MIN_RAW)
+                    && (dc >= LF2_POSE_A_MIN_PM);
+        if (!pose_a_ok)
+        {
+            dbg_printf("[LF] >>> pose A not good: CENTRE %u, RIGHT %u.  Try again.",
+                       s_now.cal_c_avg, s_now.cal_r_avg);
+        }
+    }
     TEST_CHECK(LF2_ID, pose_a_ok,
-               "(g2) pose A: CENTRE >= 950 pm, the boot calibration holds");
+               "(g2) pose A: calibrated on black, CENTRE >= 950 pm, RIGHT on white");
     if (pose_a_ok)
     {
         lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off", &dc, &dr, &rmin, &rmax);
@@ -1091,8 +1113,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     }
     else
     {
-        dbg_puts("[LF] >>> STOP: no drives.  Pose A was not on black, or the boot calibration is wrong.");
-        dbg_puts("[LF] >>> Unplug.  Car flat on the mat, CENTRE on black, RIGHT on white.  Flash again.");
+        dbg_puts("[LF] >>> STOP: no drives.  Pose A never read CENTRE on black and RIGHT on white.");
     }
 
     /* (d) + (n) Straight line from the start pose. */
