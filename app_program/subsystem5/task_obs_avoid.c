@@ -47,12 +47,34 @@
 #define OBS_IDLE_POLL_MS        (100U)
 
 /** Time for the Vehicle Controller to complete one 45 degree bypass turn.
- *  TUNE: measure on the track (S5-U21) and promote to config/timing.h. */
-#define OBS_TURN_DWELL_MS       (700U)
+ *
+ *  MEASURED on the car, 2026-11-04 (S5-U32): six in-place 45 degree turns
+ *  timed from the encoder counts settling (Buddy 2's turns are closed-loop
+ *  on the encoders, task_motion.c), on the track mat at the bring-up speeds:
+ *
+ *      LEFT  530, 470, 500 ms
+ *      RIGHT 500, 470, 470 ms      mean 490 ms, spread 60 ms
+ *
+ *  550 ms is the mean plus about one spread, so a slow turn still finishes
+ *  inside its dwell.  The previous value, 700 ms, was a guess and cost
+ *  630 ms of the 3.0 s NFR14 budget across the three turns for nothing.
+ *  TUNE: re-measure if the bypass speed or the surface changes. */
+#define OBS_TURN_DWELL_MS       (550U)
 
-/** Straight run alongside the obstacle, past its depth.  TUNE: an obstacle
- *  is assumed no deeper than it is wide, plus the side margin. */
-#define OBS_ALONG_EXTRA_MM      ((uint32_t)CAR_WIDTH_MM)
+/** Straight run alongside the obstacle, past its depth.  The ultrasonic only
+ *  ever sees the obstacle's FRONT FACE -- it cannot measure depth -- so this
+ *  is the whole allowance for how far back the obstacle extends.
+ *
+ *  Was CAR_WIDTH_MM (120 mm), i.e. "no deeper than it is wide, plus a car
+ *  width".  Reduced to OBS_SIDE_MARGIN_MM on 2026-11-04 to fit NFR14: at the
+ *  measured turn time the three turns alone are 1650 ms of the 3.0 s budget,
+ *  and this leg was 1133 ms of the rest.
+ *
+ *  RISK (owner-to-confirm, buddy 5): the assumption is now "no deeper than it
+ *  is wide, plus 50 mm".  A deeper obstacle than that will be clipped on the
+ *  way back in.  Measure the real obstacles on the track and raise this again
+ *  if any of them are deep; correctness wins over the grade-A target.  TUNE */
+#define OBS_ALONG_EXTRA_MM      ((uint32_t)OBS_SIDE_MARGIN_MM)
 
 /** Longest wait for subsystem 3 to report the line again. */
 #define OBS_LEG_BACK_MAX_MS     ((uint32_t)LF_T_SEARCH_MS)
@@ -431,6 +453,14 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
          * before committing to a side (specs.md FR8). */
         set_nav_flag(EVF_NAV_AVOID_ACTIVE);
         send_nav(drep_nav_avoid(DREP_NAV_AVOID_SLOW, 0U));
+        /* Arm the whole-manoeuvre budget HERE, not only in
+         * start_manoeuvre(): the task loop checks it in every state but
+         * OBS_AV_IDLE, so leaving it at its previous value makes the budget
+         * look already spent and aborts the manoeuvre before the next
+         * profile can choose a side.  The car then drives straight into the
+         * obstacle it had just slowed down for. */
+        s_budget_deadline_ms = now_ms + (uint32_t)OBS_BYPASS_BUDGET_MS
+                               + OBS_LEG_BACK_MAX_MS;
         enter_state(OBS_AV_SLOW, (uint32_t)OBS_BYPASS_BUDGET_MS, now_ms);
         return;
     }
