@@ -142,7 +142,10 @@ static void handle_remote_msg(nav_input_t msg, bool fault_latched, uint32_t now_
 
     if (type == DREP_NAV_REMOTE_RESET)
     {
-        if (fault_latched)
+        /* Also accept RESET when only the VC state is latched (flag bit
+         * already cleared out-of-band), otherwise VC deadlocks in
+         * FAULT_LATCHED (INTEGRATION_FIXES.md Issue 1). */
+        if (fault_latched || (s_sys_state == VC_SYS_SAFETY_FAULT_LATCHED))
         {
             if (is_stationary_for_reset(now_ms))
             {
