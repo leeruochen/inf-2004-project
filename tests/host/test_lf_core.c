@@ -83,6 +83,9 @@ static uint32_t       g_turn_seed;  /* sensor noise seed for drive_turn(), 0 = d
 /* Travel from junction detection to the JUNCTION post, encoder counts
  * (worked by hand, see the header). */
 #define JCT_POST_CNT    (1428U)
+/* The look for the line past the cross: 30 mm x 2464 / 207 = 357 counts, by
+ * hand, or 30 samples of g_fwd_step 12 from detection. */
+#define JCT_LOOK_CNT    (357U)
 
 static uint16_t raw_of(uint16_t d_pm)
 {
@@ -236,6 +239,8 @@ static void test_constants(void)
     CHECK(ENC_CPR == 616U);
     CHECK(WHEEL_CIRC_MM == 207U);
     CHECK(LF_T_JCT_MAX_MS == 900U);
+    CHECK(LF_D_JCT_LOOK_CNT == JCT_LOOK_CNT);
+    CHECK(LF_RECOVER_RAMP_Q7 == 1);
 }
 
 /* Test 2: start-pose calibration, from the LF-1 desk numbers. */
@@ -528,12 +533,12 @@ static void test_tracking(void)
     start_tracking(&lf);
     (void)run(&lf, 5U, 1000U, 0U);              /* CENTRE across the body */
     r = run(&lf, 40U, 0U, 900U);
-    CHECK(r.min_steer == LF_RECOVER_Q7);
-    CHECK(r.max_steer == LF_RECOVER_Q7);
+    CHECK(r.min_steer > LF_RECOVER_Q7);         /* right, growing (test 25) */
+    CHECK(r.max_steer <= (LF_RECOVER_Q7 + 40));
     CHECK(r.last.state == LF_ST_ON_LINE);
     CHECK(r.junctions == 0U);
     r = run(&lf, 19U, 0U, 0U);                  /* both off: still right */
-    CHECK(r.min_steer == LF_RECOVER_Q7);
+    CHECK(r.min_steer > LF_RECOVER_Q7);
 }
 
 /* Test 8: junctions, spikes, holding the steering, re-arming. */
@@ -706,7 +711,8 @@ static void test_lost_and_search(void)
     start_tracking(&lf);
     r = run(&lf, 19U, 0U, 0U);                  /* 95 ms */
     CHECK(r.last.state == LF_ST_ON_LINE);
-    CHECK(r.min_steer == -LF_RECOVER_Q7);
+    CHECK(r.max_steer < -LF_RECOVER_Q7);        /* left, growing (test 25) */
+    CHECK(r.min_steer >= -(LF_RECOVER_Q7 + 19));
     CHECK(r.max_steer < 0);
     start_tracking(&lf);
     n = until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 100U);
@@ -744,7 +750,7 @@ static void test_lost_and_search(void)
     (void)run(&lf, 5U, 1000U, 0U);              /* CENTRE across the body */
     (void)run(&lf, 2U, 500U, 300U);             /* left edge; RIGHT touches */
     r = run(&lf, 19U, 0U, 0U);
-    CHECK(r.min_steer == LF_RECOVER_Q7);
+    CHECK(r.min_steer > LF_RECOVER_Q7);
     CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 100U) <= 100U);
     r = run(&lf, 4U, 0U, 0U);
     CHECK(r.min_steer == LF_SEARCH_Q7);
@@ -758,8 +764,8 @@ static void test_lost_and_search(void)
     (void)run(&lf, 1U, 0U, 0U);                 /* the gap between them */
     (void)run(&lf, 5U, 1000U, 0U);              /* CENTRE crosses: 25 ms */
     r = run(&lf, 10U, 0U, 0U);                  /* both white, car right of the line */
-    CHECK(r.max_steer == -LF_RECOVER_Q7);
-    CHECK(r.min_steer == -LF_RECOVER_Q7);
+    CHECK(r.max_steer < -LF_RECOVER_Q7);        /* left, from the base value again */
+    CHECK(r.min_steer >= -(LF_RECOVER_Q7 + 10));
     CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 100U) <= 100U);
     r = run(&lf, 4U, 0U, 0U);
     CHECK(r.max_steer == -LF_SEARCH_Q7);
@@ -1565,6 +1571,94 @@ static void test_sim_phases(void)
     g_turn_seed = 0U;
 }
 
+/* Test 25 (LF-3.3): recovery steering grows while CENTRE stays off the line,
+ * and starts again from the base value after every slip.  CENTRE leaves the
+ * right edge, so the side is LEFT: steer < 0.  T_lost is untouched: LINE_LOST
+ * still comes after 20 samples, so the largest value here is 32 + 19. */
+static void test_recover_ramp(void)
+{
+    lf_core_t lf;
+    lf_out_t  o;
+    uint32_t  n;
+
+    start_tracking(&lf);
+    (void)run(&lf, 8U, 900U, 0U);
+    o = feed(&lf, 0U, 0U);
+    CHECK(lf.steer_q7 == -33);
+    o = feed(&lf, 0U, 0U);
+    CHECK(lf.steer_q7 == -34);
+    for (n = 3U; n <= 10U; n++)
+    {
+        o = feed(&lf, 0U, 0U);
+    }
+    CHECK(lf.steer_q7 == -42);
+    CHECK(o.state == LF_ST_ON_LINE);
+
+    /* Back on the line, then off again: from the base value, not from -42. */
+    (void)run(&lf, 8U, 900U, 0U);
+    CHECK(lf.steer_q7 == lf_edge_steer(900U));
+    o = feed(&lf, 0U, 0U);
+    CHECK(lf.steer_q7 == -33);
+
+    /* The side flips: start again from the base value on the new side.  The
+     * car came off the left edge, steering left the wrong way; carrying that
+     * value over to the right overshot and failed test 24's nose-left start. */
+    start_tracking(&lf);
+    (void)run(&lf, 8U, 900U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    CHECK(lf.steer_q7 == -42);
+    o = feed(&lf, 0U, 900U);                    /* RIGHT reaches the line */
+    CHECK(lf.steer_q7 == 33);
+    o = feed(&lf, 0U, 900U);
+    CHECK(lf.steer_q7 == 34);
+    CHECK(o.state == LF_ST_ON_LINE);
+
+    /* T_lost is still 100 ms: confirmed LIGHT for 20 samples, as in test 9. */
+    start_tracking(&lf);
+    (void)run(&lf, 8U, 900U, 0U);
+    n = until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 100U);
+    CHECK((n >= 20U) && (n <= 23U));
+}
+
+/* Test 26 (LF-3.3): both sensors leave the cross line in the same sample, as
+ * in S3-U15 run 1 (23:48).  The core has not seen "CENTRE on, RIGHT white",
+ * so it does not know the line goes on: it steers left for 30 mm of travel
+ * from detection instead of driving the post distance at steer 0. */
+static void test_cross_exit(void)
+{
+    lf_core_t lf;
+    lf_out_t  o;
+    run_t     r;
+
+    /* A cross: the look finds the line, and the core tracks it from there. */
+    start_tracking(&lf);
+    (void)run(&lf, 3U, 1000U, 1000U);           /* detected */
+    CHECK(lf.state == LF_ST_JUNCTION);
+    o = feed(&lf, 0U, 0U);                      /* both off, same sample */
+    CHECK(lf.steer_q7 == -LF_RECOVER_Q7);
+    (void)run(&lf, 5U, 0U, 0U);
+    CHECK(lf.steer_q7 == -LF_RECOVER_Q7);
+    CHECK(!lf.jct_line_ahead);
+    o = feed(&lf, 900U, 0U);                    /* CENTRE back on the line */
+    CHECK(lf.jct_line_ahead);
+    CHECK(lf.steer_q7 == lf_edge_steer(900U));
+    CHECK(o.state == LF_ST_JUNCTION);
+
+    /* A T: nothing found, so steer 0 once the look ends.  12 counts a
+     * sample: 3 to detect, and the look ends 30 samples from detection. */
+    start_tracking(&lf);
+    (void)run(&lf, 3U, 1000U, 1000U);
+    (void)run(&lf, 28U, 0U, 0U);
+    CHECK(lf.steer_q7 == -LF_RECOVER_Q7);
+    (void)run(&lf, 3U, 0U, 0U);
+    CHECK(lf.steer_q7 == 0);
+    r = run(&lf, 60U, 0U, 0U);
+    CHECK(r.min_steer == 0);
+    CHECK(r.max_steer == 0);
+    CHECK(r.junctions == 0U);
+    CHECK(lf.state == LF_ST_JUNCTION);
+}
+
 /* Test 22: the simulator against the 4 Nov 2026 hardware runs, so a change
  * to the model cannot quietly drift away from the real car.  Expected
  * values are the logged ones, not computed the way the model computes. */
@@ -1788,6 +1882,8 @@ int main(void)
     test_sim_matches_hardware();
     test_sim_stable_200();
     test_sim_recovery_starts();
+    test_recover_ramp();
+    test_cross_exit();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

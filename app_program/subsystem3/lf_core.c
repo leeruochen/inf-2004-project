@@ -43,6 +43,8 @@ _Static_assert(LF_STEER_POST_PERIOD_MS == MOTION_PERIOD_MS,
 _Static_assert(LF_STEER_FULL_Q7 <= DREP_STEER_Q7_MAX, "full steering fits Q7");
 _Static_assert((ENC_CPR > 0U) && (WHEEL_CIRC_MM > 0U), "encoder geometry known");
 _Static_assert(LF_D_JCT_LEAD_MM < LF_D_PIVOT_MM, "JUNCTION posted after detection");
+_Static_assert(LF_D_JCT_LOOK_MM < LF_D_JCT_POST_MM, "the look past the cross ends before the post");
+_Static_assert((LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7) <= LF_STEER_FULL_Q7, "the ramp starts inside full steering");
 _Static_assert(((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) < LF_T_JCT_MAX_MS,
                "at cruise the travel ends before the time cap");
 
@@ -240,8 +242,10 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
  *      until the junction is confirmed or rejected.  CENTRE's extra darkness
  *      there is the cross line, not a drift.
  *   2. CENTRE white: off the line -> recovery steer towards the remembered
- *      side.  This includes the overshoot left across the whole line: RIGHT
- *      then sees the line, and update_side() has made the side RIGHT.
+ *      side, growing the longer CENTRE stays off (LF_RECOVER_RAMP_Q7), and
+ *      from the base value again if the side changes.  This includes the
+ *      overshoot left across the whole line: RIGHT then sees the line, and
+ *      update_side() has made the side RIGHT.
  *   3. Otherwise: proportional edge steering from CENTRE.
  */
 static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
@@ -252,10 +256,20 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     }
     else if (p_v->c_now == LF_ZONE_LIGHT)
     {
-        p_lf->steer_q7 = side_steer(p_lf->side, LF_RECOVER_Q7);
+        if (p_lf->side != p_lf->recover_side)
+        {
+            p_lf->recover_side = p_lf->side;
+            p_lf->recover_q7 = LF_RECOVER_Q7;
+        }
+        if (p_lf->recover_q7 < LF_STEER_FULL_Q7)
+        {
+            p_lf->recover_q7 += LF_RECOVER_RAMP_Q7;
+        }
+        p_lf->steer_q7 = side_steer(p_lf->side, p_lf->recover_q7);
     }
     else
     {
+        p_lf->recover_q7 = LF_RECOVER_Q7;
         p_lf->steer_q7 = lf_edge_steer(p_v->d_c);
     }
 }
@@ -380,8 +394,9 @@ static void forget_cross_line(lf_core_t *p_lf)
  * line is seen going on past it (CENTRE on it, RIGHT white), track it as
  * in ON_LINE, so the car is aligned with it at the pivot point, and a
  * drift off it is steered back (the cross line is first wiped from the
- * side memory).  No line ahead (a T junction): straight.  The line ending
- * is not LINE_LOST here.
+ * side memory).  Both sensors white before the line was seen going on:
+ * look left for LF_D_JCT_LOOK_CNT from detection.  No line ahead (a T
+ * junction): straight.  The line ending is not LINE_LOST here.
  * Returns true if steering may be posted this sample: not in the sample
  * of the post, so the Vehicle Controller acts on JUNCTION before any
  * steering (it runs at a higher priority, so the next sample already sees
@@ -401,6 +416,11 @@ static bool jct_travel(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
     if (p_lf->jct_line_ahead)
     {
         online_steer(p_lf, p_v);
+    }
+    else if ((p_v->c_now == LF_ZONE_LIGHT) && (p_v->r_now == LF_ZONE_LIGHT)
+             && ((p_in->fwd_cnt - p_lf->jct_cnt0) < LF_D_JCT_LOOK_CNT))
+    {
+        p_lf->steer_q7 = -LF_RECOVER_Q7;    /* look left for the line */
     }
     else
     {
@@ -594,6 +614,8 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->junction_armed = true;
     p_lf->side = LF_SIDE_LEFT;
     p_lf->steer_q7 = 0;
+    p_lf->recover_q7 = LF_RECOVER_Q7;
+    p_lf->recover_side = LF_SIDE_LEFT;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
     p_lf->jct_pending = false;

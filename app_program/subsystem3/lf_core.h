@@ -96,6 +96,12 @@
  *  It carries on from lf_edge_steer() at the LIGHT limit (-31), so leaving
  *  the edge is no jump.  At 127 it crossed the 18 mm line in ~100 ms. TUNE */
 #define LF_RECOVER_Q7           (32)
+/** Recovery steering grows by this much per sample while CENTRE stays off the
+ *  line, Q7: a brief slip stays gentle, a real one gets firmer, up to
+ *  LF_STEER_FULL_Q7.  At 1 it adds 20 before LF_T_LOST_MS ends it.  It starts
+ *  again from LF_RECOVER_Q7 when the side changes: carrying a value built up
+ *  the wrong way over to the right side overshot in the host model. TUNE */
+#define LF_RECOVER_RAMP_Q7      (1)
 /** Steering while searching for a lost line, Q7.  Enough to come back within
  *  LF_T_SEARCH_MS; at 127 the car reached the line too fast to stay on it. TUNE */
 #define LF_SEARCH_Q7            (64)
@@ -122,6 +128,16 @@
 /** The same in encoder counts: ENC_QUAD_MULT x ENC_CPR counts per wheel
  *  turn of WHEEL_CIRC_MM (config/thresholds.h). */
 #define LF_D_JCT_POST_CNT       ((LF_D_JCT_POST_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+/** Past a cross line with both sensors white and no sign of the line going
+ *  on, steer left for this much travel from detection: CENTRE rode the right
+ *  edge, so if the line goes on it is to the left.  Without this, sensors
+ *  leaving the cross in the same sample read as a T junction and the car
+ *  drove the whole post distance at steer 0 (S3-U15, 4 Nov).  Then straight,
+ *  so a real T junction is left alone: in the host model 40 mm at this
+ *  steering begins to cost left turns at a T. TUNE */
+#define LF_D_JCT_LOOK_MM        (30U)
+/** The same in encoder counts. */
+#define LF_D_JCT_LOOK_CNT       ((LF_D_JCT_LOOK_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault); at cruise the travel takes 400 ms (300 mm/s) to
  *  600 ms (bring-up 200 mm/s). TUNE */
@@ -251,6 +267,8 @@ typedef struct
     uint32_t       timer_n;         /**< samples spent in the current state/phase */
     bool           post_now;        /**< post at the next sample that may post (state entry) */
     int32_t        steer_q7;        /**< last computed steering */
+    int32_t        recover_q7;      /**< recovery steering, grows while CENTRE is off the line */
+    lf_side_t      recover_side;    /**< the side recover_q7 has been growing towards */
     lf_manoeuvre_t man_seen;        /**< manoeuvre seen in JUNCTION (NONE = straight) */
     bool           man_done;        /**< that manoeuvre has finished */
     bool           jct_pending;     /**< junction detected, JUNCTION not yet posted */
