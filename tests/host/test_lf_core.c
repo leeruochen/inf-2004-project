@@ -242,6 +242,7 @@ static void test_constants(void)
     CHECK(LF_D_JCT_LOOK_CNT == JCT_LOOK_CNT);
     CHECK(LF_RECOVER_RAMP_Q7 == 1);
     CHECK(LF_PIVOT_HALF_CNT == 1065U);          /* 45 degrees, by hand: see lf_core.h */
+    CHECK(LF_PIVOT_UTURN_CNT == 3195U);         /* 135 degrees */
 }
 
 /* Test 2: start-pose calibration, from the LF-1 desk numbers. */
@@ -1760,6 +1761,79 @@ static void test_pivot_memory(void)
     CHECK(lf.side == LF_SIDE_RIGHT);
 }
 
+/* One u-turn, a right pivot, as lf_link reports it.  Both sensors cross the
+ * cross arm at about 90 degrees, then see (dc, dr) past 135. */
+static void uturn_pivot(lf_core_t *p_lf, uint16_t dc, uint16_t dr)
+{
+    start_tracking(p_lf);
+    post_junction(p_lf);
+    g_in.manoeuvre = LF_MAN_UTURN;
+    g_in.yaw_cnt = 100;
+    (void)run(p_lf, 2U, 0U, 0U);
+    g_in.yaw_cnt = 100 + 2130;                  /* 90 degrees: the cross arm */
+    (void)run(p_lf, 5U, 0U, 1000U);
+    (void)run(p_lf, 5U, 1000U, 0U);
+    (void)run(p_lf, 5U, 0U, 0U);
+    g_in.yaw_cnt = 100 + 3900;                  /* past 135 degrees */
+    (void)run(p_lf, 5U, dc, dr);
+    (void)run(p_lf, 5U, 0U, 0U);
+    g_in.yaw_cnt = 100 + 4300;                  /* about 180 degrees */
+    (void)run(p_lf, 5U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+}
+
+/* Test 28 (LF-3.4): the u-turn uses the same memory.  A right pivot reaches
+ * RIGHT first, so CENTRE having seen the line means the pivot went past it:
+ * the line is left.  The old rule always steered right, and in the fitted
+ * model every u-turn ending at 180 degrees or more was TRACK_LOST. */
+static void test_uturn_memory(void)
+{
+    lf_core_t lf;
+    run_t     r;
+
+    /* CENTRE crossed it: the line is left, and the cross arm did not count. */
+    uturn_pivot(&lf, 1000U, 0U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_LEFT);
+    CHECK(r.min_steer == -LF_ACQUIRE_STEER_Q7);
+    CHECK(r.max_steer == -LF_ACQUIRE_STEER_Q7);
+
+    /* Only RIGHT crossed it: the line is right. */
+    uturn_pivot(&lf, 0U, 1000U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_RIGHT);
+    CHECK(r.min_steer == LF_ACQUIRE_STEER_Q7);
+
+    /* Nothing past 135 degrees: still ahead, to the right.  The cross arm at
+     * 90 degrees, seen by CENTRE, must not count. */
+    uturn_pivot(&lf, 0U, 0U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_RIGHT);
+    CHECK(r.min_steer == LF_ACQUIRE_STEER_Q7);
+
+    /* Not found: T_uturn is unchanged, and the search keeps the side the
+     * pivot gave, not the old fixed right. */
+    uturn_pivot(&lf, 1000U, 0U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 300U) >= 199U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 100U) <= 100U);
+    r = run(&lf, 4U, 0U, 0U);
+    CHECK(r.max_steer == -LF_SEARCH_Q7);
+
+    /* A pivot that never got to 135 degrees: as before, gently right. */
+    start_tracking(&lf);
+    post_junction(&lf);
+    g_in.manoeuvre = LF_MAN_UTURN;
+    g_in.yaw_cnt = 0;
+    (void)run(&lf, 2U, 0U, 0U);
+    g_in.yaw_cnt = 2000;
+    (void)run(&lf, 10U, 1000U, 0U);
+    (void)run(&lf, 5U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(r.min_steer == LF_ACQUIRE_STEER_Q7);
+    CHECK(r.max_steer == LF_ACQUIRE_STEER_Q7);
+}
+
 /* Test 22: the simulator against the 4 Nov 2026 hardware runs, so a change
  * to the model cannot quietly drift away from the real car.  Expected
  * values are the logged ones, not computed the way the model computes. */
@@ -1986,6 +2060,7 @@ int main(void)
     test_recover_ramp();
     test_cross_exit();
     test_pivot_memory();
+    test_uturn_memory();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

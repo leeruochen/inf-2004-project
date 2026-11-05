@@ -274,26 +274,27 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     }
 }
 
-/* During a 90 degree pivot, note what the sensors see past halfway: the new
- * line goes by under them, and the order says where it ended up. */
+/* During a pivot, note what the sensors see late in it: the line the car is
+ * turning onto goes by under them, and the order says where it ended up. */
 static void pivot_watch(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
 {
     if (!p_lf->piv_on)
     {
         p_lf->piv_on = true;
         p_lf->piv_yaw0 = p_in->yaw_cnt;
-        p_lf->piv_past_half = false;
+        p_lf->piv_late = false;
         p_lf->piv_c_seen = false;
         p_lf->piv_r_seen = false;
     }
     {
         int32_t const d = (int32_t)((uint32_t)p_in->yaw_cnt - (uint32_t)p_lf->piv_yaw0);
         uint32_t const turned = (d < 0) ? (uint32_t)(-d) : (uint32_t)d;
+        uint32_t const late = (p_in->manoeuvre == LF_MAN_UTURN) ? LF_PIVOT_UTURN_CNT : LF_PIVOT_HALF_CNT;
 
         p_lf->piv_left = (d < 0);
-        if (turned >= LF_PIVOT_HALF_CNT)
+        if (turned >= late)
         {
-            p_lf->piv_past_half = true;
+            p_lf->piv_late = true;
             p_lf->piv_c_seen = p_lf->piv_c_seen || (p_v->c_now != LF_ZONE_LIGHT);
             p_lf->piv_r_seen = p_lf->piv_r_seen || (p_v->r_now != LF_ZONE_LIGHT);
         }
@@ -304,8 +305,8 @@ static void pivot_watch(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
  * the new line reaches CENTRE first, then RIGHT: once either has seen it, it
  * is to the right, between them or past RIGHT (S3-U14: CENTRE crossed it at
  * 82-87 degrees and the pivot ended at 92).  Seen by neither: still ahead, to
- * the left.  A right pivot reaches RIGHT first: seen by CENTRE, it has gone
- * past and is to the left; otherwise it is to the right. */
+ * the left.  A right pivot, a u-turn included, reaches RIGHT first: seen by
+ * CENTRE, it has gone past and is to the left; otherwise it is to the right. */
 static lf_side_t pivot_side(lf_core_t const *p_lf)
 {
     lf_side_t side;
@@ -492,8 +493,7 @@ static bool jct_travel(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
  * did not turn, back to ON_LINE once RIGHT is white and CENTRE is on the
  * line.  Otherwise the Vehicle Controller is turning: post nothing while it
  * turns, then wait T_turn (T_uturn) for CENTRE to see solid black.  After a
- * u-turn the line is to the right of CENTRE: steer gently right meanwhile.
- * After a 90 degree pivot, steer gently towards the side pivot_side() found.
+ * pivot, steer gently towards the side pivot_side() found while it looks.
  */
 static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
                         lf_out_t *p_out)
@@ -539,23 +539,21 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
         {
             p_lf->man_done = true;
             p_lf->post_now = true;          /* post at once after the turn */
-            if (!uturn && p_lf->piv_past_half)
+            if (p_lf->piv_late)
             {
                 p_lf->side = pivot_side(p_lf);
             }
         }
         p_lf->timer_n++;
-        if (uturn)
-        {
-            p_lf->steer_q7 = LF_ACQUIRE_STEER_Q7;
-        }
-        else if (p_lf->piv_past_half)
+        if (p_lf->piv_late)
         {
             p_lf->steer_q7 = side_steer(p_lf->side, LF_ACQUIRE_STEER_Q7);
         }
         else
         {
-            p_lf->steer_q7 = 0;             /* a stalled pivot: nothing known */
+            /* A stalled pivot: nothing known.  After a u-turn the line is
+             * most likely to the right of CENTRE. */
+            p_lf->steer_q7 = uturn ? LF_ACQUIRE_STEER_Q7 : 0;
         }
         may_post = true;
         if (p_v->zc == LF_ZONE_DARK)
@@ -564,7 +562,7 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
         }
         else if (p_lf->timer_n >= limit)
         {
-            if (uturn)
+            if (uturn && !p_lf->piv_late)
             {
                 p_lf->side = LF_SIDE_RIGHT;
             }
@@ -681,7 +679,7 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->recover_side = LF_SIDE_LEFT;
     p_lf->piv_on = false;
     p_lf->piv_yaw0 = 0;
-    p_lf->piv_past_half = false;
+    p_lf->piv_late = false;
     p_lf->piv_left = false;
     p_lf->piv_c_seen = false;
     p_lf->piv_r_seen = false;
@@ -715,7 +713,7 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
     v.zc = lf_zone_update(&p_lf->zc, v.d_c);
     v.zr = lf_zone_update(&p_lf->zr, v.d_r);
     update_side(p_lf, &v);
-    if (p_in->manoeuvre == LF_MAN_TURN)
+    if ((p_in->manoeuvre == LF_MAN_TURN) || (p_in->manoeuvre == LF_MAN_UTURN))
     {
         pivot_watch(p_lf, p_in, &v);
     }

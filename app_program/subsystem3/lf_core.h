@@ -142,6 +142,9 @@
  *  degrees, 2 x pi x 114 mm x 45 / 360 x 2464 / 207.  Before this the sensors
  *  are crossing the line the car came along, not the new one. */
 #define LF_PIVOT_HALF_CNT       (1065U)
+/** The same for a u-turn, at 135 degrees: the cross arm goes by at 90, so only
+ *  the last quarter of the pivot can show the line the car came along. */
+#define LF_PIVOT_UTURN_CNT      (3U * LF_PIVOT_HALF_CNT)
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault); at cruise the travel takes 400 ms (300 mm/s) to
  *  600 ms (bring-up 200 mm/s). TUNE */
@@ -279,12 +282,12 @@ typedef struct
     bool           jct_pending;     /**< junction detected, JUNCTION not yet posted */
     bool           jct_line_ahead;  /**< the line was seen going on past the cross line */
     uint32_t       jct_cnt0;        /**< fwd_cnt when the junction was detected */
-    bool           piv_on;          /**< a 90 degree pivot is being watched */
+    bool           piv_on;          /**< a pivot is being watched */
     int32_t        piv_yaw0;        /**< yaw_cnt when it started */
-    bool           piv_past_half;   /**< it got past LF_PIVOT_HALF_CNT */
+    bool           piv_late;        /**< it got past LF_PIVOT_HALF_CNT (u-turn: LF_PIVOT_UTURN_CNT) */
     bool           piv_left;        /**< it turned left */
-    bool           piv_c_seen;      /**< CENTRE saw a line past halfway */
-    bool           piv_r_seen;      /**< RIGHT saw a line past halfway */
+    bool           piv_c_seen;      /**< CENTRE saw a line after that */
+    bool           piv_r_seen;      /**< RIGHT saw a line after that */
 } lf_core_t;
 
 /* ---------------------------------------------------------------------------
