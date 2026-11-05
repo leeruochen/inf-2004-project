@@ -4,11 +4,11 @@ Written 5 Nov 2026 by Buddy 3 (Jin Yong). Test: `testing/subsystem3/TEST_LOG.md`
 
 ## Purpose
 
-With a turn command waiting, does the car pivot at the cross, find the new line and follow it? The command is injected by the test: no barcode is read. Left passed on 5 Nov. This build tests the right turn; U-turn comes last.
+With a turn command waiting, does the car pivot at the cross, find the new line and follow it? The command is injected by the test: no barcode is read. Left and right passed on 5 Nov. This build tests the U-turn.
 
 ## Setup
 
-1. **Track:** a cross with at least 30 cm of straight line before it, and **at least 50 cm of straight line on the side the car turns to**. The car lands about 12 cm along the new line and follows it 30 cm more. Add a board if the line is shorter: too short a line fails (t5).
+1. **Track:** a cross with **at least 55 cm of straight line before it**. The car turns round at the cross and comes back along the same line: it lands about 12 cm from the cross and follows the line 30 cm more. Too short a line fails (t5).
 2. **Power:** battery disconnected, USB only. From pose A on, lift the laptop and follow the car, cable slack and overhead. It must never pull on the car. Wires clear of the right wheel.
 3. **Space:** keep the laptop and everything else at least 25 cm from the car's path, on both the approach and the new line.
 
@@ -23,7 +23,7 @@ With a turn command waiting, does the car pivot at the cross, find the new line 
 
 1. Lift the car and set it against the tape, hands off.
 2. It starts by itself after `HANDS OFF`.
-3. It crosses the junction line, stops, pivots right, steers gently onto the new line and follows it about 30 cm, then stops.
+3. It crosses the junction line, stops, pivots right through about 180 degrees, comes back along the line about 30 cm, then stops.
 4. Note what you see: did it pivot about a quarter turn, did it end on the new line?
 
 `LINE_LOST` after the pivot is allowed, but should now be rare: the car then searches and finds the line.

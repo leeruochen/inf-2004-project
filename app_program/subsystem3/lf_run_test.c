@@ -156,13 +156,13 @@
 #define LF2_JMAT_WAIT_S         (180U)
 
 /** S3-U14: a junction turn, in place of the straight and mat drives.  The
- *  command is what a barcode would post: left passed (12:08, 5 Nov), now right,
- *  U-turn last. */
+ *  command is what a barcode would post: left and right passed on 5 Nov, now
+ *  the U-turn. */
 #define LF2_TURN_ONLY           (1U)
 #define LF2_TURN_RUNS           (3U)
-#define LF2_TURN_CMD            DREP_BC_CMD_RIGHT
-#define LF2_TURN_VC_STATE       VC_SYS_NAV_TURN_RIGHT
-#define LF2_TURN_NAME           "right"
+#define LF2_TURN_CMD            DREP_BC_CMD_UTURN
+#define LF2_TURN_VC_STATE       VC_SYS_NAV_U_TURN
+#define LF2_TURN_NAME           "U-turn:"
 /** STOP this far along the branch, from the first ON_LINE after the turn. */
 #define LF2_TURN_BRANCH_MM      (300U)
 /** No cross by this much wheel travel: STOP.  The start is 300 mm before it. */
@@ -171,10 +171,10 @@
 #define LF2_TURN_MS             (9000U)
 /** The turn as the encoders saw it: a wide sanity window, the real angle is
  *  printed and judged by eye and against NFR4 (+-5 degrees). */
-#define LF2_TURN_DEG_MIN        (75U)
-#define LF2_TURN_DEG_MAX        (115U)
-/** The core must be tracking within T_turn + the stop + T_search. */
-#define LF2_TURN_FIND_MAX_MS    (LF_T_TURN_MS + LF_T_STOP_MS + LF_T_SEARCH_MS)
+#define LF2_TURN_DEG_MIN        (165U)
+#define LF2_TURN_DEG_MAX        (200U)
+/** The core must be tracking within T_uturn + the stop + T_search. */
+#define LF2_TURN_FIND_MAX_MS    (LF_T_UTURN_MS + LF_T_STOP_MS + LF_T_SEARCH_MS)
 /** The branch is judged from this far along it, once the car has settled. */
 #define LF2_TURN_TAIL_FROM_MM   (100U)
 /** Effective track x pi, mm: Motion's turn geometry (MOTION_EFF_TRACK_MM 114). */
@@ -1192,7 +1192,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                        "(t2) the VC took the command and turned at the junction");
             TEST_CHECK(LF2_ID, s_run.turn_done && (s_run.turn_deg >= LF2_TURN_DEG_MIN)
                                && (s_run.turn_deg <= LF2_TURN_DEG_MAX),
-                       "(t3) the turn is 75-115 degrees by the encoders");
+                       "(t3) the turn is in its window by the encoders");
             TEST_CHECK(LF2_ID, s_run.branch_on && (s_run.n_lost == 0U)
                                && ((s_run.t_branch_ms - s_run.t_turn_end_ms) <= LF2_TURN_FIND_MAX_MS),
                        "(t4) line found after the turn, no TRACK_LOST");
