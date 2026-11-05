@@ -138,6 +138,10 @@
 #define LF_D_JCT_LOOK_MM        (30U)
 /** The same in encoder counts. */
 #define LF_D_JCT_LOOK_CNT       ((LF_D_JCT_LOOK_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+/** A pivot counts as past halfway from here: left minus right counts at 45
+ *  degrees, 2 x pi x 114 mm x 45 / 360 x 2464 / 207.  Before this the sensors
+ *  are crossing the line the car came along, not the new one. */
+#define LF_PIVOT_HALF_CNT       (1065U)
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault); at cruise the travel takes 400 ms (300 mm/s) to
  *  600 ms (bring-up 200 mm/s). TUNE */
@@ -228,6 +232,7 @@ typedef struct
     bool           avoid_active;    /**< EVF_NAV_AVOID_ACTIVE */
     bool           reacquired;      /**< EVF_NAV_LINE_REACQUIRED */
     uint32_t       fwd_cnt;         /**< forward travel, encoder counts, free-running (lf_link) */
+    int32_t        yaw_cnt;         /**< left minus right encoder counts, wraps (lf_link) */
     bool           post_slot;       /**< the last sample before Motion reads its queue (lf_link_post_slot) */
 } lf_in_t;
 
@@ -274,6 +279,12 @@ typedef struct
     bool           jct_pending;     /**< junction detected, JUNCTION not yet posted */
     bool           jct_line_ahead;  /**< the line was seen going on past the cross line */
     uint32_t       jct_cnt0;        /**< fwd_cnt when the junction was detected */
+    bool           piv_on;          /**< a 90 degree pivot is being watched */
+    int32_t        piv_yaw0;        /**< yaw_cnt when it started */
+    bool           piv_past_half;   /**< it got past LF_PIVOT_HALF_CNT */
+    bool           piv_left;        /**< it turned left */
+    bool           piv_c_seen;      /**< CENTRE saw a line past halfway */
+    bool           piv_r_seen;      /**< RIGHT saw a line past halfway */
 } lf_core_t;
 
 /* ---------------------------------------------------------------------------

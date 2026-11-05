@@ -129,6 +129,7 @@ void lf_link_step(lf_link_t *p_link, lf_manoeuvre_t vc_man,
 
         p_out->manoeuvre = turn_watch(p_link, vc_man, changed);
         p_out->fwd_cnt = p_link->fwd_cnt;
+        p_out->yaw_cnt = (int32_t)((uint32_t)enc_count[LF_ENC_LEFT] - (uint32_t)enc_count[LF_ENC_RIGHT]);
     }
 }
 

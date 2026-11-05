@@ -504,6 +504,7 @@ static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out
     lf_link_step(&p_sim->link, p_sim->vc_man, p_sim->pub, &lk);
     p_in->manoeuvre = lk.manoeuvre;
     p_in->fwd_cnt = lk.fwd_cnt;
+    p_in->yaw_cnt = lk.yaw_cnt;
     p_in->post_slot = lf_link_post_slot(p_sim->pub_tick_ms, p_sim->step_n * LF_SAMPLE_PERIOD_MS);
     p_in->raw_c = sim_raw(p_sim, 0.0);
     p_in->raw_r = sim_raw(p_sim, -p_sim->spacing_mm);

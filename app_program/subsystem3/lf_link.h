@@ -77,6 +77,7 @@ typedef struct
 {
     lf_manoeuvre_t manoeuvre;   /**< vc_man, or NONE once the turn is done */
     uint32_t       fwd_cnt;     /**< forward travel, encoder counts (wraps) */
+    int32_t        yaw_cnt;     /**< left minus right encoder counts (wraps): turning right rises */
 } lf_link_out_t;
 
 /* ---------------------------------------------------------------------------

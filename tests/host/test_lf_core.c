@@ -241,6 +241,7 @@ static void test_constants(void)
     CHECK(LF_T_JCT_MAX_MS == 900U);
     CHECK(LF_D_JCT_LOOK_CNT == JCT_LOOK_CNT);
     CHECK(LF_RECOVER_RAMP_Q7 == 1);
+    CHECK(LF_PIVOT_HALF_CNT == 1065U);          /* 45 degrees, by hand: see lf_core.h */
 }
 
 /* Test 2: start-pose calibration, from the LF-1 desk numbers. */
@@ -1659,6 +1660,106 @@ static void test_cross_exit(void)
     CHECK(lf.state == LF_ST_JUNCTION);
 }
 
+/* One 90 degree pivot, as lf_link reports it: yaw_cnt to `mid`, then to
+ * `end`, with what each sensor sees past halfway. */
+static void pivot(lf_core_t *p_lf, int32_t sign, uint16_t dc, uint16_t dr)
+{
+    start_tracking(p_lf);
+    post_junction(p_lf);
+    g_in.manoeuvre = LF_MAN_TURN;
+    g_in.yaw_cnt = 100;
+    (void)run(p_lf, 2U, 0U, 0U);
+    g_in.yaw_cnt = 100 + (sign * 400);          /* before halfway: the old line */
+    (void)run(p_lf, 5U, 0U, 1000U);
+    (void)run(p_lf, 5U, 1000U, 0U);
+    (void)run(p_lf, 5U, 0U, 0U);
+    g_in.yaw_cnt = 100 + (sign * 1200);         /* past halfway */
+    (void)run(p_lf, 5U, dc, dr);
+    (void)run(p_lf, 5U, 0U, 0U);
+    g_in.yaw_cnt = 100 + (sign * 2130);         /* 90 degrees */
+    (void)run(p_lf, 5U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+}
+
+/* Test 27 (LF-3.4): after a pivot the side comes from what crossed the new
+ * line, S3-U14 11:42: a left pivot, CENTRE crossed at 82-87 degrees, ended at
+ * 92, both white, the old side memory said LEFT and the car left the line. */
+static void test_pivot_memory(void)
+{
+    lf_core_t lf;
+    run_t     r;
+
+    /* Left, CENTRE crossed it: the line is right.  RIGHT and CENTRE seeing
+     * the old line before halfway change nothing. */
+    pivot(&lf, -1, 1000U, 0U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_RIGHT);
+    CHECK(r.min_steer == LF_ACQUIRE_STEER_Q7);
+    CHECK(r.max_steer == LF_ACQUIRE_STEER_Q7);
+
+    /* Left, nothing past halfway: the line is still ahead, to the left. */
+    pivot(&lf, -1, 0U, 0U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_LEFT);
+    CHECK(r.max_steer == -LF_ACQUIRE_STEER_Q7);
+
+    /* Right, CENTRE crossed it: gone past, the line is left. */
+    pivot(&lf, 1, 1000U, 0U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_LEFT);
+    CHECK(r.max_steer == -LF_ACQUIRE_STEER_Q7);
+
+    /* Right, RIGHT crossed it, CENTRE not yet: the line is right. */
+    pivot(&lf, 1, 0U, 1000U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_RIGHT);
+    CHECK(r.min_steer == LF_ACQUIRE_STEER_Q7);
+
+    /* Right, nothing past halfway: still ahead, to the right. */
+    pivot(&lf, 1, 0U, 0U);
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(r.min_steer == LF_ACQUIRE_STEER_Q7);
+
+    /* Found: CENTRE on black ends it, as before. */
+    pivot(&lf, -1, 1000U, 0U);
+    r = run(&lf, 3U, 1000U, 0U);
+    CHECK(r.last.state == LF_ST_ON_LINE);
+
+    /* Not found: T_turn is unchanged, and the search starts on that side. */
+    pivot(&lf, -1, 1000U, 0U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 300U) <= 101U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 100U) <= 100U);
+    r = run(&lf, 4U, 0U, 0U);
+    CHECK(r.min_steer == LF_SEARCH_Q7);
+
+    /* The pivot never got past halfway (a stalled wheel): nothing is known,
+     * so straight, as before. */
+    start_tracking(&lf);
+    post_junction(&lf);
+    g_in.manoeuvre = LF_MAN_TURN;
+    g_in.yaw_cnt = 0;
+    (void)run(&lf, 2U, 0U, 0U);
+    g_in.yaw_cnt = -500;
+    (void)run(&lf, 10U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(r.min_steer == 0);
+    CHECK(r.max_steer == 0);
+
+    /* Counts near the wrap: the same left pivot. */
+    start_tracking(&lf);
+    post_junction(&lf);
+    g_in.manoeuvre = LF_MAN_TURN;
+    g_in.yaw_cnt = INT32_MIN + 300;
+    (void)run(&lf, 2U, 0U, 0U);
+    g_in.yaw_cnt = (int32_t)((uint32_t)(INT32_MIN + 300) - 1200U);
+    (void)run(&lf, 5U, 1000U, 0U);
+    (void)run(&lf, 5U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&lf, 10U, 0U, 0U);
+    CHECK(lf.side == LF_SIDE_RIGHT);
+}
+
 /* Test 22: the simulator against the 4 Nov 2026 hardware runs, so a change
  * to the model cannot quietly drift away from the real car.  Expected
  * values are the logged ones, not computed the way the model computes. */
@@ -1884,6 +1985,7 @@ int main(void)
     test_sim_recovery_starts();
     test_recover_ramp();
     test_cross_exit();
+    test_pivot_memory();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

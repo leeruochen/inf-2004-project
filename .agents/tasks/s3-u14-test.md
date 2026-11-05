@@ -9,8 +9,8 @@ Left turn first. With a turn command waiting, does the car pivot at the cross, f
 ## Setup
 
 1. **Track:** the course, at the bottom cross. Approach along the bottom line, in the normal direction. After a left turn the car follows the central straight.
-2. **Power:** battery disconnected, USB only. Cable slack, overhead and behind the car, from pose A on. Wires clear of the right wheel.
-3. **Space:** nothing within 25 cm in front of the car.
+2. **Power:** battery disconnected, USB only. From pose A on, lift the laptop and follow the car, cable slack and overhead. It must never pull on the car. Wires clear of the right wheel.
+3. **Space:** keep the laptop and everything else at least 25 cm from the car's path, on both the approach and the new line.
 
 ## Position
 
@@ -23,10 +23,10 @@ Left turn first. With a turn command waiting, does the car pivot at the cross, f
 
 1. Lift the car and set it against the tape, hands off.
 2. It starts by itself after `HANDS OFF`.
-3. It crosses the junction line, stops, pivots left, finds the central straight and follows it about 30 cm, then stops.
+3. It crosses the junction line, stops, pivots left, steers gently onto the central straight and follows it about 30 cm, then stops.
 4. Note what you see: did it pivot about a quarter turn, did it end on the new line?
 
-`LINE_LOST` after the pivot is allowed: the car then searches and finds the line.
+`LINE_LOST` after the pivot is allowed, but should now be rare: the car then searches and finds the line.
 
 ## PASS
 

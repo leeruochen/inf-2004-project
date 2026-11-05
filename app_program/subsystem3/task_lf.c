@@ -249,6 +249,7 @@ static void lf_sample(void)
     lf_link_step(&s_link, lf_vc_manoeuvre(vc_state), s_ms.enc_count, &lk);
     in.manoeuvre = lk.manoeuvre;
     in.fwd_cnt = lk.fwd_cnt;
+    in.yaw_cnt = lk.yaw_cnt;
     in.post_slot = lf_link_post_slot(s_ms.tick_ms, now_ms);
 
     lf_core_step(&s_core, &in, &out);
