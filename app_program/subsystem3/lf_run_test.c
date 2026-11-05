@@ -156,12 +156,13 @@
 #define LF2_JMAT_WAIT_S         (180U)
 
 /** S3-U14: a junction turn, in place of the straight and mat drives.  The
- *  command is what a barcode would post; left first, right and U-turn later. */
+ *  command is what a barcode would post: left passed (12:08, 5 Nov), now right,
+ *  U-turn last. */
 #define LF2_TURN_ONLY           (1U)
 #define LF2_TURN_RUNS           (3U)
-#define LF2_TURN_CMD            DREP_BC_CMD_LEFT
-#define LF2_TURN_VC_STATE       VC_SYS_NAV_TURN_LEFT
-#define LF2_TURN_NAME           "left"
+#define LF2_TURN_CMD            DREP_BC_CMD_RIGHT
+#define LF2_TURN_VC_STATE       VC_SYS_NAV_TURN_RIGHT
+#define LF2_TURN_NAME           "right"
 /** STOP this far along the branch, from the first ON_LINE after the turn. */
 #define LF2_TURN_BRANCH_MM      (300U)
 /** No cross by this much wheel travel: STOP.  The start is 300 mm before it. */
