@@ -46,3 +46,17 @@ Add a new row for every run. Never edit or delete old rows.
 
 | Date | Test ID | Commit | Tester | Result | Log / evidence | Notes |
 |---|---|---|---|---|---|---|
+| 2026-11-13 | S4-U01 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | LSM303D at 0x1D (accel + mag) |
+| 2026-11-13 | S4-U02 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U03 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U04 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U05 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U06 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U07 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Level reference: board at 8 half-deg (4 deg) when flat, 0 retries |
+| 2026-11-13 | S4-U08 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U09 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U10 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U11 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U12 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U17 | `5b5adc1` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | First run of the lift detector on the car; Subsystem 2 motor tests ran before it without a false lift |
+| 2026-11-13 | S4-U21 | `5b5adc1` | Vincent (Vincent6430) | PASS | `tests/host/test_imu_lift.c` | Host test, 63 checks, 0 failed |
