@@ -142,7 +142,12 @@ Write-Host "Console on $port" -ForegroundColor Green
 $logDir = Join-Path $Repo "testing\subsystem4\logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $log = Join-Path $logDir ("{0}_s4_unit.txt" -f (Get-Date -Format "yyyy-MM-dd_HHmm"))
-"# Subsystem 4 APP_TEST run, $branch at $commit, $(Get-Date -Format 's')" | Set-Content -Path $log -Encoding UTF8
+# One writer for the whole run, shared for reading: a viewer or another
+# program reading the log can no longer make a write fail (13 Nov 2026).
+$logw = New-Object System.IO.StreamWriter([System.IO.File]::Open($log, 'Append', 'Write', 'ReadWrite'), (New-Object System.Text.UTF8Encoding($false)))
+$logw.AutoFlush = $true
+function Log-Line([string]$text) { try { $logw.WriteLine($text) } catch { } }
+Log-Line "# Subsystem 4 APP_TEST run, $branch at $commit, $(Get-Date -Format 's')"
 
 function Open-Console($preferred, $ignore, $seconds) {
     $deadline = (Get-Date).AddSeconds($seconds)
@@ -187,7 +192,7 @@ try {
         if (-not $silentWarned -and (((Get-Date) - $lastRx).TotalSeconds -gt 10)) {
             $silentWarned = $true
             $stamp = Get-Date -Format "HH:mm:ss"
-            "# [script] $stamp console SILENT for 10 s (robot frozen or USB dead)" | Add-Content -Path $log -Encoding UTF8
+            Log-Line "# [script] $stamp console SILENT for 10 s (robot frozen or USB dead)"
             Write-Host ""
             Write-Host "[script] $stamp the robot has sent nothing for 10 s: it may have FROZEN. Do not unplug it; note what you were doing." -ForegroundColor Red
         }
@@ -195,7 +200,7 @@ try {
             if ($stopAt -and ((Get-Date) -gt $stopAt)) { break }
             if ((Get-Date) -gt $runDeadline) {
                 Write-Host "[script] no subsystem4 SUMMARY within 10 min; stopping." -ForegroundColor Red
-                "# [script] timed out waiting for the subsystem4 SUMMARY" | Add-Content -Path $log -Encoding UTF8
+                Log-Line "# [script] timed out waiting for the subsystem4 SUMMARY"
                 break
             }
         }
@@ -210,7 +215,7 @@ try {
         while (($nl = $buf.IndexOf("`n")) -ge 0) {
             $line = $buf.Substring(0, $nl).TrimEnd("`r")
             $buf = $buf.Substring($nl + 1)
-            Add-Content -Path $log -Value $line -Encoding UTF8
+            Log-Line $line
 
             if ($line -match '\[TEST\] S4-\S+ FAIL') { $fail++; Write-Host $line -ForegroundColor Red }
             elseif ($line -match '\[TEST\] S4-\S+ PASS') { $pass++; Write-Host $line -ForegroundColor Green }
@@ -235,7 +240,7 @@ try {
         if ($lost) {
             $drops++
             $stamp = Get-Date -Format "HH:mm:ss"
-            "# [script] $stamp console lost (drop $drops), reconnecting" | Add-Content -Path $log -Encoding UTF8
+            Log-Line "# [script] $stamp console lost (drop $drops), reconnecting"
             Write-Host ""
             Write-Host "[script] $stamp console lost (drop $drops): the Pico left USB. Reconnecting..." -ForegroundColor DarkYellow
             try { $sp.Dispose() } catch { }
@@ -243,12 +248,13 @@ try {
             $sp = Open-Console $port $portsBefore 60
             if (-not $sp) { Write-Host "[script] no console for 60 s; stopping." -ForegroundColor Red; break }
             $stamp = Get-Date -Format "HH:mm:ss"
-            "# [script] $stamp reconnected on $($sp.PortName)" | Add-Content -Path $log -Encoding UTF8
+            Log-Line "# [script] $stamp reconnected on $($sp.PortName)"
             Write-Host "[script] $stamp reconnected on $($sp.PortName). Lines after this are from a NEW boot." -ForegroundColor DarkYellow
         }
     }
 }
 finally {
+    try { $logw.Close() } catch { }
     if ($sp -and $sp.IsOpen) { $sp.Close() }
     Write-Host ""
     Write-Host "Saved log: $log" -ForegroundColor Green
