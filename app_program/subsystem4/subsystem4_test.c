@@ -18,6 +18,7 @@
 #include "imu_lift.h"
 #include "task_imu.h"
 #include "task_safety.h"
+#include "../subsystem2/subsystem2.h"
 #include "../test_report.h"
 #include "config/timing.h"
 
@@ -26,7 +27,7 @@
 /* Wait for this many 10 ms IMU cycles before checking the samples. */
 #define S4_TEST_SETTLE_MS   (100U)
 
-/* Operator-guided tests S4-U14..U16 and S4-U18..U20: the console asks for
+/* Operator-guided tests S4-U14..U16, S4-U18..U20 and S4-U23: the console asks for
  * one action at a time and the test detects it.  Off by default so other
  * members' APP_TEST runs do not wait for someone to lift their car; turn on
  * with
@@ -40,6 +41,16 @@
 #define S4_WINDOW_MS        (20000U)    /* time given for each action */
 #define S4_POLL_MS          (50U)
 #define S4_NOTE_EVERY_MS    (5000U)
+
+/* S4-U23, lift while driving: drive straight this far at cruise speed (20 cm/s
+ * in bring-up builds, about 3.5 s), and require the wheels to stop within
+ * NFR10's 200 ms of the lift event.  Wheels count as stopped when neither
+ * encoder moves for S4_STILL_POLLS polls of S4_DRIVE_POLL_MS. */
+#define S4_DRIVE_CM         (70)
+#define S4_DRIVE_POLL_MS    (10U)
+#define S4_DRIVE_WINDOW_MS  (6000U)
+#define S4_STOP_LIMIT_MS    (200U)
+#define S4_STILL_POLLS      (3U)
 
 /* Wait until p_get() changes from before, or window_ms; reminder every 5 s. */
 static bool s4_wait_change(uint32_t (*p_get)(void), uint32_t before, uint32_t window_ms)
@@ -78,6 +89,18 @@ static bool s4_wait_true(bool (*p_ok)(void), uint32_t window_ms)
     }
 
     return p_ok();
+}
+
+/* Sum of both encoder counts (free-running), or the previous value on error. */
+static int32_t s4_enc_sum(int32_t prev)
+{
+    motion_state_t st;
+
+    if (motion_get_state(&st) != E_OK)
+    {
+        return prev;
+    }
+    return st.enc_count[0] + st.enc_count[1];
 }
 
 static bool s4_fault_latched(void)
@@ -184,6 +207,79 @@ static void s4_manual_tests(uint32_t *p_pass, uint32_t *p_fail)
         s4_reset_fault();
     }
 
+    /* S4-U23: lifted WHILE DRIVING -> wheels stop within 200 ms (FR12, NFR10,
+     * the demo's end-of-run signal).  Moving the car to the track is itself a
+     * lift, so wait until it stands level and still, then reset the fault. */
+    dbg_puts("[S4] MANUAL S4-U23: PUT the car on the TRACK on a straight, facing along it; hands off");
+    {
+        (void)s4_wait_change(imu_get_lift_count, imu_get_lift_count(), S4_WINDOW_MS);
+        (void)tk_dly_tsk(1000U);
+        bool const placed = s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
+
+        s4_reset_fault();
+        dbg_puts("[S4]   car drives 70 cm straight in 3 s: get ready to LIFT it while it moves");
+        (void)tk_dly_tsk(3000U);
+
+        uint32_t const lifts   = imu_get_lift_count();
+        uint32_t const brakes  = safety_get_brake_count();
+        int32_t        enc     = s4_enc_sum(0);
+        bool           seen    = false;
+        bool           moving  = false;
+        bool           stopped = false;
+        uint32_t       t_lift  = 0U;
+        uint32_t       t_stop  = 0U;
+        uint32_t       still   = 0U;
+
+        (void)motion_move_forward(S4_DRIVE_CM);
+        dbg_puts("[S4] MANUAL S4-U23: LIFT the car NOW, while it is driving");
+
+        for (uint32_t waited = 0U; (waited < S4_DRIVE_WINDOW_MS) && !stopped; waited += S4_DRIVE_POLL_MS)
+        {
+            (void)tk_dly_tsk(S4_DRIVE_POLL_MS);
+
+            uint32_t const now   = app_period_now_ms();
+            int32_t const  e     = s4_enc_sum(enc);
+            bool const     turns = (e != enc);
+
+            enc = e;
+
+            if (!seen)
+            {
+                moving = turns;     /* wheels turning in the poll before the lift */
+
+                if (imu_get_lift_count() != lifts)
+                {
+                    seen   = true;
+                    t_lift = now;
+                }
+                continue;
+            }
+
+            still = turns ? 0U : (still + 1U);
+
+            if (still >= S4_STILL_POLLS)
+            {
+                stopped = true;
+                t_stop  = now - ((S4_STILL_POLLS - 1U) * S4_DRIVE_POLL_MS);
+            }
+        }
+
+        (void)motion_stop();
+
+        uint32_t const stop_ms = stopped ? (t_stop - t_lift) : 0U;
+
+        dbg_printf("[S4]   U23 placed=%d lifted=%d driving=%d stopped=%d in %lu ms after the lift (limit %lu)",
+                   (int)placed, (int)seen, (int)moving, (int)stopped,
+                   (unsigned long)stop_ms, (unsigned long)S4_STOP_LIMIT_MS);
+        TEST_CHECK("S4-U23", placed && seen && moving && stopped && (stop_ms <= S4_STOP_LIMIT_MS)
+                             && (safety_get_brake_count() > brakes) && s4_fault_latched(),
+                   "lifted while driving -> wheels stop within 200 ms, FAULT_LATCHED set");
+        (void)tk_dly_tsk(1000U);
+        dbg_puts("[S4]   put the car back down FLAT and keep it still");
+        (void)s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
+        s4_reset_fault();
+    }
+
     *p_pass = test_pass_;
     *p_fail = test_fail_;
 }
@@ -234,7 +330,7 @@ void subsystem4_test(void)
 #if S4_MANUAL_TESTS
     s4_manual_tests(&test_pass_, &test_fail_);
 #else
-    dbg_puts("[S4] S4-U14..U16, U18..U20 skipped: operator-guided, build with -DS4_MANUAL_TESTS=ON");
+    dbg_puts("[S4] S4-U14..U16, U18..U20, U23 skipped: operator-guided, -DS4_MANUAL_TESTS=ON");
 #endif
 
     TEST_SUMMARY("subsystem4");
