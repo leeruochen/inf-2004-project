@@ -90,8 +90,35 @@
 #define OBS_PING_BUDGET_MS      (45U)
 
 /** A bearing belongs to the same obstacle as the nearest return if it is
- *  within this much of it.  TUNE: promote to thresholds.h after S5-U14. */
+ *  within this much of it.  TUNE: promote to thresholds.h after S5-U14.
+ *
+ *  This is only the outer bound; OBS_EDGE_STEP_MM below is what actually
+ *  decides the run.  100 mm on its own is looser than most obstacles are
+ *  wide, so any neighbouring bearing that answered at all used to join. */
 #define OBS_EDGE_TOL_MM         (100U)
+
+/** Largest jump in range, between one bearing and the next one already in
+ *  the run, that still counts as the same surface.
+ *
+ *  WHY, and why the absolute tolerance above is not enough: OBS_EDGE_TOL_MM
+ *  is measured from the nearest return, so at 158 mm it admits anything out
+ *  to 258 mm -- past OBS_DETECT_MM, i.e. everything the sweep can see.  A
+ *  bearing looking at the background 80 mm behind the obstacle therefore
+ *  joined the run, the run grew by one slot, and the width grew by the arc
+ *  that slot subtends (27.6 mm at 158 mm).  MEASURED 2026-11-04 (S5-U33):
+ *  the same 50 mm object read 55 mm on one sweep and 82 mm on the next --
+ *  a 27 mm difference, exactly one slot.  That jitter is what put the 82 mm
+ *  reading outside NFR15's band.
+ *
+ *  Comparing against the NEIGHBOUR instead follows a real surface while
+ *  cutting at a step change.  Geometry sets the floor: a flat face read
+ *  off-normal returns d0 / cos(theta), so across the widest 10 degree step
+ *  the fine sweep can take (20 to 30 degrees off-normal, the edge of
+ *  OBS_FINE_HALF_SPAN_DEG) a wall at the 250 mm detect range rises about
+ *  23 mm.  40 mm keeps that wall in one run with margin for surface noise,
+ *  while rejecting the ~80 mm step to the background that caused the
+ *  jitter.  TUNE: re-measure with S5-U33 if the detect range changes. */
+#define OBS_EDGE_STEP_MM        (40U)
 
 /** Effective HC-SR04 beam width, subtracted from the measured angular span
  *  and from the measured lateral extent so a narrow post is not reported as
@@ -235,6 +262,26 @@ static bool slot_is_obstacle(obs_scan_t const *p_scan, uint32_t i, uint32_t thre
     return (d != 0U) && (d <= thresh_mm);
 }
 
+/** True if bearing i continues the run that bearing prev_mm is already in.
+ *
+ *  Both tests have to hold: within OBS_EDGE_TOL_MM of the nearest return
+ *  (the obstacle cannot be unboundedly deep) AND within OBS_EDGE_STEP_MM of
+ *  the neighbour already in the run (no step change to another surface). */
+static bool slot_joins_run(obs_scan_t const *p_scan, uint32_t i,
+                           uint32_t thresh_mm, uint32_t prev_mm)
+{
+    uint32_t const d = (uint32_t)p_scan->dist_mm[i];
+    uint32_t       step_mm;
+
+    if (!slot_is_obstacle(p_scan, i, thresh_mm))
+    {
+        return false;
+    }
+    step_mm = (d > prev_mm) ? (d - prev_mm) : (prev_mm - d);
+
+    return step_mm <= (uint32_t)OBS_EDGE_STEP_MM;
+}
+
 bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
 {
     if ((p_scan == NULL) || (p_out == NULL))
@@ -279,13 +326,20 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
     uint32_t       right_slot = near_slot;
     uint32_t       left_slot = near_slot;
 
-    while ((right_slot > lo) && slot_is_obstacle(p_scan, right_slot - 1U, thresh_mm))
+    uint32_t       prev_mm = near_mm;
+
+    while ((right_slot > lo)
+           && slot_joins_run(p_scan, right_slot - 1U, thresh_mm, prev_mm))
     {
         right_slot--;
+        prev_mm = (uint32_t)p_scan->dist_mm[right_slot];
     }
-    while ((left_slot < hi) && slot_is_obstacle(p_scan, left_slot + 1U, thresh_mm))
+    prev_mm = near_mm;
+    while ((left_slot < hi)
+           && slot_joins_run(p_scan, left_slot + 1U, thresh_mm, prev_mm))
     {
         left_slot++;
+        prev_mm = (uint32_t)p_scan->dist_mm[left_slot];
     }
 
     /* 3. Lateral extent of the run.  Positive x is to the car's right, so
