@@ -143,7 +143,9 @@ static void s4_manual_tests(uint32_t *p_pass, uint32_t *p_fail)
     }
 
     /* S4-U20: overturned (tilted past theta_lift) -> brake + FAULT_LATCHED. */
-    dbg_puts("[S4] MANUAL S4-U20: TIP the car onto its SIDE (or upside down) for 2 s, then put it back down FLAT");
+    /* Roll it over on the desk: lifting it first would trigger RAISED before
+     * the tilt (guided run of 13 Nov 2026). */
+    dbg_puts("[S4] MANUAL S4-U20: ROLL the car onto its SIDE on the desk (do NOT lift it), 2 s, then back FLAT");
     {
         uint32_t const brakes = safety_get_brake_count();
         bool const     seen   = s4_wait_change(imu_get_lift_count, imu_get_lift_count(), S4_WINDOW_MS);
