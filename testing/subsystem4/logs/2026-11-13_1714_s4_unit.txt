@@ -1,0 +1,609 @@
+﻿# Subsystem 4 APP_TEST run, buddy4/lift-detection at a9d948a, 2026-11-13T17:14:07
+pre-kernel ok
+
+
+microT-Kernel Version 3.00
+
+[IPC] kernel spec version 3.00 OK
+[IPC] 8 objects created, MBF depth self-check OK
+[S3] IR_R (GP26/ADC0) ADC sanity OK
+[S3] IR_C (GP28/ADC2) ADC sanity OK
+[S4] IMU init OK
+[S4] tasks started
+[SAFETY] task started
+[IMU] task started
+[IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+[IMU] chip LSM303D, accel+mag at 0x1D
+[TEL] backend: console ([TEL] <topic> <hex>)
+[TEL] link DISCONNECTED -> CONNECTING
+[TEL] link CONNECTING -> CONNECTED
+[IMU] level reference: board at 9 half-deg when flat (0 tries)
+[TEST] S4-U01 PASS  accelerometer found and identified
+[TEST] S4-U02 PASS  magnetometer present
+[TEST] S4-U03 PASS  accel configured (imu_is_ready)
+[TEST] S4-U04 PASS  IMU task reads new samples
+[S4] z=-909 mg mag=920 mg pitch=1 half-deg (board 9 when flat)
+[TEST] S4-U05 PASS  z-axis ~1 g at rest
+[TEST] S4-U06 PASS  magnitude ~1 g at rest
+[TEST] S4-U07 PASS  pitch within 10 deg of the boot level reference
+[TEST] S4-U08 PASS  IMU task running
+[TEST] S4-U09 PASS  Safety task running
+[TEST] S4-U10 PASS  IMU period ~10 ms
+[TEST] S4-U11 PASS  no I2C errors
+[TEST] S4-U12 PASS  no IMU watchdog timeouts
+[TEST] S4-U17 PASS  lift detector armed, no false lift event with the car at rest
+[S4] ===== MANUAL TESTS: do each step when asked (20 s each) =====
+[S4] MANUAL S4-U15: put a ~2 cm book under the FRONT wheels for 2 s, then remove it
+[TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+[TEL] car/telemetry/motion 01010fd00700000000000000000000000000
+[TEL] car/telemetry/motion 01010fb80b00000000000000000000000000
+[TEL] car/telemetry/motion 01010fa00f00000000000000000000000000
+[TEL] car/telemetry/motion 01010f881300000000040000000000000000
+[TEL] car/telemetry/heartbeat 010706881300000100
+[S5] coarse hit 98 mm @ 150 deg, fine scan
+[IMU] hump pitch=16 half-deg
+[TEL] car/telemetry/hump 0104057215000008
+[S4]   hump seen, pitch=16 half-deg
+[TEST] S4-U15 PASS  hump reported, nose up = positive pitch
+[S5] obstacle 81 mm @ 170 deg w=50 clrL=29 clrR=635
+[S5RAW]   30 deg = 579 mm
+[S5RAW]   60 deg = 595 mm
+[S5RAW]   120 deg = 245 mm
+[S5RAW]   140 deg = 149 mm
+[S5RAW]   160 deg = 90 mm
+[S5RAW]   170 deg = 81 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=81 edges 160..180 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[TEL] car/telemetry/motion 01010f701700000000440200001403000000
+[IMU] lift peak 1s: v=14/100 mm/s acc=23 mg cos=922/866
+[TEL] car/telemetry/motion 01010f581b00000000500200008c02000000
+[S5] coarse hit 80 mm @ 140 deg, fine scan
+[S5] obstacle 52 mm @ 140 deg w=50 clrL=635 clrR=31
+[S5RAW]   30 deg = 606 mm
+[S5RAW]   60 deg = 613 mm
+[S5RAW]   90 deg = 149 mm
+[S5RAW]   110 deg = 91 mm
+[S5RAW]   120 deg = 102 mm
+[S5RAW]   130 deg = 84 mm
+[S5RAW]   140 deg = 62 mm
+[S5RAW]   150 deg = 54 mm
+[S5RAW]   160 deg = 52 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=52 edges 110..170 deg width=50
+[S5] bypass LEFT: d=5 cm w=50 mm out=760 ms along=400 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[TEL] car/telemetry/motion 01010f401f00000000500200009002000000
+[S5] avoid -> LEG_OUT (760 ms)
+[S4] MANUAL S4-U18: LIFT the car ~10 cm off the desk, hold it 2 s, put it back down FLAT
+[S5] coarse hit 62 mm @ 130 deg, fine scan
+[S5] avoid -> TURN_IN1 (550 ms)
+[TEL] car/telemetry/motion 01010f282300000000500200009002000000
+[S5] avoid -> LEG_ALONG (400 ms)
+[S5] avoid -> TURN_IN2 (550 ms)
+[DBG] alive: SDK timer 10586 ms, kernel time 9880 ms, difference 706 ms
+[TEL] car/telemetry/motion 01010f102700000000500200009002000000
+[TEL] car/telemetry/heartbeat 010706102700000100
+[S5] avoid -> LEG_BACK (2000 ms)
+[IMU] hump pitch=13 half-deg
+[TEL] car/telemetry/hump 0104056c2a008006
+[SAFETY] BRAKE: lifted or overturned
+[IMU] LIFTED (raised): cos_tilt=997/1000 up_accel=80 mg v=119 mm/s
+[TEL] car/telemetry/fault 010605da2a000400
+[TEL] car/telemetry/heartbeat 010706e42a00004300
+[TEL] car/telemetry/motion 01010ff82a00000000500200009002000000
+[S5] coarse hit 78 mm @ 120 deg, fine scan
+[TEST] S4-U18 PASS  lifted -> emergency brake, FAULT_LATCHED set
+[IMU] hump pitch=-12 half-deg
+[TEL] car/telemetry/hump 010405a62c00007a
+[IMU] lift detection re-armed (car level and still)
+[S5] obstacle 73 mm @ 120 deg w=99 clrL=635 clrR=70
+[S5RAW]   60 deg = 141 mm
+[S5RAW]   90 deg = 85 mm
+[S5RAW]   100 deg = 81 mm
+[S5RAW]   110 deg = 73 mm
+[S5RAW]   120 deg = 85 mm
+[S5RAW]   130 deg = 98 mm
+[S5RAW]   140 deg = 173 mm
+[S5RAW]   150 deg = 173 mm
+[S5RAW]   160 deg = 1956 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=73 edges 90..150 deg width=99
+[S5] avoid ABORT in LEG_BACK: safety fault latched
+[S5] avoid -> IDLE (reacquired=0)
+[TEST] S4-U19 PASS  lift detector re-arms after the car is put back down, no second event
+[IMU] lift peak 1s: v=129/100 mm/s acc=108 mg cos=991/866
+[TEL] car/telemetry/motion 01010fe02e00000000500200009002000000
+[TEL] car/telemetry/heartbeat 010706bc2f00000100
+[S4]   fault reset requested: FAULT_LATCHED cleared
+[S4] MANUAL S4-U20: ROLL the car onto its SIDE on the desk (do NOT lift it), 2 s, then back FLAT
+[S5] coarse hit 73 mm @ 120 deg, fine scan
+[TEL] car/telemetry/motion 01010fc83200000000500200009002000000
+[S5] obstacle 81 mm @ 100 deg w=50 clrL=50 clrR=60
+[S5RAW]   30 deg = 129 mm
+[S5RAW]   90 deg = 122 mm
+[S5RAW]   100 deg = 113 mm
+[S5RAW]   110 deg = 81 mm
+[S5RAW]   120 deg = 218 mm
+[S5RAW]   130 deg = 155 mm
+[S5RAW]   140 deg = 161 mm
+[S5RAW]   150 deg = 90 mm
+[S5RAW]   160 deg = 1956 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=81 edges 90..110 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[IMU] lift peak 1s: v=76/100 mm/s acc=91 mg cos=996/866
+[TEL] car/telemetry/motion 01010fb03600000000580200006c03000000
+[S5] coarse hit 70 mm @ 120 deg, fine scan
+[S5] obstacle 73 mm @ 120 deg w=51 clrL=635 clrR=40
+[S5RAW]   60 deg = 81 mm
+[S5RAW]   90 deg = 73 mm
+[S5RAW]   100 deg = 73 mm
+[S5RAW]   110 deg = 73 mm
+[S5RAW]   120 deg = 81 mm
+[S5RAW]   130 deg = 158 mm
+[S5RAW]   140 deg = 132 mm
+[S5RAW]   150 deg = 111 mm
+[S5RAW]   160 deg = 1956 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=73 edges 90..150 deg width=51
+[S5] bypass LEFT: d=7 cm w=55 mm out=772 ms along=420 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[TEL] car/telemetry/motion 01010f983a00000000bc0a00000c09000000
+[TEL] car/telemetry/heartbeat 010706983a00000100
+[S5] avoid -> LEG_OUT (772 ms)
+[TEL] car/telemetry/motion 01010f803e000000002c1b0000e010000000
+[S5] coarse hit 64 mm @ 120 deg, fine scan
+[S5] avoid -> TURN_IN1 (550 ms)
+[IMU] hump pitch=-15 half-deg
+[TEL] car/telemetry/hump 0104051a40008078
+[S5] obstacle 81 mm @ 60 deg w=50 clrL=40 clrR=635
+[S5RAW]   60 deg = 81 mm
+[S5RAW]   90 deg = 82 mm
+[S5RAW]   100 deg = 126 mm
+[S5RAW]   110 deg = 129 mm
+[S5RAW]   120 deg = 145 mm
+[S5RAW]   130 deg = 158 mm
+[S5RAW]   140 deg = 189 mm
+[S5RAW]   150 deg = 197 mm
+[S5RAW]   160 deg = 1956 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=81 edges 60..60 deg width=50
+[S5] avoid -> LEG_ALONG (420 ms)
+[TEL] car/telemetry/motion 01010f684200000000f82700009818000000
+[S5] avoid -> TURN_IN2 (550 ms)
+[S4]   waiting... 15 s left
+[IMU] hump pitch=-22 half-deg
+[TEL] car/telemetry/hump 0104057a44000075
+[IMU] lift peak 1s: v=0/100 mm/s acc=19 mg cos=862/866
+[S5] coarse hit 105 mm @ 120 deg, fine scan
+[S5] avoid -> LEG_BACK (2000 ms)
+[TEL] car/telemetry/motion 01010f504600000000d42b0000d41c000000
+[S5] obstacle 91 mm @ 130 deg w=50 clrL=635 clrR=23
+[S5RAW]   30 deg = 149 mm
+[S5RAW]   60 deg = 114 mm
+[S5RAW]   90 deg = 108 mm
+[S5RAW]   100 deg = 130 mm
+[S5RAW]   110 deg = 281 mm
+[S5RAW]   120 deg = 91 mm
+[S5RAW]   130 deg = 98 mm
+[S5RAW]   140 deg = 126 mm
+[S5RAW]   150 deg = 97 mm
+[S5RAW]   160 deg = 1956 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=91 edges 120..150 deg width=50
+[IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=898/866
+[TEL] car/telemetry/motion 01010f384a00000000d42b0000d41c000000
+[S5] coarse hit 82 mm @ 130 deg, fine scan
+[IMU] lift peak 1s: v=0/100 mm/s acc=10 mg cos=874/866
+[S5] avoid handoff in LEG_BACK, line not found: LEG_BACK dwell elapsed
+[S5] avoid -> IDLE (reacquired=0)
+[S5] obstacle 86 mm @ 120 deg w=60 clrL=635 clrR=60
+[S5RAW]   30 deg = 111 mm
+[S5RAW]   60 deg = 120 mm
+[S5RAW]   90 deg = 108 mm
+[S5RAW]   100 deg = 117 mm
+[S5RAW]   110 deg = 91 mm
+[S5RAW]   120 deg = 91 mm
+[S5RAW]   130 deg = 86 mm
+[S5RAW]   140 deg = 98 mm
+[S5RAW]   150 deg = 106 mm
+[S5RAW]   160 deg = 102 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=86 edges 90..160 deg width=60
+[S5] avoid -> SLOW (3000 ms)
+[DBG] alive: SDK timer 20590 ms, kernel time 19884 ms, difference 706 ms
+[TEL] car/telemetry/motion 01010f204e00000000d42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706204e00000100
+[IMU] hump pitch=17 half-deg
+[TEL] car/telemetry/hump 0104050e51008008
+[S5] coarse hit 77 mm @ 120 deg, fine scan
+[TEL] car/telemetry/motion 01010f085200000000b42b0000d41c000000
+[S5] obstacle 99 mm @ 120 deg w=50 clrL=46 clrR=105
+[S5RAW]   30 deg = 120 mm
+[S5RAW]   60 deg = 112 mm
+[S5RAW]   90 deg = 1884 mm
+[S5RAW]   100 deg = 1883 mm
+[S5RAW]   110 deg = 1879 mm
+[S5RAW]   120 deg = 99 mm
+[S5RAW]   130 deg = 2130 mm
+[S5RAW]   140 deg = 125 mm
+[S5RAW]   150 deg = 116 mm
+[S5RAW]   160 deg = 102 mm
+[S5RAW]   170 deg = 53 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=99 edges 120..120 deg width=50
+[S5] blocked: clrL=45 clrR=105 need 170
+[S5] avoid -> BLOCKED (1200 ms)
+[IMU] lift peak 1s: v=37/100 mm/s acc=112 mg cos=958/866
+[TEL] car/telemetry/motion 01010ff05500000000b42b0000d41c000000
+[S4]   waiting... 10 s left
+[S5] avoid -> SLOW (3000 ms)
+[S5] coarse hit 125 mm @ 140 deg, fine scan
+[TEL] car/telemetry/motion 01010fd85900000000b42b0000d41c000000
+[S5] avoid -> IDLE (reacquired=0)
+[TEL] car/telemetry/motion 01010fc05d00000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010fa86100000000b42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706a86100000100
+[TEL] car/telemetry/motion 01010f906500000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010f786900000000b42b0000d41c000000
+[S4]   waiting... 5 s left
+[TEL] car/telemetry/motion 01010f606d00000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010f487100000000b42b0000d41c000000
+[DBG] alive: SDK timer 30591 ms, kernel time 29885 ms, difference 706 ms
+[TEL] car/telemetry/motion 01010f307500000000b42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706307500000100
+[TEL] car/telemetry/motion 01010f187900000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010f007d00000000b42b0000d41c000000
+[TEST] S4-U20 FAIL  overturned -> tilt detected, emergency brake, FAULT_LATCHED set   (subsystem
+[TEL] car/telemetry/motion 01010fe88000000000b42b0000d41c000000
+[S4]   fault reset requested: FAULT_LATCHED cleared
+[S4] MANUAL S4-U14: unplug the IMU cable, wait 2 s, plug it back in
+[TEL] car/telemetry/motion 01010fd08400000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010fb88800000000b42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706b88800000100
+[TEL] car/telemetry/motion 01010fa08c00000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010f889000000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010f709400000000b42b0000d41c000000
+[S4]   waiting... 15 s left
+[TEL] car/telemetry/motion 01010f589800000000b42b0000d41c000000
+[DBG] alive: SDK timer 40591 ms, kernel time 39885 ms, difference 706 ms
+[TEL] car/telemetry/motion 01010f409c00000000b42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706409c00000100
+[S5] coarse hit 184 mm @ 30 deg, fine scan
+[TEL] car/telemetry/motion 01010f28a000000000b42b0000d41c000000
+[S5] obstacle 201 mm @ 0 deg w=50 clrL=635 clrR=635
+[S5RAW]   0 deg = 201 mm
+[S5RAW]   10 deg = 577 mm
+[S5RAW]   20 deg = 567 mm
+[S5RAW]   50 deg = 1909 mm
+[S5RAW]   60 deg = 1905 mm
+[S5RAW]   90 deg = 2068 mm
+[S5RAW]   100 deg = 1883 mm
+[S5RAW]   110 deg = 1896 mm
+[S5RAW]   120 deg = 2096 mm
+[S5RAW]   130 deg = 1900 mm
+[S5RAW]   140 deg = 1896 mm
+[S5RAW]   150 deg = 2088 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=201 edges 0..0 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[TEL] car/telemetry/motion 01010f10a400000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010ff8a700000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010fe0ab00000000b42b0000d41c000000
+[S4]   waiting... 10 s left
+[S5] avoid -> IDLE (reacquired=0)
+[TEL] car/telemetry/motion 01010fc8af00000000b42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706c8af00000100
+[TEL] car/telemetry/motion 01010fb0b300000000b42b0000d41c000000
+[TEL] car/telemetry/motion 01010f98b700000000b42b0000d41c000000
+[S5] coarse hit 71 mm @ 120 deg, fine scan
+[TEL] car/telemetry/motion 01010f80bb00000000c42b0000d41c000000
+[S5] obstacle 97 mm @ 130 deg w=50 clrL=635 clrR=100
+[S5RAW]   0 deg = 201 mm
+[S5RAW]   10 deg = 577 mm
+[S5RAW]   20 deg = 567 mm
+[S5RAW]   30 deg = 113 mm
+[S5RAW]   50 deg = 1909 mm
+[S5RAW]   60 deg = 122 mm
+[S5RAW]   110 deg = 115 mm
+[S5RAW]   120 deg = 126 mm
+[S5RAW]   130 deg = 115 mm
+[S5RAW]   140 deg = 97 mm
+[S5RAW]   150 deg = 97 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=97 edges 110..150 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[IMU] lift peak 1s: v=52/100 mm/s acc=47 mg cos=999/866
+[IMU] hump pitch=-13 half-deg
+[TEL] car/telemetry/hump 01040504bf008079
+[TEL] car/telemetry/motion 01010f68bf00000000c42b0000d81c000000
+[S4]   waiting... 5 s left
+[S5] coarse hit 80 mm @ 130 deg, fine scan
+[IMU] lift peak 1s: v=61/100 mm/s acc=52 mg cos=984/866
+[S5] obstacle 75 mm @ 120 deg w=52 clrL=635 clrR=59
+[S5RAW]   0 deg = 201 mm
+[S5RAW]   10 deg = 577 mm
+[S5RAW]   20 deg = 567 mm
+[S5RAW]   30 deg = 180 mm
+[S5RAW]   50 deg = 1909 mm
+[S5RAW]   60 deg = 119 mm
+[S5RAW]   90 deg = 85 mm
+[S5RAW]   100 deg = 80 mm
+[S5RAW]   110 deg = 75 mm
+[S5RAW]   120 deg = 80 mm
+[S5RAW]   130 deg = 84 mm
+[S5RAW]   140 deg = 95 mm
+[S5RAW]   150 deg = 108 mm
+[S5RAW]   160 deg = 108 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=75 edges 90..160 deg width=52
+[S5] bypass LEFT: d=7 cm w=55 mm out=772 ms along=420 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[DBG] alive: SDK timer 50593 ms, kernel time 49887 ms, difference 706 ms
+[TEL] car/telemetry/motion 01010f50c300000000c42b0000d81c000000
+[TEL] car/telemetry/heartbeat 01070650c300000100
+[S5] avoid -> LEG_OUT (772 ms)
+[S5] coarse hit 75 mm @ 120 deg, fine scan
+[TEL] car/telemetry/motion 01010f38c700000000c42b0000d81c000000
+[S5] avoid -> TURN_IN1 (550 ms)
+[S5] obstacle 63 mm @ 120 deg w=53 clrL=635 clrR=54
+[S5RAW]   0 deg = 201 mm
+[S5RAW]   10 deg = 577 mm
+[S5RAW]   20 deg = 567 mm
+[S5RAW]   30 deg = 96 mm
+[S5RAW]   50 deg = 1909 mm
+[S5RAW]   60 deg = 109 mm
+[S5RAW]   90 deg = 88 mm
+[S5RAW]   100 deg = 67 mm
+[S5RAW]   110 deg = 63 mm
+[S5RAW]   120 deg = 79 mm
+[S5RAW]   130 deg = 96 mm
+[S5RAW]   140 deg = 104 mm
+[S5RAW]   150 deg = 112 mm
+[S5RAW]   160 deg = 108 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=63 edges 90..150 deg width=53
+[S5] avoid -> LEG_ALONG (420 ms)
+[TEL] car/telemetry/motion 01010f20cb00000000c42b0000d81c000000
+[S5] avoid -> TURN_IN2 (550 ms)
+[IMU] hump pitch=12 half-deg
+[TEL] car/telemetry/hump 01040506cc000006
+[S5] coarse hit 63 mm @ 120 deg, fine scan
+[S5] avoid -> LEG_BACK (2000 ms)
+[IMU] lift peak 1s: v=82/100 mm/s acc=100 mg cos=951/866
+[TEL] car/telemetry/motion 01010f08cf00000000c42b0000d81c000000
+[S5] obstacle 74 mm @ 120 deg w=50 clrL=635 clrR=56
+[S5RAW]   0 deg = 201 mm
+[S5RAW]   10 deg = 577 mm
+[S5RAW]   20 deg = 567 mm
+[S5RAW]   30 deg = 102 mm
+[S5RAW]   50 deg = 1909 mm
+[S5RAW]   60 deg = 113 mm
+[S5RAW]   90 deg = 83 mm
+[S5RAW]   100 deg = 79 mm
+[S5RAW]   110 deg = 83 mm
+[S5RAW]   120 deg = 74 mm
+[S5RAW]   130 deg = 103 mm
+[S5RAW]   140 deg = 115 mm
+[S5RAW]   150 deg = 98 mm
+[S5RAW]   160 deg = 108 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=74 edges 90..150 deg width=50
+[IMU] hump pitch=13 half-deg
+[TEL] car/telemetry/hump 01040516d0008006
+[IMU] hump pitch=11 half-deg
+[TEL] car/telemetry/hump 0104057ed1008005
+[IMU] lift peak 1s: v=0/100 mm/s acc=110 mg cos=872/866
+[SAFETY] BRAKE: lifted or overturned
+[IMU] LIFTED (raised): cos_tilt=992/1000 up_accel=100 mg v=126 mm/s
+[TEL] car/telemetry/fault 0106058cd2000400
+[TEL] car/telemetry/heartbeat 010706a0d200004300
+[TEL] car/telemetry/motion 01010ff0d200000000c42b0000d81c000000
+[TEST] S4-U14 FAIL  IMU lost -> watchdog brake, FAULT_LATCHED set   (subsystem4_test.c:191)
+[TEST] S4-U16 FAIL  IMU readings resume after it is plugged back in   (subsystem4_test.c:206)
+[S5] coarse hit 62 mm @ 30 deg, fine scan
+[IMU] hump pitch=14 half-deg
+[TEL] car/telemetry/hump 01040558d4000007
+[IMU] lift detection re-armed (car level and still)
+[S5] avoid ABORT in LEG_BACK: safety fault latched
+[S5] avoid -> IDLE (reacquired=0)
+[IMU] lift peak 1s: v=286/100 mm/s acc=313 mg cos=966/866
+[S5] obstacle 56 mm @ 20 deg w=50 clrL=8 clrR=635
+[S5RAW]   0 deg = 113 mm
+[S5RAW]   10 deg = 64 mm
+[S5RAW]   20 deg = 56 mm
+[S5RAW]   30 deg = 124 mm
+[S5RAW]   40 deg = 148 mm
+[S5RAW]   60 deg = 89 mm
+[S5RAW]   90 deg = 86 mm
+[S5RAW]   100 deg = 79 mm
+[S5RAW]   110 deg = 83 mm
+[S5RAW]   120 deg = 233 mm
+[S5RAW]   130 deg = 103 mm
+[S5RAW]   140 deg = 115 mm
+[S5RAW]   150 deg = 245 mm
+[S5RAW]   160 deg = 108 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=56 edges 0..40 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[TEL] car/telemetry/heartbeat 01070688d600000100
+[TEL] car/telemetry/motion 01010fd8d600000000c42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706d8d600000100
+[S4]   fault reset requested: FAULT_LATCHED cleared
+[S4] MANUAL S4-U23: PUT the car on the TRACK on a straight, facing along it; hands off
+[IMU] lift peak 1s: v=41/100 mm/s acc=142 mg cos=989/866
+[TEL] car/telemetry/motion 01010fc0da00000000c42b0000d41c000000
+[S5] coarse hit 79 mm @ 100 deg, fine scan
+[TEL] car/telemetry/motion 01010fa8de00000000c42b0000d41c000000
+[S5] obstacle 115 mm @ 140 deg w=50 clrL=635 clrR=201
+[S5RAW]   0 deg = 113 mm
+[S5RAW]   10 deg = 64 mm
+[S5RAW]   20 deg = 56 mm
+[S5RAW]   40 deg = 148 mm
+[S5RAW]   140 deg = 115 mm
+[S5RAW]   160 deg = 108 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=115 edges 140..140 deg width=50
+[S5] bypass RIGHT: d=11 cm w=50 mm out=760 ms along=400 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[S5] avoid -> LEG_OUT (760 ms)
+[TEL] car/telemetry/motion 01010f90e200000000c42b0000d41c000000
+[S5] avoid -> TURN_IN1 (550 ms)
+[S5] coarse hit 115 mm @ 140 deg, fine scan
+[TEL] car/telemetry/motion 01010f78e600000000c42b0000d41c000000
+[S5] avoid -> LEG_ALONG (400 ms)
+[S5] avoid -> TURN_IN2 (550 ms)
+[S5] obstacle 148 mm @ 40 deg w=50 clrL=635 clrR=635
+[S5RAW]   0 deg = 113 mm
+[S5RAW]   10 deg = 64 mm
+[S5RAW]   20 deg = 56 mm
+[S5RAW]   40 deg = 148 mm
+[S5RAW]   180 deg = 85 mm
+[S5RAW] near=148 edges 40..40 deg width=50
+[DBG] alive: SDK timer 60595 ms, kernel time 59889 ms, difference 706 ms
+[STACK] init: 360 of 1152 B used, 792 never used
+[STACK] dbg_drain: 820 of 1664 B used, 844 never used
+[STACK] tel: 408 of 4736 B used, 4328 never used
+[STACK] vc: 336 of 1664 B used, 1328 never used
+[STACK] motion: 184 of 1664 B used, 1480 never used
+[STACK] safety: 296 of 1664 B used, 1368 never used
+[STACK] imu: 580 of 2176 B used, 1596 never used
+[STACK] obs_scan: 656 of 1664 B used, 1008 never used
+[STACK] obs_avoid: 612 of 1664 B used, 1052 never used
+[STACK] app_test: 660 of 1664 B used, 1004 never used
+[STACK] stack top check: 0 mismatches
+[MBF] nav_in: 64 B buffer, 64 B free
+[MBF] motion_cmd: 32 B buffer, 32 B free
+[MBF] obstacle: 24 B buffer, 24 B free
+[MBF] telemetry: 384 B buffer, 384 B free
+[TEL] car/telemetry/motion 01010f60ea00000000c42b0000d41c000000
+[TEL] car/telemetry/heartbeat 01070660ea00000108
+[TEL] CONNECTED tx=89 txf=0 off=1 ev=18 bad=0 qd=0 od=0 cmd=0/0
+[S5] avoid -> LEG_BACK (2000 ms)
+[S4]   waiting... 15 s left
+[TEL] car/telemetry/motion 01010f48ee00000000c42b0000d41c000000
+[S5] coarse hit 148 mm @ 40 deg, fine scan
+[TEL] car/telemetry/motion 01010f30f200000000c42b0000d41c000000
+[S5] avoid handoff in LEG_BACK, line not found: LEG_BACK dwell elapsed
+[S5] avoid -> IDLE (reacquired=0)
+[TEL] car/telemetry/motion 01010f18f600000000c42b0000d41c000000
+[TEL] car/telemetry/motion 01010f00fa00000000c42b0000d41c000000
+[TEL] car/telemetry/motion 01010fe8fd00000000c42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706e8fd00000108
+[S4]   waiting... 10 s left
+[TEL] car/telemetry/motion 01010fd00101000000c42b0000d41c000000
+[TEL] car/telemetry/motion 01010fb80501000000c42b0000d41c000000
+[TEL] car/telemetry/motion 01010fa00901000000c42b0000d41c000000
+[TEL] car/telemetry/motion 01010f880d01000000c42b0000d41c000000
+[DBG] alive: SDK timer 70597 ms, kernel time 69891 ms, difference 706 ms
+[TEL] car/telemetry/motion 01010f701101000000c42b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706701101000108
+[S4]   waiting... 5 s left
+[TEL] car/telemetry/motion 01010f581501000000c42b0000d41c000000
+[IMU] hump pitch=20 half-deg
+[TEL] car/telemetry/hump 010405f21601000a
+[TEL] car/telemetry/motion 01010f401901000000c02b0000d41c000000
+[TEL] car/telemetry/motion 01010f281d01000000c02b0000d41c000000
+[TEL] car/telemetry/motion 01010f102101000000c02b0000d41c000000
+[IMU] hump pitch=10 half-deg
+[TEL] car/telemetry/hump 0104058623010005
+[TEL] car/telemetry/motion 01010ff82401000000c02b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706f82401000100
+[TEL] car/telemetry/motion 01010fe02801000000c02b0000d41c000000
+[TEL] car/telemetry/motion 01010fc82c01000000c02b0000d41c000000
+[S4]   fault reset requested: FAULT_LATCHED cleared
+[S4]   car drives 70 cm straight in 3 s: get ready to LIFT it while it moves
+[TEL] car/telemetry/motion 01010fb03001000000c02b0000d41c000000
+[TEL] car/telemetry/motion 01010f983401000000c02b0000d41c000000
+[DBG] alive: SDK timer 80607 ms, kernel time 79901 ms, difference 706 ms
+[TEL] car/telemetry/motion 01010f803801000000c02b0000d41c000000
+[TEL] car/telemetry/heartbeat 010706803801000100
+[S4] MANUAL S4-U23: LIFT the car NOW, while it is driving
+[IMU] hump pitch=17 half-deg
+[TEL] car/telemetry/hump 010405883a018008
+[TEL] car/telemetry/motion 01010f683c01cd28002c3f00003c30000000
+[IMU] hump pitch=-17 half-deg
+[TEL] car/telemetry/hump 010405b83c018077
+[IMU] hump pitch=16 half-deg
+[TEL] car/telemetry/hump 0104054e3d010008
+[SAFETY] BRAKE: lifted or overturned
+[IMU] LIFTED (raised): cos_tilt=1000/1000 up_accel=190 mg v=172 mm/s
+[TEL] car/telemetry/fault 010605943d010400
+[TEL] car/telemetry/heartbeat 010706a83d01004300
+[S4]   U23 placed=1 lifted=1 driving=1 stopped=1 in 134 ms after the lift (limit 200)
+[TEST] S4-U23 PASS  lifted while driving -> wheels stop within 200 ms, FAULT_LATCHED set
+[S5] coarse hit 103 mm @ 150 deg, fine scan
+[IMU] lift peak 1s: v=215/100 mm/s acc=218 mg cos=987/866 [disarmed]
+[IMU] lift detection re-armed (car level and still)
+[TEL] car/telemetry/motion 01010f504001004000744b0000743c000000
+[S5] obstacle 57 mm @ 140 deg w=50 clrL=635 clrR=101
+[S5RAW]   0 deg = 113 mm
+[S5RAW]   30 deg = 112 mm
+[S5RAW]   60 deg = 105 mm
+[S5RAW]   120 deg = 149 mm
+[S5RAW]   130 deg = 141 mm
+[S5RAW]   140 deg = 141 mm
+[S5RAW]   150 deg = 57 mm
+[S5RAW]   160 deg = 57 mm
+[S5RAW]   170 deg = 74 mm
+[S5RAW]   180 deg = 257 mm
+[S5RAW] near=57 edges 120..170 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[S4]   put the car back down FLAT and keep it still
+[IMU] hump pitch=-12 half-deg
+[TEL] car/telemetry/hump 010405244401007a
+[TEL] car/telemetry/motion 01010f384401004000744b0000743c000000
+[TEL] car/telemetry/heartbeat 010706d84401000100
+[S4]   fault reset requested: FAULT_LATCHED cleared
+[TEST] subsystem4 SUMMARY 17 passed, 3 failed
+[S5] coarse hit 101 mm @ 30 deg, fine scan
+[IMU] lift peak 1s: v=56/100 mm/s acc=157 mg cos=981/866
+[IMU] hump pitch=10 half-deg
+[TEL] car/telemetry/hump 0104054e47010005
+[TEL] car/telemetry/motion 01010f204801004000704b0000743c000000
+[S5] obstacle 109 mm @ 30 deg w=57 clrL=130 clrR=635
+[S5RAW]   0 deg = 161 mm
+[S5RAW]   10 deg = 132 mm
+[S5RAW]   20 deg = 109 mm
+[S5RAW]   30 deg = 109 mm
+[S5RAW]   40 deg = 112 mm
+[S5RAW]   50 deg = 121 mm
+[S5RAW]   60 deg = 125 mm
+[S5RAW]   120 deg = 136 mm
+[S5RAW]   130 deg = 141 mm
+[S5RAW]   140 deg = 141 mm
+[S5RAW]   150 deg = 144 mm
+[S5RAW]   160 deg = 57 mm
+[S5RAW]   170 deg = 74 mm
+[S5RAW]   180 deg = 257 mm
+[S5RAW] near=109 edges 0..60 deg width=57
+[S5] bypass RIGHT: d=10 cm w=60 mm out=788 ms along=440 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[S5] avoid -> LEG_OUT (788 ms)
+[IMU] lift peak 1s: v=76/100 mm/s acc=77 mg cos=992/866
+[TEL] car/telemetry/motion 01010f084c01004000704b0000743c000000
+[TEL] car/telemetry/heartbeat 010706084c01000100
+[S5] coarse hit 42 mm @ 130 deg, fine scan
+[S5] avoid -> TURN_IN1 (550 ms)
+[S5] avoid -> LEG_ALONG (440 ms)
+[TEL] car/telemetry/motion 01010ff04f01004000704b0000743c000000
+[S5] obstacle 112 mm @ 40 deg w=50 clrL=90 clrR=635
+[S5RAW]   0 deg = 161 mm
+[S5RAW]   10 deg = 132 mm
+[S5RAW]   20 deg = 109 mm
+[S5RAW]   30 deg = 117 mm
+[S5RAW]   40 deg = 112 mm
+[S5RAW]   50 deg = 121 mm
+[S5RAW]   60 deg = 112 mm
+[S5RAW]   100 deg = 198 mm
+[S5RAW]   170 deg = 74 mm
+[S5RAW]   180 deg = 257 mm
+[S5RAW] near=112 edges 30..60 deg width=50

@@ -58,7 +58,7 @@ SYS_STATE = [
 
 # EVF_SAFETY bits b0..b9 (src/common/ipc_types.h).
 SAFETY_BITS = [
-    "COLLISION", "IMU_ALIVE", "FAULT_LATCHED", "STALL", "ENCODER",
+    "LIFTED", "IMU_ALIVE", "FAULT_LATCHED", "STALL", "ENCODER",
     "IMU_I2C", "IMU_WDOG", "NO_ECHO", "WIFI_LOSS", "IR_SENSOR",
 ]
 

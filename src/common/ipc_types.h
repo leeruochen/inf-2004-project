@@ -79,9 +79,9 @@ typedef struct
  * ARCHITECTURE.md D9): one setter per bit.
  * ------------------------------------------------------------------------- */
 
-/* IF-06 EVF_SAFETY.  Safety waits on COLLISION | IMU_ALIVE with
+/* IF-06 EVF_SAFETY.  Safety waits on LIFTED | IMU_ALIVE with
  * TWF_ORW | TWF_BITCLR (never TWF_CLR).  Other readers use tk_ref_flg. */
-#define EVF_SAFETY_COLLISION        (1UL << 0)
+#define EVF_SAFETY_LIFTED           (1UL << 0)  /* lifted or overturned (was COLLISION, 11 Nov 2026) */
 #define EVF_SAFETY_IMU_ALIVE        (1UL << 1)
 #define EVF_SAFETY_FAULT_LATCHED    (1UL << 2)
 #define EVF_SAFETY_FAULT_STALL      (1UL << 3)
@@ -93,9 +93,9 @@ typedef struct
 #define EVF_SAFETY_FAULT_IR_SENSOR  (1UL << 9)
 
 /** Safety's wait: tk_wai_flg(EVF_SAFETY, EVF_SAFETY_WAIT_MASK, TWF_ORW | TWF_BITCLR, ...). */
-#define EVF_SAFETY_WAIT_MASK        (EVF_SAFETY_COLLISION | EVF_SAFETY_IMU_ALIVE)
+#define EVF_SAFETY_WAIT_MASK        (EVF_SAFETY_LIFTED | EVF_SAFETY_IMU_ALIVE)
 /** Bits counted as faults (STATUS_NO_ECHO is informational, IMU_ALIVE a watchdog input). */
-#define EVF_SAFETY_FAULT_MASK       (EVF_SAFETY_COLLISION | EVF_SAFETY_FAULT_LATCHED      \
+#define EVF_SAFETY_FAULT_MASK       (EVF_SAFETY_LIFTED | EVF_SAFETY_FAULT_LATCHED         \
                                      | EVF_SAFETY_FAULT_STALL | EVF_SAFETY_FAULT_ENCODER  \
                                      | EVF_SAFETY_FAULT_IMU_I2C | EVF_SAFETY_FAULT_IMU_WDOG \
                                      | EVF_SAFETY_FAULT_WIFI_LOSS | EVF_SAFETY_FAULT_IR_SENSOR)
@@ -119,16 +119,16 @@ _Static_assert(sizeof(tel_evt_t) == 8U, "tel_evt_t is header + payload");
 _Static_assert(sizeof(motion_state_t) == 16U, "motion_state_t is 16 B");
 
 #define IPC_TYPES_BIT_DISTINCT(a, b)    (((a) & (b)) == 0UL)
-_Static_assert(IPC_TYPES_BIT_DISTINCT(EVF_SAFETY_COLLISION | EVF_SAFETY_IMU_ALIVE | EVF_SAFETY_FAULT_LATCHED,
+_Static_assert(IPC_TYPES_BIT_DISTINCT(EVF_SAFETY_LIFTED | EVF_SAFETY_IMU_ALIVE | EVF_SAFETY_FAULT_LATCHED,
                                       EVF_SAFETY_FAULT_STALL | EVF_SAFETY_FAULT_ENCODER | EVF_SAFETY_FAULT_IMU_I2C
                                       | EVF_SAFETY_FAULT_IMU_WDOG | EVF_SAFETY_STATUS_NO_ECHO
                                       | EVF_SAFETY_FAULT_WIFI_LOSS | EVF_SAFETY_FAULT_IR_SENSOR),
                "EVF_SAFETY bits overlap");
-_Static_assert((EVF_SAFETY_COLLISION | EVF_SAFETY_IMU_ALIVE | EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_FAULT_STALL
+_Static_assert((EVF_SAFETY_LIFTED | EVF_SAFETY_IMU_ALIVE | EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_FAULT_STALL
                 | EVF_SAFETY_FAULT_ENCODER | EVF_SAFETY_FAULT_IMU_I2C | EVF_SAFETY_FAULT_IMU_WDOG
                 | EVF_SAFETY_STATUS_NO_ECHO | EVF_SAFETY_FAULT_WIFI_LOSS | EVF_SAFETY_FAULT_IR_SENSOR)
                == EVF_SAFETY_ALL_MASK, "EVF_SAFETY: ten distinct bits b0-b9");
-_Static_assert(EVF_SAFETY_WAIT_MASK == 0x3UL, "Safety waits on COLLISION | IMU_ALIVE only");
+_Static_assert(EVF_SAFETY_WAIT_MASK == 0x3UL, "Safety waits on LIFTED | IMU_ALIVE only");
 _Static_assert((EVF_SAFETY_FAULT_MASK & (EVF_SAFETY_STATUS_NO_ECHO | EVF_SAFETY_IMU_ALIVE)) == 0UL,
                "NO_ECHO and IMU_ALIVE are not faults");
 _Static_assert((EVF_NAV_AVOID_ACTIVE | EVF_NAV_LINE_FOUND | EVF_NAV_LINE_REACQUIRED) == 0x7UL,

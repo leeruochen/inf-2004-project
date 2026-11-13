@@ -95,7 +95,7 @@ Include `#include "../subsystem2/subsystem2.h"` and `#include "src/common/data_r
 Include `#include "../subsystem2/subsystem2.h"`:
 
 1. **Emergency Brake (`IF-11`) & Fault Latch (`IF-06`, `EVF_SAFETY`)**:
-   - When `task_safety` (Priority 1) detects `EVF_SAFETY_COLLISION` or a `SAFETY_IMU_WDOG_MS` (`50 ms`) timeout on `EVF_SAFETY_IMU_ALIVE`:
+   - When `task_safety` (Priority 1) detects `EVF_SAFETY_LIFTED` (robot lifted or overturned) or a `SAFETY_IMU_WDOG_MS` (`50 ms`) timeout on `EVF_SAFETY_IMU_ALIVE`:
    ```c
    /* 1. Drive all 4 motor PWM channels LOW immediately in hardware (< 10 us): */
    motion_emergency_brake();
@@ -196,7 +196,7 @@ Add these rows to `testing/system/TEST_LOG.md` before running them on the lab co
 | **`SYS-03`** | Barcode-guided junction turns | FR3, FR4 | manual + log + video | Place barcode cards (`LEFT`, `RIGHT`, `U_TURN`, `STOP`) before course junctions; run car along the line | Car decodes each barcode within `BC_D_CMD_CM` (`30 cm`), executes the commanded `90°`/`180°` turn or stop at the junction, and sends `event_barcode` to MQTT |
 | **`SYS-04`** | Hump traversal & pitch detection | FR7, FR8 | manual + log + video | Drive car over the lab course hump/ramp during autonomous line tracking | IMU detects pitch $\ge 5^\circ$ (`IMU_HUMP_PITCH_DEG`); VC enters `VC_SYS_NAV_HUMP_SENSING` (slow speed), traverses hump without losing the line, and sends `event_hump` |
 | **`SYS-05`** | Obstacle detection, scan & bypass | FR9, FR10, FR11 | manual + log + video | Place an obstacle box on the track line; run car toward the obstacle | Car stops at `< 25 cm`, sweeps servo (`GP15`), sends `event_obstacle`, steers around the clearer side (`VC_AUTH_AVOID`), reacquires the black line, and resumes `NAV_LINE_TRACKING` |
-| **`SYS-06`** | Collision fault latch & stationary reset | FR12, IF-06, IF-11 | manual + log + video | Trigger a collision (`> 2.5 g`) or run off-track (`TRACK_LOST`); attempt remote `RESET` while moving, then after `500 ms` stationary | Motors brake immediately (`motion_emergency_brake()`); `event_fault` sent; moving `RESET` rejected; stationary `RESET` clears latch and returns to `READY_WAITING` |
+| **`SYS-06`** | Lift/overturn fault latch & stationary reset | FR12, IF-06, IF-11 | manual + log + video | Lift the robot off the track mid-run (end-of-run signal), tip it over, or run off-track (`TRACK_LOST`); attempt remote `RESET` while moving, then after `500 ms` stationary | Motors brake immediately (`motion_emergency_brake()`); `event_fault` sent; moving `RESET` rejected; stationary `RESET` clears latch and returns to `READY_WAITING` |
 
 ---
 

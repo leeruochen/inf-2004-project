@@ -14,7 +14,7 @@
 
 /*
  * Safety RTOS task entry (TASK_PRI_SAFETY = 1).
- * Waits on EVF_SAFETY for COLLISION | IMU_ALIVE with TWF_ORW | TWF_BITCLR
+ * Waits on EVF_SAFETY for LIFTED | IMU_ALIVE with TWF_ORW | TWF_BITCLR
  * (never TWF_CLR).  Brakes only through motion_emergency_brake() (IF-11).
  * Never takes MTX_MOTION.  Never calls tk_ext_tsk() (rule R6).
  */

@@ -29,21 +29,38 @@
 #include "src/common/stack_mon.h"
 
 #if APP_TEST
+/* 0 = every subsystem's tests; 1..5 = only that one (CMake APP_TEST_ONLY). */
+#ifndef APP_TEST_ONLY
+#define APP_TEST_ONLY   (0)
+#endif
+#define APP_TEST_RUN(n) ((APP_TEST_ONLY == 0) || (APP_TEST_ONLY == (n)))
+
 /*
  * On-target test task (APP_TEST builds only).  Runs every subsystem's tests
- * in turn at TASK_PRI_TEST, below the debug drain, while the system runs.
- * Results are printed through the dbg_ ring (test_report.h).
+ * (or only subsystem APP_TEST_ONLY's) in turn at TASK_PRI_TEST, below the
+ * debug drain, while the system runs.  Results are printed through the dbg_
+ * ring (test_report.h).
  */
 static void app_test_task(INT stacd, void *p_exinf)
 {
     (void)stacd;
     (void)p_exinf;
 
+#if APP_TEST_RUN(1)
     subsystem1_test();
+#endif
+#if APP_TEST_RUN(2)
     subsystem2_test();
+#endif
+#if APP_TEST_RUN(3)
     subsystem3_test();
+#endif
+#if APP_TEST_RUN(4)
     subsystem4_test();
+#endif
+#if APP_TEST_RUN(5)
     subsystem5_test();
+#endif
 
     /* Returning ends the task (rule R6: never call tk_ext_tsk directly). */
 }

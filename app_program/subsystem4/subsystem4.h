@@ -1,6 +1,6 @@
 /*
  *  subsystem4.h
- *  Subsystem 4 -- IMU processing and safety / collision response.
+ *  Subsystem 4 -- IMU processing and safety / lift-overturn response.
  *  Owner: Buddy 4, Student ID: 2500709 (Vincent).
  *
  *  This header is subsystem 4's PUBLIC interface: only what other subsystems
@@ -20,7 +20,7 @@
  *  PWM directly.  Safety never takes MTX_MOTION.
  *
  *  Interfaces (TEAM.md section 5).
- *    IF-06  EVF_SAFETY      owner.  IMU sets COLLISION and IMU_ALIVE; only
+ *    IF-06  EVF_SAFETY      owner.  IMU sets LIFTED and IMU_ALIVE; only
  *                           Safety sets FAULT_LATCHED; only the Vehicle
  *                           Controller (S2) clears it
  *    IF-04  MBF_TELEMETRY   sends hump and fault events (TMO_POL)

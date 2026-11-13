@@ -1,14 +1,16 @@
 /*
  *  task_safety.c
- *  Subsystem 4 -- Safety / Collision Response task (priority 1).
+ *  Subsystem 4 -- Safety / Lift Response task (priority 1).
  *  Kernel side: kernel and project headers only, never SDK headers (rule R1)
  *  and never blocking SDK waits (rule R2).
  *  Owner: Buddy 4, Student ID: 2500709 (Vincent).
  *
  *  Responsibilities (design.md 3.1, HANDOVER.md section 3):
- *    - Waits on EVF_SAFETY for COLLISION | IMU_ALIVE with TWF_ORW | TWF_BITCLR
+ *    - Waits on EVF_SAFETY for LIFTED | IMU_ALIVE with TWF_ORW | TWF_BITCLR
  *      (never TWF_CLR), so only the bits that woke it are cleared.
- *    - COLLISION: motion_emergency_brake(), set FAULT_LATCHED, one fault event.
+ *    - LIFTED (car lifted or overturned; replaced COLLISION on 11 Nov 2026):
+ *      motion_emergency_brake(), set FAULT_LATCHED, one fault event.  Lifting
+ *      the car ends the run, so it stays stopped until a remote RESET.
  *    - IMU watchdog: no IMU_ALIVE within SAFETY_IMU_WDOG_MS (NFR13).  Brakes and
  *      sets FAULT_LATCHED | FAULT_IMU_WDOG on every timeout (so a fault reset
  *      by the Vehicle Controller cannot let the car drive without an IMU), but
@@ -105,10 +107,10 @@ void safety_task_entry(INT stacd, void *p_exinf)
             continue;
         }
 
-        if ((flg_pattern & EVF_SAFETY_COLLISION) != 0U)
+        if ((flg_pattern & EVF_SAFETY_LIFTED) != 0U)
         {
             brake_and_latch(0U);
-            report_fault("collision");
+            report_fault("lifted or overturned");
         }
 
         if (((flg_pattern & EVF_SAFETY_IMU_ALIVE) != 0U) && s_wdog_tripped)

@@ -26,7 +26,7 @@ GOLDEN = [
      {"ts_ms": 123456, "distance_cm": 25, "bearing_idx": 6, "bearing_deg": 90, "width_mm": 125,
       "clear_l_mm": 340, "clear_r_mm": 635, "seq": 2, "oor": False, "no_echo": False}),
     ("0106056300000501",                                 # fault(99, 0x105)
-     {"ts_ms": 99, "bits": 0x105, "names": ["COLLISION", "FAULT_LATCHED", "WIFI_LOSS"]}),
+     {"ts_ms": 99, "bits": 0x105, "names": ["LIFTED", "FAULT_LATCHED", "WIFI_LOSS"]}),
     ("010706efbeaddef93f",                               # heartbeat(0xDEADBEEF, 9, 0x3FF)
      {"uptime_ms": 0xDEADBEEF, "state_id": 9, "state": "NAV_TURN_RIGHT", "fault_bits": 0x3FF}),
 ]

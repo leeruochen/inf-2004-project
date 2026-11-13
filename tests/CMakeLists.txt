@@ -102,3 +102,12 @@ target_compile_options(test_lf_core PRIVATE -Wall -Wextra -Werror)
 target_link_libraries(test_lf_core PRIVATE m)
 set_target_properties(test_lf_core PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME lf_core COMMAND test_lf_core)
+
+# Lift / overturn detector (app_program/subsystem4/imu_lift.c, pure C):
+# Subsystem 4 test S4-U21 (requirement change of 11 Nov 2026).
+add_executable(test_imu_lift host/test_imu_lift.c
+    "${ROBOCAR_ROOT}/app_program/subsystem4/imu_lift.c")
+target_include_directories(test_imu_lift PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_imu_lift PRIVATE -Wall -Wextra -Werror)
+set_target_properties(test_imu_lift PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME imu_lift COMMAND test_imu_lift)

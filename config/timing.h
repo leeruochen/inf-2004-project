@@ -6,7 +6,7 @@
  * Tunables are tagged TUNE. Unknowns carry TODO(owner-to-confirm, buddy N).
  *
  * design.md 3.2 -> macro map (D_cmd, D_detect, side margin, a_move, degree_hump
- * and g_collision are distances/accelerations and live in thresholds.h):
+ * and the lift thresholds are distances/accelerations/angles and live in thresholds.h):
  *   LF sample 5 ms ............... LF_SAMPLE_PERIOD_MS
  *   Steering post 20 ms .......... LF_STEER_POST_PERIOD_MS
  *   Motion period 20 ms .......... MOTION_PERIOD_MS
@@ -29,7 +29,8 @@
  *   T_hold 100 ms ................ MOTION_T_HOLD_MS
  *   a_move 0.05 g ................ IMU_A_MOVE_G_X1000 (thresholds.h)
  *   degree_hump 5 deg ............ IMU_HUMP_PITCH_DEG (thresholds.h)
- *   g_collision 2.5 g ............ IMU_G_COLLISION_X1000 (thresholds.h)
+ *   theta_lift 30 deg ............ IMU_LIFT_TILT_DEG (thresholds.h; replaced g_collision)
+ *   v_lift 0.10 m/s .............. IMU_LIFT_V_MMPS (thresholds.h)
  *   T_still 500 ms ............... SAFETY_T_STILL_MS
  *   T_ka 5 s / backoff 1-30 s .... TEL_KEEPALIVE_MS, TEL_BACKOFF_MIN_MS, TEL_BACKOFF_MAX_MS
  */
