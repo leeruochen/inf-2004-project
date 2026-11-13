@@ -2776,3 +2776,140 @@ microT-Kernel Version 3.00
 [TEL] car/telemetry/heartbeat 010706185506000100
 [TEL] car/telemetry/motion 01010f005906001400e40e0000c40e000000
 [TEL] car/telemetry/sensor 01020a005906ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fe85c06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ae85c06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fd06006001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ad06006ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fb86406001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ab86406ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fa06806001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020aa06806ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 010706a06806000100
+[TEL] CONNECTED tx=953 txf=0 off=1 ev=67 bad=33 qd=32 od=0 cmd=1/5
+[DBG] alive: SDK timer 420867 ms, kernel time 420141 ms, difference 726 ms
+[STACK] init: 492 of 1152 B used, 660 never used
+[STACK] dbg_drain: 828 of 1664 B used, 836 never used
+[STACK] tel: 620 of 4736 B used, 4116 never used
+[STACK] vc: 484 of 1664 B used, 1180 never used
+[STACK] motion: 444 of 1664 B used, 1220 never used
+[STACK] safety: 296 of 1664 B used, 1368 never used
+[STACK] imu: 580 of 2176 B used, 1596 never used
+[STACK] obs_scan: 656 of 1664 B used, 1008 never used
+[STACK] obs_avoid: 672 of 1664 B used, 992 never used
+[STACK] app_test: 780 of 1664 B used, 884 never used
+[STACK] stack top check: 0 mismatches
+[MBF] nav_in: 64 B buffer, 64 B free
+[MBF] motion_cmd: 32 B buffer, 32 B free
+[MBF] obstacle: 24 B buffer, 24 B free
+[MBF] telemetry: 384 B buffer, 384 B free
+[TEL] car/telemetry/motion 01010f886c06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a886c06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f707006001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a707006ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f587406001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a587406ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f407806001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a407806ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f287c06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a287c06ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 010706287c06000100
+[TEL] car/telemetry/motion 01010f108006001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a108006ffbf07904d4b00
+[TEL] car/telemetry/motion 01010ff88306001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020af88306ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fe08706001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ae08706ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fc88b06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ac88b06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fb08f06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ab08f06ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 010706b08f06000100
+[DBG] alive: SDK timer 430870 ms, kernel time 430144 ms, difference 726 ms
+[TEL] car/telemetry/motion 01010f989306001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a989306ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f809706001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a809706ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f689b06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a689b06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f509f06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a509f06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f38a306001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a38a306ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 01070638a306000100
+[TEL] car/telemetry/motion 01010f20a706001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a20a706ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f08ab06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a08ab06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010ff0ae06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020af0ae06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fd8b206001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ad8b206ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fc0b606001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ac0b606ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 010706c0b606000100
+[DBG] alive: SDK timer 440870 ms, kernel time 440144 ms, difference 726 ms
+[TEL] car/telemetry/motion 01010fa8ba06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020aa8ba06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f90be06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a90be06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f78c206001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a78c206ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f60c606001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a60c606ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f48ca06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a48ca06ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 01070648ca06000100
+[TEL] car/telemetry/motion 01010f30ce06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a30ce06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f18d206001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a18d206ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f00d606001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a00d606ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fe8d906001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ae8d906ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fd0dd06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ad0dd06ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 010706d0dd06000100
+[DBG] alive: SDK timer 450881 ms, kernel time 450155 ms, difference 726 ms
+[TEL] car/telemetry/motion 01010fb8e106001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ab8e106ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fa0e506001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020aa0e506ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f88e906001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a88e906ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f70ed06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a70ed06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f58f106001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a58f106ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 01070658f106000100
+[TEL] car/telemetry/motion 01010f40f506001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a40f506ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f28f906001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a28f906ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f10fd06001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a10fd06ffbf07904d4b00
+[TEL] car/telemetry/motion 01010ff80007001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020af80007ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fe00407001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ae00407ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 010706e00407000100
+[DBG] alive: SDK timer 460892 ms, kernel time 460166 ms, difference 726 ms
+[TEL] car/telemetry/motion 01010fc80807001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ac80807ffbf07904d4b00
+[TEL] car/telemetry/motion 01010fb00c07001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020ab00c07ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f981007001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a981007ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f801407001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a801407ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f681807001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a681807ffbf07904d4b00
+[TEL] car/telemetry/heartbeat 010706681807000100
+[TEL] car/telemetry/motion 01010f501c07001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a501c07ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f382007001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a382007ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f202407001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a202407ffbf07904d4b00
+[TEL] car/telemetry/motion 01010f082807001400e40e0000c40e000000
+[TEL] car/telemetry/sensor 01020a082807ffbf07904d4b00
