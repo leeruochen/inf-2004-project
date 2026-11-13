@@ -26,8 +26,11 @@
 #define IMU_LIFT_TILT_DEG           (30U)
 /** cos(IMU_LIFT_TILT_DEG) x 1000, used by the integer code. Update together. */
 #define IMU_LIFT_COS_TILT_X1000     (866U)
-/** a_lift: upward acceleration above 1 g that means lifted (0.3 g). TUNE */
-#define IMU_LIFT_ACCEL_G_X1000      (300U)
+/** v_lift: upward speed that means lifted (0.10 m/s), estimated by integrating
+ *  the acceleration along "up". A smooth hand lift of 10 cm reaches ~0.15-0.4
+ *  m/s; climbing a 2 cm hump at 25 cm/s ~0.05 m/s. Replaced a 0.3 g / 50 ms
+ *  acceleration rule that missed a gentle level lift (S4-U18, 13 Nov 2026). TUNE */
+#define IMU_LIFT_V_MMPS             (100U)
 /** Accelerometer full scale (headroom for bumps and handling). TUNE */
 #define IMU_ACCEL_FS_G              (4U)
 /** IMU output data rate. TUNE */
@@ -217,9 +220,6 @@
 #error "thresholds.h: IMU_LIFT_COS_TILT_X1000 must be cos(IMU_LIFT_TILT_DEG) x 1000 (30/866, 45/707, 60/500)"
 #endif
 
-#if ((IMU_ACCEL_FS_G * 1000U) - 1000U) <= IMU_LIFT_ACCEL_G_X1000
-#error "thresholds.h: IMU full scale must exceed 1 g + a_lift"
-#endif
 
 #if (MOTION_SPEED_CRUISE_NOMINAL_CMPS > MOTION_SPEED_MAX_CMPS)  \
     || (MOTION_SPEED_SLOW_NOMINAL_CMPS > MOTION_SPEED_MAX_CMPS)  \

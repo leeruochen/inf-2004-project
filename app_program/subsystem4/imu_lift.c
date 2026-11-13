@@ -36,6 +36,19 @@ static uint32_t lift_isqrt(uint64_t v)
     return (uint32_t)r;
 }
 
+static void reset_peaks(imu_lift_t *p_lift)
+{
+    p_lift->peak_v_mmps   = 0;
+    p_lift->peak_accel_mg = 0;
+    p_lift->min_cos_x1000 = 1000;
+}
+
+/* mg x 10 ms -> mm/s: 1 mg = 9.80665 mm/s^2, x 0.01 s. */
+static int32_t v_to_mmps(int32_t v_sum)
+{
+    return (int32_t)(((int64_t)v_sum * 981) / 10000);
+}
+
 static uint32_t lift_mag(int32_t x, int32_t y, int32_t z)
 {
     return lift_isqrt((uint64_t)(((int64_t)x * x) + ((int64_t)y * y) + ((int64_t)z * z)));
@@ -50,6 +63,8 @@ void imu_lift_init(imu_lift_t *p_lift)
     p_lift->armed   = false;
     p_lift->confirm = 0U;
     p_lift->settle  = 0U;
+    p_lift->v_sum   = 0;
+    reset_peaks(p_lift);
 }
 
 void imu_lift_set_up(imu_lift_t *p_lift, int32_t x_mg, int32_t y_mg, int32_t z_mg)
@@ -61,6 +76,15 @@ void imu_lift_set_up(imu_lift_t *p_lift, int32_t x_mg, int32_t y_mg, int32_t z_m
     p_lift->armed   = (p_lift->up_mag != 0U);
     p_lift->confirm = 0U;
     p_lift->settle  = 0U;
+    p_lift->v_sum   = 0;
+}
+
+void imu_lift_take_peaks(imu_lift_t *p_lift, imu_lift_meas_t *p_peak)
+{
+    p_peak->v_mmps         = p_lift->peak_v_mmps;
+    p_peak->up_accel_mg    = p_lift->peak_accel_mg;
+    p_peak->cos_tilt_x1000 = p_lift->min_cos_x1000;
+    reset_peaks(p_lift);
 }
 
 imu_lift_event_t imu_lift_step(imu_lift_t *p_lift, int32_t x_mg, int32_t y_mg, int32_t z_mg,
@@ -80,14 +104,24 @@ imu_lift_event_t imu_lift_step(imu_lift_t *p_lift, int32_t x_mg, int32_t y_mg, i
     int32_t const cos_x1000 = (den > 0) ? (int32_t)((dot * 1000) / den) : 0;
     int32_t const up_accel  = (int32_t)(dot / (int64_t)p_lift->up_mag) - (int32_t)p_lift->up_mag;
 
+    /* Vertical speed: leaky integral of the acceleration along up. */
+    p_lift->v_sum += up_accel - (p_lift->v_sum / IMU_LIFT_V_LEAK_DIV);
+
+    int32_t const v_mmps = v_to_mmps(p_lift->v_sum);
+
     if (p_meas != NULL)
     {
         p_meas->cos_tilt_x1000 = cos_x1000;
         p_meas->up_accel_mg    = up_accel;
+        p_meas->v_mmps         = v_mmps;
     }
 
+    p_lift->peak_v_mmps   = (v_mmps > p_lift->peak_v_mmps) ? v_mmps : p_lift->peak_v_mmps;
+    p_lift->peak_accel_mg = (up_accel > p_lift->peak_accel_mg) ? up_accel : p_lift->peak_accel_mg;
+    p_lift->min_cos_x1000 = (cos_x1000 < p_lift->min_cos_x1000) ? cos_x1000 : p_lift->min_cos_x1000;
+
     bool const tilted = cos_x1000 < (int32_t)IMU_LIFT_COS_TILT_X1000;
-    bool const raised = up_accel >= (int32_t)IMU_LIFT_ACCEL_G_X1000;
+    bool const raised = v_mmps >= (int32_t)IMU_LIFT_V_MMPS;
 
     if (p_lift->armed)
     {
@@ -122,6 +156,7 @@ imu_lift_event_t imu_lift_step(imu_lift_t *p_lift, int32_t x_mg, int32_t y_mg, i
         {
             p_lift->armed  = true;
             p_lift->settle = 0U;
+            p_lift->v_sum  = 0;     /* standing still: speed is 0 */
         }
     }
     else

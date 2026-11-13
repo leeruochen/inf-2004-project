@@ -33,6 +33,12 @@
 
 #define IMU_HUMP_PITCH_HALF_DEG     ((int32_t)IMU_HUMP_PITCH_DEG * 2)
 
+/* Lift tuning log: once a second, print the peaks if the car moved up faster
+ * than this or tilted past 15 deg (debug console only; quiet at rest). */
+#define IMU_LIFT_LOG_SAMPLES        (100U)      /* 1 s */
+#define IMU_LIFT_LOG_V_MMPS         (40)
+#define IMU_LIFT_LOG_COS_X1000      (966)
+
 /* A hump ends once |pitch| falls below half the hump threshold (hysteresis). */
 #define IMU_HUMP_EXIT_HALF_DEG      (IMU_HUMP_PITCH_HALF_DEG / 2)
 
@@ -73,6 +79,7 @@ static uint32_t s_consecutive_fail;
 static uint32_t s_hump_confirm;
 static bool     s_hump_active;
 static imu_lift_t s_lift;
+static uint32_t   s_lift_log_n;
 static bool     s_filter_primed;
 static int32_t  s_fx_mg;
 static int32_t  s_fy_mg;
@@ -174,6 +181,7 @@ bool imu_task_init(void)
     s_hump_confirm     = 0U;
     s_hump_active      = false;
     imu_lift_init(&s_lift);
+    s_lift_log_n       = 0U;
     s_filter_primed    = false;
     s_fx_mg            = 0;
     s_fy_mg            = 0;
@@ -280,14 +288,32 @@ static void check_lift(void)
         s_last_lift_event = (uint32_t)evt;
         s_lift_count++;
         (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_LIFTED);
-        dbg_printf("[IMU] LIFTED (%s): cos_tilt=%ld/1000 up_accel=%ld mg",
+        dbg_printf("[IMU] LIFTED (%s): cos_tilt=%ld/1000 up_accel=%ld mg v=%ld mm/s",
                    (evt == IMU_LIFT_TILTED) ? ((meas.cos_tilt_x1000 < 0) ? "overturned" : "tilted")
                                             : "raised",
-                   (long)meas.cos_tilt_x1000, (long)meas.up_accel_mg);
+                   (long)meas.cos_tilt_x1000, (long)meas.up_accel_mg, (long)meas.v_mmps);
     }
     else if (!was_armed && s_lift.armed)
     {
         dbg_puts("[IMU] lift detection re-armed (car level and still)");
+    }
+
+    s_lift_log_n++;
+
+    if (s_lift_log_n >= IMU_LIFT_LOG_SAMPLES)
+    {
+        imu_lift_meas_t peak;
+
+        s_lift_log_n = 0U;
+        imu_lift_take_peaks(&s_lift, &peak);
+
+        if ((peak.v_mmps >= IMU_LIFT_LOG_V_MMPS) || (peak.cos_tilt_x1000 < IMU_LIFT_LOG_COS_X1000))
+        {
+            dbg_printf("[IMU] lift peak 1s: v=%ld/%lu mm/s acc=%ld mg cos=%ld/%lu%s",
+                       (long)peak.v_mmps, (unsigned long)IMU_LIFT_V_MMPS, (long)peak.up_accel_mg,
+                       (long)peak.cos_tilt_x1000, (unsigned long)IMU_LIFT_COS_TILT_X1000,
+                       s_lift.armed ? "" : " [disarmed]");
+        }
     }
 }
 

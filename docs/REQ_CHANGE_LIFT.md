@@ -23,7 +23,7 @@ collision detection conflict, and simplified the requirement:
 | Detection (`app_program/subsystem4/`) | `check_collision()` in `task_imu.c`: raw magnitude >= 2.5 g | New pure module `imu_lift.c/.h`, called from `task_imu.c` every 10 ms on the low-passed vector |
 | Event flag b0 (`src/common/ipc_types.h`) | `EVF_SAFETY_COLLISION` | `EVF_SAFETY_LIFTED` (same bit, same single setter, same Safety wait mask) |
 | Safety task | Brake + FAULT_LATCHED on COLLISION | Brake + FAULT_LATCHED on LIFTED (unchanged path, new trigger) |
-| Thresholds (`config/thresholds.h`) | `IMU_G_COLLISION_X1000` 2.5 g | `IMU_LIFT_TILT_DEG` 30 deg (`IMU_LIFT_COS_TILT_X1000` 866), `IMU_LIFT_ACCEL_G_X1000` 0.3 g |
+| Thresholds (`config/thresholds.h`) | `IMU_G_COLLISION_X1000` 2.5 g | `IMU_LIFT_TILT_DEG` 30 deg (`IMU_LIFT_COS_TILT_X1000` 866), `IMU_LIFT_V_MMPS` 0.10 m/s (first tried as `IMU_LIFT_ACCEL_G_X1000` 0.3 g, see below) |
 | Subsystem 5 (`task_obs_avoid.c`) | Aborts a bypass on COLLISION or FAULT_LATCHED | Aborts on LIFTED or FAULT_LATCHED (identifier rename only) |
 | Dashboard (`tools/dashboard/tel_codec.py`) | bit 0 named COLLISION | bit 0 named LIFTED |
 | Tests | S4-U13 (knock the car) | S4-U13 dropped; S4-U17 (no false lift at rest), S4-U18..U20 (lift, re-arm, tip over, operator-guided), S4-U21 (host), S4-U22 (no false lift over humps, on track); SYS-06 redefined |
@@ -40,8 +40,15 @@ acceleration is compared with "up":
 - **Tilted** more than 30 deg in any direction. People almost always tilt a car
   they pick up, and an overturned car is past 90 deg. Humps tilt the car only
   about 10-15 deg (S4 run, 13 Nov 2026), so they stay well below.
-- **Raised**: acceleration along "up" more than 0.3 g above rest, for a lift
-  that stays level.
+- **Raised**: moving upwards faster than 0.10 m/s, for a lift that stays
+  level. The speed is the acceleration along "up" (minus 1 g at rest)
+  integrated every 10 ms with a 320 ms leak. A smooth 10 cm hand lift reaches
+  about 0.15-0.4 m/s; climbing a 2 cm hump at 25 cm/s about 0.05 m/s.
+  The first version used an acceleration limit instead (0.3 g for 50 ms). On
+  the car it missed a gentle, level lift (S4-U18 FAIL, 13 Nov 2026), because a
+  smooth lift never pulls much more than 0.1 g. The console now prints
+  `[IMU] lift peak 1s: v=... mm/s` once a second while the car moves, to tune
+  the limit from real lifts and real runs over humps.
 
 Five suspicious samples in a row (50 ms) give one event: the IMU task sets
 `EVF_SAFETY_LIFTED` and logs `[IMU] LIFTED (tilted|overturned|raised)`. The

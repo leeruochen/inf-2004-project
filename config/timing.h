@@ -30,7 +30,7 @@
  *   a_move 0.05 g ................ IMU_A_MOVE_G_X1000 (thresholds.h)
  *   degree_hump 5 deg ............ IMU_HUMP_PITCH_DEG (thresholds.h)
  *   theta_lift 30 deg ............ IMU_LIFT_TILT_DEG (thresholds.h; replaced g_collision)
- *   a_lift 0.3 g ................. IMU_LIFT_ACCEL_G_X1000 (thresholds.h)
+ *   v_lift 0.10 m/s .............. IMU_LIFT_V_MMPS (thresholds.h)
  *   T_still 500 ms ............... SAFETY_T_STILL_MS
  *   T_ka 5 s / backoff 1-30 s .... TEL_KEEPALIVE_MS, TEL_BACKOFF_MIN_MS, TEL_BACKOFF_MAX_MS
  */
