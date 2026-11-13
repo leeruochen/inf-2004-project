@@ -39,7 +39,7 @@ Define a test here before running it. Test IDs never change.
 **auto (operator-guided)** = the console asks a person for one action and the `TEST_CHECK` detects it (only in builds configured with `-DS4_MANUAL_TESTS=ON`);
 **auto (host)** = a host unit test in `tests/host/`, no board needed.
 
-`testing/subsystem4/s4_test.ps1 -AutoOnly` builds, flashes (rebooting the Pico into BOOTSEL over USB when it already runs the firmware) and records S4-U01..U12 and U17 unattended. Without `-AutoOnly` it adds the operator-guided tests.
+`testing/subsystem4/s4_test.ps1 -AutoOnly` builds, flashes (rebooting the Pico into BOOTSEL over USB when it already runs the firmware) and records S4-U01..U12 and U17 unattended. Without `-AutoOnly` it adds the operator-guided tests. Add `-ImuOnly` to run only subsystem 4's tests (CMake `-DAPP_TEST_ONLY=4`, build folder `build/s4imu`): the IMU checks start about 5 s after boot instead of about 4 min, and the script stops by itself after the subsystem 4 summary. The script also warns if the robot sends nothing for 10 s.
 
 ## Results
 

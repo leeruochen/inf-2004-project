@@ -45,6 +45,13 @@ option(APP_TEST "On-target subsystem self-tests in a lowest-priority test task (
 if(APP_TEST AND NOT DBG_ENABLE)
     message(FATAL_ERROR "APP_TEST=ON needs DBG_ENABLE=ON: test results are printed through the dbg_ ring")
 endif()
+# APP_TEST_ONLY: 0 = every subsystem's tests (default); 1..5 = only that
+# subsystem's tests, for a faster run of one member's tests. The other
+# subsystems' tasks still run as normal.
+set(APP_TEST_ONLY "0" CACHE STRING "APP_TEST builds: 0 = all subsystem tests, 1..5 = only that subsystem")
+if(NOT APP_TEST_ONLY MATCHES "^[0-5]$")
+    message(FATAL_ERROR "APP_TEST_ONLY must be 0 (all) or 1..5, got '${APP_TEST_ONLY}'")
+endif()
 
 # USB CDC is the only console (Week 8 pin map v2, ARCHITECTURE.md D6). The
 # Debug Probe is SWD only. UART0 would drive GP0 against the right encoder.
@@ -119,7 +126,7 @@ else()
 endif()
 target_compile_definitions(robocar_options INTERFACE DBG_BACKEND_USB=1)
 if(APP_TEST)
-    target_compile_definitions(robocar_options INTERFACE APP_TEST=1)
+    target_compile_definitions(robocar_options INTERFACE APP_TEST=1 APP_TEST_ONLY=${APP_TEST_ONLY})
 else()
     target_compile_definitions(robocar_options INTERFACE APP_TEST=0)
 endif()

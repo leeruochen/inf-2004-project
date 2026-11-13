@@ -9,12 +9,18 @@
 #                     S4-U01..U12, in build/s4auto), wait for the robot to be plugged in,
 #                     flash it without BOOTSEL if it already runs USB-console firmware,
 #                     and stop by itself after the summary line. Exit code 0 = all passed.
+#   -ImuOnly          run ONLY subsystem 4's tests (APP_TEST_ONLY=4): skips the other
+#                     members' tests (motor spins, the 2.5 min line-sensor countdown), so
+#                     the IMU checks start about 5 s after boot. Builds in build/s4imu
+#                     (guided) or build/s4imuauto (with -AutoOnly), and stops by itself
+#                     after the subsystem 4 summary.
 #   -WaitMinutes 10   how long to wait for the robot to be plugged in.
 # Stop: Ctrl+C.
 param(
     [string]$Repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
     [switch]$SkipBuild,
     [switch]$AutoOnly,
+    [switch]$ImuOnly,
     [int]$WaitMinutes = 10
 )
 
@@ -42,9 +48,11 @@ Step "Repo $Repo on $branch at $commit"
 
 # --- 1. Build ---------------------------------------------------------------
 if ($AutoOnly) { $bdir = "build/s4auto"; $manual = "OFF" } else { $bdir = "build/s4test"; $manual = "ON" }
+$only = "0"
+if ($ImuOnly) { $only = "4"; $bdir = if ($AutoOnly) { "build/s4imuauto" } else { "build/s4imu" } }
 $uf2 = Join-Path $Repo ($bdir.Replace('/', '\') + "\robocar.uf2")
 if (-not $SkipBuild) {
-    Step "1/4 Building the test firmware (APP_TEST=ON, S4 guided tests $manual) in $bdir"
+    Step "1/4 Building the test firmware (APP_TEST=ON, S4 guided tests $manual, only subsystem $only (0 = all)) in $bdir"
     # A build folder configured with CMAKE_C_FLAGS by an earlier script lost the
     # toolchain's CPU flags; start that one fresh.
     $cache = "$bdir/CMakeCache.txt"
@@ -52,7 +60,7 @@ if (-not $SkipBuild) {
         Write-Host "Removing the old $bdir folder (wrong compiler flags)" -ForegroundColor DarkYellow
         Remove-Item -Recurse -Force $bdir
     }
-    & $CM -S . -B $bdir @common -DDBG_BACKEND=USB -DAPP_TEST=ON "-DS4_MANUAL_TESTS=$manual"
+    & $CM -S . -B $bdir @common -DDBG_BACKEND=USB -DAPP_TEST=ON "-DS4_MANUAL_TESTS=$manual" "-DAPP_TEST_ONLY=$only"
     if ($LASTEXITCODE -ne 0) { Stop-Here "CMake configure failed (scroll up for the first error)" }
     & $CM --build $bdir
     if ($LASTEXITCODE -ne 0) { Stop-Here "Build failed (scroll up for the first error)" }
@@ -170,9 +178,20 @@ Write-Host "If the Pico drops off USB, this window reconnects by itself. Ctrl+C 
 $pass = 0; $fail = 0; $hinted = $false; $buf = ""; $drops = 0
 $stopAt = $null
 $runDeadline = (Get-Date).AddMinutes(10)
+$autoStop = ($AutoOnly -or $ImuOnly)
+$lastRx = Get-Date; $silentWarned = $false
 try {
     while ($true) {
-        if ($AutoOnly) {
+        # The robot normally prints telemetry 5 times a second: 10 s of silence
+        # means it froze or its USB died (13 Nov 2026, 16:45 run).
+        if (-not $silentWarned -and (((Get-Date) - $lastRx).TotalSeconds -gt 10)) {
+            $silentWarned = $true
+            $stamp = Get-Date -Format "HH:mm:ss"
+            "# [script] $stamp console SILENT for 10 s (robot frozen or USB dead)" | Add-Content -Path $log -Encoding UTF8
+            Write-Host ""
+            Write-Host "[script] $stamp the robot has sent nothing for 10 s: it may have FROZEN. Do not unplug it; note what you were doing." -ForegroundColor Red
+        }
+        if ($autoStop) {
             if ($stopAt -and ((Get-Date) -gt $stopAt)) { break }
             if ((Get-Date) -gt $runDeadline) {
                 Write-Host "[script] no subsystem4 SUMMARY within 10 min; stopping." -ForegroundColor Red
@@ -183,7 +202,7 @@ try {
         $lost = $false
         try {
             if (-not $sp.IsOpen) { $lost = $true }
-            elseif ($sp.BytesToRead -gt 0) { $buf += $sp.ReadExisting() }
+            elseif ($sp.BytesToRead -gt 0) { $buf += $sp.ReadExisting(); $lastRx = Get-Date; $silentWarned = $false }
             else { Start-Sleep -Milliseconds 20 }
         }
         catch { $lost = $true }
@@ -204,7 +223,7 @@ try {
             if (-not $hinted -and $line -match 'subsystem4 SUMMARY') {
                 $hinted = $true
                 Write-Host ""
-                if ($AutoOnly) {
+                if ($autoStop) {
                     Write-Host "Subsystem 4 done: $pass passed, $fail failed. Finishing in 3 s." -ForegroundColor Magenta
                     $stopAt = (Get-Date).AddSeconds(3)
                 } else {
@@ -235,4 +254,6 @@ finally {
     Write-Host "Saved log: $log" -ForegroundColor Green
     Write-Host "S4 automatic checks seen: $pass passed, $fail failed. Console drops: $drops. Commit tested: $commit"
 }
-if ($hinted -and ($fail -eq 0) -and ($pass -gt 0)) { exit 0 } else { exit 1 }
+if ($hinted -and ($fail -eq 0) -and ($pass -gt 0)) { $code = 0 } else { $code = 1 }
+if ($ImuOnly -and -not $AutoOnly) { Write-Host "Done. The log is saved in testing\subsystem4\logs." -ForegroundColor Magenta }
+exit $code

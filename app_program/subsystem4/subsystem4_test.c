@@ -289,6 +289,14 @@ void subsystem4_test(void)
 {
     TEST_INIT();
 
+    /* When only subsystem 4's tests run (APP_TEST_ONLY=4) they start right
+     * after boot: give the level reference (car flat and still for 0.5 s,
+     * 10 s fallback) time to finish first. */
+    for (uint32_t waited = 0U; (waited < 11000U) && !imu_is_level_done(); waited += 100U)
+    {
+        (void)tk_dly_tsk(100U);
+    }
+
     TEST_CHECK("S4-U01", imu_accel_found(), "accelerometer found and identified");
     TEST_CHECK("S4-U02", imu_mag_found(), "magnetometer present");
     TEST_CHECK("S4-U03", imu_is_ready(), "accel configured (imu_is_ready)");
