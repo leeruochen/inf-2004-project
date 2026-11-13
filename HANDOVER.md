@@ -1,10 +1,10 @@
 # HANDOVER: where the project stands and where each member continues
 
-Read this first (or start at **`START_GUIDE.md`** for a full index of all important files, and **`INTEGRATION_PHASES.md`** for team integration and lab course testing). Section 3 is for every team member (where to continue on your
+Read this first (or start at **`START_GUIDE.md`** for a full index of all important files, **`INTEGRATION_PHASES.md`** for team integration and lab course testing, and **`docs/EMBEDDED_OPTIMIZATIONS.md`** for low-level ARMv6-M / SWAR / fixed-point / hardware optimizations across all subsystems). Section 3 is for every team member (where to continue on your
 own subsystem). Section 0 is for whoever continues on another device or with an
 AI agent. The detailed evidence is in `.agents/tasks/` (index in section 9).
 
-Last updated: 2 Nov 2026, status of Subsystems 1, 3, 4 and 5 (section 1, and the Buddy 1, 3 and 4 status rows in section 3), by Buddy 4 (Vincent). Previous update: 31 Oct 2026, Subsystem 2 (Motion & Vehicle Controller) complete and merged on main, by Buddy 2 (Ruo Chen).
+Last updated: 13 Nov 2026, Subsystem 2 safe ARMv6-M codegen & RAM compaction (`OPT-01`..`OPT-04`) applied and cross-subsystem optimization guide added at `docs/EMBEDDED_OPTIMIZATIONS.md`, by Buddy 2 (Ruo Chen). Previous updates: 2 Nov 2026, status of Subsystems 1, 3, 4 and 5, by Buddy 4 (Vincent); 31 Oct 2026, Subsystem 2 complete and merged on main, by Buddy 2 (Ruo Chen).
 
 ---
 
@@ -55,6 +55,7 @@ Last updated: 2 Nov 2026, status of Subsystems 1, 3, 4 and 5 (section 1, and the
 | Subsystem 5 code | **Written, desk-verified only (1 Nov 2026):** servo + ultrasonic drivers, Obstacle Scanning and Obstacle Avoidance tasks, 26 on-target tests defined and 33 test cases logged. Compiles clean with `-Wall -Wextra -Werror`, 0 rule violations, 16/16 host logic tests pass. **Never run on hardware** — see section 3, Buddy 5 |
 | Subsystem code (all five buddies) | **Buddy 2 (Subsystem 2) COMPLETE (merged on main, 31 Oct 2026):** S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) PASS on board and floor; PID tuning and motion accuracy reports complete. Motion library (`moveForward`, `turnLeft`, etc.), Vehicle Controller (`MBF_NAV_IN`), emergency brake (`motion_emergency_brake()`), and telemetry publisher (`MTX_MOTION`) are operational and ready for team integration. **As of 2 Nov 2026 no other subsystem has run on the car yet:** **Buddy 1 (Subsystem 1)**: Telemetry task, binary MQTT over CYW43/lwIP (poll mode) and dashboard merged (PR #12); host tests S1-H01..H05 PASS. **Buddy 3 (Subsystem 3)**: barcode decoder (BC-1, PR #9) and capture framing (BC-2A.1, PR #11) merged, host tests S3-U01/U02; the GP27 capture driver and Barcode task (BC-2A.2) are on branch `buddy3/bc2a-hw`, not merged; Line-Following not started. **Buddy 4 (Subsystem 4)**: IMU driver, IMU Processing and Safety tasks merged on `main`, 15 tests defined. **Buddy 5 (Subsystem 5)**: code written (row above). Details in section 3 |
 | Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026; B5 bring-up test (SYS-01, 13 min with stress, replug) passed, 31 Oct 2026. Buddy 2's Pico W; logs on PRs #3-#5 and in `testing/system/logs/` |
+| **Embedded optimizations (`docs/EMBEDDED_OPTIMIZATIONS.md`)** | **Tier 1 safe optimizations applied in Subsystem 2 (`OPT-01`..`OPT-04`, 13 Nov 2026)** by Buddy 2 (Ruo Chen): single base-pointer context structs (`s_mot`, `s_vc` with 10-bit packed `state_bits`), branchless Thumb-1 `abs_i32` & sign inversion, 32-bit hardware division in `motor_get_pwm_freq_hz`, `.rodata` compaction. **Optimizations for Platform (`src/`) and Subsystems 1, 3, 4, 5 (`OPT-05`..`OPT-20`) are documented in `docs/EMBEDDED_OPTIMIZATIONS.md`** with Car Behavioral Impact ratings so Buddies 1, 3, 4, and 5 can adopt them after baseline car testing |
 
 **Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
 `8d083ca` = `origin/main`), so every member can see `app_program/`, `TEAM.md` and the new pin
@@ -129,7 +130,9 @@ General workflow for everyone:
 Every subsystem today has `subsystemN.c` (init/start stubs), `subsystemN.h` (its interfaces as
 comments), `subsystemN_test.c` (empty test) and `sources.cmake`. Interfaces between
 subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
-`docs/DATA_REPRESENTATION.md`.
+`docs/DATA_REPRESENTATION.md`. Low-level ARMv6-M assembly, SWAR bit-hacks, 64-bit division
+elimination, and RP2040 peripheral offloads for each subsystem are in
+**`docs/EMBEDDED_OPTIMIZATIONS.md`** (adopt after your baseline car tests pass).
 
 ### Buddy 1: Damian (2501299, Damian-oliveiro), telemetry, `app_program/subsystem1/`
 
@@ -153,7 +156,7 @@ subsystems are IF-01..IF-11 in `TEAM.md` section 5. Data formats are in
 | Bring-up order | motor direction first (`MOTOR_x_DIR_INVERT`), then encoder sign (`ENC_x_DIR_INVERT`) by hand-spin and forward-drive tests |
 | Values to measure | `ENC_CPR`, `WHEEL_CIRC_MM` (0 = not measured; code using them must `#error` while 0), `MOTOR_DUTY_MAX_PCT`, `POWER_GROVE_3V3_BUDGET_MA` |
 | Also yours | Batch B platform work (section 4), labelled `TODO(phase 1 batch B, buddy 2)` across the repo; it unblocks everyone's hardware tests. Buddy 3 writes it as the helper (C1). You own the decisions, review and merge each stage PR, and run every hardware stage: from B4, build the `.uf2` from the PR commit, flash the Pico W and run the hardware/USB tests (C7, plan section 2). NFR2 wording test: drive a measured distance at 50 cm/s and compare counts, both wheels (ARCHITECTURE.md D7) |
-| Status | **COMPLETE and MERGED ON MAIN (31 Oct 2026):** S0-S7 done + **all 28/28 hardware tests PASS** on board and floor (16 automated unit tests + 6 Phase 1 bench calibration tests + 6 Phase 2 floor trials recorded in `testing/subsystem2/TEST_LOG.md`, `PID_TUNING_REPORT.md`, `MOTION_ACCURACY_EVALUATION.md`). Calibrated hardware parameters: `MOTOR_L_DIR_INVERT=1U`, `MOTOR_R_DIR_INVERT=0U`, `ENC_L_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U` (66 mm wheel diameter), `ENC_CPR=616U` (2,464 quad counts/rev), `MOTION_EFF_TRACK_MM=114U` (skid-steer 90.0° in-place turns). Motion Library API (`moveForward`, `moveBackward`, `turnLeft`, `turnRight`, `stop`), `motion_emergency_brake()`, Vehicle Controller FSM & arbitration (`MBF_NAV_IN`), and `motion_state_t` publishing under `MTX_MOTION` are live and ready for all team members. Full progress history: `app_program/subsystem2/subsystem2_roadmap.md` |
+| Status | **COMPLETE and MERGED ON MAIN (31 Oct 2026; S8 safe optimizations applied 13 Nov 2026):** S0-S7 done + **all 28/28 hardware tests PASS** on board and floor (16 automated unit tests + 6 Phase 1 bench calibration tests + 6 Phase 2 floor trials recorded in `testing/subsystem2/TEST_LOG.md`, `PID_TUNING_REPORT.md`, `MOTION_ACCURACY_EVALUATION.md`). Calibrated hardware parameters: `MOTOR_L_DIR_INVERT=1U`, `MOTOR_R_DIR_INVERT=0U`, `ENC_L_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U` (66 mm wheel diameter), `ENC_CPR=616U` (2,464 quad counts/rev), `MOTION_EFF_TRACK_MM=114U` (skid-steer 90.0° in-place turns). Motion Library API (`moveForward`, `moveBackward`, `turnLeft`, `turnRight`, `stop`), `motion_emergency_brake()`, Vehicle Controller FSM & arbitration (`MBF_NAV_IN`), and `motion_state_t` publishing under `MTX_MOTION` are live and ready for all team members. S8 (`OPT-01`..`OPT-04` in `docs/EMBEDDED_OPTIMIZATIONS.md`) compacts `task_motion.c` and `task_vc.c` into single base-pointer context structs with 10-bit packed VC state, branchless Thumb-1 math, and 32-bit hardware division. Full progress history: `app_program/subsystem2/subsystem2_roadmap.md` |
 
 ### Buddy 3: Jin Yong (2503319, jyong1101), line following + barcode, `app_program/subsystem3/`
 
