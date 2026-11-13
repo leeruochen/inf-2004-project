@@ -17,7 +17,7 @@
  *    - Single setter of EVF_NAV_AVOID_ACTIVE and EVF_NAV_LINE_REACQUIRED
  *      (docs/DATA_REPRESENTATION.md section 3).
  *    - Aborts to a stop if EVF_SAFETY says the car is in a fault or
- *      collision state, or if the manoeuvre runs past its budget.
+ *      has been lifted / overturned, or if the manoeuvre runs past its budget.
  *
  *  Scheduling: this task is NOT periodic.  It blocks in tk_rcv_mbf() on
  *  MBF_OBSTACLE for exactly the time left in the current manoeuvre step, so
@@ -270,7 +270,7 @@ static bool safety_blocks(void)
 {
     uint32_t const flags = read_flags(EVF_SAFETY);
 
-    return (flags & (EVF_SAFETY_COLLISION | EVF_SAFETY_FAULT_LATCHED)) != 0U;
+    return (flags & (EVF_SAFETY_LIFTED | EVF_SAFETY_FAULT_LATCHED)) != 0U;
 }
 
 /* ---------------------------------------------------------------------------
@@ -317,7 +317,7 @@ static void release(uint32_t now_ms, bool reacquired)
 /** Stop the car, count the abort and release authority.
  *
  *  Only for a fault the car must not keep driving through: a latched safety
- *  fault or a collision.  Running out of bypass time is NOT one of those --
+ *  fault or a lifted / overturned car.  Running out of bypass time is NOT one of those --
  *  see handoff_no_line(). */
 static void abort_manoeuvre(uint32_t now_ms, char const *p_why)
 {

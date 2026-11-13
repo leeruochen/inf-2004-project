@@ -53,8 +53,15 @@ uint32_t imu_get_good_sample_count(void);
 /** Total I2C read failures since boot. */
 uint32_t imu_get_i2c_error_count(void);
 
-/** Collisions detected since boot (one per spike). */
-uint32_t imu_get_collision_count(void);
+/** Lift / overturn events since boot (one per pick-up, imu_lift.h). */
+uint32_t imu_get_lift_count(void);
+
+/** True while the lift detector is armed (level reference taken, car not
+ *  lifted since it last stood level and still for 0.5 s). */
+bool imu_is_lift_armed(void);
+
+/** Kind of the last lift event (imu_lift_event_t; IMU_LIFT_NONE if none yet). */
+uint32_t imu_get_last_lift_event(void);
 
 /** Humps reported since boot (one per hump). */
 uint32_t imu_get_hump_count(void);

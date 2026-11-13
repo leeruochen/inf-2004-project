@@ -12,7 +12,8 @@
  *      from a level reference taken after boot once the car has been still
  *      and flat for 0.5 s (falls back to 0 after 10 s).
  *    - Sets EVF_SAFETY_IMU_ALIVE after every good sample (watchdog input).
- *    - Sets EVF_SAFETY_COLLISION once per spike above IMU_G_COLLISION_X1000.
+ *    - Sets EVF_SAFETY_LIFTED once per pick-up when the car is lifted or
+ *      overturned (imu_lift.c; replaces collision detection, 11 Nov 2026).
  *    - Sends one DREP_TEL_HUMP event per hump (pitch above IMU_HUMP_PITCH_DEG).
  *    - Sets EVF_SAFETY_FAULT_IMU_I2C after repeated I2C failures.
  */
@@ -22,6 +23,7 @@
 #include "config/thresholds.h"
 #include "config/timing.h"
 #include "drv_imu.h"
+#include "imu_lift.h"
 
 /* Consecutive I2C failures before FAULT_IMU_I2C (5 x 10 ms). */
 #define IMU_I2C_FAIL_THRESHOLD      (5U)
@@ -30,22 +32,14 @@
 #define IMU_HUMP_CONFIRM_SAMPLES    (3U)
 
 #define IMU_HUMP_PITCH_HALF_DEG     ((int32_t)IMU_HUMP_PITCH_DEG * 2)
-#define IMU_COLLISION_MG            ((uint32_t)IMU_G_COLLISION_X1000)
-
-/* Re-arm collision detection once the magnitude falls below this (1.5 g). */
-#define IMU_COLLISION_REARM_MG      (1500U)
-
-#if IMU_COLLISION_REARM_MG >= IMU_G_COLLISION_X1000
-#error "task_imu.c: collision re-arm level must be below g_collision"
-#endif
 
 /* A hump ends once |pitch| falls below half the hump threshold (hysteresis). */
 #define IMU_HUMP_EXIT_HALF_DEG      (IMU_HUMP_PITCH_HALF_DEG / 2)
 
 /* Low-pass for pitch: each sample moves the filtered value 1/8 of the way
  * (time constant about 8 x 10 ms = 80 ms).  Motor and servo vibration
- * otherwise swings the raw pitch by +-15 deg on the car.  Collision uses the
- * unfiltered magnitude so a sharp hit is not smoothed away. */
+ * otherwise swings the raw pitch by +-15 deg on the car.  The lift detector
+ * uses the same filtered vector. */
 #define IMU_FILTER_DIV              (8)
 
 /* Boot level reference, so a board not mounted level still reads 0 on flat
@@ -53,7 +47,8 @@
  * if the pitch stayed within IMU_LEVEL_STILL_SPAN (car not shaking or held)
  * and the average is within IMU_LEVEL_MAX_TILT (car not tilted); otherwise
  * start a new window.  If no window is accepted in IMU_LEVEL_TIMEOUT
- * samples, use 0: the board measured 0 when flat on 2 Nov 2026. */
+ * samples, use 0: the board measured 0 when flat on 2 Nov 2026.  The same
+ * window gives the lift detector its "up" vector. */
 #define IMU_LEVEL_SKIP_SAMPLES      (20U)       /* 200 ms filter settling */
 #define IMU_LEVEL_AVG_SAMPLES       (50U)       /* 500 ms window */
 #define IMU_LEVEL_STILL_SPAN        (6)         /* 3 deg max-min in a window */
@@ -69,14 +64,15 @@ static volatile int32_t  s_z_mg;
 static volatile uint32_t s_release_count;
 static volatile uint32_t s_good_count;
 static volatile uint32_t s_i2c_error_count;
-static volatile uint32_t s_collision_count;
+static volatile uint32_t s_lift_count;
+static volatile uint32_t s_last_lift_event;
 static volatile uint32_t s_hump_count;
 static volatile int32_t  s_last_hump_pitch;
 
 static uint32_t s_consecutive_fail;
 static uint32_t s_hump_confirm;
 static bool     s_hump_active;
-static bool     s_collision_armed;
+static imu_lift_t s_lift;
 static bool     s_filter_primed;
 static int32_t  s_fx_mg;
 static int32_t  s_fy_mg;
@@ -84,6 +80,9 @@ static int32_t  s_fz_mg;
 static uint32_t s_level_count;     /* samples since start */
 static uint32_t s_level_win_n;     /* samples in the current window */
 static int32_t  s_level_sum;
+static int32_t  s_level_sum_x;     /* filtered vector sums, for the up vector */
+static int32_t  s_level_sum_y;
+static int32_t  s_level_sum_z;
 static int32_t  s_level_min;
 static int32_t  s_level_max;
 static uint32_t s_level_retries;
@@ -133,9 +132,19 @@ uint32_t imu_get_i2c_error_count(void)
     return s_i2c_error_count;
 }
 
-uint32_t imu_get_collision_count(void)
+uint32_t imu_get_lift_count(void)
 {
-    return s_collision_count;
+    return s_lift_count;
+}
+
+uint32_t imu_get_last_lift_event(void)
+{
+    return s_last_lift_event;
+}
+
+bool imu_is_lift_armed(void)
+{
+    return s_lift.armed;
 }
 
 uint32_t imu_get_hump_count(void)
@@ -157,13 +166,14 @@ bool imu_task_init(void)
     s_release_count    = 0U;
     s_good_count       = 0U;
     s_i2c_error_count  = 0U;
-    s_collision_count  = 0U;
+    s_lift_count       = 0U;
+    s_last_lift_event  = (uint32_t)IMU_LIFT_NONE;
     s_hump_count       = 0U;
     s_last_hump_pitch  = 0;
     s_consecutive_fail = 0U;
     s_hump_confirm     = 0U;
     s_hump_active      = false;
-    s_collision_armed  = true;
+    imu_lift_init(&s_lift);
     s_filter_primed    = false;
     s_fx_mg            = 0;
     s_fy_mg            = 0;
@@ -171,6 +181,9 @@ bool imu_task_init(void)
     s_level_count      = 0U;
     s_level_win_n      = 0U;
     s_level_sum        = 0;
+    s_level_sum_x      = 0;
+    s_level_sum_y      = 0;
+    s_level_sum_z      = 0;
     s_level_min        = 0;
     s_level_max        = 0;
     s_level_retries    = 0U;
@@ -256,18 +269,25 @@ static void send_tel(tel_evt_t evt)
     (void)tk_snd_mbf(MBF_TELEMETRY, &evt, (INT)sizeof(evt), TMO_POL);
 }
 
-static void check_collision(uint32_t mag)
+static void check_lift(void)
 {
-    if (s_collision_armed && (mag >= IMU_COLLISION_MG))
+    imu_lift_meas_t        meas;
+    bool const             was_armed = s_lift.armed;
+    imu_lift_event_t const evt       = imu_lift_step(&s_lift, s_fx_mg, s_fy_mg, s_fz_mg, &meas);
+
+    if (evt != IMU_LIFT_NONE)
     {
-        s_collision_armed = false;
-        s_collision_count++;
-        (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_COLLISION);
-        dbg_printf("[IMU] COLLISION mag=%lu mg", (unsigned long)mag);
+        s_last_lift_event = (uint32_t)evt;
+        s_lift_count++;
+        (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_LIFTED);
+        dbg_printf("[IMU] LIFTED (%s): cos_tilt=%ld/1000 up_accel=%ld mg",
+                   (evt == IMU_LIFT_TILTED) ? ((meas.cos_tilt_x1000 < 0) ? "overturned" : "tilted")
+                                            : "raised",
+                   (long)meas.cos_tilt_x1000, (long)meas.up_accel_mg);
     }
-    else if (!s_collision_armed && (mag < IMU_COLLISION_REARM_MG))
+    else if (!was_armed && s_lift.armed)
     {
-        s_collision_armed = true;
+        dbg_puts("[IMU] lift detection re-armed (car level and still)");
     }
 }
 
@@ -303,9 +323,10 @@ static void check_hump(int32_t pitch)
     }
 }
 
-static void finish_level(int32_t offset)
+static void finish_level(int32_t offset, int32_t up_x, int32_t up_y, int32_t up_z)
 {
     s_pitch_offset_half_deg = offset;
+    imu_lift_set_up(&s_lift, up_x, up_y, up_z);
     s_level_done            = true;
 }
 
@@ -320,7 +341,8 @@ static void update_level(int32_t board_pitch)
 
     if (s_level_count > IMU_LEVEL_TIMEOUT)
     {
-        finish_level(0);
+        /* Not still and flat: assume the board's Z axis points up or down. */
+        finish_level(0, 0, 0, (s_fz_mg >= 0) ? 1000 : -1000);
         dbg_printf("[IMU] level reference: car not still and flat in 10 s (%lu tries), using 0",
                    (unsigned long)s_level_retries);
         return;
@@ -328,13 +350,19 @@ static void update_level(int32_t board_pitch)
 
     if (s_level_win_n == 0U)
     {
-        s_level_sum = 0;
+        s_level_sum   = 0;
+        s_level_sum_x = 0;
+        s_level_sum_y = 0;
+        s_level_sum_z = 0;
         s_level_min = board_pitch;
         s_level_max = board_pitch;
     }
 
     s_level_win_n++;
     s_level_sum += board_pitch;
+    s_level_sum_x += s_fx_mg;
+    s_level_sum_y += s_fy_mg;
+    s_level_sum_z += s_fz_mg;
     s_level_min = (board_pitch < s_level_min) ? board_pitch : s_level_min;
     s_level_max = (board_pitch > s_level_max) ? board_pitch : s_level_max;
 
@@ -361,7 +389,9 @@ static void update_level(int32_t board_pitch)
         return;
     }
 
-    finish_level(avg);
+    finish_level(avg, s_level_sum_x / (int32_t)IMU_LEVEL_AVG_SAMPLES,
+                 s_level_sum_y / (int32_t)IMU_LEVEL_AVG_SAMPLES,
+                 s_level_sum_z / (int32_t)IMU_LEVEL_AVG_SAMPLES);
     dbg_printf("[IMU] level reference: board at %ld half-deg when flat (%lu tries)",
                (long)avg, (unsigned long)s_level_retries);
 }
@@ -455,7 +485,6 @@ void imu_task_entry(INT stacd, void *p_exinf)
             s_fz_mg += (z_mg - s_fz_mg) / IMU_FILTER_DIV;
         }
 
-        uint32_t const raw_mag   = imu_accel_magnitude_mg(x_mg, y_mg, z_mg);
         int32_t const  board_pitch = imu_pitch_half_deg(s_fx_mg, s_fy_mg, s_fz_mg);
 
         s_accel_mag_mg = imu_accel_magnitude_mg(s_fx_mg, s_fy_mg, s_fz_mg);
@@ -463,8 +492,6 @@ void imu_task_entry(INT stacd, void *p_exinf)
         s_good_count++;
 
         (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_IMU_ALIVE);
-
-        check_collision(raw_mag);
 
         if (!s_level_done)
         {
@@ -475,6 +502,7 @@ void imu_task_entry(INT stacd, void *p_exinf)
         int32_t const pitch = board_pitch - s_pitch_offset_half_deg;
 
         s_pitch_half_deg = pitch;
+        check_lift();
         check_hump(pitch);
     }
 }

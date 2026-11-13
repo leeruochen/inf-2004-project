@@ -20,7 +20,7 @@
 
 /** Kernel init task (INITTASK_ITSKPRI). Creates every object and task, then tk_slp_tsk(TMO_FEVR). */
 #define TASK_PRI_INIT           (1U)
-/** Safety / Collision Response. */
+/** Safety / Lift Response (was Collision Response until 11 Nov 2026). */
 #define TASK_PRI_SAFETY         (1U)
 /** Vehicle Controller. */
 #define TASK_PRI_VC             (2U)

@@ -1,6 +1,6 @@
 # Subsystem 4 — test log
 
-**Subsystem:** IMU processing and safety  ·  **Student ID:** 2500709 (Vincent)  ·  **Code:** `app_program/subsystem4/`
+**Subsystem:** IMU processing and safety (lift/overturn stop)  ·  **Student ID:** 2500709 (Vincent)  ·  **Code:** `app_program/subsystem4/`
 
 See `testing/README.md` for how to run tests and record results.
 
@@ -22,14 +22,23 @@ Define a test here before running it. Test IDs never change.
 | S4-U10 | IMU period ~10 ms | IMU_SAMPLE_PERIOD_MS | auto | At least 8 good samples in 100 ms | PASS |
 | S4-U11 | No I2C errors | I2C reliability | auto | `imu_get_i2c_error_count() == 0` | PASS |
 | S4-U12 | No IMU watchdog timeouts with the IMU connected | NFR13, IF-06 | auto | `safety_get_wdog_timeout_count() == 0` | PASS |
-| S4-U13 | Collision triggers the emergency brake | IF-06 EVF_SAFETY_COLLISION, IF-11 | auto (operator-guided) | Configure with `-DS4_MANUAL_TESTS=ON`. When the console asks, knock the car firmly once (20 s window). The test then asks the Vehicle Controller to reset the fault | Collision counted, Safety brake count rises, FAULT_LATCHED set |
+| S4-U13 | ~~Collision triggers the emergency brake~~ **DROPPED 11 Nov 2026**: IMU collision detection removed from the requirements (lecturer's instruction; see docs/REQ_CHANGE_LIFT.md). Replaced by S4-U17..U21. Never run | ~~IF-06 EVF_SAFETY_COLLISION~~ | — | — | — |
 | S4-U14 | IMU watchdog triggers the emergency brake | NFR13, IF-06 EVF_SAFETY_FAULT_IMU_WDOG | auto (operator-guided) | When asked, unplug the IMU cable, wait 2 s, plug it back in (20 s window) | Watchdog timeout counted, FAULT_LATCHED set |
 | S4-U15 | Hump detected, pitch sign correct | IF-04 MBF_TELEMETRY (DREP_TEL_HUMP), D4 | auto (operator-guided) | When asked, put a ~2 cm book under the FRONT wheels for 2 s, then remove it (20 s window) | One hump reported with positive pitch (nose up) |
 | S4-U16 | IMU recovers after it is plugged back in | IF-06 EVF_SAFETY_FAULT_IMU_I2C, robustness | auto (operator-guided) | Follows S4-U14: after the watchdog trips, plug the IMU back in (20 s window) | Good samples resume (>= 40 in 0.5 s), FAULT_IMU_I2C cleared, `[IMU] I2C back` logged |
+| S4-U17 | No false lift event at rest; detector armed | FR12, NFR12 | auto | Car flat and still and **not touched** after power-on. `imu_is_lift_armed()` and `imu_get_lift_count() == 0` | PASS |
+| S4-U18 | Lifting the robot triggers the emergency brake | FR12, NFR10, IF-06 EVF_SAFETY_LIFTED, IF-11 | auto (operator-guided) | When asked, lift the car ~10 cm off the desk, hold it 2 s, put it back down flat (20 s window) | Lift counted, Safety brake count rises, FAULT_LATCHED set |
+| S4-U19 | One pick-up is one event; detector re-arms once put down | FR12 | auto (operator-guided) | Follows S4-U18: car back on the desk, level and still | Re-armed within 20 s, no second event; then the test asks the Vehicle Controller to reset the fault |
+| S4-U20 | Overturning the robot triggers the emergency brake | FR12, IF-06 EVF_SAFETY_LIFTED | auto (operator-guided) | When asked, tip the car onto its side (or upside down) for 2 s, then put it back down flat (20 s window) | Event of kind TILTED, Safety brake count rises, FAULT_LATCHED set |
+| S4-U21 | Lift/overturn detector logic (host) | FR12, NFR12 | auto (host) | `tests/host/test_imu_lift.c` (`ctest -R imu_lift`): thresholds 30 deg / 0.3 g / 50 ms, no events at rest, on 15 deg humps, 25 deg roll or 0.3 g forward acceleration; tilt, raise, side, upside-down and free fall detected; one event per pick-up, re-arm after 0.5 s level and still; board mounted upside down or 5 deg tilted | All checks pass |
+| S4-U22 | No false lift event while driving over humps | NFR12, design.md A4 | manual + log | Drive the course (line, humps, turns) with the console logging; then lift the car at the end | No `[IMU] LIFTED` line until the final lift; the final lift stops the motors |
 
 *Method:* **auto** = `TEST_CHECK` in code, result printed on the console;
 **manual** = a person observes the result (LED, scope, meter, phone app…);
-**auto (operator-guided)** = the console asks a person for one action and the `TEST_CHECK` detects it (only in builds configured with `-DS4_MANUAL_TESTS=ON`).
+**auto (operator-guided)** = the console asks a person for one action and the `TEST_CHECK` detects it (only in builds configured with `-DS4_MANUAL_TESTS=ON`);
+**auto (host)** = a host unit test in `tests/host/`, no board needed.
+
+`testing/subsystem4/s4_test.ps1 -AutoOnly` builds, flashes (rebooting the Pico into BOOTSEL over USB when it already runs the firmware) and records S4-U01..U12 and U17 unattended. Without `-AutoOnly` it adds the operator-guided tests.
 
 ## Results
 

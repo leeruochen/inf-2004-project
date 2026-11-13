@@ -18,9 +18,17 @@
 #define IMU_A_MOVE_G_X1000          (50U)
 /** degree_hump: pitch that, with a vertical spike, means a hump. TUNE */
 #define IMU_HUMP_PITCH_DEG          (5U)
-/** g_collision: acceleration spike that latches a collision fault (2.5 g). TUNE */
-#define IMU_G_COLLISION_X1000       (2500U)
-/** Accelerometer full scale. Must exceed g_collision, so not 2 g. TUNE */
+/* Lift / overturn detection (replaces g_collision; requirement change of
+ * 11 Nov 2026, app_program/subsystem4/imu_lift.h).  Either one, held for
+ * 50 ms, brakes the motors and latches the fault. */
+/** theta_lift: tilt from level that means lifted or overturned (30 deg).
+ *  Must stay well above hump pitch (~10-15 deg measured). TUNE */
+#define IMU_LIFT_TILT_DEG           (30U)
+/** cos(IMU_LIFT_TILT_DEG) x 1000, used by the integer code. Update together. */
+#define IMU_LIFT_COS_TILT_X1000     (866U)
+/** a_lift: upward acceleration above 1 g that means lifted (0.3 g). TUNE */
+#define IMU_LIFT_ACCEL_G_X1000      (300U)
+/** Accelerometer full scale (headroom for bumps and handling). TUNE */
 #define IMU_ACCEL_FS_G              (4U)
 /** IMU output data rate. TUNE */
 #define IMU_ODR_HZ                  (400U)
@@ -203,12 +211,14 @@
  * Compile-time checks
  * ------------------------------------------------------------------------- */
 
-#if IMU_ACCEL_FS_G == 2U
-#error "thresholds.h: 2 g full scale cannot measure g_collision"
+#if !((IMU_LIFT_TILT_DEG == 30U) && (IMU_LIFT_COS_TILT_X1000 == 866U))     \
+    && !((IMU_LIFT_TILT_DEG == 45U) && (IMU_LIFT_COS_TILT_X1000 == 707U))  \
+    && !((IMU_LIFT_TILT_DEG == 60U) && (IMU_LIFT_COS_TILT_X1000 == 500U))
+#error "thresholds.h: IMU_LIFT_COS_TILT_X1000 must be cos(IMU_LIFT_TILT_DEG) x 1000 (30/866, 45/707, 60/500)"
 #endif
 
-#if (IMU_ACCEL_FS_G * 1000U) <= IMU_G_COLLISION_X1000
-#error "thresholds.h: IMU full scale must exceed g_collision"
+#if ((IMU_ACCEL_FS_G * 1000U) - 1000U) <= IMU_LIFT_ACCEL_G_X1000
+#error "thresholds.h: IMU full scale must exceed 1 g + a_lift"
 #endif
 
 #if (MOTION_SPEED_CRUISE_NOMINAL_CMPS > MOTION_SPEED_MAX_CMPS)  \

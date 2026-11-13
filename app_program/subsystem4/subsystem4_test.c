@@ -15,6 +15,7 @@
 
 #include "subsystem4.h"
 #include "drv_imu.h"
+#include "imu_lift.h"
 #include "task_imu.h"
 #include "task_safety.h"
 #include "../test_report.h"
@@ -25,10 +26,12 @@
 /* Wait for this many 10 ms IMU cycles before checking the samples. */
 #define S4_TEST_SETTLE_MS   (100U)
 
-/* Operator-guided tests S4-U13..U16: the console asks for one action at a
- * time and the test detects it.  Off by default so other members' APP_TEST
- * runs do not wait for someone to knock their car; turn on with
- *   -DS4_MANUAL_TESTS=ON */
+/* Operator-guided tests S4-U14..U16 and S4-U18..U20: the console asks for
+ * one action at a time and the test detects it.  Off by default so other
+ * members' APP_TEST runs do not wait for someone to lift their car; turn on
+ * with
+ *   -DS4_MANUAL_TESTS=ON
+ * (S4-U13, collision, was dropped with the requirement change of 11 Nov 2026.) */
 #ifndef S4_MANUAL_TESTS
 #define S4_MANUAL_TESTS     (0)
 #endif
@@ -60,6 +63,21 @@ static bool s4_wait_change(uint32_t (*p_get)(void), uint32_t before, uint32_t wi
     }
 
     return p_get() != before;
+}
+
+/* Wait until p_ok() is true, or window_ms. */
+static bool s4_wait_true(bool (*p_ok)(void), uint32_t window_ms)
+{
+    for (uint32_t waited = 0U; waited < window_ms; waited += S4_POLL_MS)
+    {
+        if (p_ok())
+        {
+            return true;
+        }
+        (void)tk_dly_tsk(S4_POLL_MS);
+    }
+
+    return p_ok();
 }
 
 static bool s4_fault_latched(void)
@@ -104,16 +122,37 @@ static void s4_manual_tests(uint32_t *p_pass, uint32_t *p_fail)
         (void)tk_dly_tsk(3000U);    /* time to take the book out */
     }
 
-    /* S4-U13: collision -> emergency brake + FAULT_LATCHED. */
-    dbg_puts("[S4] MANUAL S4-U13: knock the car firmly once");
+    /* S4-U18: lifted -> emergency brake + FAULT_LATCHED. */
+    (void)s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
+    dbg_puts("[S4] MANUAL S4-U18: LIFT the car ~10 cm off the desk, hold it 2 s, put it back down FLAT");
     {
         uint32_t const brakes = safety_get_brake_count();
-        bool const     seen   = s4_wait_change(imu_get_collision_count, imu_get_collision_count(),
-                                               S4_WINDOW_MS);
+        bool const     seen   = s4_wait_change(imu_get_lift_count, imu_get_lift_count(), S4_WINDOW_MS);
 
         (void)tk_dly_tsk(100U);     /* Safety (P1) has run by now */
-        TEST_CHECK("S4-U13", seen && (safety_get_brake_count() > brakes) && s4_fault_latched(),
-                   "collision -> emergency brake, FAULT_LATCHED set");
+        TEST_CHECK("S4-U18", seen && (safety_get_brake_count() > brakes) && s4_fault_latched(),
+                   "lifted -> emergency brake, FAULT_LATCHED set");
+
+        /* S4-U19: one pick-up is one event; re-arms once level and still. */
+        uint32_t const count = imu_get_lift_count();
+        bool const     armed = s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
+
+        TEST_CHECK("S4-U19", seen && armed && (imu_get_lift_count() == count),
+                   "lift detector re-arms after the car is put back down, no second event");
+        s4_reset_fault();
+    }
+
+    /* S4-U20: overturned (tilted past theta_lift) -> brake + FAULT_LATCHED. */
+    dbg_puts("[S4] MANUAL S4-U20: TIP the car onto its SIDE (or upside down) for 2 s, then put it back down FLAT");
+    {
+        uint32_t const brakes = safety_get_brake_count();
+        bool const     seen   = s4_wait_change(imu_get_lift_count, imu_get_lift_count(), S4_WINDOW_MS);
+
+        (void)tk_dly_tsk(100U);
+        TEST_CHECK("S4-U20", seen && (imu_get_last_lift_event() == (uint32_t)IMU_LIFT_TILTED)
+                             && (safety_get_brake_count() > brakes) && s4_fault_latched(),
+                   "overturned -> tilt detected, emergency brake, FAULT_LATCHED set");
+        (void)s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
         s4_reset_fault();
     }
 
@@ -187,11 +226,13 @@ void subsystem4_test(void)
     TEST_CHECK("S4-U11", imu_get_i2c_error_count() == 0U, "no I2C errors");
     TEST_CHECK("S4-U12", safety_get_wdog_timeout_count() == 0U,
                "no IMU watchdog timeouts");
+    TEST_CHECK("S4-U17", imu_is_lift_armed() && (imu_get_lift_count() == 0U),
+               "lift detector armed, no false lift event with the car at rest");
 
 #if S4_MANUAL_TESTS
     s4_manual_tests(&test_pass_, &test_fail_);
 #else
-    dbg_puts("[S4] S4-U13..U16 skipped: operator-guided, build with -DS4_MANUAL_TESTS=ON");
+    dbg_puts("[S4] S4-U14..U16, U18..U20 skipped: operator-guided, build with -DS4_MANUAL_TESTS=ON");
 #endif
 
     TEST_SUMMARY("subsystem4");
