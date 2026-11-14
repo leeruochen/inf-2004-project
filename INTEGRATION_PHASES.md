@@ -2,7 +2,28 @@
 
 **Project:** INF2004 Autonomous Line-Following RoboCar (Pico W + Cytron Robo Pico, micro T-Kernel 3.0)  
 **Maintainer:** Buddy 2 (Ruo Chen, `2500530` — Vehicle Controller & Motion Control Hub)  
-**Related Docs:** `HANDOVER.md`, `TEAM.md`, `docs/DATA_REPRESENTATION.md`, `docs/DEBUG.md`, `testing/README.md`, `videos/README.md`
+**Related Docs:** `HANDOVER.md`, `TEAM.md`, `docs/DATA_REPRESENTATION.md`, `docs/DEBUG.md`, `docs/EMBEDDED_OPTIMIZATIONS.md`, `testing/README.md`, `videos/README.md`
+
+---
+
+## 0. Current Execution Roadmap (Tests $\rightarrow$ Practice Track $\rightarrow$ Optimizations)
+
+As of **14 Nov 2026**, follow this four-stage order so tuning and integration issues are never confused with optimization side effects:
+
+1. **Stage 1 — Finish Remaining Subsystem On-Car Tests (`APP_TEST=ON`)**
+   - **S2 (Buddy 2 — Done):** `S2-U01`..`S2-U28` PASS (`testing/subsystem2/TEST_LOG.md`). Safe bit-identical optimizations (`OPT-01`..`OPT-04` in `docs/EMBEDDED_OPTIMIZATIONS.md`) are already applied and build clean.
+   - **S4 (Buddy 4 — Mostly Done):** `S4-U01..U12`, `S4-U15` (hump), `S4-U17..U20` (lift/tilt), and `S4-U23` (lift while driving stops wheels in 134 ms) PASS (`testing/subsystem4/TEST_LOG.md`). `S4-U22` (no false lift over humps) runs on the practice track.
+   - **S5 (Buddy 5 — Mostly Done):** `S5-U01..U26` (25/26 PASS), `S5-U32` (550 ms turn dwell), and `INT-S5-01` (12 obstacle bypasses) PASS (`testing/subsystem5/TEST_LOG.md`). Re-run `-DAPP_TEST_ONLY=5` to log `S5-U29..U31` (width filter fix) and measure `CAR_WIDTH_MM`.
+   - **S3 (Buddy 3 — Critical Blocker):** Host/desk tests (`S3-U01`, `S3-U08`, `S3-U09`, `S3-U10`) pass, but `app_program/subsystem3/subsystem3.c` still has `TODO` stubs in `subsystem3_start()`. Merge GP27 barcode (`buddy3/bc2a-hw`) and wire `task_lf` (`LF-3`, starting `task_lf` in `subsystem3_start()` and setting `EVF_NAV_LINE_FOUND`).
+   - **S1 (Buddy 1):** Host tests `S1-H01..H05` PASS (`testing/subsystem1/TEST_LOG.md`). Flash `-DAPP_TEST=ON -DAPP_TEST_ONLY=1` to log `S1-U01..U10`, then flash `-DTEL_BACKEND_WIFI=ON` for `S1-M01..M02` (`start` / `stop` / `reset`).
+2. **Stage 2 — Run Pairwise Integration Tests (`INT-01`..`INT-05`, Section 4)**
+   - Run **`INT-04`** (S4 Safety $\rightarrow$ S2 Brake/Reset) and **`INT-05`** (S1 MQTT $\leftrightarrow$ S2 VC/Motion) immediately (both sides are already merged on `main`).
+   - As soon as Buddy 3 starts `task_lf` and `task_bc`, run **`INT-01`** (line steering), **`INT-03` / `INT-S5-02`** (obstacle bypass + line reacquisition), and **`INT-02`** (barcode junction turns).
+3. **Stage 3 — Actual Runs on the Practice Track (`SYS-02`..`SYS-06`, Section 5)**
+   - Flash production firmware (`APP_TEST=OFF`, `-DTEL_BACKEND_WIFI=ON`) at `MOTION_BRINGUP_SPEEDS = 1U` (`20 cm/s` cruise).
+   - Complete **`SYS-02`** (full lap), **`SYS-03`** (barcode turns), **`SYS-04`** (hump + `S4-U22`), **`SYS-05`** (obstacle bypass), and **`SYS-06`** (lift stop + stationary reset), logging console output and unlisted YouTube clips (Section 6), then step up to nominal speeds (`MOTION_BRINGUP_SPEEDS = 0U`, `30 cm/s` cruise).
+4. **Stage 4 — Adopt Remaining Optimizations (`docs/EMBEDDED_OPTIMIZATIONS.md`, Post-Track)**
+   - After baseline `SYS-02`..`SYS-06` runs are recorded: adopt **Tier 1** (`OPT-05..07`, `OPT-09..13`, `OPT-19` — zero behavioral impact, bit-identical math/SWAR/context structs), then **Tier 2** (`OPT-08`, `OPT-17` — ISR jitter reduction if WiFi causes ultrasonic/barcode edge jitter), and optionally **Tier 3** (`OPT-14..16`, `OPT-18`, `OPT-20` — SIO interpolator, DMA ADC, PIO0 SM2/SM3 hardware offload, `--gc-sections`).
 
 ---
 
@@ -181,10 +202,10 @@ Copy-Item build/s0b/robocar.uf2 "$($v.DriveLetter):\"
 
 ### 5.2 Speed Progression on the Lab Course (`config/thresholds.h`)
 - **Initial Lab Course Runs (`MOTION_BRINGUP_SPEEDS = 1U`, current default)**:
-  - Cruise = `20 cm/s`, Slow/Turn = `10 cm/s`, Bypass = `15 cm/s`.
+  - Cruise = `20 cm/s`, Slow/Turn = `10 cm/s`, Bypass = `25 cm/s` (`MOTION_SPEED_*_BRINGUP_CMPS`).
   - Keep `MOTION_BRINGUP_SPEEDS = 1U` while tuning S3's line-following gain and S5's obstacle bypass timings on the physical lab track.
 - **Nominal Lab Course Runs (`MOTION_BRINGUP_SPEEDS = 0U`)**:
-  - Cruise = `30 cm/s`, Slow/Turn = `15 cm/s`, Bypass = `20 cm/s`.
+  - Cruise = `30 cm/s`, Slow/Turn = `15 cm/s`, Bypass = `25 cm/s` (`MOTION_SPEED_*_NOMINAL_CMPS`).
   - Flip `#define MOTION_BRINGUP_SPEEDS (0U)` in `config/thresholds.h` once the car completes a full lap reliably at bring-up speeds.
 
 ### 5.3 Planned System Test Cases (`SYS-02`..`SYS-06`)
@@ -197,6 +218,20 @@ Add these rows to `testing/system/TEST_LOG.md` before running them on the lab co
 | **`SYS-04`** | Hump traversal & pitch detection | FR7, FR8 | manual + log + video | Drive car over the lab course hump/ramp during autonomous line tracking | IMU detects pitch $\ge 5^\circ$ (`IMU_HUMP_PITCH_DEG`); VC enters `VC_SYS_NAV_HUMP_SENSING` (slow speed), traverses hump without losing the line, and sends `event_hump` |
 | **`SYS-05`** | Obstacle detection, scan & bypass | FR9, FR10, FR11 | manual + log + video | Place an obstacle box on the track line; run car toward the obstacle | Car stops at `< 25 cm`, sweeps servo (`GP15`), sends `event_obstacle`, steers around the clearer side (`VC_AUTH_AVOID`), reacquires the black line, and resumes `NAV_LINE_TRACKING` |
 | **`SYS-06`** | Lift/overturn fault latch & stationary reset | FR12, IF-06, IF-11 | manual + log + video | Lift the robot off the track mid-run (end-of-run signal), tip it over, or run off-track (`TRACK_LOST`); attempt remote `RESET` while moving, then after `500 ms` stationary | Motors brake immediately (`motion_emergency_brake()`); `event_fault` sent; moving `RESET` rejected; stationary `RESET` clears latch and returns to `READY_WAITING` |
+
+---
+
+### 5.4 Post-Track Optimization Phase (`docs/EMBEDDED_OPTIMIZATIONS.md`)
+Do **not** mix hardware tuning on the practice track with Tier 2 / Tier 3 code or peripheral refactors. Once baseline `SYS-02`..`SYS-06` runs pass and are logged:
+1. **Apply Tier 1 (Zero Behavioral Impact) Optimizations Across Remaining Subsystems**:
+   - **Buddy 1 (`OPT-06`, `OPT-07`)**: Byte-chunked `drep_bits_put` / `drep_bits_get` and branchless SWAR hex/decimal helpers; verify with `ctest -R tel` (`S1-H01..H05`).
+   - **Buddy 3 (`OPT-05`)**: `MULS`-based SWAR 9-bit mirror, SWAR popcount, and halved `uint16_t` LUT in `bc_decode.c`; verify with `ctest -R bc_decode` (`S3-U01`, `S3-U02`).
+   - **Buddy 4 (`OPT-13`, `OPT-19`)**: 32-bit `atan2_half_deg` / lift dot-product and unified `isqrt` + `s_imu`/`s_safety` context structs; verify with `ctest -R imu_lift` (`S4-U21`) and a quick `S4-U23` re-check.
+   - **Buddy 5 (`OPT-11`, `OPT-12`, `OPT-19`)**: 32-bit ultrasonic range division, 32-bit polar projection + 10-entry quadrant trig table in `task_obs_scan.c`, and `s_scan`/`s_avoid` context structs; verify with `S5-U04`, `S5-U06`..`S5-U16`.
+2. **Apply Tier 2 (ISR Latency & Jitter Reduction) If Needed**:
+   - **`OPT-08` & `OPT-17`**: Inline Thumb-1 `run_slot()` wrapper in `src/rtos/port/port_irq.c` and SRAM placement (`__not_in_flash_func`) for `echo_isr` (`GP5`) and `bc_gpio_isr` (`GP27`) if CYW43 WiFi load causes missed barcode edges or ultrasonic spread.
+3. **Apply Tier 3 (RP2040 Hardware Offloads) With Team Agreement**:
+   - **`OPT-14` (`interp0`/`interp1` hardware clamp/lerp)**, **`OPT-15` (DMA round-robin ADC for IR)**, **`OPT-16` (`PIO0 SM2`/`SM3` hardware echo & barcode capture)**, and **`OPT-20` (`--gc-sections` linker dead-code stripping)**, updating `TEAM.md` peripheral ownership before merging.
 
 ---
 
