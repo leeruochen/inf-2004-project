@@ -164,9 +164,9 @@ proposed; Batch B fixes them in the shared header.
 
 | Bit | Name | Setter (single) | Clearer | In Safety's wait mask | Counted as fault |
 |---|---|---|---|---|---|
-| b0 | COLLISION | IMU Processing | Safety (`TWF_BITCLR` on release) | yes | yes (latched) |
+| b0 | LIFTED (was COLLISION until 11 Nov 2026): robot lifted or overturned | IMU Processing | Safety (`TWF_BITCLR` on release) | yes | yes (latched) |
 | b1 | IMU_ALIVE | IMU Processing (every sample) | Safety (`TWF_BITCLR`) | yes | no (watchdog input) |
-| b2 | FAULT_LATCHED (was "collision latch") | Safety only: collision or IMU watchdog trip | Vehicle Controller only (`car/cmd/reset` while stationary) | no | yes |
+| b2 | FAULT_LATCHED (was "collision latch") | Safety only: lifted/overturned or IMU watchdog trip | Vehicle Controller only (`car/cmd/reset` while stationary) | no | yes |
 | b3 | FAULT_STALL | Motion | Motion | no | yes |
 | b4 | FAULT_ENCODER | Motion | Motion | no | yes |
 | b5 | FAULT_IMU_I2C | IMU Processing | IMU Processing | no | yes |
@@ -175,7 +175,7 @@ proposed; Batch B fixes them in the shared header.
 | b8 | FAULT_WIFI_LOSS | Telemetry | Telemetry | no | yes (never stops the car) |
 | b9 | FAULT_IR_SENSOR | Line-Following (`hal_adc_sanity_check()` at boot) | Line-Following | no | yes (logged and counted, never acts on motors) |
 
-- Safety: `tk_wai_flg(EVF_SAFETY, COLLISION | IMU_ALIVE, TWF_ORW | TWF_BITCLR, &ptn, SAFETY_IMU_WDOG_MS)`.
+- Safety: `tk_wai_flg(EVF_SAFETY, LIFTED | IMU_ALIVE, TWF_ORW | TWF_BITCLR, &ptn, SAFETY_IMU_WDOG_MS)`.
   `TWF_BITCLR` clears only the waited bits (`flgptn &= ~waiptn`,
   eventflag.c:170-171, 260-261) and the returned pattern is captured before the
   clear (eventflag.c:165, 257). Never `TWF_CLR`, which zeroes the whole word.
@@ -191,11 +191,11 @@ LINE_FOUND (Line-Following); 3 bits; readers poll.
 
 | FSM | States | Count | Bits |
 |---|---|---|---|
-| System (design.md section 5, `[image2]`) | top level: INITIALISING, READY_WAITING_FOR_START, OBSTACLE_AVOIDANCE/BYPASS, SAFETY_COLLISION_LATCHED_FAULT; AUTONOMOUS_NAVIGATION sub-states: LINE_TRACKING, HUMP_SENSING, TURN_LEFT, GO_STRAIGHT, U_TURN, TURN_RIGHT | 10 | **4 flat** |
+| System (design.md section 5, `[image2]`) | top level: INITIALISING, READY_WAITING_FOR_START, OBSTACLE_AVOIDANCE/BYPASS, SAFETY_LATCHED_FAULT (was SAFETY_COLLISION_LATCHED_FAULT; entered on lift/overturn or IMU watchdog); AUTONOMOUS_NAVIGATION sub-states: LINE_TRACKING, HUMP_SENSING, TURN_LEFT, GO_STRAIGHT, U_TURN, TURN_RIGHT | 10 | **4 flat** |
 | Line-following (6.1) | ON_LINE, JUNCTION_DETECTED, LINE_LOST, REACQUIRING_TRACK, SUSPENDED_BY_AVOIDANCE, TRACK_LOST | 6 | 3 |
 | Barcode (6.2) | IDLE, EDGE_CAPTURE_READING, VALIDATING_CHECKSUM, COMMAND_READY, INVALID_READ_RESET | 5 | 3 |
 | Obstacle (6.3) | SWEEPING_COARSE, FINE_SCAN_LOCALIZATION, BYPASS_DECISION, LEAVE_LINE, PASS_OBSTACLE, RETURN_TO_LINE, LINE_REACQUIRED_HANDOFF, BLOCKED_STOP (+ composite EXECUTING_BYPASS) | 8-9 | 4 |
-| IMU / terrain (6.4) | STATIONARY, ACCELERATING, CRUISING, TURNING, HUMP_DETECTED, COLLISION_FAULT | 6 | 3 |
+| IMU / terrain (6.4) | STATIONARY, ACCELERATING, CRUISING, TURNING, HUMP_DETECTED, LIFTED_FAULT | 6 | 3 |
 | WiFi / MQTT (6.5) | DISCONNECTED, CONNECTING, CONNECTED, DEGRADED_BUFFERING, RECONNECTING | 5 | 3 |
 | VC authority | LINE, AVOID | 2 | 1 |
 | Avoidance plan | stop, continue, left, right, reverse | 5 | 3 |

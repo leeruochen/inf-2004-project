@@ -90,12 +90,54 @@
 #define OBS_PING_BUDGET_MS      (45U)
 
 /** A bearing belongs to the same obstacle as the nearest return if it is
- *  within this much of it.  TUNE: promote to thresholds.h after S5-U14. */
+ *  within this much of it.  TUNE: promote to thresholds.h after S5-U14.
+ *
+ *  This is only the outer bound; OBS_EDGE_STEP_MM below is what actually
+ *  decides the run.  100 mm on its own is looser than most obstacles are
+ *  wide, so any neighbouring bearing that answered at all used to join. */
 #define OBS_EDGE_TOL_MM         (100U)
 
-/** Nominal HC-SR04 beam width, subtracted from the measured angular span so
- *  a narrow post is not reported as a wide wall.  TUNE. */
-#define OBS_BEAM_DEG            (15U)
+/** Largest jump in range, between one bearing and the next one already in
+ *  the run, that still counts as the same surface.
+ *
+ *  WHY, and why the absolute tolerance above is not enough: OBS_EDGE_TOL_MM
+ *  is measured from the nearest return, so at 158 mm it admits anything out
+ *  to 258 mm -- past OBS_DETECT_MM, i.e. everything the sweep can see.  A
+ *  bearing looking at the background 80 mm behind the obstacle therefore
+ *  joined the run, the run grew by one slot, and the width grew by the arc
+ *  that slot subtends (27.6 mm at 158 mm).  MEASURED 2026-11-04 (S5-U33):
+ *  the same 50 mm object read 55 mm on one sweep and 82 mm on the next --
+ *  a 27 mm difference, exactly one slot.  That jitter is what put the 82 mm
+ *  reading outside NFR15's band.
+ *
+ *  Comparing against the NEIGHBOUR instead follows a real surface while
+ *  cutting at a step change.  Geometry sets the floor: a flat face read
+ *  off-normal returns d0 / cos(theta), so across the widest 10 degree step
+ *  the fine sweep can take (20 to 30 degrees off-normal, the edge of
+ *  OBS_FINE_HALF_SPAN_DEG) a wall at the 250 mm detect range rises about
+ *  23 mm.  40 mm keeps that wall in one run with margin for surface noise,
+ *  while rejecting the ~80 mm step to the background that caused the
+ *  jitter.  TUNE: re-measure with S5-U33 if the detect range changes. */
+#define OBS_EDGE_STEP_MM        (40U)
+
+/** Effective HC-SR04 beam width, subtracted from the measured angular span
+ *  and from the measured lateral extent so a narrow post is not reported as
+ *  a wide wall.
+ *
+ *  MEASURED on the car, 2026-11-04 (S5-U33): a 50 mm object at 158 mm
+ *  answered across 60..110 degrees, a 60 degree span, where its true angular
+ *  size is about 18 degrees.  The sensor reports the nearest reflector
+ *  anywhere in its cone, so the object keeps answering after the horn has
+ *  turned away from it; the difference, about 40 degrees, is the beam.  The
+ *  datasheet's nominal 15 degrees is far too narrow and made obs_analyse()
+ *  report that object as 190 mm wide. */
+#define OBS_BEAM_DEG            (40U)
+
+/** Smallest width an obstacle is ever reported with.  Anything the sensor
+ *  returns at all is a real object, and planning a bypass around a 13 mm
+ *  obstacle would clip it.  MEASURED 2026-11-04: narrow objects resolve to
+ *  13..29 mm, so this floor is what keeps the leg lengths usable.  TUNE. */
+#define OBS_WIDTH_MIN_MM        (50U)
 
 /** Radians per degree, scaled by 100000 (pi / 180 = 0.0174533). */
 #define OBS_RAD_PER_DEG_M100K   (1745U)
@@ -220,6 +262,26 @@ static bool slot_is_obstacle(obs_scan_t const *p_scan, uint32_t i, uint32_t thre
     return (d != 0U) && (d <= thresh_mm);
 }
 
+/** True if bearing i continues the run that bearing prev_mm is already in.
+ *
+ *  Both tests have to hold: within OBS_EDGE_TOL_MM of the nearest return
+ *  (the obstacle cannot be unboundedly deep) AND within OBS_EDGE_STEP_MM of
+ *  the neighbour already in the run (no step change to another surface). */
+static bool slot_joins_run(obs_scan_t const *p_scan, uint32_t i,
+                           uint32_t thresh_mm, uint32_t prev_mm)
+{
+    uint32_t const d = (uint32_t)p_scan->dist_mm[i];
+    uint32_t       step_mm;
+
+    if (!slot_is_obstacle(p_scan, i, thresh_mm))
+    {
+        return false;
+    }
+    step_mm = (d > prev_mm) ? (d - prev_mm) : (prev_mm - d);
+
+    return step_mm <= (uint32_t)OBS_EDGE_STEP_MM;
+}
+
 bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
 {
     if ((p_scan == NULL) || (p_out == NULL))
@@ -264,13 +326,20 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
     uint32_t       right_slot = near_slot;
     uint32_t       left_slot = near_slot;
 
-    while ((right_slot > lo) && slot_is_obstacle(p_scan, right_slot - 1U, thresh_mm))
+    uint32_t       prev_mm = near_mm;
+
+    while ((right_slot > lo)
+           && slot_joins_run(p_scan, right_slot - 1U, thresh_mm, prev_mm))
     {
         right_slot--;
+        prev_mm = (uint32_t)p_scan->dist_mm[right_slot];
     }
-    while ((left_slot < hi) && slot_is_obstacle(p_scan, left_slot + 1U, thresh_mm))
+    prev_mm = near_mm;
+    while ((left_slot < hi)
+           && slot_joins_run(p_scan, left_slot + 1U, thresh_mm, prev_mm))
     {
         left_slot++;
+        prev_mm = (uint32_t)p_scan->dist_mm[left_slot];
     }
 
     /* 3. Lateral extent of the run.  Positive x is to the car's right, so
@@ -314,13 +383,34 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
      * beam itself, so the beam width is the floor.  Flooring at the (smaller)
      * sample pitch instead would under-report a one-bearing hit, and
      * docs/DATA_REPRESENTATION.md 2.3 requires the width to err wide. */
-    uint32_t const eff_deg = (span_deg > OBS_BEAM_DEG) ? (span_deg - OBS_BEAM_DEG)
-                                                       : OBS_BEAM_DEG;
+    uint32_t const eff_deg = (span_deg > OBS_BEAM_DEG)
+                                 ? (span_deg - OBS_BEAM_DEG)
+                                 : OBS_FINE_STEP_DEG;
     uint32_t const w_angle = (uint32_t)(((uint64_t)near_mm * (uint64_t)eff_deg
                                          * (uint64_t)OBS_RAD_PER_DEG_M100K) / 100000ULL);
-    uint32_t const w_extent = (uint32_t)(x_max - x_min);
+
+    /* The lateral extent is smeared by the same beam: the run's end bearings
+     * are the ones where the object was still inside the cone, not where it
+     * really ends.  Subtract the arc the beam spans at this range before
+     * comparing, or the extent always wins the max() below and every object
+     * is reported about a beam-width too wide. */
+    uint32_t const beam_mm = (uint32_t)(((uint64_t)near_mm * (uint64_t)OBS_BEAM_DEG
+                                         * (uint64_t)OBS_RAD_PER_DEG_M100K) / 100000ULL);
+    uint32_t const raw_extent = (uint32_t)(x_max - x_min);
+    uint32_t const w_extent = (raw_extent > beam_mm) ? (raw_extent - beam_mm) : 0U;
     uint32_t       width_mm = (w_angle > w_extent) ? w_angle : w_extent;
 
+    /* Floor.  When the run is a single bearing the angular estimate collapses
+     * to one sample pitch (about 13 mm at 76 mm range), and the beam
+     * subtraction above can take the extent estimate to nearly zero.  Either
+     * way the obstacle would be reported far narrower than anything the car
+     * can actually see, obs_leg_out_mm() would plan a turn too short to clear
+     * it, and the car would clip it.  docs/DATA_REPRESENTATION.md 2.3
+     * requires width to err wide, so hold a floor instead. */
+    if (width_mm < (uint32_t)OBS_WIDTH_MIN_MM)
+    {
+        width_mm = (uint32_t)OBS_WIDTH_MIN_MM;
+    }
     if (width_mm > (uint32_t)DREP_OBS_WIDTH_MAX_MM)
     {
         width_mm = (uint32_t)DREP_OBS_WIDTH_MAX_MM;
@@ -706,6 +796,27 @@ static void finish_coarse_sweep(uint32_t now_ms)
                  now_ms);
 }
 
+/* Bring-up only: print every bearing of the sweep that was just analysed,
+ * so the width figure can be checked against the raw samples. */
+static void dump_sweep(obs_result_t const *p_res)
+{
+    for (uint32_t i = 0U; i < OBS_BEARING_SLOTS; i++)
+    {
+        uint32_t const d = (uint32_t)s_scan.dist_mm[i];
+
+        if (d != 0U)
+        {
+            dbg_printf("[S5RAW]   %lu deg = %lu mm",
+                       (unsigned long)OBS_SLOT_TO_DEG(i), (unsigned long)d);
+        }
+    }
+    dbg_printf("[S5RAW] near=%lu edges %lu..%lu deg width=%lu",
+               (unsigned long)p_res->near_mm,
+               (unsigned long)p_res->right_deg,
+               (unsigned long)p_res->left_deg,
+               (unsigned long)p_res->width_mm);
+}
+
 /** A fine sweep has just finished: profile it and publish. */
 static void finish_fine_sweep(uint32_t now_ms)
 {
@@ -721,6 +832,7 @@ static void finish_fine_sweep(uint32_t now_ms)
                    (unsigned long)res.near_mm, (unsigned long)res.bearing_deg,
                    (unsigned long)res.width_mm, (unsigned long)res.clear_l_mm,
                    (unsigned long)res.clear_r_mm);
+        dump_sweep(&res);
         send_profile(obs_result_to_profile(&res, s_seq));
     }
     else

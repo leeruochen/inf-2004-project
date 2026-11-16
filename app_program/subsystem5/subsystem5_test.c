@@ -309,6 +309,64 @@ void subsystem5_test(void)
                    "the ultrasonic sensor returned at least one echo");
     }
 
+    /* -----------------------------------------------------------------
+     * NFR15 width stability (S5-U29..S5-U31).  Pure analysis, no hardware:
+     * these reproduce the run-span jitter measured in S5-U33 on 2026-11-04,
+     * where the same 50 mm object read 55 mm on one sweep and 82 mm on the
+     * next because a background bearing joined the run.
+     * ----------------------------------------------------------------- */
+
+    {
+        /* The obstacle alone: one bearing at 158 mm, as the clean sweep saw
+         * it.  Below the beam resolution, so it floors at OBS_WIDTH_MIN_MM. */
+        empty_sweep(&scan);
+        put_return(&scan, 90U, 158U);
+        bool const ok = obs_analyse(&scan, &res) && res.valid
+                        && (res.width_mm >= 50U) && (res.width_mm <= 78U);
+
+        TEST_CHECK("S5-U29", ok,
+                   "a 50 mm object at 158 mm reports inside NFR15's band (50..78 mm)");
+    }
+
+    {
+        /* The same object with the background 80 mm behind it answering on
+         * the next bearing.  The step from 158 to 238 mm exceeds
+         * OBS_EDGE_STEP_MM, so the background must NOT join the run and the
+         * width must not grow by a slot.  This is the case that produced the
+         * out-of-band 82 mm reading before the fix. */
+        empty_sweep(&scan);
+        put_return(&scan, 90U, 158U);
+        put_return(&scan, 100U, 238U);
+        bool const ok = obs_analyse(&scan, &res) && res.valid
+                        && (res.left_deg == 90U) && (res.right_deg == 90U)
+                        && (res.width_mm <= 78U);
+
+        TEST_CHECK("S5-U30", ok,
+                   "a background return 80 mm behind the obstacle does not widen the run");
+    }
+
+    {
+        /* A real flat wall must still come back as ONE run: read off-normal
+         * it rises as d0 / cos(theta), about 10..23 mm per 10 degree step,
+         * all inside OBS_EDGE_STEP_MM.  Guards against the fix cutting
+         * genuine surfaces into pieces. */
+        empty_sweep(&scan);
+        put_return(&scan, 60U, 231U);
+        put_return(&scan, 70U, 213U);
+        put_return(&scan, 80U, 203U);
+        put_return(&scan, 90U, 200U);
+        put_return(&scan, 100U, 203U);
+        put_return(&scan, 110U, 213U);
+        put_return(&scan, 120U, 231U);
+        scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(60U);
+        scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(120U);
+        bool const ok = obs_analyse(&scan, &res) && res.valid
+                        && (res.left_deg == 120U) && (res.right_deg == 60U);
+
+        TEST_CHECK("S5-U31", ok,
+                   "a flat wall at 60..120 degrees stays one run despite its range rise");
+    }
+
     TEST_SUMMARY("subsystem5");
 }
 

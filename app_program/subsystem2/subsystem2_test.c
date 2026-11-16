@@ -377,6 +377,7 @@ static bool test_s2_u24_vc_stops_on_fault_latched(void)
     nav_input_t const line_msg = drep_nav_steer(32);
     motion_cmd_t      last_cmd;
     uint32_t          cmd_type;
+    uint32_t          st_latched;
 
     if (!vc_is_task_running())
     {
@@ -389,10 +390,19 @@ static bool test_s2_u24_vc_stops_on_fault_latched(void)
 
     last_cmd = vc_get_last_motion_cmd();
     cmd_type = drep_mc_type(last_cmd);
+    st_latched = vc_get_system_state();
+
+    /* Reset VC state cleanly after verifying fault behaviour, so VC is not
+     * left in FAULT_LATCHED with the EVF_SAFETY bit already cleared. */
     (void)tk_clr_flg(EVF_SAFETY, (UINT)~EVF_SAFETY_FAULT_LATCHED);
+    {
+        nav_input_t const rst = drep_nav_remote(DREP_NAV_REMOTE_RESET);
+        (void)tk_snd_mbf(MBF_NAV_IN, &rst, (INT)sizeof(rst), TMO_POL);
+        vc_drain_and_step(app_period_now_ms() + SAFETY_T_STILL_MS + 20U);
+    }
     drain_motion_cmd_mbf();
 
-    return (vc_get_system_state() == VC_SYS_SAFETY_FAULT_LATCHED)
+    return (st_latched == VC_SYS_SAFETY_FAULT_LATCHED)
            && ((cmd_type == DREP_MC_BRAKE) || (cmd_type == DREP_MC_STOP))
            && (drep_mc_speed(last_cmd) == 0U);
 }
@@ -417,9 +427,10 @@ static bool test_s2_u25_vc_reset_stationary_only(void)
     drain_motion_cmd_mbf();
     t0 = app_period_now_ms();
 
-    /* Set FAULT_LATCHED plus another bit (STATUS_NO_ECHO) to verify only
-     * FAULT_LATCHED is cleared on reset. */
-    (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_STATUS_NO_ECHO);
+    /* Set FAULT_LATCHED plus FAULT_ENCODER (owned by S2) to verify only
+     * FAULT_LATCHED is cleared on reset.  STATUS_NO_ECHO is not used here
+     * because S5 task_obs_scan clears it concurrently. */
+    (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_FAULT_ENCODER);
 
     /* 1. Simulate moving (speed != 0 under MTX_MOTION), then send RESET. */
     if (tk_loc_mtx(MTX_MOTION, TMO_FEVR) == E_OK)
@@ -450,10 +461,10 @@ static bool test_s2_u25_vc_reset_stationary_only(void)
     (void)tk_ref_flg(EVF_SAFETY, &rflg2);
 
     stationary_cleared = ((rflg2.flgptn & EVF_SAFETY_FAULT_LATCHED) == 0U)
-                         && ((rflg2.flgptn & EVF_SAFETY_STATUS_NO_ECHO) != 0U)
+                         && ((rflg2.flgptn & EVF_SAFETY_FAULT_ENCODER) != 0U)
                          && (vc_get_system_state() == VC_SYS_READY_WAITING);
 
-    (void)tk_clr_flg(EVF_SAFETY, (UINT)~(EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_STATUS_NO_ECHO));
+    (void)tk_clr_flg(EVF_SAFETY, (UINT)~(EVF_SAFETY_FAULT_LATCHED | EVF_SAFETY_FAULT_ENCODER));
     drain_motion_cmd_mbf();
     return moving_ignored && stationary_cleared;
 }
@@ -833,6 +844,12 @@ void subsystem2_test(void)
                "System FSM returns to READY and stops on TRACK_LOST and STOP");
     TEST_CHECK("S2-U28", test_s2_u28_public_motion_api(),
                "Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_cmd_t");
+
+    /* Ensure clean state for subsequent subsystem tests: no FAULT_LATCHED
+     * bit and VC in READY_WAITING. */
+    (void)tk_clr_flg(EVF_SAFETY, (UINT)~EVF_SAFETY_FAULT_LATCHED);
+    vc_init();
+    vc_complete_selftest(true);
 
     TEST_SUMMARY("subsystem2");
 #endif /* S2_FLOOR_TEST_MODE == 1 */

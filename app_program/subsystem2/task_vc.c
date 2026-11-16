@@ -34,19 +34,85 @@
 /** Turn angle (degrees) commanded for a 90-degree junction turn. */
 #define VC_JUNCTION_TURN_DEG    (90)
 
-static volatile bool     s_task_running = false;
-static volatile uint32_t s_sys_state = VC_SYS_INITIALISING;
-static volatile uint32_t s_authority = VC_AUTH_LINE;
-static volatile uint32_t s_reject_count = 0U;
-static volatile uint32_t s_sent_cmd_count = 0U;
-static motion_cmd_t      s_last_motion_cmd = { 0U };
+/* ---------------------------------------------------------------------------
+ * Compact Vehicle Controller Context & Packed 10-bit Private State Word
+ * (ARCHITECTURE.md D8, docs/DATA_REPRESENTATION.md section 4)
+ *
+ * ARMv6-M (RP2040 Cortex-M0+ Thumb-1) Codegen & Memory Optimization:
+ *   Previously, `task_vc.c` stored 10 separate `static` 32-bit/boolean
+ *   variables (44 bytes in `.bss`, plus up to 10 literal-pool pointers in
+ *   `.text`).  Six of those variables hold small discrete states totaling
+ *   only 10 bits:
+ *
+ *     bits [3:0] (4b) : System FSM state (VC_SYS_INITIALISING .. VC_SYS_SAFETY_FAULT_LATCHED)
+ *     bit  [4]   (1b) : Authority mode   (0 = VC_AUTH_LINE, 1 = VC_AUTH_AVOID)
+ *     bits [6:5] (2b) : Pending barcode command (DREP_BC_CMD_STRAIGHT..UTURN)
+ *     bit  [7]   (1b) : Barcode command pending flag (bc_pending)
+ *     bit  [8]   (1b) : Stationary timer valid flag  (stationary_valid)
+ *     bit  [9]   (1b) : VC task loop active flag     (task_running)
+ *
+ *   Packing these 10 bits into `s_vc.state_bits` using explicit masks and
+ *   shifts (no C bit-fields per HANDOVER.md section 6) and grouping the
+ *   remaining counters/timestamps into `static vc_ctx_t s_vc` shrinks `.bss`
+ *   from 44 bytes to 24 bytes (-45%) and lets GCC address all VC state from a
+ *   single base pointer (`LDR`/`LDRH [r4, #imm]`).
+ * ------------------------------------------------------------------------- */
 
-static bool     s_stationary_valid = false;
-static uint32_t s_stationary_since_ms = 0U;
+#define VC_ST_SYS_SHIFT         (0U)
+#define VC_ST_SYS_BITS          (DREP_FSM_SYSTEM_BITS)  /* 4 bits: [3:0] */
+#define VC_ST_AUTH_SHIFT        (4U)
+#define VC_ST_AUTH_BITS         (1U)                    /* 1 bit:  [4]   */
+#define VC_ST_BCCMD_SHIFT       (5U)
+#define VC_ST_BCCMD_BITS        (DREP_BC_CMD_BITS)      /* 2 bits: [6:5] */
 
-static bool     s_bc_pending = false;
-static uint32_t s_bc_cmd = DREP_BC_CMD_STRAIGHT;
-static uint32_t s_bc_dist_cm = 0U;
+#define VC_ST_FLG_BC_PENDING    (1U << 7)
+#define VC_ST_FLG_STAT_VALID    (1U << 8)
+#define VC_ST_FLG_TASK_RUNNING  (1U << 9)
+
+typedef struct
+{
+    uint32_t          stationary_since_ms;
+    uint32_t          bc_dist_cm;
+    volatile uint32_t reject_count;
+    volatile uint32_t sent_cmd_count;
+    motion_cmd_t      last_motion_cmd;
+    volatile uint16_t state_bits;
+    uint16_t          reserved_pad;
+} vc_ctx_t;
+
+static vc_ctx_t s_vc =
+{
+    0U,
+    0U,
+    0U,
+    0U,
+    { 0U },
+    (uint16_t)VC_SYS_INITIALISING,
+    0U
+};
+
+static inline uint32_t vc_sys_get(void)
+{
+    return drep_get(s_vc.state_bits, VC_ST_SYS_SHIFT, VC_ST_SYS_BITS);
+}
+
+static inline uint32_t vc_auth_get(void)
+{
+    return drep_get(s_vc.state_bits, VC_ST_AUTH_SHIFT, VC_ST_AUTH_BITS);
+}
+
+static inline void vc_auth_put(uint32_t auth)
+{
+    uint32_t const v = (auth == VC_AUTH_AVOID) ? VC_AUTH_AVOID : VC_AUTH_LINE;
+
+    s_vc.state_bits = (uint16_t)drep_set(s_vc.state_bits,
+                                         VC_ST_AUTH_SHIFT, VC_ST_AUTH_BITS, v);
+}
+
+static inline uint32_t vc_bc_cmd_get(void)
+{
+    return drep_get(s_vc.state_bits, VC_ST_BCCMD_SHIFT, VC_ST_BCCMD_BITS);
+}
 
 static bool is_nav_substate(uint32_t state)
 {
@@ -61,11 +127,12 @@ static void set_system_state(uint32_t new_state, uint32_t now_ms)
     {
         return;
     }
-    if (s_sys_state != clamped)
+    if (vc_sys_get() != clamped)
     {
         tel_evt_t const evt = drep_tel_make(DREP_TEL_STATE, now_ms, clamped, false);
 
-        s_sys_state = clamped;
+        s_vc.state_bits = (uint16_t)drep_set(s_vc.state_bits,
+                                             VC_ST_SYS_SHIFT, VC_ST_SYS_BITS, clamped);
         /* Non-blocking telemetry post (NFR1: drop if full). */
         (void)tk_snd_mbf(MBF_TELEMETRY, &evt, (INT)sizeof(evt), TMO_POL);
     }
@@ -73,8 +140,8 @@ static void set_system_state(uint32_t new_state, uint32_t now_ms)
 
 static void send_motion_cmd(motion_cmd_t cmd)
 {
-    s_last_motion_cmd = cmd;
-    s_sent_cmd_count++;
+    s_vc.last_motion_cmd = cmd;
+    s_vc.sent_cmd_count++;
 
     /* Drain-then-send on full 4-slot queue so the latest VC decision wins. */
     if (tk_snd_mbf(MBF_MOTION_CMD, &cmd, (INT)sizeof(cmd), TMO_POL) == E_TMOUT)
@@ -102,27 +169,27 @@ static uint32_t update_stationary_tracker(uint32_t now_ms)
 
     if (speed_x10 == 0)
     {
-        if (!s_stationary_valid)
+        if ((s_vc.state_bits & VC_ST_FLG_STAT_VALID) == 0U)
         {
-            s_stationary_since_ms = now_ms;
-            s_stationary_valid = true;
+            s_vc.stationary_since_ms = now_ms;
+            s_vc.state_bits = (uint16_t)(s_vc.state_bits | VC_ST_FLG_STAT_VALID);
         }
     }
     else
     {
-        s_stationary_valid = false;
-        s_stationary_since_ms = now_ms;
+        s_vc.state_bits = (uint16_t)(s_vc.state_bits & (uint16_t)~VC_ST_FLG_STAT_VALID);
+        s_vc.stationary_since_ms = now_ms;
     }
     return dist_cm;
 }
 
 static bool is_stationary_for_reset(uint32_t now_ms)
 {
-    if (!s_stationary_valid)
+    if ((s_vc.state_bits & VC_ST_FLG_STAT_VALID) == 0U)
     {
         return false;
     }
-    return (uint32_t)(now_ms - s_stationary_since_ms) >= SAFETY_T_STILL_MS;
+    return (uint32_t)(now_ms - s_vc.stationary_since_ms) >= SAFETY_T_STILL_MS;
 }
 
 static bool is_fault_latched(void)
@@ -142,14 +209,17 @@ static void handle_remote_msg(nav_input_t msg, bool fault_latched, uint32_t now_
 
     if (type == DREP_NAV_REMOTE_RESET)
     {
-        if (fault_latched)
+        /* Also accept RESET when only the VC state is latched (flag bit
+         * already cleared out-of-band), otherwise VC deadlocks in
+         * FAULT_LATCHED (INTEGRATION_FIXES.md Issue 1). */
+        if (fault_latched || (vc_sys_get() == VC_SYS_SAFETY_FAULT_LATCHED))
         {
             if (is_stationary_for_reset(now_ms))
             {
                 /* Clear ONLY the FAULT_LATCHED bit (ARCHITECTURE.md D9). */
                 (void)tk_clr_flg(EVF_SAFETY, (UINT)~EVF_SAFETY_FAULT_LATCHED);
-                s_authority = VC_AUTH_LINE;
-                s_bc_pending = false;
+                vc_auth_put(VC_AUTH_LINE);
+                s_vc.state_bits = (uint16_t)(s_vc.state_bits & (uint16_t)~VC_ST_FLG_BC_PENDING);
                 set_system_state(VC_SYS_READY_WAITING, now_ms);
                 send_motion_cmd(drep_mc_pack(DREP_MC_STOP, 0, 0));
             }
@@ -171,21 +241,21 @@ static void handle_remote_msg(nav_input_t msg, bool fault_latched, uint32_t now_
 
     if (type == DREP_NAV_REMOTE_STOP)
     {
-        s_authority = VC_AUTH_LINE;
-        s_bc_pending = false;
+        vc_auth_put(VC_AUTH_LINE);
+        s_vc.state_bits = (uint16_t)(s_vc.state_bits & (uint16_t)~VC_ST_FLG_BC_PENDING);
         set_system_state(VC_SYS_READY_WAITING, now_ms);
         send_motion_cmd(drep_mc_pack(DREP_MC_STOP, 0, 0));
     }
     else if (type == DREP_NAV_REMOTE_START)
     {
-        if (s_sys_state == VC_SYS_INITIALISING)
+        if (vc_sys_get() == VC_SYS_INITIALISING)
         {
             set_system_state(VC_SYS_READY_WAITING, now_ms);
         }
-        if (s_sys_state == VC_SYS_READY_WAITING)
+        if (vc_sys_get() == VC_SYS_READY_WAITING)
         {
-            s_authority = VC_AUTH_LINE;
-            s_bc_pending = false;
+            vc_auth_put(VC_AUTH_LINE);
+            s_vc.state_bits = (uint16_t)(s_vc.state_bits & (uint16_t)~VC_ST_FLG_BC_PENDING);
             set_system_state(VC_SYS_NAV_LINE_TRACKING, now_ms);
             send_motion_cmd(drep_mc_pack(DREP_MC_FWD, (int32_t)MOTION_SPEED_CRUISE_CMPS, 0));
         }
@@ -195,11 +265,12 @@ static void handle_remote_msg(nav_input_t msg, bool fault_latched, uint32_t now_
 static void handle_avoid_msg(nav_input_t msg, uint32_t now_ms)
 {
     uint32_t const type = drep_nav_type(msg);
+    uint32_t const cur_sys = vc_sys_get();
 
     if (type == DREP_NAV_AVOID_RELEASE)
     {
-        s_authority = VC_AUTH_LINE;
-        if (s_sys_state == VC_SYS_OBSTACLE_AVOIDANCE)
+        vc_auth_put(VC_AUTH_LINE);
+        if (cur_sys == VC_SYS_OBSTACLE_AVOIDANCE)
         {
             set_system_state(VC_SYS_NAV_LINE_TRACKING, now_ms);
             send_motion_cmd(drep_mc_pack(DREP_MC_FWD, (int32_t)MOTION_SPEED_CRUISE_CMPS, 0));
@@ -208,13 +279,13 @@ static void handle_avoid_msg(nav_input_t msg, uint32_t now_ms)
     }
 
     /* Enter or stay in avoidance if currently navigating or authority is AVOID. */
-    if ((!is_nav_substate(s_sys_state)) && (s_sys_state != VC_SYS_OBSTACLE_AVOIDANCE)
-        && (s_authority != VC_AUTH_AVOID))
+    if ((!is_nav_substate(cur_sys)) && (cur_sys != VC_SYS_OBSTACLE_AVOIDANCE)
+        && (vc_auth_get() != VC_AUTH_AVOID))
     {
         return;
     }
 
-    s_authority = VC_AUTH_AVOID;
+    vc_auth_put(VC_AUTH_AVOID);
     set_system_state(VC_SYS_OBSTACLE_AVOIDANCE, now_ms);
 
     if (type == DREP_NAV_AVOID_SLOW)
@@ -258,13 +329,16 @@ static void handle_avoid_msg(nav_input_t msg, uint32_t now_ms)
 
 static void handle_barcode_msg(nav_input_t msg, uint32_t cur_dist_cm)
 {
-    if ((s_authority != VC_AUTH_LINE) || (!is_nav_substate(s_sys_state)))
+    uint32_t bits = s_vc.state_bits;
+
+    if ((vc_auth_get() != VC_AUTH_LINE) || (!is_nav_substate(vc_sys_get())))
     {
         return;
     }
-    s_bc_cmd = drep_nav_barcode_cmd(msg);
-    s_bc_dist_cm = cur_dist_cm;
-    s_bc_pending = true;
+    bits = drep_set(bits, VC_ST_BCCMD_SHIFT, VC_ST_BCCMD_BITS,
+                    drep_nav_barcode_cmd(msg));
+    s_vc.bc_dist_cm = cur_dist_cm;
+    s_vc.state_bits = (uint16_t)(bits | VC_ST_FLG_BC_PENDING);
 }
 
 static void handle_line_msg(nav_input_t msg, uint32_t cur_dist_cm, uint32_t now_ms)
@@ -272,24 +346,25 @@ static void handle_line_msg(nav_input_t msg, uint32_t cur_dist_cm, uint32_t now_
     uint32_t const type = drep_nav_type(msg);
 
     /* Precedence rule: AVOID outranks LINE (design.md section 4). */
-    if (s_authority != VC_AUTH_LINE)
+    if (vc_auth_get() != VC_AUTH_LINE)
     {
         return;
     }
-    if (!is_nav_substate(s_sys_state))
+    if (!is_nav_substate(vc_sys_get()))
     {
         return;
     }
 
     /* Expire a pending barcode command if the car travelled past D_cmd (30 cm). */
-    if (s_bc_pending && ((uint16_t)(cur_dist_cm - s_bc_dist_cm) > BC_D_CMD_CM))
+    if (((s_vc.state_bits & VC_ST_FLG_BC_PENDING) != 0U)
+        && ((uint16_t)(cur_dist_cm - s_vc.bc_dist_cm) > BC_D_CMD_CM))
     {
-        s_bc_pending = false;
+        s_vc.state_bits = (uint16_t)(s_vc.state_bits & (uint16_t)~VC_ST_FLG_BC_PENDING);
     }
 
     if (type == DREP_NAV_LINE_TRACK_LOST)
     {
-        s_bc_pending = false;
+        s_vc.state_bits = (uint16_t)(s_vc.state_bits & (uint16_t)~VC_ST_FLG_BC_PENDING);
         set_system_state(VC_SYS_READY_WAITING, now_ms);
         send_motion_cmd(drep_mc_pack(DREP_MC_STOP, 0, 0));
         return;
@@ -297,10 +372,12 @@ static void handle_line_msg(nav_input_t msg, uint32_t cur_dist_cm, uint32_t now_
 
     if (type == DREP_NAV_LINE_JUNCTION)
     {
-        if (s_bc_pending)
+        if ((s_vc.state_bits & VC_ST_FLG_BC_PENDING) != 0U)
         {
-            s_bc_pending = false;
-            switch (s_bc_cmd)
+            uint32_t const bc_cmd = vc_bc_cmd_get();
+
+            s_vc.state_bits = (uint16_t)(s_vc.state_bits & (uint16_t)~VC_ST_FLG_BC_PENDING);
+            switch (bc_cmd)
             {
                 case DREP_BC_CMD_LEFT:
                     set_system_state(VC_SYS_NAV_TURN_LEFT, now_ms);
@@ -352,7 +429,7 @@ static void process_one_nav(nav_input_t msg, uint32_t cur_dist_cm, uint32_t now_
 
     if (!drep_nav_valid(msg))
     {
-        s_reject_count++;
+        s_vc.reject_count++;
         dbg_puts("[VC] invalid nav_input_t rejected");
         return;
     }
@@ -392,17 +469,19 @@ static void process_one_nav(nav_input_t msg, uint32_t cur_dist_cm, uint32_t now_
 void vc_init(void)
 {
     uint32_t const now_ms = app_period_now_ms();
+    uint32_t       bits = s_vc.state_bits & VC_ST_FLG_TASK_RUNNING;
 
-    s_sys_state = VC_SYS_INITIALISING;
-    s_authority = VC_AUTH_LINE;
-    s_reject_count = 0U;
-    s_sent_cmd_count = 0U;
-    s_last_motion_cmd.w = 0U;
-    s_stationary_valid = true;
-    s_stationary_since_ms = now_ms;
-    s_bc_pending = false;
-    s_bc_cmd = DREP_BC_CMD_STRAIGHT;
-    s_bc_dist_cm = 0U;
+    bits = drep_set(bits, VC_ST_SYS_SHIFT, VC_ST_SYS_BITS, VC_SYS_INITIALISING);
+    bits = drep_set(bits, VC_ST_AUTH_SHIFT, VC_ST_AUTH_BITS, VC_AUTH_LINE);
+    bits = drep_set(bits, VC_ST_BCCMD_SHIFT, VC_ST_BCCMD_BITS, DREP_BC_CMD_STRAIGHT);
+    bits |= VC_ST_FLG_STAT_VALID;
+
+    s_vc.state_bits = (uint16_t)bits;
+    s_vc.reject_count = 0U;
+    s_vc.sent_cmd_count = 0U;
+    s_vc.last_motion_cmd.w = 0U;
+    s_vc.stationary_since_ms = now_ms;
+    s_vc.bc_dist_cm = 0U;
 }
 
 void vc_complete_selftest(bool passed)
@@ -435,7 +514,7 @@ static void vc_drain_mbf_internal(uint32_t cur_dist_cm, uint32_t now_ms)
         }
         if (n != (INT)sizeof(msg))
         {
-            s_reject_count++;
+            s_vc.reject_count++;
             continue;
         }
         any_msg = true;
@@ -443,7 +522,7 @@ static void vc_drain_mbf_internal(uint32_t cur_dist_cm, uint32_t now_ms)
     }
 
     if ((!any_msg) && is_fault_latched()
-        && (s_sys_state != VC_SYS_SAFETY_FAULT_LATCHED))
+        && (vc_sys_get() != VC_SYS_SAFETY_FAULT_LATCHED))
     {
         set_system_state(VC_SYS_SAFETY_FAULT_LATCHED, now_ms);
         send_motion_cmd(drep_mc_pack(DREP_MC_BRAKE, 0, 0));
@@ -459,7 +538,7 @@ void vc_drain_and_step(uint32_t now_ms)
      * already woken VC synchronously inside tk_snd_mbf().  Yield briefly if
      * the buffer is not yet empty; never call tk_rcv_mbf(MBF_NAV_IN) from two
      * tasks (design.md section 4: VC is the sole reader of MBF_NAV_IN). */
-    if (s_task_running)
+    if ((s_vc.state_bits & VC_ST_FLG_TASK_RUNNING) != 0U)
     {
         T_RMBF rmbf;
 
@@ -467,7 +546,7 @@ void vc_drain_and_step(uint32_t now_ms)
         {
             (void)tk_dly_tsk(1);
         }
-        if (is_fault_latched() && (s_sys_state != VC_SYS_SAFETY_FAULT_LATCHED))
+        if (is_fault_latched() && (vc_sys_get() != VC_SYS_SAFETY_FAULT_LATCHED))
         {
             set_system_state(VC_SYS_SAFETY_FAULT_LATCHED, now_ms);
             send_motion_cmd(drep_mc_pack(DREP_MC_BRAKE, 0, 0));
@@ -485,7 +564,7 @@ void vc_task_entry(INT stacd, void *p_exinf)
 
     vc_init();
     vc_complete_selftest(!is_fault_latched());
-    s_task_running = true;
+    s_vc.state_bits = (uint16_t)(s_vc.state_bits | VC_ST_FLG_TASK_RUNNING);
 
     for (;;)
     {
@@ -499,7 +578,7 @@ void vc_task_entry(INT stacd, void *p_exinf)
             process_one_nav(msg, cur_dist_cm, now_ms);
             vc_drain_mbf_internal(cur_dist_cm, now_ms);
         }
-        else if (is_fault_latched() && (s_sys_state != VC_SYS_SAFETY_FAULT_LATCHED))
+        else if (is_fault_latched() && (vc_sys_get() != VC_SYS_SAFETY_FAULT_LATCHED))
         {
             set_system_state(VC_SYS_SAFETY_FAULT_LATCHED, now_ms);
             send_motion_cmd(drep_mc_pack(DREP_MC_BRAKE, 0, 0));
@@ -510,35 +589,35 @@ void vc_task_entry(INT stacd, void *p_exinf)
 
 uint32_t vc_get_system_state(void)
 {
-    return s_sys_state;
+    return vc_sys_get();
 }
 
 bool vc_is_task_running(void)
 {
-    return s_task_running;
+    return (s_vc.state_bits & VC_ST_FLG_TASK_RUNNING) != 0U;
 }
 
 uint32_t vc_get_authority(void)
 {
-    return s_authority;
+    return vc_auth_get();
 }
 
 void vc_set_authority(uint32_t auth)
 {
-    s_authority = (auth == VC_AUTH_AVOID) ? VC_AUTH_AVOID : VC_AUTH_LINE;
+    vc_auth_put(auth);
 }
 
 uint32_t vc_get_reject_count(void)
 {
-    return s_reject_count;
+    return s_vc.reject_count;
 }
 
 uint32_t vc_get_sent_cmd_count(void)
 {
-    return s_sent_cmd_count;
+    return s_vc.sent_cmd_count;
 }
 
 motion_cmd_t vc_get_last_motion_cmd(void)
 {
-    return s_last_motion_cmd;
+    return s_vc.last_motion_cmd;
 }

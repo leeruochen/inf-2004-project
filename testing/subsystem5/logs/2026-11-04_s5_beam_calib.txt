@@ -1,0 +1,76 @@
+Subsystem 5 -- HC-SR04 effective beam width calibration
+Date:   2026-11-04
+Build:  DBG_BACKEND=USB APP_TEST=ON (dump_sweep() [S5RAW] output)
+Target: rigid object 50 mm wide, held square to the sensor at ~158 mm.
+
+PURPOSE
+  obs_analyse() reported a 60 mm box as 190 mm wide (+280%), far outside
+  NFR15 (width error within 10%).  OBS_BEAM_DEG was set to the HC-SR04
+  datasheet's nominal 15 degrees.  These sweeps measure the real figure.
+
+RAW SWEEPS (one line per bearing that returned an echo)
+
+  [S5] obstacle 158 mm @ 80 deg w=145 clrL=635 clrR=635
+  [S5RAW]   30 deg = 1039 mm      <- background (wall)
+  [S5RAW]   40 deg = 1043 mm      <- background
+  [S5RAW]   50 deg = 1068 mm      <- background
+  [S5RAW]   60 deg =  175 mm      <- object
+  [S5RAW]   70 deg =  170 mm      <- object
+  [S5RAW]   80 deg =  166 mm      <- object
+  [S5RAW]   90 deg =  165 mm      <- object
+  [S5RAW]  100 deg =  158 mm      <- object
+  [S5RAW]  110 deg =  170 mm      <- object
+  [S5RAW] near=158 edges 60..110 deg width=145
+
+  [S5] obstacle 158 mm @ 80 deg w=181 clrL=635 clrR=635
+  [S5RAW]   30 deg = 1046 mm
+  [S5RAW]   40 deg = 1043 mm
+  [S5RAW]   50 deg =  191 mm
+  [S5RAW]   60 deg =  170 mm
+  [S5RAW]   70 deg =  158 mm
+  [S5RAW]   80 deg =  158 mm
+  [S5RAW]   90 deg =  158 mm
+  [S5RAW]  100 deg =  170 mm
+  [S5RAW]  110 deg =  174 mm
+  [S5RAW] near=158 edges 50..110 deg width=181
+
+ANALYSIS
+  A 50 mm object at 158 mm subtends 2*atan(25/158) = 18 degrees.
+  It returned an echo across 60..110 deg, a span of 60 degrees (and
+  50..110, i.e. 70 degrees, on alternate sweeps).
+
+  The HC-SR04 reports the nearest reflector ANYWHERE inside its cone, so
+  the object keeps answering after the horn has turned away from it.  The
+  excess span is therefore the beam:
+
+      beam ~= observed span - true angular size
+            = 60 - 18
+            = 42 degrees        -> OBS_BEAM_DEG set to 40
+
+  The datasheet's 15 degrees is roughly a third of the real figure, which
+  is why the angular and lateral width estimates were both inflated.
+
+CHANGES MADE (app_program/subsystem5/task_obs_scan.c)
+  1. OBS_BEAM_DEG 15 -> 40, with the measurement recorded at the macro.
+  2. The beam arc is now subtracted from the LATERAL EXTENT estimate as
+     well, not only from the angular span.  The extent is smeared by the
+     same beam, so before this it always won the max() and every object
+     was reported about a beam-width too wide.
+  3. OBS_WIDTH_MIN_MM (50) floor added.  With (1) and (2) a single-bearing
+     run collapsed to 13 mm for the same 50 mm object, which is the unsafe
+     direction: obs_leg_out_mm() would plan a turn too short to clear it.
+
+RESULT (same object, same position)
+  before:  190 mm   (+280%)
+  after:    55 mm   (+10%)  on sweeps with a 60 deg span
+            82 mm   (+64%)  on sweeps with a 70 deg span
+
+  Mean error about +36%, and still biased WIDE, which is the safe
+  direction per docs/DATA_REPRESENTATION.md 2.3.
+
+OUTSTANDING
+  NFR15 (+/-10%) is met on the better sweeps but not consistently.  The
+  residual error is run-span jitter: one extra 10 deg slot at the edge of
+  the run adds ~27 mm at this range.  Calibrating further needs objects of
+  two or three known widths at two or three known distances; this fit uses
+  a single object at a single range.

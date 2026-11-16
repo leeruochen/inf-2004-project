@@ -14,12 +14,22 @@
 | S5 Vehicle Controller | DONE (code + HW verified) 31 Oct 2026 | `task_vc.h/.c` implemented (P2, sole reader of `MBF_NAV_IN`, `drep_nav_valid()`, arbitration Safety > Avoid > Barcode > Line, `EVF_SAFETY` `tk_ref_flg` & `FAULT_LATCHED` reset only after `SAFETY_T_STILL_MS` = 500 ms at zero speed, 10-state 4-bit System FSM `VC_SYS_*` in `subsystem2.h`, `DREP_TEL_STATE` telemetry events). Auto checks S2-U22..U27 all PASS on board |
 | S6 startup and API | DONE (code + HW verified) 31 Oct 2026 | `subsystem2_init()` enforces pre-start brake (`subsystem2_pre_start_brake_ok()`) and `vc_init()`; `subsystem2_start()` starts `vc` (P2) and `motion` (P3) via `app_start_task()`. Public Motion Library API (`motion_move_forward/backward`, `motion_turn_left/right`, `motion_stop` + `moveForward`, `moveBackward`, `turnLeft`, `turnRight`, `stop` inline aliases, Q3 Option (a)) added in `subsystem2.h/.c`. S2-U28 PASS on board |
 | S7 tests and reports | DONE (28/28 HW tests PASS on board + floor) 31 Oct 2026 | All 28 hardware tests (`S2-U01`..`S2-U28`: 16 auto `TEST_CHECK`s + 6 Phase 1 bench calibration tests + 6 Phase 2 floor trials) PASS on target and recorded in `TEST_LOG.md`, `PID_TUNING_REPORT.md`, and `MOTION_ACCURACY_EVALUATION.md` (`MOTOR_L_DIR_INVERT=1U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U`, `ENC_CPR=616U`, `MOTION_EFF_TRACK_MM=114U`) |
+| S8 safe codegen & RAM compaction | DONE 13 Nov 2026 | Consolidated module-private state into single base-pointer context structs (`s_mot` in `task_motion.c`, `s_vc` with packed 10-bit `state_bits` word in `task_vc.c`) to eliminate ARMv6-M Thumb-1 literal-pool bloat and cut `.bss` RAM; replaced `abs_i32()` and encoder sign inversion with branchless Thumb-1 idioms; replaced 64-bit `__aeabi_uldivmod` in `motor_get_pwm_freq_hz()` with 32-bit hardware SIO division; compacted `.rodata` pin/wheel tables to `uint8_t`. Zero behavioral impact (100% bit-identical PID/FSM outputs). Cross-subsystem optimization guide created at `docs/EMBEDDED_OPTIMIZATIONS.md` |
 
 Build note (Windows): the sandbox cannot run the SDK compiler (illegal DLL relocation); run the HANDOVER section 5 build outside the sandbox. Build dirs: `build/s0b` is the S0 sanity build (gitignored).
 
 
 Checked against HANDOVER.md, specs.md, TEAM.md, ARCHITECTURE.md, `docs/DATA_REPRESENTATION.md` and the repo headers.
 Folders you may edit: `app_program/subsystem2/`, `testing/subsystem2/`. Anything else (CMakeLists.txt, TEAM.md, config/*.h) needs team agreement.
+
+## Changes by other members
+
+Buddy 2 gives explicit permission for any member to edit Subsystem 2 when needed (HANDOVER.md
+section 0, rule 5). Record every such change here, newest last, and give the reason in the
+commit message too.
+
+| Date | Who | Files | What changed | Justification |
+|---|---|---|---|---|
 
 ## Open decisions (settle before or during the step shown)
 

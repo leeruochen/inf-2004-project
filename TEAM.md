@@ -26,7 +26,7 @@ entries in design.md (Team Role and Subsystem Ownership table).
 | 1 | Telemetry: WiFi, MQTT, dashboard link | 2501299 (Damian) | Damian-oliveiro | `app_program/subsystem1/` | `testing/subsystem1/` |
 | 2 | Motion control (motors, encoders, PID) and Vehicle Controller | 2500530 (Ruo Chen) | leeruochen | `app_program/subsystem2/` | `testing/subsystem2/` |
 | 3 | Line following and barcode decode | 2503319 (Jin Yong) | jyong1101 | `app_program/subsystem3/` | `testing/subsystem3/` |
-| 4 | IMU processing and safety / collision response (incl. `task_safety.c`) | 2500709 (Vincent) | Vincent6430 | `app_program/subsystem4/` | `testing/subsystem4/` |
+| 4 | IMU processing and safety / lift-overturn response (incl. `task_safety.c`) | 2500709 (Vincent) | Vincent6430 | `app_program/subsystem4/` | `testing/subsystem4/` |
 | 5 | Obstacle scanning and obstacle avoidance / recovery | 2500596 (Chay Han) | longchayhan03-eng (TODO(owner-to-confirm): design.md reads "Chay Hanlongchayhan03-eng", no separator) | `app_program/subsystem5/` | `testing/subsystem5/` |
 
 Shared files (`app_program/app_main.c`, `app_program/app.h`,
@@ -179,7 +179,7 @@ in `usermain()` step 1 (Batch B), before any `subsystemN_init()`.
 | IF-03 | S5 Scan → S5 Avoid (internal) | message buffer, 2 slots (owned by S5) | `MBF_OBSTACLE` | `obstacle_profile_t`; newest profile wins. Sender drains then sends (`DATA_REPRESENTATION.md` 2.3) | **S5 (2500596)** |
 | IF-04 | all → S1 | message buffer, 32 slots (owned by S1) | `MBF_TELEMETRY` | `tel_evt_t`; senders `TMO_POL`, overflow dropped and counted | S2 (2500530); S1/S3/S4 pending. S5 sends nothing: `DREP_TEL_TYPE_COUNT` has no obstacle type (see `testing/subsystem5/TEST_LOG.md` open item 5) |
 | IF-05 | echo ISR → S5 Scan | semaphore (owned by S5) | `SEM_ECHO` | echo received; 30 ms timeout = nothing in range. Signalled from the echo ISR via `hal_isr_sig()` | **S5 (2500596)** |
-| IF-06 | S4 IMU → S4 Safety; Safety → S2 VC | eventflag (owned by S4) | `EVF_SAFETY` | COLLISION, IMU_ALIVE (set by IMU); FAULT_LATCHED set only by Safety, cleared only by S2 VC; STATUS_NO_ECHO (b7) set and cleared only by S5 Scan, which also reads COLLISION/FAULT_LATCHED to abort a bypass | S2 (2500530); **S5 (2500596)** for b7; S4 pending |
+| IF-06 | S4 IMU → S4 Safety; Safety → S2 VC | eventflag (owned by S4) | `EVF_SAFETY` | LIFTED (was COLLISION until 11 Nov 2026), IMU_ALIVE (set by IMU); FAULT_LATCHED set only by Safety, cleared only by S2 VC; STATUS_NO_ECHO (b7) set and cleared only by S5 Scan, which also reads LIFTED/FAULT_LATCHED to abort a bypass | S2 (2500530); **S5 (2500596)** for b7; S4 pending |
 | IF-07 | S5, S3 → readers | eventflag (owned by S5) | `EVF_NAV` | AVOID_ACTIVE, LINE_REACQUIRED (S5), LINE_FOUND (S3); readers poll | S2 (2500530); **S5 (2500596)**; S3 pending |
 | IF-08 | S2 Motion → S3 BC and LF, S1 | shared data under a mutex, `TA_INHERIT` (owned by S2) | `MTX_MOTION`, `motion_state_t` | speed, distance, encoder counts, `tick_ms` (LF: odometer, turn done, post slot); copy and release at once. Safety never takes it | S2 (2500530); S1/S3 pending |
 | IF-09 | barcode ISR → S3 BC (internal) | ISR ring buffer, 64 edges (owned by S3) | barcode edge ring | bar/space edge times; overflow forces INVALID_READ_RESET | TODO(owner-to-confirm) |

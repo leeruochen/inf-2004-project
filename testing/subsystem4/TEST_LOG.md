@@ -1,6 +1,6 @@
 # Subsystem 4 — test log
 
-**Subsystem:** IMU processing and safety  ·  **Student ID:** 2500709 (Vincent)  ·  **Code:** `app_program/subsystem4/`
+**Subsystem:** IMU processing and safety (lift/overturn stop)  ·  **Student ID:** 2500709 (Vincent)  ·  **Code:** `app_program/subsystem4/`
 
 See `testing/README.md` for how to run tests and record results.
 
@@ -22,14 +22,24 @@ Define a test here before running it. Test IDs never change.
 | S4-U10 | IMU period ~10 ms | IMU_SAMPLE_PERIOD_MS | auto | At least 8 good samples in 100 ms | PASS |
 | S4-U11 | No I2C errors | I2C reliability | auto | `imu_get_i2c_error_count() == 0` | PASS |
 | S4-U12 | No IMU watchdog timeouts with the IMU connected | NFR13, IF-06 | auto | `safety_get_wdog_timeout_count() == 0` | PASS |
-| S4-U13 | Collision triggers the emergency brake | IF-06 EVF_SAFETY_COLLISION, IF-11 | auto (operator-guided) | Configure with `-DS4_MANUAL_TESTS=ON`. When the console asks, knock the car firmly once (20 s window). The test then asks the Vehicle Controller to reset the fault | Collision counted, Safety brake count rises, FAULT_LATCHED set |
+| S4-U13 | ~~Collision triggers the emergency brake~~ **DROPPED 11 Nov 2026**: IMU collision detection removed from the requirements (lecturer's instruction; see docs/REQ_CHANGE_LIFT.md). Replaced by S4-U17..U21. Never run | ~~IF-06 EVF_SAFETY_COLLISION~~ | — | — | — |
 | S4-U14 | IMU watchdog triggers the emergency brake | NFR13, IF-06 EVF_SAFETY_FAULT_IMU_WDOG | auto (operator-guided) | When asked, unplug the IMU cable, wait 2 s, plug it back in (20 s window) | Watchdog timeout counted, FAULT_LATCHED set |
 | S4-U15 | Hump detected, pitch sign correct | IF-04 MBF_TELEMETRY (DREP_TEL_HUMP), D4 | auto (operator-guided) | When asked, put a ~2 cm book under the FRONT wheels for 2 s, then remove it (20 s window) | One hump reported with positive pitch (nose up) |
 | S4-U16 | IMU recovers after it is plugged back in | IF-06 EVF_SAFETY_FAULT_IMU_I2C, robustness | auto (operator-guided) | Follows S4-U14: after the watchdog trips, plug the IMU back in (20 s window) | Good samples resume (>= 40 in 0.5 s), FAULT_IMU_I2C cleared, `[IMU] I2C back` logged |
+| S4-U17 | No false lift event at rest; detector armed | FR12, NFR12 | auto | Car flat and still and **not touched** after power-on. `imu_is_lift_armed()` and `imu_get_lift_count() == 0` | PASS |
+| S4-U18 | Lifting the robot triggers the emergency brake | FR12, NFR10, IF-06 EVF_SAFETY_LIFTED, IF-11 | auto (operator-guided) | When asked, lift the car ~10 cm off the desk, hold it 2 s, put it back down flat (20 s window) | Lift counted, Safety brake count rises, FAULT_LATCHED set |
+| S4-U19 | One pick-up is one event; detector re-arms once put down | FR12 | auto (operator-guided) | Follows S4-U18: car back on the desk, level and still | Re-armed within 20 s, no second event; then the test asks the Vehicle Controller to reset the fault |
+| S4-U20 | Overturning the robot triggers the emergency brake | FR12, IF-06 EVF_SAFETY_LIFTED | auto (operator-guided) | When asked, roll the car onto its side on the desk without lifting it (lifting first triggers RAISED before the tilt), 2 s, then put it back down flat (20 s window) | Event of kind TILTED, Safety brake count rises, FAULT_LATCHED set |
+| S4-U21 | Lift/overturn detector logic (host) | FR12, NFR12 | auto (host) | `tests/host/test_imu_lift.c` (`ctest -R imu_lift`): thresholds 30 deg / 0.10 m/s / 50 ms, no events at rest, on 15 deg humps, 25 deg roll, 0.3 g forward acceleration, +-0.05 g hump bounces, +-0.5 g jolts or a 30 mg offset; tilt, smooth level lift (10 cm in 0.8 s, the S4-U18 case), quick lift, side, upside-down and free fall detected; one event per pick-up, re-arm after 0.5 s level and still; board mounted upside down or 5 deg tilted | All checks pass |
+| S4-U22 | No false lift event while driving over humps | NFR12, design.md A4 | manual + log | Drive the course (line, humps, turns) with the console logging; then lift the car at the end | No `[IMU] LIFTED` line until the final lift; the final lift stops the motors |
+| S4-U23 | Lifting the robot WHILE DRIVING stops the wheels within 200 ms | FR12, NFR10 (the demo's end-of-run signal) | auto (operator-guided) | Last guided step. When asked, put the car on a straight of the track facing along it and let go; after 3 s it drives 70 cm straight at cruise speed (`motion_move_forward()`, no line following); lift it while it moves. The test times from the lift event until neither wheel encoder moves for 30 ms. Keep enough USB cable slack | Lift seen while the wheels were turning; wheels stopped within 200 ms of the lift event; Safety brake count rises; FAULT_LATCHED set |
 
 *Method:* **auto** = `TEST_CHECK` in code, result printed on the console;
 **manual** = a person observes the result (LED, scope, meter, phone app…);
-**auto (operator-guided)** = the console asks a person for one action and the `TEST_CHECK` detects it (only in builds configured with `-DS4_MANUAL_TESTS=ON`).
+**auto (operator-guided)** = the console asks a person for one action and the `TEST_CHECK` detects it (only in builds configured with `-DS4_MANUAL_TESTS=ON`);
+**auto (host)** = a host unit test in `tests/host/`, no board needed.
+
+`testing/subsystem4/s4_test.ps1 -AutoOnly` builds, flashes (rebooting the Pico into BOOTSEL over USB when it already runs the firmware) and records S4-U01..U12 and U17 unattended. Without `-AutoOnly` it adds the operator-guided tests. Add `-ImuOnly` to run only subsystem 4's tests (CMake `-DAPP_TEST_ONLY=4`, build folder `build/s4imu`): the IMU checks start about 5 s after boot instead of about 4 min, and the script stops by itself after the subsystem 4 summary. The script also warns if the robot sends nothing for 10 s.
 
 ## Results
 
@@ -37,3 +47,54 @@ Add a new row for every run. Never edit or delete old rows.
 
 | Date | Test ID | Commit | Tester | Result | Log / evidence | Notes |
 |---|---|---|---|---|---|---|
+| 2026-11-13 | S4-U01 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | LSM303D at 0x1D (accel + mag) |
+| 2026-11-13 | S4-U02 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U03 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U04 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U05 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U06 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U07 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Level reference: board at 8 half-deg (4 deg) when flat, 0 retries |
+| 2026-11-13 | S4-U08 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U09 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U10 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U11 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U12 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | Unattended run (`s4_test.ps1 -AutoOnly`), car flat on a stand |
+| 2026-11-13 | S4-U17 | `9cef4bb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1524_s4_unit.txt` | First run of the lift detector on the car; Subsystem 2 motor tests ran before it without a false lift |
+| 2026-11-13 | S4-U21 | `9cef4bb` | Vincent (Vincent6430) | PASS | `tests/host/test_imu_lift.c` | Host test, 63 checks, 0 failed |
+| 2026-11-13 | S4-U15 | `d5686af` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1530_s4_console.txt` (full window export; `logs/2026-11-13_1530_s4_unit.txt` lost lines 146-795 to a file lock) | Front raised ~2 cm: hump at +14 half-deg (+7 deg), nose up = positive |
+| 2026-11-13 | S4-U18 | `d5686af` | Vincent (Vincent6430) | FAIL | `logs/2026-11-13_1530_s4_console.txt` (full window export; `logs/2026-11-13_1530_s4_unit.txt` lost lines 146-795 to a file lock) | Car lifted ~10 cm smoothly and level: no lift event in the 20 s window. Tilt stayed below 5 deg (no hump event either) and the 0.3 g / 50 ms upward-acceleration rule was not met by a gentle lift. Fix: detect vertical speed instead (next commit) |
+| 2026-11-13 | S4-U19 | `d5686af` | Vincent (Vincent6430) | FAIL | `logs/2026-11-13_1530_s4_console.txt` (full window export; `logs/2026-11-13_1530_s4_unit.txt` lost lines 146-795 to a file lock) | Consequence of S4-U18 (no event, so nothing to re-arm) |
+| 2026-11-13 | S4-U20 | `d5686af` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1530_s4_console.txt` (full window export; `logs/2026-11-13_1530_s4_unit.txt` lost lines 146-795 to a file lock) | Tipped onto its side: TILTED at cos 0.855 (~31 deg), Safety braked, FAULT_LATCHED set; re-armed once put down |
+| 2026-11-13 | S4-U14 | `d5686af` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1530_s4_console.txt` (full window export; `logs/2026-11-13_1530_s4_unit.txt` lost lines 146-795 to a file lock) | IMU unplugged: watchdog brake, FAULT_LATCHED set |
+| 2026-11-13 | S4-U16 | `d5686af` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1530_s4_console.txt` (full window export; `logs/2026-11-13_1530_s4_unit.txt` lost lines 146-795 to a file lock) | IMU plugged back in: readings resumed |
+| 2026-11-13 | S4-U01..U12, U17 | `d5686af` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1530_s4_console.txt` (full window export; `logs/2026-11-13_1530_s4_unit.txt` lost lines 146-795 to a file lock) | Same guided run; all 13 automatic checks pass again |
+| 2026-11-13 | S4-U01..U12, U17 | `6403b41` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1554_s4_unit.txt` | All 13 automatic checks pass (twice: the run restarted after a crash, below) |
+| 2026-11-13 | S4-U15 | `6403b41` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1554_s4_unit.txt` | Hump reported, nose up = positive pitch (both boots) |
+| 2026-11-13 | S4-U18 | `6403b41` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1554_s4_unit.txt` | Fix verified: the same gentle, level lift that failed in the 15:30 run is now detected as RAISED at v=117 mm/s (limit 100), peak 145 mm/s; Safety braked, FAULT_LATCHED set |
+| 2026-11-13 | S4-U19 | `6403b41` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1554_s4_unit.txt` | Re-armed once put down, no second event |
+| 2026-11-13 | S4-U20 | `6403b41` | Vincent (Vincent6430) | FAIL | `logs/2026-11-13_1554_s4_unit.txt` | Operator lifted the car to tip it, so RAISED (v=123 mm/s) fired before the tilt; brake and latch worked, but the test expects a TILTED event. Prompt to be reworded: roll the car over on the desk without lifting it. The car was then turned upside down during the S4-U14 prompt: TILTED detected (cos 0.763 at trigger, about -0.85 while upside down) |
+| 2026-11-13 | S4-U14 | `6403b41` | Vincent (Vincent6430) | FAIL | `logs/2026-11-13_1554_s4_unit.txt` | Steps out of sync: the car was upside down during this prompt and the IMU cable was not unplugged, so no watchdog trip. Passed in the 15:30 run; code unchanged since |
+| 2026-11-13 | S4-U16 | `6403b41` | Vincent (Vincent6430) | FAIL | `logs/2026-11-13_1554_s4_unit.txt` | Consequence of S4-U14 (no trip, nothing to recover from) |
+| 2026-11-13 | (run note) | `6403b41` | Vincent (Vincent6430) | — | `logs/2026-11-13_1554_s4_unit.txt` | After S4-U15 the robot reset on a HardFault: `panic()` in the Pico SDK (pc in `__breakpoint` via `_exit`/`panic`, IPSR 47 = IRQ 31, the SDK USB stdio background IRQ), right after the car was handled. The USB console also dropped 4 times without a reset. Suspect the USB cable moving; not Subsystem 4 code. To investigate separately |
+| 2026-11-13 | S4-U01..U12, U17 | `7ddf207` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1608_s4_unit.txt` | All 13 automatic checks pass |
+| 2026-11-13 | S4-U15 | `7ddf207` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1608_s4_unit.txt` | Hump reported, nose up = positive pitch |
+| 2026-11-13 | S4-U18 | `7ddf207` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1608_s4_unit.txt` | Gentle level lift detected as RAISED at v=158 mm/s (limit 100); brake + FAULT_LATCHED |
+| 2026-11-13 | S4-U19 | `7ddf207` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1608_s4_unit.txt` | Re-armed once put down, no second event |
+| 2026-11-13 | S4-U20 | `7ddf207` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1608_s4_unit.txt` | Rolled onto its side on the desk (reworded prompt): TILTED at cos 0.797 (~37 deg); brake + FAULT_LATCHED |
+| 2026-11-13 | S4-U14 | `7ddf207` | Vincent (Vincent6430) | not performed | `logs/2026-11-13_1608_s4_unit.txt` | Skipped by the tester this run (the console prints FAIL when the 20 s window expires untouched). PASS on `d5686af` (15:30 run); watchdog and I2C recovery code unchanged since. Re-run in the full pre-demo test set |
+| 2026-11-13 | S4-U16 | `7ddf207` | Vincent (Vincent6430) | not performed | `logs/2026-11-13_1608_s4_unit.txt` | Skipped with S4-U14 (see above). PASS on `d5686af` |
+| 2026-11-13 | (run note) | `7ddf207` | Vincent (Vincent6430) | — | `logs/2026-11-13_1608_s4_unit.txt` | No HardFault this run; the USB console dropped 3 times while the car was handled and reconnected each time |
+| 2026-11-13 | S4-U01..U12, U17 | `aad8e46` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1645_s4_unit.txt` | All 13 automatic checks pass |
+| 2026-11-13 | S4-U15 | `aad8e46` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1645_s4_unit.txt` | Hump reported, nose up = positive pitch |
+| 2026-11-13 | S4-U18 | `aad8e46` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1645_s4_unit.txt` | Level lift detected as RAISED at v=126 mm/s, cos 1000/1000 (perfectly level) |
+| 2026-11-13 | S4-U19 | `aad8e46` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1645_s4_unit.txt` | Re-armed once put down, no second event |
+| 2026-11-13 | S4-U20 | `aad8e46` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1645_s4_unit.txt` | Rolled over on the desk: TILTED at cos 0.849 (~32 deg) |
+| 2026-11-13 | S4-U14, U16, U23 | `aad8e46` | Vincent (Vincent6430) | not performed | `logs/2026-11-13_1645_s4_unit.txt` | Run stopped: the console went silent right after the S4-U14 prompt (no further lines at all, not even telemetry) and the Pico then disappeared from USB; the tester stopped the script |
+| 2026-11-13 | (run note) | `aad8e46` | Vincent (Vincent6430) | — | `logs/2026-11-13_1639_s4_unit.txt`, `logs/2026-11-13_1645_s4_unit.txt` | **Open issue (USB console):** (1) 16:39 run: HardFault while the car was handled, `panic()` in IRQ 31 (USB stdio background IRQ); the panic sites in this image include `sleep_until` ("Attempted to sleep inside of an exception handler", debug builds), `hw_claim_or_assert` and PIO/float shims; the message is lost because it goes to the failing USB console. (2) 16:45 run: output stopped completely at the S4-U14 prompt and the Pico left USB without the usual reset. Not yet known whether the robot froze or the cable was disturbed. Next: capture the panic message (e.g. `PICO_PANIC_FUNCTION` into the RAM fault record) and retest S4-U14/U16/U23 |
+| 2026-11-13 | S4-U01..U12, U17 | `9144dfb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1714_s4_unit.txt` | IMU-only run (`s4_test.ps1 -ImuOnly`, APP_TEST_ONLY=4): checks start ~5 s after boot |
+| 2026-11-13 | S4-U15 | `9144dfb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1714_s4_unit.txt` | Hump reported, nose up = positive pitch |
+| 2026-11-13 | S4-U18 | `9144dfb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1714_s4_unit.txt` | Level lift detected as RAISED at v=119 mm/s |
+| 2026-11-13 | S4-U19 | `9144dfb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1714_s4_unit.txt` | Re-armed once put down, no second event |
+| 2026-11-13 | S4-U20 | `9144dfb` | Vincent (Vincent6430) | FAIL | `logs/2026-11-13_1714_s4_unit.txt` | No lift event in the 20 s roll window: the roll did not pass 30 deg, or its lines were lost (a log viewer locked the file and some writes failed; fixed in the script for later runs). Passed on `7ddf207` and `aad8e46`; tilt code unchanged |
+| 2026-11-13 | S4-U14, U16 | `9144dfb` | Vincent (Vincent6430) | not performed | `logs/2026-11-13_1714_s4_unit.txt` | Skipped by the tester (the car was moved toward the track during this window: RAISED at 126 mm/s) |
+| 2026-11-13 | S4-U23 | `9144dfb` | Vincent (Vincent6430) | PASS | `logs/2026-11-13_1714_s4_unit.txt` | **Lift while driving on the track: wheels stopped 134 ms after the lift event (limit 200 ms, NFR10)**; lift detected as RAISED at v=172 mm/s; FAULT_LATCHED set |

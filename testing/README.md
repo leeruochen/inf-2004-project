@@ -45,7 +45,9 @@ Test IDs never change and are never reused, even if a test is dropped.
    `APP_TEST=ON` fails at configure. The test image runs every subsystem's
    tests in a dedicated lowest-priority test task (priority 11) and prints one
    `[TEST] <ID> PASS|FAIL` line per check on the USB CDC console. (A normal
-   build leaves the tests out.) Flash it as in `README.md` section 3.
+   build leaves the tests out.) Add `-DAPP_TEST_ONLY=N` (1..5) to run only
+   subsystem N's tests, for a faster run of your own tests (default 0 = all).
+   Flash it as in `README.md` section 3.
 4. **Save the console output** to `logs/`, named `YYYY-MM-DD_<what>.txt`.
    The console is USB CDC on the Pico W's own USB port. Its COM port (Device
    Manager > Ports (COM & LPT)) appears only after the firmware boots, and it

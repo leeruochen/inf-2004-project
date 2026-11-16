@@ -17,7 +17,7 @@
  *    - Single setter of EVF_NAV_AVOID_ACTIVE and EVF_NAV_LINE_REACQUIRED
  *      (docs/DATA_REPRESENTATION.md section 3).
  *    - Aborts to a stop if EVF_SAFETY says the car is in a fault or
- *      collision state, or if the manoeuvre runs past its budget.
+ *      has been lifted / overturned, or if the manoeuvre runs past its budget.
  *
  *  Scheduling: this task is NOT periodic.  It blocks in tk_rcv_mbf() on
  *  MBF_OBSTACLE for exactly the time left in the current manoeuvre step, so
@@ -47,12 +47,41 @@
 #define OBS_IDLE_POLL_MS        (100U)
 
 /** Time for the Vehicle Controller to complete one 45 degree bypass turn.
- *  TUNE: measure on the track (S5-U21) and promote to config/timing.h. */
-#define OBS_TURN_DWELL_MS       (700U)
+ *
+ *  MEASURED on the car, 2026-11-04 (S5-U32): six in-place 45 degree turns
+ *  timed from the encoder counts settling (Buddy 2's turns are closed-loop
+ *  on the encoders, task_motion.c), on the track mat at the bring-up speeds:
+ *
+ *      LEFT  530, 470, 500 ms
+ *      RIGHT 500, 470, 470 ms      mean 490 ms, spread 60 ms
+ *
+ *  550 ms is the mean plus about one spread, so a slow turn still finishes
+ *  inside its dwell.  The previous value, 700 ms, was a guess and cost
+ *  600 ms of the 3.0 s NFR14 budget across the four turns for nothing.
+ *  TUNE: re-measure if the bypass speed or the surface changes. */
+#define OBS_TURN_DWELL_MS       (550U)
 
-/** Straight run alongside the obstacle, past its depth.  TUNE: an obstacle
- *  is assumed no deeper than it is wide, plus the side margin. */
-#define OBS_ALONG_EXTRA_MM      ((uint32_t)CAR_WIDTH_MM)
+/** Straight run alongside the obstacle, past its depth.  The ultrasonic only
+ *  ever sees the obstacle's FRONT FACE -- it cannot measure depth -- so this
+ *  is the whole allowance for how far back the obstacle extends.
+ *
+ *  Was CAR_WIDTH_MM (120 mm), i.e. "no deeper than it is wide, plus a car
+ *  width".  Reduced to OBS_SIDE_MARGIN_MM on 2026-11-04 to fit NFR14: at the
+ *  measured turn time the four turns alone are 2200 ms of the 3.0 s budget,
+ *  and this leg was 1133 ms of the rest.
+ *
+ *  2026-11-06: the team raised MOTION_SPEED_BYPASS_CMPS to 25 cm/s, which
+ *  buys back about 772 ms of leg time: the sum up to the start of LEG_BACK
+ *  falls from 4056 ms to about 2810 ms.  Not enough to restore 120 mm --
+ *  NFR14 also covers LEG_BACK and TURN_STRAIGHT, so 2810 ms is a floor, not
+ *  the whole interval, and LEG_BACK's real duration is unmeasured until the
+ *  line-reacquisition integration test (INT-S5-02) runs.  Left at 50 mm.
+ *
+ *  RISK (owner-to-confirm, buddy 5): the assumption is now "no deeper than it
+ *  is wide, plus 50 mm".  A deeper obstacle than that will be clipped on the
+ *  way back in.  Measure the real obstacles on the track and raise this again
+ *  if any of them are deep; correctness wins over the grade-A target.  TUNE */
+#define OBS_ALONG_EXTRA_MM      ((uint32_t)OBS_SIDE_MARGIN_MM)
 
 /** Longest wait for subsystem 3 to report the line again. */
 #define OBS_LEG_BACK_MAX_MS     ((uint32_t)LF_T_SEARCH_MS)
@@ -241,7 +270,7 @@ static bool safety_blocks(void)
 {
     uint32_t const flags = read_flags(EVF_SAFETY);
 
-    return (flags & (EVF_SAFETY_COLLISION | EVF_SAFETY_FAULT_LATCHED)) != 0U;
+    return (flags & (EVF_SAFETY_LIFTED | EVF_SAFETY_FAULT_LATCHED)) != 0U;
 }
 
 /* ---------------------------------------------------------------------------
@@ -285,11 +314,39 @@ static void release(uint32_t now_ms, bool reacquired)
     dbg_printf("[S5] avoid -> IDLE (reacquired=%d)", reacquired ? 1 : 0);
 }
 
-/** Stop the car, count the abort and release authority. */
+/** Stop the car, count the abort and release authority.
+ *
+ *  Only for a fault the car must not keep driving through: a latched safety
+ *  fault or a lifted / overturned car.  Running out of bypass time is NOT one of those --
+ *  see handoff_no_line(). */
 static void abort_manoeuvre(uint32_t now_ms, char const *p_why)
 {
     dbg_printf("[S5] avoid ABORT in %s: %s", state_name(s_state), p_why);
     send_bypass(DREP_BYPASS_STOP);
+    s_abort_count++;
+    release(now_ms, false);
+}
+
+/** Hand authority back WITHOUT stopping, having never seen the line.
+ *
+ *  design.md 5.5: "If the bypass exceeds its 3.0 s budget, the handoff still
+ *  happens with 'line not found' and Line-Following starts its own search,
+ *  limited by T_search, so the worst case from obstacle to TRACK_LOST stop is
+ *  5.0 s."  So the car must still be ROLLING when authority changes hands --
+ *  Line-Following cannot search for a line from a standstill, and the 5.0 s
+ *  worst case in NFR14 is bypass budget + LF_T_SEARCH_MS, which only adds up
+ *  if the search actually runs.
+ *
+ *  This used to call abort_manoeuvre(), which sends DREP_BYPASS_STOP first.
+ *  MEASURED 2026-11-04: the car completed the bypass correctly and then sat
+ *  still with the line under it, because LEG_BACK expiring took the stopping
+ *  path.  Motion holds its last setpoint for T_hold across the authority
+ *  change (design.md 5.5), so leaving the bypass speed in place is what keeps
+ *  the car moving into Line-Following's search. */
+static void handoff_no_line(uint32_t now_ms, char const *p_why)
+{
+    dbg_printf("[S5] avoid handoff in %s, line not found: %s",
+               state_name(s_state), p_why);
     s_abort_count++;
     release(now_ms, false);
 }
@@ -368,8 +425,9 @@ static void step_expired(uint32_t now_ms)
             break;
 
         case OBS_AV_LEG_BACK:
-            /* Never found the line inside LF_T_SEARCH_MS. */
-            abort_manoeuvre(now_ms, "line not reacquired");
+            /* Never found the line inside LF_T_SEARCH_MS.  Hand over still
+             * rolling so Line-Following can run its own search. */
+            handoff_no_line(now_ms, "LEG_BACK dwell elapsed");
             break;
 
         case OBS_AV_TURN_STRAIGHT:
@@ -431,6 +489,14 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
          * before committing to a side (specs.md FR8). */
         set_nav_flag(EVF_NAV_AVOID_ACTIVE);
         send_nav(drep_nav_avoid(DREP_NAV_AVOID_SLOW, 0U));
+        /* Arm the whole-manoeuvre budget HERE, not only in
+         * start_manoeuvre(): the task loop checks it in every state but
+         * OBS_AV_IDLE, so leaving it at its previous value makes the budget
+         * look already spent and aborts the manoeuvre before the next
+         * profile can choose a side.  The car then drives straight into the
+         * obstacle it had just slowed down for. */
+        s_budget_deadline_ms = now_ms + (uint32_t)OBS_BYPASS_BUDGET_MS
+                               + OBS_LEG_BACK_MAX_MS;
         enter_state(OBS_AV_SLOW, (uint32_t)OBS_BYPASS_BUDGET_MS, now_ms);
         return;
     }
@@ -509,10 +575,20 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
             continue;
         }
 
-        /* Whole-manoeuvre budget (NFR14). */
+        /* Whole-manoeuvre budget (NFR14).  Out of time is not a fault: hand
+         * over rolling and let Line-Following search (design.md 5.5).  The
+         * one exception is being boxed in -- OBS_AV_BLOCKED has deliberately
+         * stopped or reversed the car, so it must not be sent onwards. */
         if ((int32_t)(app_period_now_ms() - s_budget_deadline_ms) >= 0)
         {
-            abort_manoeuvre(app_period_now_ms(), "bypass budget exhausted");
+            if (s_state == OBS_AV_BLOCKED)
+            {
+                abort_manoeuvre(app_period_now_ms(), "blocked, budget spent");
+            }
+            else
+            {
+                handoff_no_line(app_period_now_ms(), "bypass budget exhausted");
+            }
             continue;
         }
 

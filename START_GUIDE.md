@@ -69,6 +69,7 @@ When cloning or pulling this repository on a new machine:
 | **1** | [`HANDOVER.md`](HANDOVER.md) | **Master project status & rules:** Where each buddy stands, Batch A/B platform status, binding coding rules (**R1–R6**), build instructions (Section 5), and owner decisions (Section 7). |
 | **2** | [`TEAM.md`](TEAM.md) | **Hardware & RTOS ownership table:** Pin claims (`GP0`–`GP29`), hardware wiring checklist, peripheral owning tasks, task priorities (`P1`–`P11`), interfaces (`IF-01`..`IF-11`), and kernel object budget. |
 | **3** | [`INTEGRATION_PHASES.md`](INTEGRATION_PHASES.md) | **Official integration & lab course guide:** How `usermain()` starts all 5 subsystems, exact C code snippets for calling into Subsystem 2 (VC + Motion), pairwise bench tests (`INT-01`..`05`), and full lab course tests (`SYS-02`..`06`). |
+| **4** | [`INTEGRATION_FIXES.md`](INTEGRATION_FIXES.md) | **Active Integration Tasks & Fixes (Buddy 2 & 5):** Complete context, root cause, exact line numbers, code diffs, and verification steps for S2-U25/FAULT_LATCHED resolution, 25 cm/s bypass speed, and NFR15 rewording. |
 
 ---
 

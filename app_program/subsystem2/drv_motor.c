@@ -53,11 +53,13 @@
 /** Largest integer clock divider of a PWM slice. */
 #define MOTOR_DIV_INT_MAX       (255UL)
 
-/* Forward and reverse input pin of each motor, after MOTOR_x_DIR_INVERT. */
+/* Forward and reverse input pin of each motor, after MOTOR_x_DIR_INVERT.
+ * Stored as uint8_t (RP2040 GPIO 0..29) so k_motor_pins[] and k_all_pins[]
+ * occupy 8 bytes total in .rodata instead of 32 bytes. */
 typedef struct
 {
-    uint32_t pin_fwd;
-    uint32_t pin_rev;
+    uint8_t pin_fwd;
+    uint8_t pin_rev;
 } motor_pins_t;
 
 /* Calibrated on target in S2-U03 (2026-10-31_s2_phase1_calib.txt):
@@ -72,24 +74,27 @@ static motor_pins_t const k_motor_pins[MOTOR_COUNT] =
 {
     [MOTOR_LEFT] =
     {
-        (MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_B_PIN : MOTOR_L_A_PIN,
-        (MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_A_PIN : MOTOR_L_B_PIN
+        (uint8_t)((MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_B_PIN : MOTOR_L_A_PIN),
+        (uint8_t)((MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_A_PIN : MOTOR_L_B_PIN)
     },
     [MOTOR_RIGHT] =
     {
-        (MOTOR_R_DIR_INVERT != 0U) ? MOTOR_R_B_PIN : MOTOR_R_A_PIN,
-        (MOTOR_R_DIR_INVERT != 0U) ? MOTOR_R_A_PIN : MOTOR_R_B_PIN
+        (uint8_t)((MOTOR_R_DIR_INVERT != 0U) ? MOTOR_R_B_PIN : MOTOR_R_A_PIN),
+        (uint8_t)((MOTOR_R_DIR_INVERT != 0U) ? MOTOR_R_A_PIN : MOTOR_R_B_PIN)
     }
 };
 
 /* All four motor pins, for the emergency brake before PWM is set up. */
-static uint32_t const k_all_pins[4] =
+static uint8_t const k_all_pins[4] =
 {
-    MOTOR_L_A_PIN, MOTOR_L_B_PIN, MOTOR_R_A_PIN, MOTOR_R_B_PIN
+    (uint8_t)MOTOR_L_A_PIN,
+    (uint8_t)MOTOR_L_B_PIN,
+    (uint8_t)MOTOR_R_A_PIN,
+    (uint8_t)MOTOR_R_B_PIN
 };
 
+static uint32_t      s_period = 0U;     /* wrap + 1, counts (6250 at 20 kHz) */
 static volatile bool s_ready = false;
-static uint32_t      s_period = 0U;     /* wrap + 1, counts */
 
 /* Write both compare levels of one motor in a single CC register write, so
  * the two inputs never disagree for a PWM period. */
@@ -251,21 +256,29 @@ void motor_brake_all(void)
 uint32_t motor_get_pwm_freq_hz(uint32_t motor)
 {
     uint32_t slice;
-    uint64_t div_x16;
-    uint64_t top;
+    uint32_t div_x16;
+    uint32_t period;
 
     if ((!s_ready) || (motor >= MOTOR_COUNT))
     {
         return 0U;
     }
     slice = pwm_gpio_to_slice_num(k_motor_pins[motor].pin_fwd);
-    div_x16 = (uint64_t)(pwm_hw->slice[slice].div & 0xFFFU);    /* INT 11:4, FRAC 3:0 */
-    top = (uint64_t)(pwm_hw->slice[slice].top & 0xFFFFU);
+    div_x16 = pwm_hw->slice[slice].div & 0xFFFU;            /* INT 11:4, FRAC 3:0 */
+    period = (pwm_hw->slice[slice].top & 0xFFFFU) + 1U;     /* 1..65536           */
     if (div_x16 == 0U)
     {
         return 0U;
     }
-    return (uint32_t)(((uint64_t)clock_get_hz(clk_sys) * 16U) / (div_x16 * (top + 1U)));
+    /*
+     * 32-bit Hardware Divider Optimization (eliminates __aeabi_uldivmod):
+     *   At clk_sys = 125 MHz, `clk_sys * 16U` = 2,000,000,000 (< UINT32_MAX =
+     *   4,294,967,295, safe up to clk_sys = 268.4 MHz), and `div_x16 * period`
+     *   <= 4095 * 65536 = 268,369,920.  Keeping both numerator and denominator
+     *   in 32-bit `uint32_t` uses the RP2040's 8-cycle hardware SIO divider
+     *   instead of pulling in the ~300-cycle 64-bit software division helper.
+     */
+    return (clock_get_hz(clk_sys) * 16U) / (div_x16 * period);
 }
 
 void motor_get_levels(uint32_t motor, uint32_t *p_fwd, uint32_t *p_rev, uint32_t *p_period)

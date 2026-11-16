@@ -1,12 +1,27 @@
 # testing/subsystem4/s4_test.ps1 - Subsystem 4 (Buddy 4): build, flash and record the
-# APP_TEST firmware with the operator-guided tests S4-U13..U16 (S4_MANUAL_TESTS=ON).
+# APP_TEST firmware with the operator-guided tests S4-U14..U16 and S4-U18..U20 (S4_MANUAL_TESTS=ON).
 # Needs the Pico SDK v1.5.1 Windows installer (HANDOVER.md section 5).
 # Run from the repo root:
 #   powershell -ExecutionPolicy Bypass -File testing\subsystem4\s4_test.ps1
-# Options: -SkipBuild (flash the existing build/s4test firmware).  Stop: Ctrl+C.
+# Options:
+#   -SkipBuild        flash the existing firmware instead of rebuilding.
+#   -AutoOnly         unattended run: build WITHOUT the operator-guided tests (only
+#                     S4-U01..U12, in build/s4auto), wait for the robot to be plugged in,
+#                     flash it without BOOTSEL if it already runs USB-console firmware,
+#                     and stop by itself after the summary line. Exit code 0 = all passed.
+#   -ImuOnly          run ONLY subsystem 4's tests (APP_TEST_ONLY=4): skips the other
+#                     members' tests (motor spins, the 2.5 min line-sensor countdown), so
+#                     the IMU checks start about 5 s after boot. Builds in build/s4imu
+#                     (guided) or build/s4imuauto (with -AutoOnly), and stops by itself
+#                     after the subsystem 4 summary.
+#   -WaitMinutes 10   how long to wait for the robot to be plugged in.
+# Stop: Ctrl+C.
 param(
     [string]$Repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [switch]$AutoOnly,
+    [switch]$ImuOnly,
+    [int]$WaitMinutes = 10
 )
 
 $R = "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1"
@@ -32,19 +47,22 @@ $branch = (git rev-parse --abbrev-ref HEAD)
 Step "Repo $Repo on $branch at $commit"
 
 # --- 1. Build ---------------------------------------------------------------
-$uf2 = Join-Path $Repo "build\s4test\robocar.uf2"
+if ($AutoOnly) { $bdir = "build/s4auto"; $manual = "OFF" } else { $bdir = "build/s4test"; $manual = "ON" }
+$only = "0"
+if ($ImuOnly) { $only = "4"; $bdir = if ($AutoOnly) { "build/s4imuauto" } else { "build/s4imu" } }
+$uf2 = Join-Path $Repo ($bdir.Replace('/', '\') + "\robocar.uf2")
 if (-not $SkipBuild) {
-    Step "1/4 Building the test firmware (APP_TEST=ON, S4 guided tests on) in build/s4test"
+    Step "1/4 Building the test firmware (APP_TEST=ON, S4 guided tests $manual, only subsystem $only (0 = all)) in $bdir"
     # A build folder configured with CMAKE_C_FLAGS by an earlier script lost the
     # toolchain's CPU flags; start that one fresh.
-    $cache = "build/s4test/CMakeCache.txt"
+    $cache = "$bdir/CMakeCache.txt"
     if ((Test-Path $cache) -and (Select-String -Path $cache -Pattern '^CMAKE_C_FLAGS:STRING=-DS4' -Quiet)) {
-        Write-Host "Removing the old build/s4test folder (wrong compiler flags)" -ForegroundColor DarkYellow
-        Remove-Item -Recurse -Force build/s4test
+        Write-Host "Removing the old $bdir folder (wrong compiler flags)" -ForegroundColor DarkYellow
+        Remove-Item -Recurse -Force $bdir
     }
-    & $CM -S . -B build/s4test @common -DDBG_BACKEND=USB -DAPP_TEST=ON -DS4_MANUAL_TESTS=ON
+    & $CM -S . -B $bdir @common -DDBG_BACKEND=USB -DAPP_TEST=ON "-DS4_MANUAL_TESTS=$manual" "-DAPP_TEST_ONLY=$only"
     if ($LASTEXITCODE -ne 0) { Stop-Here "CMake configure failed (scroll up for the first error)" }
-    & $CM --build build/s4test
+    & $CM --build $bdir
     if ($LASTEXITCODE -ne 0) { Stop-Here "Build failed (scroll up for the first error)" }
 }
 if (-not (Test-Path $uf2)) { Stop-Here "$uf2 was not produced" }
@@ -52,16 +70,55 @@ Write-Host "Firmware: $uf2" -ForegroundColor Green
 
 # --- 2. Wait for BOOTSEL ------------------------------------------------------
 Step "2/4 Flashing"
-Ask "Car on a stand, wheels OFF the desk, IMU plugged in."
-Ask "Unplug the Pico W USB cable, HOLD the white BOOTSEL button, plug the cable back in, then release."
-Write-Host "Waiting for the RPI-RP2 drive..."
-$drive = $null
-$deadline = (Get-Date).AddMinutes(3)
-while (-not $drive) {
+function Find-BootDrive {
     $d = Get-CimInstance Win32_LogicalDisk -Filter "VolumeName='RPI-RP2'" -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($d) { $drive = $d.DeviceID }
-    elseif ((Get-Date) -gt $deadline) { Stop-Here "No RPI-RP2 drive after 3 minutes. Try BOOTSEL again, or another USB cable (some are charge-only)." }
-    else { Start-Sleep -Milliseconds 300 }
+    if ($d) { return $d.DeviceID } else { return $null }
+}
+# A Pico running firmware with the SDK USB console (VID 2E8A, PID 000A).
+function Find-PicoConsole {
+    foreach ($e in @(Get-CimInstance Win32_PnPEntity -ErrorAction SilentlyContinue |
+            Where-Object { ($_.PNPDeviceID -match 'VID_2E8A&PID_000A') -and ($_.Name -match '\(COM\d+\)') })) {
+        if ($e.Name -match '\((COM\d+)\)') { return $Matches[1] }
+    }
+    return $null
+}
+function Wait-BootDrive($seconds) {
+    $deadline = (Get-Date).AddSeconds($seconds)
+    while ((Get-Date) -lt $deadline) {
+        $d = Find-BootDrive
+        if ($d) { return $d }
+        Start-Sleep -Milliseconds 300
+    }
+    return $null
+}
+
+Ask "Car on a stand, wheels OFF the desk, flat and still, IMU plugged in."
+Ask "Plug the Pico W USB cable in (no need to hold BOOTSEL if it already runs our firmware)."
+Write-Host "Waiting up to $WaitMinutes min for the robot..."
+$drive = $null
+$deadline = (Get-Date).AddMinutes($WaitMinutes)
+while (-not $drive) {
+    $drive = Find-BootDrive
+    if ($drive) { break }
+    $cp = Find-PicoConsole
+    if ($cp) {
+        # The SDK USB console reboots into BOOTSEL when the host sets 1200 baud.
+        Write-Host "Robot found on $cp running firmware; asking it to reboot into BOOTSEL..." -ForegroundColor Green
+        Start-Sleep -Seconds 1
+        try {
+            $t = New-Object System.IO.Ports.SerialPort $cp, 1200
+            $t.Open(); Start-Sleep -Milliseconds 200; $t.Close()
+        } catch { Write-Host "(1200-baud touch: $($_.Exception.Message))" -ForegroundColor DarkGray }
+        $drive = Wait-BootDrive 15
+        if (-not $drive) {
+            Ask "Automatic reboot did not work. Unplug the USB cable, HOLD the white BOOTSEL button, plug it back in, then release."
+            $drive = Wait-BootDrive 180
+            if (-not $drive) { Stop-Here "No RPI-RP2 drive. Try BOOTSEL again, or another USB cable (some are charge-only)." }
+        }
+        break
+    }
+    if ((Get-Date) -gt $deadline) { Stop-Here "No robot within $WaitMinutes min. Check the USB cable (some are charge-only), or plug in while holding BOOTSEL." }
+    Start-Sleep -Milliseconds 300
 }
 Write-Host "Found RPI-RP2 at $drive" -ForegroundColor Green
 
@@ -85,7 +142,12 @@ Write-Host "Console on $port" -ForegroundColor Green
 $logDir = Join-Path $Repo "testing\subsystem4\logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $log = Join-Path $logDir ("{0}_s4_unit.txt" -f (Get-Date -Format "yyyy-MM-dd_HHmm"))
-"# Subsystem 4 APP_TEST run, $branch at $commit, $(Get-Date -Format 's')" | Set-Content -Path $log -Encoding UTF8
+# One writer for the whole run, shared for reading: a viewer or another
+# program reading the log can no longer make a write fail (13 Nov 2026).
+$logw = New-Object System.IO.StreamWriter([System.IO.File]::Open($log, 'Append', 'Write', 'ReadWrite'), (New-Object System.Text.UTF8Encoding($false)))
+$logw.AutoFlush = $true
+function Log-Line([string]$text) { try { $logw.WriteLine($text) } catch { } }
+Log-Line "# Subsystem 4 APP_TEST run, $branch at $commit, $(Get-Date -Format 's')"
 
 function Open-Console($preferred, $ignore, $seconds) {
     $deadline = (Get-Date).AddSeconds($seconds)
@@ -119,12 +181,33 @@ Write-Host "Log: $log"
 Write-Host "If the Pico drops off USB, this window reconnects by itself. Ctrl+C to stop." -ForegroundColor DarkGray
 
 $pass = 0; $fail = 0; $hinted = $false; $buf = ""; $drops = 0
+$stopAt = $null
+$runDeadline = (Get-Date).AddMinutes(10)
+$autoStop = ($AutoOnly -or $ImuOnly)
+$lastRx = Get-Date; $silentWarned = $false
 try {
     while ($true) {
+        # The robot normally prints telemetry 5 times a second: 10 s of silence
+        # means it froze or its USB died (13 Nov 2026, 16:45 run).
+        if (-not $silentWarned -and (((Get-Date) - $lastRx).TotalSeconds -gt 10)) {
+            $silentWarned = $true
+            $stamp = Get-Date -Format "HH:mm:ss"
+            Log-Line "# [script] $stamp console SILENT for 10 s (robot frozen or USB dead)"
+            Write-Host ""
+            Write-Host "[script] $stamp the robot has sent nothing for 10 s: it may have FROZEN. Do not unplug it; note what you were doing." -ForegroundColor Red
+        }
+        if ($autoStop) {
+            if ($stopAt -and ((Get-Date) -gt $stopAt)) { break }
+            if ((Get-Date) -gt $runDeadline) {
+                Write-Host "[script] no subsystem4 SUMMARY within 10 min; stopping." -ForegroundColor Red
+                Log-Line "# [script] timed out waiting for the subsystem4 SUMMARY"
+                break
+            }
+        }
         $lost = $false
         try {
             if (-not $sp.IsOpen) { $lost = $true }
-            elseif ($sp.BytesToRead -gt 0) { $buf += $sp.ReadExisting() }
+            elseif ($sp.BytesToRead -gt 0) { $buf += $sp.ReadExisting(); $lastRx = Get-Date; $silentWarned = $false }
             else { Start-Sleep -Milliseconds 20 }
         }
         catch { $lost = $true }
@@ -132,7 +215,7 @@ try {
         while (($nl = $buf.IndexOf("`n")) -ge 0) {
             $line = $buf.Substring(0, $nl).TrimEnd("`r")
             $buf = $buf.Substring($nl + 1)
-            Add-Content -Path $log -Value $line -Encoding UTF8
+            Log-Line $line
 
             if ($line -match '\[TEST\] S4-\S+ FAIL') { $fail++; Write-Host $line -ForegroundColor Red }
             elseif ($line -match '\[TEST\] S4-\S+ PASS') { $pass++; Write-Host $line -ForegroundColor Green }
@@ -145,14 +228,19 @@ try {
             if (-not $hinted -and $line -match 'subsystem4 SUMMARY') {
                 $hinted = $true
                 Write-Host ""
-                Write-Host "Subsystem 4 done: $pass passed, $fail failed. You can press Ctrl+C now." -ForegroundColor Magenta
+                if ($autoStop) {
+                    Write-Host "Subsystem 4 done: $pass passed, $fail failed. Finishing in 3 s." -ForegroundColor Magenta
+                    $stopAt = (Get-Date).AddSeconds(3)
+                } else {
+                    Write-Host "Subsystem 4 done: $pass passed, $fail failed. You can press Ctrl+C now." -ForegroundColor Magenta
+                }
             }
         }
 
         if ($lost) {
             $drops++
             $stamp = Get-Date -Format "HH:mm:ss"
-            "# [script] $stamp console lost (drop $drops), reconnecting" | Add-Content -Path $log -Encoding UTF8
+            Log-Line "# [script] $stamp console lost (drop $drops), reconnecting"
             Write-Host ""
             Write-Host "[script] $stamp console lost (drop $drops): the Pico left USB. Reconnecting..." -ForegroundColor DarkYellow
             try { $sp.Dispose() } catch { }
@@ -160,14 +248,18 @@ try {
             $sp = Open-Console $port $portsBefore 60
             if (-not $sp) { Write-Host "[script] no console for 60 s; stopping." -ForegroundColor Red; break }
             $stamp = Get-Date -Format "HH:mm:ss"
-            "# [script] $stamp reconnected on $($sp.PortName)" | Add-Content -Path $log -Encoding UTF8
+            Log-Line "# [script] $stamp reconnected on $($sp.PortName)"
             Write-Host "[script] $stamp reconnected on $($sp.PortName). Lines after this are from a NEW boot." -ForegroundColor DarkYellow
         }
     }
 }
 finally {
+    try { $logw.Close() } catch { }
     if ($sp -and $sp.IsOpen) { $sp.Close() }
     Write-Host ""
     Write-Host "Saved log: $log" -ForegroundColor Green
     Write-Host "S4 automatic checks seen: $pass passed, $fail failed. Console drops: $drops. Commit tested: $commit"
 }
+if ($hinted -and ($fail -eq 0) -and ($pass -gt 0)) { $code = 0 } else { $code = 1 }
+if ($ImuOnly -and -not $AutoOnly) { Write-Host "Done. The log is saved in testing\subsystem4\logs." -ForegroundColor Magenta }
+exit $code

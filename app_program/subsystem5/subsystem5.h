@@ -24,7 +24,7 @@
  *    IF-01  MBF_NAV_IN      sends bypass commands (5 ms timeout) to the
  *                           Vehicle Controller (S2)
  *    IF-06  EVF_SAFETY      sets and clears STATUS_NO_ECHO (b7, owner);
- *                           reads COLLISION and FAULT_LATCHED to abort
+ *                           reads LIFTED and FAULT_LATCHED to abort
  *
  *  Internal layout:
  *    drv_servo.c/.h        SDK side, PWM slice 7 B on GP15

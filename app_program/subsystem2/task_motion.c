@@ -108,28 +108,53 @@ typedef struct
     int32_t prev_err;
 } motion_pid_t;
 
-static volatile bool     s_task_running = false;
-static volatile bool     s_calib_hold = false;
-static volatile uint32_t s_release_count = 0U;
-static volatile uint32_t s_missed_count = 0U;
-static volatile uint32_t s_reject_count = 0U;
+/* ---------------------------------------------------------------------------
+ * Compact Module Context & Minimum-Width State Packing (ARCHITECTURE.md D8)
+ *
+ * ARMv6-M (RP2040 Cortex-M0+ Thumb-1) Codegen Optimization:
+ *   Thumb-1 lacks PC-relative stores and can only load 32-bit addresses via
+ *   `LDR Rd, [PC, #imm8]` from a literal pool.  Declaring 16 separate `static`
+ *   variables forces GCC to emit up to 16 literal-pool pointers in `.text` and
+ *   repeatedly reload base addresses into low registers (`r0`-`r7`).
+ *
+ *   Consolidating all module-private state into a single `motion_ctx_t` struct
+ *   (68 bytes total, vs 84 bytes unpacked) allows GCC to load `&s_mot` once
+ *   into a single base register (e.g. `r4`) and reach every field via a single
+ *   16-bit immediate-offset instruction (`LDR`/`STR`/`LDRH`/`LDRB [r4, #imm]`).
+ *
+ *   Boolean flags are packed into `flags` using explicit masks and shifts
+ *   (no C bit-fields, per HANDOVER.md section 6 / Barr-C).
+ * ------------------------------------------------------------------------- */
 
-static uint32_t     s_cmd_type = DREP_MC_STOP;
-static uint32_t     s_setpoint_cmps = 0U;
-static int32_t      s_cmd_arg = 0;
-static motion_cmd_t s_last_cmd = { 0U };
-static uint32_t     s_hold_elapsed_ms = 0U;
-static bool         s_cmd_active = false;
+#define MOT_FLG_TASK_RUNNING    (1U << 0)   /* motion_task_entry loop active */
+#define MOT_FLG_CALIB_HOLD      (1U << 1)   /* suppress PWM during hand-spin */
+#define MOT_FLG_CMD_ACTIVE      (1U << 2)   /* non-stop command in progress  */
 
-static int32_t      s_prev_cnt[ENC_WHEEL_COUNT] = { 0, 0 };
-static int32_t      s_manoeuvre_start_cnt[ENC_WHEEL_COUNT] = { 0, 0 };
-static uint32_t     s_distance_mm_rem = 0U;
-static uint32_t     s_distance_cm = 0U;
-static motion_pid_t s_pid[ENC_WHEEL_COUNT];
+typedef struct
+{
+    int32_t          prev_cnt[ENC_WHEEL_COUNT];
+    int32_t          manoeuvre_start_cnt[ENC_WHEEL_COUNT];
+    motion_pid_t     pid[ENC_WHEEL_COUNT];
+    uint32_t         distance_mm_rem;
+    uint32_t         distance_cm;
+    motion_cmd_t     last_cmd;
+    volatile uint32_t release_count;
+    volatile uint32_t missed_count;
+    volatile uint32_t reject_count;
+    int16_t          cmd_arg;           /* 10-bit signed (-512..+511)        */
+    uint16_t         hold_elapsed_ms;   /* 0..MOTION_MANOEUVRE_MAX_MS (15000)*/
 #if MOTION_HAS_GEOMETRY
-static uint32_t     s_stall_ticks = 0U;
-static uint32_t     s_fault_bits_set = 0U;
+    uint16_t         fault_bits_set;    /* EVF_SAFETY b5..b6                 */
+    uint8_t          stall_ticks;       /* 0..MOTION_STALL_PERIODS (25)      */
+#endif
+    uint8_t          cmd_type;          /* 3-bit DREP_MC_* (0..7)            */
+    uint8_t          setpoint_cmps;     /* 6-bit speed (0..50 cm/s)          */
+    volatile uint8_t flags;             /* MOT_FLG_* bitmask                 */
+} motion_ctx_t;
 
+static motion_ctx_t s_mot;
+
+#if MOTION_HAS_GEOMETRY
 static int32_t clamp_i32(int32_t v, int32_t lo, int32_t hi)
 {
     if (v < lo)
@@ -143,9 +168,20 @@ static int32_t clamp_i32(int32_t v, int32_t lo, int32_t hi)
     return v;
 }
 
+/*
+ * Branchless 32-bit absolute value for ARMv6-M (Cortex-M0+ Thumb-1):
+ *   mask = (uint32_t)(v >> 31);        // ASRS r1, r0, #31 (0 or 0xFFFFFFFF)
+ *   return ((uint32_t)v + mask) ^ mask;// ADDS r0, r0, r1  ; EORS r0, r1
+ *
+ * Compiles to 3 single-cycle 16-bit Thumb-1 instructions (6 bytes, 3 cycles
+ * constant time) with zero conditional branch penalty, and is bit-for-bit
+ * identical to `(v < 0) ? -v : v` across all 2^32 signed 32-bit inputs.
+ */
 static uint32_t abs_i32(int32_t v)
 {
-    return (v < 0) ? (uint32_t)(0U - (uint32_t)v) : (uint32_t)v;
+    uint32_t const mask = (uint32_t)(v >> 31);
+
+    return ((uint32_t)v + mask) ^ mask;
 }
 #endif /* MOTION_HAS_GEOMETRY */
 
@@ -153,17 +189,17 @@ static void reset_pid(void)
 {
     for (uint32_t w = 0U; w < ENC_WHEEL_COUNT; w++)
     {
-        s_pid[w].integral = 0;
-        s_pid[w].prev_err = 0;
+        s_mot.pid[w].integral = 0;
+        s_mot.pid[w].prev_err = 0;
     }
 }
 
 static void stop_internal(bool coast)
 {
-    s_cmd_type = DREP_MC_STOP;
-    s_setpoint_cmps = 0U;
-    s_cmd_arg = 0;
-    s_cmd_active = false;
+    s_mot.cmd_type = (uint8_t)DREP_MC_STOP;
+    s_mot.setpoint_cmps = 0U;
+    s_mot.cmd_arg = 0;
+    s_mot.flags = (uint8_t)(s_mot.flags & (uint8_t)~MOT_FLG_CMD_ACTIVE);
     reset_pid();
     if (coast)
     {
@@ -192,57 +228,63 @@ static void poll_command_queue(int32_t const cnt[ENC_WHEEL_COUNT])
         }
         if (n != (INT)sizeof(cmd))
         {
-            s_reject_count++;
+            s_mot.reject_count++;
             continue;
         }
         if (!drep_mc_valid(cmd))
         {
-            s_reject_count++;
+            s_mot.reject_count++;
             dbg_puts("[MOT] invalid motion_cmd_t rejected");
             continue;
         }
 
-        s_last_cmd = cmd;
-        s_cmd_type = drep_mc_type(cmd);
-        s_setpoint_cmps = drep_mc_speed(cmd);
-        if (s_setpoint_cmps > MOTION_SPEED_MAX_CMPS)
+        s_mot.last_cmd = cmd;
+        s_mot.cmd_type = (uint8_t)drep_mc_type(cmd);
         {
-            s_setpoint_cmps = MOTION_SPEED_MAX_CMPS;
+            uint32_t spd = drep_mc_speed(cmd);
+
+            if (spd > MOTION_SPEED_MAX_CMPS)
+            {
+                spd = MOTION_SPEED_MAX_CMPS;
+            }
+            s_mot.setpoint_cmps = (uint8_t)spd;
         }
-        s_cmd_arg = drep_mc_arg(cmd);
+        s_mot.cmd_arg = (int16_t)drep_mc_arg(cmd);
         got_valid = true;
     }
 
     if (got_valid)
     {
-        s_hold_elapsed_ms = 0U;
-        s_manoeuvre_start_cnt[ENC_WHEEL_LEFT] = cnt[ENC_WHEEL_LEFT];
-        s_manoeuvre_start_cnt[ENC_WHEEL_RIGHT] = cnt[ENC_WHEEL_RIGHT];
+        s_mot.hold_elapsed_ms = 0U;
+        s_mot.manoeuvre_start_cnt[ENC_WHEEL_LEFT] = cnt[ENC_WHEEL_LEFT];
+        s_mot.manoeuvre_start_cnt[ENC_WHEEL_RIGHT] = cnt[ENC_WHEEL_RIGHT];
 
-        if ((s_cmd_type == DREP_MC_STOP) || (s_cmd_type == DREP_MC_BRAKE)
-            || (s_setpoint_cmps == 0U))
+        if ((s_mot.cmd_type == DREP_MC_STOP) || (s_mot.cmd_type == DREP_MC_BRAKE)
+            || (s_mot.setpoint_cmps == 0U))
         {
             stop_internal(false);
         }
         else
         {
-            s_cmd_active = true;
+            s_mot.flags = (uint8_t)(s_mot.flags | MOT_FLG_CMD_ACTIVE);
         }
         return;
     }
 
-    if (s_cmd_active)
+    if ((s_mot.flags & MOT_FLG_CMD_ACTIVE) != 0U)
     {
+        uint32_t const type = s_mot.cmd_type;
         bool const is_bounded_manoeuvre =
-            (((s_cmd_type == DREP_MC_FWD) || (s_cmd_type == DREP_MC_BACK)
-              || (s_cmd_type == DREP_MC_TURN_L) || (s_cmd_type == DREP_MC_TURN_R))
-             && (s_cmd_arg > 0))
-            || (s_cmd_type == DREP_MC_UTURN);
+            (((type == DREP_MC_FWD) || (type == DREP_MC_BACK)
+              || (type == DREP_MC_TURN_L) || (type == DREP_MC_TURN_R))
+             && (s_mot.cmd_arg > 0))
+            || (type == DREP_MC_UTURN);
         uint32_t const hold_limit_ms =
             is_bounded_manoeuvre ? MOTION_MANOEUVRE_MAX_MS : MOTION_T_HOLD_MS;
+        uint32_t const elapsed_ms = (uint32_t)s_mot.hold_elapsed_ms + MOTION_PERIOD_MS;
 
-        s_hold_elapsed_ms += MOTION_PERIOD_MS;
-        if (s_hold_elapsed_ms >= hold_limit_ms)
+        s_mot.hold_elapsed_ms = (uint16_t)elapsed_ms;
+        if (elapsed_ms >= hold_limit_ms)
         {
             stop_internal(false);
         }
@@ -254,14 +296,15 @@ static void check_manoeuvre_completion(int32_t const cnt[ENC_WHEEL_COUNT])
 {
 #if MOTION_HAS_GEOMETRY
     int32_t const dl = (int32_t)((uint32_t)cnt[ENC_WHEEL_LEFT]
-                                 - (uint32_t)s_manoeuvre_start_cnt[ENC_WHEEL_LEFT]);
+                                 - (uint32_t)s_mot.manoeuvre_start_cnt[ENC_WHEEL_LEFT]);
     int32_t const dr = (int32_t)((uint32_t)cnt[ENC_WHEEL_RIGHT]
-                                 - (uint32_t)s_manoeuvre_start_cnt[ENC_WHEEL_RIGHT]);
+                                 - (uint32_t)s_mot.manoeuvre_start_cnt[ENC_WHEEL_RIGHT]);
     uint32_t const mean_counts = (abs_i32(dl) + abs_i32(dr)) / 2U;
+    uint32_t const type = s_mot.cmd_type;
 
-    if (((s_cmd_type == DREP_MC_FWD) || (s_cmd_type == DREP_MC_BACK)) && (s_cmd_arg > 0))
+    if (((type == DREP_MC_FWD) || (type == DREP_MC_BACK)) && (s_mot.cmd_arg > 0))
     {
-        uint32_t const target_mm = (uint32_t)s_cmd_arg * 10U;
+        uint32_t const target_mm = (uint32_t)s_mot.cmd_arg * 10U;
         uint32_t const target_counts =
             (target_mm * (uint32_t)MOTION_COUNTS_PER_REV) / MOTION_EFF_WHEEL_CIRC;
 
@@ -270,11 +313,11 @@ static void check_manoeuvre_completion(int32_t const cnt[ENC_WHEEL_COUNT])
             stop_internal(false);
         }
     }
-    else if ((s_cmd_type == DREP_MC_TURN_L) || (s_cmd_type == DREP_MC_TURN_R)
-             || (s_cmd_type == DREP_MC_UTURN))
+    else if ((type == DREP_MC_TURN_L) || (type == DREP_MC_TURN_R)
+             || (type == DREP_MC_UTURN))
     {
-        uint32_t const angle_deg = (s_cmd_type == DREP_MC_UTURN)
-                                   ? 180U : (uint32_t)s_cmd_arg;
+        uint32_t const angle_deg = (type == DREP_MC_UTURN)
+                                   ? 180U : (uint32_t)s_mot.cmd_arg;
 
         if (angle_deg > 0U)
         {
@@ -297,7 +340,7 @@ static void check_manoeuvre_completion(int32_t const cnt[ENC_WHEEL_COUNT])
 #if MOTION_HAS_GEOMETRY
 static int32_t pid_step_wheel(uint32_t wheel, int32_t target_counts, int32_t actual_counts)
 {
-    motion_pid_t *p_pid = &s_pid[wheel];
+    motion_pid_t *p_pid = &s_mot.pid[wheel];
     int32_t const err = target_counts - actual_counts;
     int32_t const d_err = err - p_pid->prev_err;
 
@@ -320,11 +363,11 @@ static void update_fault_flags(int32_t duty_l, int32_t duty_r, int32_t dl, int32
 
     if (driving && ((dl == 0) || (dr == 0)))
     {
-        if (s_stall_ticks < MOTION_STALL_PERIODS)
+        if (s_mot.stall_ticks < MOTION_STALL_PERIODS)
         {
-            s_stall_ticks++;
+            s_mot.stall_ticks++;
         }
-        if (s_stall_ticks >= MOTION_STALL_PERIODS)
+        if (s_mot.stall_ticks >= MOTION_STALL_PERIODS)
         {
             if ((dl == 0) && (dr == 0))
             {
@@ -338,13 +381,14 @@ static void update_fault_flags(int32_t duty_l, int32_t duty_r, int32_t dl, int32
     }
     else
     {
-        s_stall_ticks = 0U;
+        s_mot.stall_ticks = 0U;
     }
 
-    if (new_faults != s_fault_bits_set)
+    if (new_faults != (uint32_t)s_mot.fault_bits_set)
     {
-        uint32_t const to_clear = s_fault_bits_set & ~new_faults;
-        uint32_t const to_set = new_faults & ~s_fault_bits_set;
+        uint32_t const prev_faults = s_mot.fault_bits_set;
+        uint32_t const to_clear = prev_faults & ~new_faults;
+        uint32_t const to_set = new_faults & ~prev_faults;
 
         if (to_clear != 0U)
         {
@@ -354,7 +398,7 @@ static void update_fault_flags(int32_t duty_l, int32_t duty_r, int32_t dl, int32
         {
             (void)tk_set_flg(EVF_SAFETY, (UINT)to_set);
         }
-        s_fault_bits_set = new_faults;
+        s_mot.fault_bits_set = (uint16_t)new_faults;
     }
 #else
     (void)duty_l;
@@ -367,12 +411,14 @@ static void update_fault_flags(int32_t duty_l, int32_t duty_r, int32_t dl, int32
 /* Compute wheel duties from the active command and encoder feedback. */
 static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
 {
-    int32_t base_pm;
-    int32_t duty_l = 0;
-    int32_t duty_r = 0;
-    int32_t sync_trim;
+    int32_t        base_pm;
+    int32_t        duty_l = 0;
+    int32_t        duty_r = 0;
+    int32_t        sync_trim;
+    uint32_t const setpoint_cmps = s_mot.setpoint_cmps;
+    uint32_t const cmd_type = s_mot.cmd_type;
 
-    if ((!s_cmd_active) || (s_setpoint_cmps == 0U))
+    if (((s_mot.flags & MOT_FLG_CMD_ACTIVE) == 0U) || (setpoint_cmps == 0U))
     {
         motor_brake_all();
         *p_speed_x10 = 0;
@@ -382,10 +428,10 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
 
     /* Base feed-forward duty proportional to speed / MOTION_SPEED_MAX_CMPS,
      * scaled to MOTOR_DUTY_MAX_PCT. */
-    base_pm = ((int32_t)s_setpoint_cmps * (int32_t)MOTOR_DUTY_MAX_PCT * 10)
+    base_pm = ((int32_t)setpoint_cmps * (int32_t)MOTOR_DUTY_MAX_PCT * 10)
               / (int32_t)MOTION_SPEED_MAX_CMPS;
 
-    switch (s_cmd_type)
+    switch (cmd_type)
     {
         case DREP_MC_FWD:
             duty_l = base_pm;
@@ -399,8 +445,8 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
 
         case DREP_MC_STEER:
         {
-            /* s_cmd_arg in -256..+255: > 0 steers right (left faster, right slower). */
-            int32_t const diff_pm = (base_pm * s_cmd_arg) / 256;
+            /* cmd_arg in -256..+255: > 0 steers right (left faster, right slower). */
+            int32_t const diff_pm = (base_pm * (int32_t)s_mot.cmd_arg) / 256;
 
             duty_l = base_pm + diff_pm;
             duty_r = base_pm - diff_pm;
@@ -438,7 +484,7 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
     {
         uint32_t const cm_denom = (uint32_t)(2 * MOTION_COUNTS_PER_REV * 10);
         int32_t const  mag_counts =
-            ((int32_t)s_setpoint_cmps * 10 * MOTION_COUNTS_PER_REV * (int32_t)MOTION_PERIOD_MS)
+            ((int32_t)setpoint_cmps * 10 * MOTION_COUNTS_PER_REV * (int32_t)MOTION_PERIOD_MS)
             / ((int32_t)MOTION_EFF_WHEEL_CIRC * 1000);
         int32_t const  tgt_l = (duty_l >= 0) ? mag_counts : -mag_counts;
         int32_t const  tgt_r = (duty_r >= 0) ? mag_counts : -mag_counts;
@@ -447,12 +493,12 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
         duty_l += pid_step_wheel(ENC_WHEEL_LEFT, tgt_l, dl);
         duty_r += pid_step_wheel(ENC_WHEEL_RIGHT, tgt_r, dr);
 
-        if ((s_cmd_type == DREP_MC_FWD) || (s_cmd_type == DREP_MC_BACK))
+        if ((cmd_type == DREP_MC_FWD) || (cmd_type == DREP_MC_BACK))
         {
-            int32_t const total_dl = (int32_t)((uint32_t)s_prev_cnt[ENC_WHEEL_LEFT]
-                                               - (uint32_t)s_manoeuvre_start_cnt[ENC_WHEEL_LEFT]);
-            int32_t const total_dr = (int32_t)((uint32_t)s_prev_cnt[ENC_WHEEL_RIGHT]
-                                               - (uint32_t)s_manoeuvre_start_cnt[ENC_WHEEL_RIGHT]);
+            int32_t const total_dl = (int32_t)((uint32_t)s_mot.prev_cnt[ENC_WHEEL_LEFT]
+                                               - (uint32_t)s_mot.manoeuvre_start_cnt[ENC_WHEEL_LEFT]);
+            int32_t const total_dr = (int32_t)((uint32_t)s_mot.prev_cnt[ENC_WHEEL_RIGHT]
+                                               - (uint32_t)s_mot.manoeuvre_start_cnt[ENC_WHEEL_RIGHT]);
             int32_t const heading_diff = total_dl - total_dr;
 
             sync_trim = clamp_i32((heading_diff * MOTION_SYNC_KP_PM)
@@ -461,7 +507,7 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
             duty_l -= sync_trim;
             duty_r += sync_trim;
 
-            if (s_cmd_type == DREP_MC_FWD)
+            if (cmd_type == DREP_MC_FWD)
             {
                 if (duty_l < 0) { duty_l = 0; }
                 if (duty_r < 0) { duty_r = 0; }
@@ -476,11 +522,11 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
         if ((dl == 0) && (dr == 0))
         {
             /* Bench fallback when motor power switch is off (wheels still). */
-            *p_speed_x10 = (s_cmd_type == DREP_MC_BACK)
-                           ? -((int32_t)s_setpoint_cmps * 10)
-                           : ((int32_t)s_setpoint_cmps * 10);
-            s_distance_mm_rem += ((s_setpoint_cmps * 10U * MOTION_PERIOD_MS) / 1000U)
-                                 * (uint32_t)(2 * MOTION_COUNTS_PER_REV);
+            *p_speed_x10 = (cmd_type == DREP_MC_BACK)
+                           ? -((int32_t)setpoint_cmps * 10)
+                           : ((int32_t)setpoint_cmps * 10);
+            s_mot.distance_mm_rem += ((setpoint_cmps * 10U * MOTION_PERIOD_MS) / 1000U)
+                                     * (uint32_t)(2 * MOTION_COUNTS_PER_REV);
         }
         else
         {
@@ -488,32 +534,32 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
             *p_speed_x10 = (mean_d * (int32_t)MOTION_EFF_WHEEL_CIRC
                             * (int32_t)(1000U / MOTION_PERIOD_MS))
                            / MOTION_COUNTS_PER_REV;
-            s_distance_mm_rem += (abs_i32(dl) + abs_i32(dr)) * MOTION_EFF_WHEEL_CIRC;
+            s_mot.distance_mm_rem += (abs_i32(dl) + abs_i32(dr)) * MOTION_EFF_WHEEL_CIRC;
         }
-        s_distance_cm += s_distance_mm_rem / cm_denom;
-        s_distance_mm_rem %= cm_denom;
+        s_mot.distance_cm += s_mot.distance_mm_rem / cm_denom;
+        s_mot.distance_mm_rem %= cm_denom;
     }
 #else
-    if (s_cmd_type == DREP_MC_BACK)
+    if (cmd_type == DREP_MC_BACK)
     {
-        *p_speed_x10 = -((int32_t)s_setpoint_cmps * 10);
+        *p_speed_x10 = -((int32_t)setpoint_cmps * 10);
     }
-    else if ((s_cmd_type == DREP_MC_FWD) || (s_cmd_type == DREP_MC_STEER))
+    else if ((cmd_type == DREP_MC_FWD) || (cmd_type == DREP_MC_STEER))
     {
-        *p_speed_x10 = (int32_t)s_setpoint_cmps * 10;
+        *p_speed_x10 = (int32_t)setpoint_cmps * 10;
     }
     else
     {
         *p_speed_x10 = 0;
     }
     /* Integrate commanded linear travel in mm (speed_cmps * 10 mm/s * 20 ms / 1000). */
-    if ((s_cmd_type == DREP_MC_FWD) || (s_cmd_type == DREP_MC_BACK)
-        || (s_cmd_type == DREP_MC_STEER))
+    if ((cmd_type == DREP_MC_FWD) || (cmd_type == DREP_MC_BACK)
+        || (cmd_type == DREP_MC_STEER))
     {
-        s_distance_mm_rem += (s_setpoint_cmps * 10U * MOTION_PERIOD_MS) / 1000U;
+        s_mot.distance_mm_rem += (setpoint_cmps * 10U * MOTION_PERIOD_MS) / 1000U;
     }
-    s_distance_cm += s_distance_mm_rem / 10U;
-    s_distance_mm_rem %= 10U;
+    s_mot.distance_cm += s_mot.distance_mm_rem / 10U;
+    s_mot.distance_mm_rem %= 10U;
 #endif
 
     duty_l = motor_duty_clamp_pm(duty_l);
@@ -527,7 +573,7 @@ static void publish_motion_state(int32_t speed_x10,
                                  int32_t const cnt[ENC_WHEEL_COUNT],
                                  uint32_t now_ms)
 {
-    uint32_t const w = drep_ms_pack(speed_x10, s_distance_cm);
+    uint32_t const w = drep_ms_pack(speed_x10, s_mot.distance_cm);
 
     if (tk_loc_mtx(MTX_MOTION, TMO_FEVR) == E_OK)
     {
@@ -544,25 +590,25 @@ void motion_control_init(void)
     motor_init();
     enc_init();
 
-    s_release_count = 0U;
-    s_missed_count = 0U;
-    s_reject_count = 0U;
-    s_last_cmd.w = 0U;
-    s_hold_elapsed_ms = 0U;
-    s_distance_mm_rem = 0U;
-    s_distance_cm = 0U;
+    s_mot.release_count = 0U;
+    s_mot.missed_count = 0U;
+    s_mot.reject_count = 0U;
+    s_mot.last_cmd.w = 0U;
+    s_mot.hold_elapsed_ms = 0U;
+    s_mot.distance_mm_rem = 0U;
+    s_mot.distance_cm = 0U;
 #if MOTION_HAS_GEOMETRY
-    s_stall_ticks = 0U;
-    s_fault_bits_set = 0U;
+    s_mot.stall_ticks = 0U;
+    s_mot.fault_bits_set = 0U;
 #endif
 
-    s_prev_cnt[ENC_WHEEL_LEFT] = enc_get_count(ENC_WHEEL_LEFT);
-    s_prev_cnt[ENC_WHEEL_RIGHT] = enc_get_count(ENC_WHEEL_RIGHT);
-    s_manoeuvre_start_cnt[ENC_WHEEL_LEFT] = s_prev_cnt[ENC_WHEEL_LEFT];
-    s_manoeuvre_start_cnt[ENC_WHEEL_RIGHT] = s_prev_cnt[ENC_WHEEL_RIGHT];
+    s_mot.prev_cnt[ENC_WHEEL_LEFT] = enc_get_count(ENC_WHEEL_LEFT);
+    s_mot.prev_cnt[ENC_WHEEL_RIGHT] = enc_get_count(ENC_WHEEL_RIGHT);
+    s_mot.manoeuvre_start_cnt[ENC_WHEEL_LEFT] = s_mot.prev_cnt[ENC_WHEEL_LEFT];
+    s_mot.manoeuvre_start_cnt[ENC_WHEEL_RIGHT] = s_mot.prev_cnt[ENC_WHEEL_RIGHT];
 
     stop_internal(false);
-    publish_motion_state(0, s_prev_cnt, app_period_now_ms());
+    publish_motion_state(0, s_mot.prev_cnt, app_period_now_ms());
 }
 
 void motion_step_cycle(uint32_t now_ms)
@@ -575,10 +621,10 @@ void motion_step_cycle(uint32_t now_ms)
 
     cnt[ENC_WHEEL_LEFT] = enc_get_count(ENC_WHEEL_LEFT);
     cnt[ENC_WHEEL_RIGHT] = enc_get_count(ENC_WHEEL_RIGHT);
-    dl = (int32_t)((uint32_t)cnt[ENC_WHEEL_LEFT] - (uint32_t)s_prev_cnt[ENC_WHEEL_LEFT]);
-    dr = (int32_t)((uint32_t)cnt[ENC_WHEEL_RIGHT] - (uint32_t)s_prev_cnt[ENC_WHEEL_RIGHT]);
-    s_prev_cnt[ENC_WHEEL_LEFT] = cnt[ENC_WHEEL_LEFT];
-    s_prev_cnt[ENC_WHEEL_RIGHT] = cnt[ENC_WHEEL_RIGHT];
+    dl = (int32_t)((uint32_t)cnt[ENC_WHEEL_LEFT] - (uint32_t)s_mot.prev_cnt[ENC_WHEEL_LEFT]);
+    dr = (int32_t)((uint32_t)cnt[ENC_WHEEL_RIGHT] - (uint32_t)s_mot.prev_cnt[ENC_WHEEL_RIGHT]);
+    s_mot.prev_cnt[ENC_WHEEL_LEFT] = cnt[ENC_WHEEL_LEFT];
+    s_mot.prev_cnt[ENC_WHEEL_RIGHT] = cnt[ENC_WHEEL_RIGHT];
 
     poll_command_queue(cnt);
 
@@ -590,22 +636,22 @@ void motion_step_cycle(uint32_t now_ms)
         stop_internal(false);
     }
 
-    if (s_cmd_active)
+    if ((s_mot.flags & MOT_FLG_CMD_ACTIVE) != 0U)
     {
         check_manoeuvre_completion(cnt);
     }
 
-    if (!s_calib_hold)
+    if ((s_mot.flags & MOT_FLG_CALIB_HOLD) == 0U)
     {
         apply_control(dl, dr, &speed_x10);
     }
     publish_motion_state(speed_x10, cnt, now_ms);
-    s_release_count++;
+    s_mot.release_count++;
 }
 
 void motion_test_run_periods(uint32_t periods)
 {
-    if (s_task_running)
+    if ((s_mot.flags & MOT_FLG_TASK_RUNNING) != 0U)
     {
         if (periods >= 100U)
         {
@@ -616,9 +662,9 @@ void motion_test_run_periods(uint32_t periods)
         }
         else
         {
-            uint32_t const target = s_release_count + periods;
+            uint32_t const target = s_mot.release_count + periods;
 
-            while ((int32_t)(s_release_count - target) < 0)
+            while ((int32_t)(s_mot.release_count - target) < 0)
             {
                 (void)tk_dly_tsk(1);
             }
@@ -635,7 +681,7 @@ void motion_test_run_periods(uint32_t periods)
 
         if (missed > 0U)
         {
-            s_missed_count += missed;
+            s_mot.missed_count += missed;
             dbg_printf("[MOT] period overrun: %lu missed", (unsigned long)missed);
         }
         motion_step_cycle(app_period_now_ms());
@@ -650,7 +696,7 @@ void motion_task_entry(INT stacd, void *p_exinf)
     (void)p_exinf;
 
     motion_control_init();
-    s_task_running = true;
+    s_mot.flags = (uint8_t)(s_mot.flags | MOT_FLG_TASK_RUNNING);
     app_period_init(&per, MOTION_PERIOD_MS);
 
     for (;;)
@@ -659,7 +705,7 @@ void motion_task_entry(INT stacd, void *p_exinf)
 
         if (missed > 0U)
         {
-            s_missed_count += missed;
+            s_mot.missed_count += missed;
             dbg_printf("[MOT] period overrun: %lu missed", (unsigned long)missed);
         }
         motion_step_cycle(app_period_now_ms());
@@ -687,40 +733,47 @@ ER motion_get_state(motion_state_t *p_out)
 
 bool motion_is_task_running(void)
 {
-    return s_task_running;
+    return (s_mot.flags & MOT_FLG_TASK_RUNNING) != 0U;
 }
 
 uint32_t motion_get_release_count(void)
 {
-    return s_release_count;
+    return s_mot.release_count;
 }
 
 uint32_t motion_get_missed_count(void)
 {
-    return s_missed_count;
+    return s_mot.missed_count;
 }
 
 uint32_t motion_get_reject_count(void)
 {
-    return s_reject_count;
+    return s_mot.reject_count;
 }
 
 uint32_t motion_get_setpoint_cmps(void)
 {
-    return s_setpoint_cmps;
+    return s_mot.setpoint_cmps;
 }
 
 uint32_t motion_get_cmd_type(void)
 {
-    return s_cmd_type;
+    return s_mot.cmd_type;
 }
 
 motion_cmd_t motion_get_last_cmd(void)
 {
-    return s_last_cmd;
+    return s_mot.last_cmd;
 }
 
 void motion_set_calib_hold(bool hold)
 {
-    s_calib_hold = hold;
+    if (hold)
+    {
+        s_mot.flags = (uint8_t)(s_mot.flags | MOT_FLG_CALIB_HOLD);
+    }
+    else
+    {
+        s_mot.flags = (uint8_t)(s_mot.flags & (uint8_t)~MOT_FLG_CALIB_HOLD);
+    }
 }

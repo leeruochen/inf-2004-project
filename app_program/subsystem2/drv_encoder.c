@@ -43,11 +43,13 @@
 /** Bounded poll iterations for a fresh push after draining the 4-word FIFO. */
 #define ENC_FRESH_POLL_MAX      (32U)
 
+/* Per-wheel PIO configuration.  Stored as uint8_t so k_enc_wheels[] occupies
+ * 6 bytes in .rodata instead of 24 bytes. */
 typedef struct
 {
-    uint32_t sm;
-    uint32_t pin_a;
-    uint32_t invert;
+    uint8_t sm;
+    uint8_t pin_a;
+    uint8_t invert;     /* 0 = normal, 1 = negate count */
 } enc_wheel_cfg_t;
 
 /* Calibrated on target in S2-U03/S2-U08 (2026-10-31_s2_phase1_calib.txt):
@@ -62,20 +64,20 @@ static enc_wheel_cfg_t const k_enc_wheels[ENC_WHEEL_COUNT] =
 {
     [ENC_WHEEL_LEFT] =
     {
-        ENC_L_PIO_SM,
-        ENC_L_A_PIN,
-        ENC_L_DIR_INVERT
+        (uint8_t)ENC_L_PIO_SM,
+        (uint8_t)ENC_L_A_PIN,
+        (uint8_t)((ENC_L_DIR_INVERT != 0U) ? 1U : 0U)
     },
     [ENC_WHEEL_RIGHT] =
     {
-        ENC_R_PIO_SM,
-        ENC_R_A_PIN,
-        ENC_R_EFF_INVERT
+        (uint8_t)ENC_R_PIO_SM,
+        (uint8_t)ENC_R_A_PIN,
+        (uint8_t)((ENC_R_EFF_INVERT != 0U) ? 1U : 0U)
     }
 };
 
-static volatile uint32_t s_ready = 0U;
-static int32_t           s_last_raw[ENC_WHEEL_COUNT] = { 0, 0 };
+static int32_t          s_last_raw[ENC_WHEEL_COUNT] = { 0, 0 };
+static volatile uint8_t s_ready = 0U;
 
 static void enc_init_sm(enc_wheel_cfg_t const *p_cfg)
 {
@@ -186,10 +188,15 @@ int32_t enc_get_count(uint32_t wheel)
         s_last_raw[wheel] = raw;
     }
 
-    if (k_enc_wheels[wheel].invert != 0U)
+    /*
+     * Branchless two's-complement conditional negation on ARMv6-M (Thumb-1):
+     *   inv_mask = 0U - invert;   // 0x00000000 if invert==0, 0xFFFFFFFF if invert==1
+     *   return (raw ^ inv_mask) - inv_mask; // EORS + SUBS (2 single-cycle instructions)
+     */
     {
-        return (int32_t)(0U - (uint32_t)raw);
+        uint32_t const inv_mask = 0U - (uint32_t)k_enc_wheels[wheel].invert;
+
+        return (int32_t)(((uint32_t)raw ^ inv_mask) - inv_mask);
     }
-    return raw;
 }
 
