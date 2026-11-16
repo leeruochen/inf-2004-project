@@ -1,7 +1,7 @@
 /*
  *  lf_run_test.c
  *  Subsystem 3 -- Line-Following task test on the track (S3-U12, S3-U13,
- *  S3-U14, S3-U15), APP_TEST only.
+ *  S3-U14, S3-U15, S3-U17), APP_TEST only.
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Kernel side: kernel and pure project headers only (rule R1).
  *
@@ -38,6 +38,14 @@
  *  a barcode would give (drep_nav_barcode) when the cross is detected, the
  *  VC pivots at the JUNCTION post, and the core finds the branch and follows
  *  it for LF2_TURN_BRANCH_MM.  No barcode is read.
+ *
+ *  Curves (S3-U17, configure -DS3_CURVE_TEST=ON): in place of the turns,
+ *  LF2_CURVE_GROUPS groups of LF2_CURVE_RUNS drives on a curve piece (left
+ *  curve, right curve, then an S-curve if there is one).  Each drive starts
+ *  on the approach straight and stops by distance on the exit straight;
+ *  nothing is injected.  It counts LINE_LOST entries and junction
+ *  detections (a curve has no cross, so any is false) and judges the exit
+ *  straight.  The steering is today's: this measures it, it changes nothing.
  *
  *  Guides: .agents/tasks/s3-lf33-test.md, s3-u14-test.md, s3-u15-test.md.  Expected values come from
  *  config/timing.h, lf_core.h and design.md 3.2, typed in: 5 ms samples
@@ -106,12 +114,25 @@
 /** LF-3.3: only the straight drive, this many times. */
 #define LF2_STRAIGHT_ONLY       (1U)
 #define LF2_STRAIGHT_RUNS       (3U)
+/** S3-U17 curves in place of the S3-U14 turns: -DS3_CURVE_TEST=ON
+ *  (sources.cmake).  0 = the S3-U14 U-turn test, as before. */
+#ifndef S3_CURVE_TEST
+#define S3_CURVE_TEST           (0)
+#endif
 /** Test ID of this build's checks. */
+#if S3_CURVE_TEST
+#define LF2_ID                  "S3-U17"
+#else
 #define LF2_ID                  "S3-U14"
+#endif
 /** Trace: one row per this many polls (20 ms), and how it is printed: a
  *  burst of rows, then a pause so the console drains the 2 KB ring. */
 #define LF2_TRACE_EVERY_POLLS   (2U)
+#if S3_CURVE_TEST
+#define LF2_TRACE_ROWS          (400U)      /* 8 s: a whole curve drive */
+#else
 #define LF2_TRACE_ROWS          (256U)
+#endif
 #define LF2_TRACE_BURST         (8U)
 #define LF2_TRACE_PAUSE_MS      (100U)
 /** Recovery drives: ON_LINE within this time of START. */
@@ -163,7 +184,11 @@
 /** S3-U14: a junction turn, in place of the straight and mat drives.  The
  *  command is what a barcode would post: left and right passed on 5 Nov, now
  *  the U-turn. */
+#if S3_CURVE_TEST
+#define LF2_TURN_ONLY           (0U)
+#else
 #define LF2_TURN_ONLY           (1U)
+#endif
 #define LF2_TURN_RUNS           (3U)
 #define LF2_TURN_CMD            DREP_BC_CMD_UTURN
 #define LF2_TURN_VC_STATE       VC_SYS_NAV_U_TURN
@@ -185,6 +210,26 @@
 /** Effective track x pi, mm: Motion's turn geometry (MOTION_EFF_TRACK_MM 114). */
 #define LF2_PI_TRACK_MM         (358U)
 
+/** S3-U17 curve piece.  SET FROM THE PIECE before the build (H0): the drive
+ *  starts LF2_CURVE_START_MM before the curve and STOPs at LF2_CURVE_MM of
+ *  wheel travel, which must end at least 100 mm before the end of the exit
+ *  straight.  The exit straight is judged over the last LF2_CURVE_EXIT_MM
+ *  before the STOP.  TUNE per piece */
+#define LF2_CURVE_ONLY          ((S3_CURVE_TEST != 0) ? 1U : 0U)
+#define LF2_CURVE_GROUPS        (2U)        /* 3 with an S-curve piece */
+#define LF2_CURVE_RUNS          (3U)
+/* 16 Nov 2026, sample mat (300 mm tiles; the U-loop is two quarter-circle
+ * tiles): start mark one tile before the curved tiles; 1000 mm of wheel
+ * travel puts the sensors about 0.3-0.5 m up the exit straight (the wheels
+ * cut the loop: the sensors run 120 mm ahead of the axle), which is about
+ * two tiles long; the last 200 mm is clear of the loop either way. */
+#define LF2_CURVE_START_MM      (300U)
+#define LF2_CURVE_MM            (1000U)
+#define LF2_CURVE_EXIT_MM       (200U)
+/** |steer| at or above this counts as "hard" steering: recovery past its
+ *  first 100 ms, the search, or more (lf_core.h: recovery 32 + ramp, search 64). */
+#define LF2_CURVE_HARD_Q7       (60)
+
 /** Drive limits (wheel travel).  The time limit is the travel at cruise
  *  plus 1.5 s. */
 /* INTERIM S3-U13i: 200 stops the car before the track's cross line, 250 mm
@@ -203,6 +248,10 @@
 
 _Static_assert((LF2_JMAT_DELAY_MIN_MM < LF_D_JCT_POST_MM) && (LF_D_JCT_POST_MM < LF2_JMAT_DELAY_MAX_MM),
                "the (j2) window brackets the junction post distance");
+_Static_assert((LF2_CURVE_EXIT_MM + LF2_CURVE_START_MM) < LF2_CURVE_MM,
+               "the exit window starts after the curve's start");
+_Static_assert((LF2_CURVE_GROUPS >= 1U) && (LF2_CURVE_GROUPS <= 3U), "left, right, S");
+_Static_assert(LF2_CURVE_MM < 0xFFFFU, "trace mm is uint16_t");
 
 /** Why a drive ended. */
 typedef enum
@@ -238,6 +287,7 @@ typedef struct
     uint32_t    max_ms;     /**< time limit */
     bool        jmat;       /**< junction mat: STOP on JUNCTION or LINE_LOST */
     bool        turn;       /**< junction turn: inject the command, follow the branch */
+    bool        curve;      /**< S3-U17 curve: start guard, count losses and detections */
 } lf2_drive_t;
 
 /** One row of the 20 ms trace. */
@@ -316,6 +366,15 @@ typedef struct
     uint32_t  branch_mm;        /**< travel along the branch */
     uint32_t  br_polls;         /**< polls along the branch, past the settling */
     uint32_t  br_c_on;          /**< ... ON_LINE with CENTRE on the line */
+    uint32_t  cv_t_lost;        /**< S3-U17: last LINE_LOST entry time seen */
+    uint32_t  cv_t_jct;         /**< ... last JUNCTION entry time seen */
+    uint32_t  cv_n_lost;        /**< ... LINE_LOST entries in the drive */
+    uint32_t  cv_n_det;         /**< ... junction detections (JUNCTION entries) */
+    uint32_t  cv_exit_polls;    /**< ... polls in the exit window */
+    uint32_t  cv_exit_band;     /**< ... ON_LINE with CENTRE on the line */
+    int32_t   cv_steer_max;     /**< ... largest |steer| posted in the drive */
+    uint32_t  cv_hard_polls;    /**< ... polls with |steer| >= LF2_CURVE_HARD_Q7 */
+    uint32_t  cv_first_lost_mm; /**< ... travel at the first LINE_LOST (LF2_NEVER: none) */
 } lf2_run_t;
 
 /* The test task's stack is small: the snapshots live here. */
@@ -718,6 +777,39 @@ static void lf2_turn_watch(lf2_run_t *p, uint32_t t, uint32_t vc)
     }
 }
 
+/* S3-U17 curve: LINE_LOST entries and junction detections by their entry
+ * times (each entry stamps t_entry_ms; two entries cannot fall in one 10 ms
+ * poll: LINE_LOST and JUNCTION each last at least 3 samples), the steering
+ * used, and the exit straight. */
+static void lf2_curve_watch(lf2_run_t *p, uint32_t mm)
+{
+    int32_t const s = s_now.last_steer_q7;
+    int32_t const a = (s < 0) ? -s : s;
+
+    if (s_now.t_entry_ms[LF_ST_LINE_LOST] != p->cv_t_lost)
+    {
+        p->cv_t_lost = s_now.t_entry_ms[LF_ST_LINE_LOST];
+        p->cv_n_lost++;
+        if (p->cv_first_lost_mm == LF2_NEVER)
+        {
+            p->cv_first_lost_mm = mm;
+        }
+    }
+    if (s_now.t_entry_ms[LF_ST_JUNCTION] != p->cv_t_jct)
+    {
+        p->cv_t_jct = s_now.t_entry_ms[LF_ST_JUNCTION];
+        p->cv_n_det++;
+    }
+    p->cv_steer_max = (a > p->cv_steer_max) ? a : p->cv_steer_max;
+    p->cv_hard_polls += (a >= LF2_CURVE_HARD_Q7) ? 1U : 0U;
+    if (mm >= (LF2_CURVE_MM - LF2_CURVE_EXIT_MM))
+    {
+        p->cv_exit_polls++;
+        p->cv_exit_band += ((s_now.state == LF_ST_ON_LINE)
+                            && lf2_in_band(lf_norm(&s_now.cal.c, s_now.raw_c))) ? 1U : 0U;
+    }
+}
+
 /* One bounded drive: START, watch every 10 ms, STOP at a limit. */
 static void lf2_drive(lf2_drive_t const *p_d)
 {
@@ -742,7 +834,8 @@ static void lf2_drive(lf2_drive_t const *p_d)
     p->r_white_min = 0xFFFFU;
     p->win_on_line = true;
 
-    if (p_d->jmat || p_d->turn)
+    p->cv_first_lost_mm = LF2_NEVER;
+    if (p_d->jmat || p_d->turn || p_d->curve)
     {
         if (!lf2_place_guard(p_d->p_tag, p_d->p_place))
         {
@@ -765,6 +858,8 @@ static void lf2_drive(lf2_drive_t const *p_d)
 
     lf_task_get_status(&s_base);
     p->start_c_pm = lf_norm(&s_base.cal.c, s_base.raw_c);
+    p->cv_t_lost = s_base.t_entry_ms[LF_ST_LINE_LOST];
+    p->cv_t_jct = s_base.t_entry_ms[LF_ST_JUNCTION];
     (void)motion_get_state(&s_m0);
     t0 = app_period_now_ms();
     lf2_remote(DREP_NAV_REMOTE_START);
@@ -789,6 +884,10 @@ static void lf2_drive(lf2_drive_t const *p_d)
         if (p_d->turn)
         {
             lf2_turn_watch(p, t, vc);
+        }
+        if (p_d->curve)
+        {
+            lf2_curve_watch(p, mm);
         }
         if ((polls % LF2_TRACE_EVERY_POLLS) == 0U)
         {
@@ -980,6 +1079,27 @@ static void lf2_turn_report(uint32_t run)
                (unsigned long)LF2_TURN_TAIL_FROM_MM);
 }
 
+/* What one curve drive did. */
+static void lf2_curve_report(char const *p_group, uint32_t run)
+{
+    lf2_run_t const *const p = &s_run;
+
+    dbg_printf("[LF] curve %s %lu: %s at %lu mm %lu ms, start C %u pm",
+               p_group, (unsigned long)run, k_end_name[p->end], (unsigned long)p->mm_end,
+               (unsigned long)p->t_end_ms, p->start_c_pm);
+    dbg_printf("[LF] curve: LINE_LOST %lu (first at %ld mm), TRACK_LOST %lu",
+               (unsigned long)p->cv_n_lost,
+               (long)((p->cv_first_lost_mm == LF2_NEVER) ? -1 : (int32_t)p->cv_first_lost_mm),
+               (unsigned long)p->n_lost);
+    dbg_printf("[LF] curve: junction detected %lu, JUNCTION sent %lu (a curve has none)",
+               (unsigned long)p->cv_n_det, (unsigned long)p->n_jct);
+    dbg_printf("[LF] curve: |steer| max %ld, polls at >= %d: %lu",
+               (long)p->cv_steer_max, (int)LF2_CURVE_HARD_Q7, (unsigned long)p->cv_hard_polls);
+    dbg_printf("[LF] curve: exit straight CENTRE on %lu/%lu polls (last %lu mm)",
+               (unsigned long)p->cv_exit_band, (unsigned long)p->cv_exit_polls,
+               (unsigned long)LF2_CURVE_EXIT_MM);
+}
+
 /* Recovery drive checks (r1..r3): ON_LINE soon, settled in the second
  * half, never lost, ended at the distance limit. */
 static bool lf2_recovered(void)
@@ -995,44 +1115,54 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     static lf2_drive_t const k_straight =
     {
         "straight", "START POSE at the start of >= 1 m of straight line",
-        LF2_STRAIGHT_MM, LF2_MS_FOR(LF2_STRAIGHT_MM), false, false
+        LF2_STRAIGHT_MM, LF2_MS_FOR(LF2_STRAIGHT_MM), false, false, false
     };
     static lf2_drive_t const k_r1 =
     {
         "r1", "car parallel to the line, CENTRE ~1 cm RIGHT of it (on white)",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false, false
     };
     static lf2_drive_t const k_r2 =
     {
         "r2", "nose ~15 deg LEFT of the line, CENTRE on the line middle",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false, false
     };
     static lf2_drive_t const k_r3 =
     {
         "r3", "nose ~15 deg RIGHT of the line, CENTRE on the line middle",
-        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false
+        LF2_RECOVER_MM, LF2_MS_FOR(LF2_RECOVER_MM), false, false, false
     };
     static lf2_drive_t const k_jct =
     {
         "junction", "START POSE, a cross junction 40 cm ahead, square to it",
-        LF2_JUNCTION_MM, LF2_MS_FOR(LF2_JUNCTION_MM), false, false
+        LF2_JUNCTION_MM, LF2_MS_FOR(LF2_JUNCTION_MM), false, false, false
     };
     static lf2_drive_t const k_jmat =
     {
         "jmat", "junction mat: CENTRE on the right half of the line, RIGHT on white, parallel",
-        LF2_JMAT_LIMIT_MM, LF2_MS_FOR(LF2_JMAT_LIMIT_MM), true, false
+        LF2_JMAT_LIMIT_MM, LF2_MS_FOR(LF2_JMAT_LIMIT_MM), true, false, false
     };
     static lf2_drive_t const k_turn =
     {
         "turn", "CENTRE on the right half of the line, RIGHT on white, 30 cm before the cross",
-        LF2_TURN_NO_CROSS_MM, LF2_TURN_MS, false, true
+        LF2_TURN_NO_CROSS_MM, LF2_TURN_MS, false, true, false
+    };
+    static lf2_drive_t const k_curve =
+    {
+        "curve", "CENTRE on the right half of the line, RIGHT on white, on the start mark",
+        LF2_CURVE_MM, LF2_MS_FOR(LF2_CURVE_MM), false, false, true
+    };
+    static char const * const k_curve_group[3] =
+    {
+        "LEFT curve", "RIGHT curve", "S-curve"
     };
     static lf2_drive_t const k_end =
     {
         "line end", "START POSE, the line's END 30 cm ahead (temporary line OK)",
-        LF2_END_MM, LF2_END_MS, false, false
+        LF2_END_MM, LF2_END_MS, false, false, false
     };
-    uint32_t const straight_runs = ((LF2_JMAT_ONLY != 0U) || (LF2_TURN_ONLY != 0U)) ? 0U : LF2_STRAIGHT_RUNS;
+    uint32_t const straight_runs = ((LF2_JMAT_ONLY != 0U) || (LF2_TURN_ONLY != 0U) || (LF2_CURVE_ONLY != 0U))
+                                   ? 0U : LF2_STRAIGHT_RUNS;
     uint32_t test_pass_ = *p_pass;
     uint32_t test_fail_ = *p_fail;
     uint32_t releases0;
@@ -1209,6 +1339,30 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
             TEST_CHECK(LF2_ID, (s_run.end == LF2_END_BRANCH) && s_run.still
                                && lf2_pct_ok(s_run.br_c_on, s_run.br_polls),
                        "(t5) followed the branch 300 mm, CENTRE on the line >= 90%");
+        }
+    }
+
+    /* (k) Curves: the same piece driven each way, then an S-curve. */
+    if ((LF2_CURVE_ONLY != 0U) && pose_a_ok)
+    {
+        for (uint32_t g = 0U; g < LF2_CURVE_GROUPS; g++)
+        {
+            dbg_printf("[LF] >>> %s: drives %lu-%lu.  Put the car on the start mark for the %s",
+                       k_curve_group[g], (unsigned long)((g * LF2_CURVE_RUNS) + 1U),
+                       (unsigned long)((g + 1U) * LF2_CURVE_RUNS), k_curve_group[g]);
+            for (uint32_t run = 1U; run <= LF2_CURVE_RUNS; run++)
+            {
+                lf2_drive(&k_curve);
+                lf2_curve_report(k_curve_group[g], run);
+                lf2_trace_dump("curve");
+                TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.n_lost == 0U) && s_run.still,
+                           "(k1) reached the exit straight, no TRACK_LOST");
+                TEST_CHECK(LF2_ID, (s_run.cv_n_det == 0U) && (s_run.n_jct == 0U),
+                           "(k2) no junction detected (a curve has none)");
+                TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.cv_exit_polls > 0U)
+                                   && lf2_pct_ok(s_run.cv_exit_band, s_run.cv_exit_polls),
+                           "(k3) exit straight: CENTRE on line >= 90%");
+            }
         }
     }
 

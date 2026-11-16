@@ -19,6 +19,14 @@
  * Adds its TEST_CHECK result to the caller's counters.
  */
 void lf_step_test(uint32_t *p_pass, uint32_t *p_fail);
+
+/*
+ * S3-U18 (-DS3_TURN_DIAG=ON): fixed steering from standing until the wheels
+ * say 180 degrees, eight drives (+-127, +-64); the operator measures the
+ * front tip's start and end marks with a ruler.  Adds its TEST_CHECK result
+ * to the caller's counters.
+ */
+void lf_turn_test(uint32_t *p_pass, uint32_t *p_fail);
 #endif /* APP_TEST */
 
 #endif /* LF_STEP_TEST_H */

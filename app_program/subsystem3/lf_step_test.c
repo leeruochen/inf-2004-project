@@ -1,7 +1,8 @@
 /*
  *  lf_step_test.c
  *  Subsystem 3 -- S3-U16: what the wheels do after a strong steering command
- *  ends (diagnostic, APP_TEST only, -DS3_STEP_DIAG=ON).
+ *  ends (diagnostic, APP_TEST only, -DS3_STEP_DIAG=ON).  S3-U18: the
+ *  car's real turning radius at fixed steering (-DS3_TURN_DIAG=ON).
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Kernel side: kernel and pure project headers only (rule R1).
  *
@@ -330,6 +331,182 @@ void lf_step_test(uint32_t *p_pass, uint32_t *p_fail)
     }
     dbg_puts("[LF] " LF3_ID " done: the car stays stopped");
 
+    *p_pass = test_pass_;
+    *p_fail = test_fail_;
+}
+
+/* ---------------------------------------------------------------------------
+ * S3-U18: the car's turning radius at fixed steering (16 Nov 2026).
+ *
+ * Question: how tight a curve can the car follow at all, at 200 mm/s?  The
+ * line-following core posts at most about +-64 in tracking and the search
+ * (lf_core.h: recovery 32 + ramp, search 64); +-127 is the most the
+ * steering message can ask for.  This drives the car at a fixed steering
+ * from standing until the WHEELS say it has turned 180 degrees, then STOPs.
+ * The evidence is physical: the operator puts a tape mark at the car's
+ * front tip before and after, and measures mark to mark with a ruler.  For
+ * a half turn that is the diameter of the front tip's circle.  The wheel
+ * counts only decide when to stop, and are printed for comparison.
+ * Same safety as S3-U16: STOP at the half turn, LF4_MAX_MM or LF4_MAX_MS,
+ * or when the Vehicle Controller leaves NAV_LINE_TRACKING.
+ * ------------------------------------------------------------------------- */
+
+#define LF4_ID              "S3-U18"
+#define LF4_DRIVES          (8U)
+/** Half a turn by the wheels: left minus right travel = pi x track
+ *  (Motion's effective track, MOTION_EFF_TRACK_MM 114: 358 mm) in counts,
+ *  358 x 2464 / 207 = 4261. */
+#define LF4_HALF_TURN_CNT   ((358U * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+#define LF4_MAX_MM          (1500U)
+#define LF4_MAX_MS          (8000U)
+/** Time to put the second tape mark down and measure before the next drive. */
+#define LF4_MEASURE_S       (30U)
+
+static void lf4_place(uint32_t drive, int32_t q)
+{
+    dbg_printf("[LF] >>> radius drive %lu of %lu, steering %ld (%s)", (unsigned long)(drive + 1U),
+               (unsigned long)LF4_DRIVES, (long)q, (q > 0) ? "turns RIGHT" : "turns LEFT");
+    dbg_puts("[LF] >>> car flat on the mat, 60 cm clear all round, nothing in front");
+    dbg_puts("[LF] >>> put tape mark A touching the front tip; hands off at 0");
+    for (uint32_t left = LF3_PLACE_S; left > 0U; left--)
+    {
+        if ((left <= 3U) || (left == (LF3_PLACE_S / 2U)))
+        {
+            dbg_printf("[LF] ... %lu", (unsigned long)left);
+        }
+        if ((left <= 2U) && (vc_get_system_state() == VC_SYS_SAFETY_FAULT_LATCHED))
+        {
+            dbg_puts("[LF] fault latched: test sends RESET (car must be still)");
+            lf3_remote(DREP_NAV_REMOTE_RESET);
+        }
+        (void)tk_dly_tsk((RELTIM)LF3_SECOND_MS);
+    }
+}
+
+/* One drive at fixed steering q.  True if it reached the half turn under the
+ * VC's line authority. */
+static bool lf4_drive(uint32_t drive, int32_t q)
+{
+    motion_state_t m0;
+    motion_state_t m;
+    motion_state_t m_half;
+    uint32_t       t0;
+    uint32_t       t = 0U;
+    uint32_t       t_half = 0U;
+    uint32_t       tick = 0U;
+    uint32_t       vc;
+    int32_t        cl = 0;
+    int32_t        cr = 0;
+    bool           half_turn = false;
+    bool           aborted = false;
+    bool           half_seen = false;
+
+    s_rows_n = 0U;
+    lf4_place(drive, q);
+    vc = vc_get_system_state();
+    if ((vc != VC_SYS_READY_WAITING) || (motion_get_state(&m0) != E_OK))
+    {
+        dbg_printf("[LF] radius drive %lu NOT started: VC state %lu (need 1)", (unsigned long)(drive + 1U),
+                   (unsigned long)vc);
+        return false;
+    }
+    m_half = m0;
+    lf3_remote(DREP_NAV_REMOTE_START);
+    t0 = app_period_now_ms();
+    while (!half_turn && !aborted && (t < LF4_MAX_MS))
+    {
+        if ((tick % 2U) == 0U)
+        {
+            nav_input_t const msg = drep_nav_steer(q);
+
+            (void)tk_snd_mbf(MBF_NAV_IN, &msg, (INT)sizeof(msg), TMO_POL);
+            vc = vc_get_system_state();
+            if (motion_get_state(&m) == E_OK)
+            {
+                cl = (int32_t)((uint32_t)m.enc_count[0] - (uint32_t)m0.enc_count[0]);
+                cr = (int32_t)((uint32_t)m.enc_count[1] - (uint32_t)m0.enc_count[1]);
+                if (s_rows_n < LF3_ROWS)
+                {
+                    lf3_row_t *const p_r = &s_rows[s_rows_n];
+
+                    p_r->t_ms = (uint16_t)t;
+                    p_r->cnt_l = (int16_t)cl;
+                    p_r->cnt_r = (int16_t)cr;
+                    p_r->steer_q7 = (int8_t)q;
+                    p_r->vc = (uint8_t)vc;
+                    s_rows_n++;
+                }
+                if (!half_seen && (t >= (LF3_SECOND_MS / 2U)))
+                {
+                    half_seen = true;       /* speeds are taken from 0.5 s on */
+                    m_half = m;
+                    t_half = t;
+                }
+                half_turn = ((uint32_t)((cl > cr) ? (cl - cr) : (cr - cl)) >= LF4_HALF_TURN_CNT);
+                aborted = (((lf3_mm(cl) + lf3_mm(cr)) / 2U) >= LF4_MAX_MM);
+            }
+            aborted = aborted || (vc != VC_SYS_NAV_LINE_TRACKING);
+        }
+        (void)tk_dly_tsk((RELTIM)LF3_POLL_MS);
+        tick++;
+        t = app_period_now_ms() - t0;
+    }
+    lf3_remote(DREP_NAV_REMOTE_STOP);
+    (void)tk_dly_tsk((RELTIM)(LF3_SECOND_MS / 2U));
+
+    {
+        uint32_t const dl_mm = lf3_mm(cl);
+        uint32_t const dr_mm = lf3_mm(cr);
+        uint32_t const deg = ((uint32_t)((cl > cr) ? (cl - cr) : (cr - cl)) * 180U) / LF4_HALF_TURN_CNT;
+        uint32_t       vl = 0U;
+        uint32_t       vr = 0U;
+
+        if (half_seen && (t > t_half))
+        {
+            vl = (lf3_mm((int32_t)((uint32_t)m.enc_count[0] - (uint32_t)m_half.enc_count[0])) * 1000U)
+                 / (t - t_half);
+            vr = (lf3_mm((int32_t)((uint32_t)m.enc_count[1] - (uint32_t)m_half.enc_count[1])) * 1000U)
+                 / (t - t_half);
+        }
+        dbg_printf("[LF] radius drive %lu (steer %ld): %s after %lu ms, %lu degrees by the wheels",
+                   (unsigned long)(drive + 1U), (long)q, half_turn ? "half turn" : "NOT VALID",
+                   (unsigned long)t, (unsigned long)deg);
+        dbg_printf("[LF] radius drive %lu: wheels L %lu mm R %lu mm; from 0.5 s L %lu R %lu mm/s",
+                   (unsigned long)(drive + 1U), (unsigned long)dl_mm, (unsigned long)dr_mm,
+                   (unsigned long)vl, (unsigned long)vr);
+    }
+    dbg_puts("[LF] >>> RULER: put tape mark B at the front tip now, measure A to B (mm)");
+    dbg_puts("[LF] >>> also note: does the car point back the way it came? (yes / about how far off)");
+    lf3_dump(drive, q);
+    for (uint32_t left = LF4_MEASURE_S; left > 0U; left -= 10U)
+    {
+        dbg_printf("[LF] ... next drive in %lu s: write the ruler number down", (unsigned long)left);
+        (void)tk_dly_tsk((RELTIM)(10U * LF3_SECOND_MS));
+    }
+    return half_turn && !aborted;
+}
+
+void lf_turn_test(uint32_t *p_pass, uint32_t *p_fail)
+{
+    static int32_t const k_q[LF4_DRIVES] = { 127, 127, -127, -127, 64, 64, -64, -64 };
+    uint32_t test_pass_ = *p_pass;
+    uint32_t test_fail_ = *p_fail;
+    uint32_t n_valid = 0U;
+
+    dbg_puts("[LF] " LF4_ID " turning radius at fixed steering: ON THE MAT, no line needed, motors LIVE");
+    dbg_puts("[LF] the Line-Following task stays disarmed; the test posts the steering");
+    lf_task_test_arm(false);
+    for (uint32_t d = 0U; d < LF4_DRIVES; d++)
+    {
+        n_valid += lf4_drive(d, k_q[d]) ? 1U : 0U;
+    }
+    TEST_CHECK(LF4_ID, n_valid == LF4_DRIVES,
+               "(r1) eight drives reached the half turn under line authority");
+    if (vc_get_system_state() != VC_SYS_READY_WAITING)
+    {
+        lf3_remote(DREP_NAV_REMOTE_STOP);
+    }
+    dbg_puts("[LF] " LF4_ID " done: the car stays stopped");
     *p_pass = test_pass_;
     *p_fail = test_fail_;
 }

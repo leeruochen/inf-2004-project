@@ -29,6 +29,10 @@
 #ifndef S3_STEP_DIAG
 #define S3_STEP_DIAG        (0)
 #endif
+/* S3-U18, the turning radius diagnostic on the mat: -DS3_TURN_DIAG=ON. */
+#ifndef S3_TURN_DIAG
+#define S3_TURN_DIAG        (0)
+#endif
 
 void subsystem3_test(void)
 {
@@ -42,6 +46,9 @@ void subsystem3_test(void)
 #if S3_STEP_DIAG
     /* S3-U16: what the wheels do after a strong steering command (operator-guided). */
     lf_step_test(&test_pass_, &test_fail_);
+#elif S3_TURN_DIAG
+    /* S3-U18: the car's turning radius at fixed steering (operator-guided). */
+    lf_turn_test(&test_pass_, &test_fail_);
 #else
     /* S3-U12: LF-3.2 Line-Following task on the track, motors live (operator-guided). */
     lf_run_test(&test_pass_, &test_fail_);
