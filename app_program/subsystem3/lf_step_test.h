@@ -1,7 +1,7 @@
 /*
  *  lf_step_test.h
  *  Subsystem 3 -- S3-U16, steering step diagnostic on the open floor,
- *  APP_TEST only, built only with -DS3_STEP_DIAG=1.
+ *  APP_TEST only, run only with -DS3_STEP_DIAG=ON.
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Kernel side only: included by subsystem3_test.c and lf_step_test.c.
  */

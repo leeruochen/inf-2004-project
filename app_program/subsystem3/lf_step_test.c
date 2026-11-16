@@ -1,7 +1,7 @@
 /*
  *  lf_step_test.c
  *  Subsystem 3 -- S3-U16: what the wheels do after a strong steering command
- *  ends (diagnostic, APP_TEST only, -DS3_STEP_DIAG=1).
+ *  ends (diagnostic, APP_TEST only, -DS3_STEP_DIAG=ON).
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Kernel side: kernel and pure project headers only (rule R1).
  *

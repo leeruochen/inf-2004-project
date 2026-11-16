@@ -25,7 +25,7 @@
 #define S3_RUN_LF1_TEST     (0)
 
 /* S3-U16, the steering step diagnostic on the open floor, in place of the
- * track test: build with -DS3_STEP_DIAG=1 (CMAKE_C_FLAGS).  0 = the track. */
+ * track test: configure with -DS3_STEP_DIAG=ON (sources.cmake).  0 = the track. */
 #ifndef S3_STEP_DIAG
 #define S3_STEP_DIAG        (0)
 #endif

@@ -26,3 +26,10 @@ list(APPEND ROBOCAR_KERNEL_SOURCES
 list(APPEND ROBOCAR_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c"
     "${CMAKE_CURRENT_LIST_DIR}/lf_sanity.c")
+# -DS3_STEP_DIAG=ON (APP_TEST builds): subsystem3_test() runs the S3-U16
+# steering step diagnostic on the open floor in place of the track test.
+option(S3_STEP_DIAG "Subsystem 3 APP_TEST: run the S3-U16 steering step diagnostic, not the track test" OFF)
+if(S3_STEP_DIAG)
+    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/subsystem3_test.c"
+        PROPERTIES COMPILE_DEFINITIONS "S3_STEP_DIAG=1")
+endif()
