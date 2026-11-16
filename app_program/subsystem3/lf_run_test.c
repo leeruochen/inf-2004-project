@@ -69,6 +69,11 @@
 /** Samples in 1 s at 5 ms, +-5 for the start and end of the window. */
 #define LF2_RELEASES_1S_MIN     (195U)
 #define LF2_RELEASES_1S_MAX     (205U)
+/** Wait this long at most for the task's first sample before (a).  The boot
+ *  calibration (32 samples, 160 ms) comes first and counts no sample; when
+ *  only this subsystem's tests run (APP_TEST_ONLY=3) the test starts inside
+ *  it and (a) read 168 = 200 - 32 (16 Nov 2026).  The limits are unchanged. */
+#define LF2_BOOT_WAIT_MS        (2000U)
 /** Steering post count window on the straight (ms after START). */
 #define LF2_WIN_FROM_MS         (500U)
 #define LF2_WIN_TO_MS           (2500U)
@@ -1042,8 +1047,13 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                (unsigned long)LF2_CRUISE_MMPS);
     dbg_puts("[LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts");
 
-    /* (a) The task runs every 5 ms. */
+    /* (a) The task runs every 5 ms.  First let the boot calibration end. */
     lf_task_get_status(&s_now);
+    for (uint32_t waited = 0U; (s_now.releases == 0U) && (waited < LF2_BOOT_WAIT_MS); waited += LF2_POLL_MS)
+    {
+        (void)tk_dly_tsk((RELTIM)LF2_POLL_MS);
+        lf_task_get_status(&s_now);
+    }
     releases0 = s_now.releases;
     (void)tk_dly_tsk((RELTIM)LF2_SECOND_MS);
     lf_task_get_status(&s_now);
