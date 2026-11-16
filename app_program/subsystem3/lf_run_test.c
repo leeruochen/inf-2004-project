@@ -1362,7 +1362,9 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     /* (k) Curves: the same piece driven each way, then an S-curve. */
     if ((LF2_CURVE_ONLY != 0U) && pose_a_ok)
     {
-#ifdef LF_CURVE_START_Q7
+#if defined(LF_RESCUE_N)
+        dbg_printf("[LF] variant C: RIGHT keeps the line from being lost (%u samples)", (unsigned)LF_RESCUE_N);
+#elif defined(LF_CURVE_START_Q7)
         dbg_printf("[LF] variant B: curve recovery start %d after steady tracking", (int)LF_CURVE_START_Q7);
 #else
         dbg_puts("[LF] variant A: production line following (recovery start 32)");
