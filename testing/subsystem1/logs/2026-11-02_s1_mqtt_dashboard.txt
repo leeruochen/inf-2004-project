@@ -1,0 +1,2238 @@
+S1-M01..M03 dashboard output, 2026-11-02 (tools/dashboard/tel_dashboard.py listen)
+Part 1: --broker 172.20.10.8 (14:32-14:38)
+
+connected to 172.20.10.8:1883; subscribing car/#
+14:32:16 WARNING no heartbeat for 3 s
+14:33:59 status     car ONLINE
+14:33:59 fault      t=51ms bits=0x064 FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:33:59 motion     t=5440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:33:59 motion     t=5640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:33:59 heartbeat  up=5.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:33:59 motion     t=5840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:33:59 motion     t=6040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:00 motion     t=6240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:00 motion     t=6440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:00 motion     t=6640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:00 heartbeat  up=6.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:00 motion     t=6840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:00 motion     t=7040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:01 motion     t=7240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:01 motion     t=7440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:01 motion     t=7640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:01 heartbeat  up=7.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:01 motion     t=7840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:01 motion     t=8040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:01 motion     t=8240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:02 motion     t=8440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:02 motion     t=8640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:02 heartbeat  up=8.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:02 motion     t=8840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:03 motion     t=9040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:03 motion     t=9240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:03 motion     t=9440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:03 motion     t=9640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:03 heartbeat  up=9.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:03 motion     t=9840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:03 motion     t=10040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=10240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=10440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=10640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 heartbeat  up=10.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:05 motion     t=10840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=11040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=11240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=11440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=11640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 heartbeat  up=11.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:05 motion     t=11840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=12040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:05 motion     t=12240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:06 motion     t=12440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:06 motion     t=12640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:06 heartbeat  up=12.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:06 motion     t=12840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:06 motion     t=13040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:07 motion     t=13240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:07 motion     t=13440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:07 motion     t=13640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:07 heartbeat  up=13.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:07 motion     t=13840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:07 motion     t=14040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:08 motion     t=14240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:08 motion     t=14440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:08 motion     t=14640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:08 heartbeat  up=14.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:08 motion     t=14840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:08 motion     t=15040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:09 motion     t=15240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:09 motion     t=15440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:09 motion     t=15640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:09 heartbeat  up=15.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:09 motion     t=15840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:09 motion     t=16040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:09 motion     t=16240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:10 motion     t=16440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:10 motion     t=16640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:10 heartbeat  up=16.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:10 motion     t=16840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:10 motion     t=17040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:10 motion     t=17240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:11 motion     t=17440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:11 motion     t=17640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:11 heartbeat  up=17.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:11 motion     t=17840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:12 motion     t=18040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:12 motion     t=18240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:12 motion     t=18440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:12 motion     t=18640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:12 heartbeat  up=18.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:12 motion     t=18840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:12 motion     t=19040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:13 motion     t=19240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:13 motion     t=19440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:13 motion     t=19640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:13 heartbeat  up=19.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:13 motion     t=19840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:13 motion     t=20040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:13 motion     t=20240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:14 motion     t=20440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:14 motion     t=20640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:14 heartbeat  up=20.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:14 motion     t=20840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:14 motion     t=21040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:15 motion     t=21240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:15 motion     t=21440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:15 motion     t=21640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:15 heartbeat  up=21.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:15 motion     t=21840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:15 motion     t=22040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:16 motion     t=22240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:16 motion     t=22440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:16 motion     t=22640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:16 heartbeat  up=22.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:16 motion     t=22840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:16 motion     t=23040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:17 motion     t=23240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:17 motion     t=23440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:17 motion     t=23640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:17 heartbeat  up=23.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:17 motion     t=23840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:17 motion     t=24040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:17 motion     t=24240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:18 motion     t=24440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:18 motion     t=24640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:18 heartbeat  up=24.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:18 motion     t=24840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:18 motion     t=25040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:18 motion     t=25240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:19 motion     t=25440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:19 motion     t=25640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:19 heartbeat  up=25.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:19 motion     t=25840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:19 motion     t=26040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:19 motion     t=26240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:20 motion     t=26440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:20 motion     t=26640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:20 heartbeat  up=26.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:20 motion     t=26840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:20 motion     t=27040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:21 motion     t=27240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:21 motion     t=27440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:21 motion     t=27640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:21 heartbeat  up=27.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:21 motion     t=27840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:21 motion     t=28040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:22 motion     t=28240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:22 motion     t=28440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:22 motion     t=28640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:22 heartbeat  up=28.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:22 motion     t=28840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:22 motion     t=29040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:22 motion     t=29240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:23 motion     t=29440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:23 motion     t=29640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:23 heartbeat  up=29.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:23 motion     t=29840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:23 motion     t=30040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:23 motion     t=30240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:24 motion     t=30440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:24 motion     t=30640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:24 heartbeat  up=30.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:24 motion     t=30840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:24 motion     t=31040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:25 motion     t=31240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:25 motion     t=31440ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:25 motion     t=31640ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:25 heartbeat  up=31.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:25 motion     t=31840ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:25 motion     t=32040ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:26 motion     t=32240ms v=+0.0cm/s d=0cm encL=-1 encR=1
+14:34:26 motion     t=32440ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:26 motion     t=32640ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:26 heartbeat  up=32.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:26 motion     t=32840ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:26 motion     t=33040ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:27 motion     t=33240ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:27 motion     t=33440ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:27 motion     t=33640ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:27 heartbeat  up=33.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:27 motion     t=33840ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:28 motion     t=34040ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:28 motion     t=34240ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:28 motion     t=34440ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:28 motion     t=34640ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:28 heartbeat  up=34.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:28 motion     t=34840ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:28 motion     t=35040ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:29 motion     t=35240ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:29 motion     t=35440ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:29 motion     t=35640ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:29 heartbeat  up=35.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:29 motion     t=35840ms v=+0.0cm/s d=0cm encL=-1 encR=0
+14:34:29 motion     t=36040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:30 motion     t=36240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:30 motion     t=36440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:30 motion     t=36640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:30 heartbeat  up=36.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:30 motion     t=36840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:30 motion     t=37040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:30 motion     t=37240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:31 motion     t=37440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:31 motion     t=37640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:31 heartbeat  up=37.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:31 motion     t=37840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:31 motion     t=38040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:31 motion     t=38240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:32 motion     t=38440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:32 motion     t=38640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:32 heartbeat  up=38.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:32 motion     t=38840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:32 motion     t=39040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:34 motion     t=39240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:34 motion     t=39440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:34 motion     t=39640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:34 heartbeat  up=39.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:34 motion     t=39840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:34 motion     t=40040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:34 motion     t=40240ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:34 motion     t=40440ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:34 motion     t=40640ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:34 heartbeat  up=40.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:34 motion     t=40840ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:34 motion     t=41040ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:35 motion     t=41240ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:35 motion     t=41440ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:35 motion     t=41640ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:35 heartbeat  up=41.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:35 motion     t=41840ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:35 motion     t=42040ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:36 motion     t=42240ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:36 motion     t=42440ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:36 motion     t=42640ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:36 heartbeat  up=42.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:36 motion     t=42840ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:36 motion     t=43040ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:37 motion     t=43240ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:37 motion     t=43440ms v=+0.0cm/s d=0cm encL=1 encR=0
+14:34:37 motion     t=43640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:37 heartbeat  up=43.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:37 motion     t=43840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:37 motion     t=44040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:37 motion     t=44240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:38 motion     t=44440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:38 motion     t=44640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:38 heartbeat  up=44.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:38 motion     t=44840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:38 motion     t=45040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:38 motion     t=45240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:39 motion     t=45440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:39 motion     t=45640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:39 heartbeat  up=45.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:39 motion     t=45840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:39 motion     t=46040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:39 motion     t=46240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:40 motion     t=46440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:40 motion     t=46640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:40 heartbeat  up=46.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:40 motion     t=46840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:40 motion     t=47040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:41 motion     t=47240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:41 motion     t=47440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:41 motion     t=47640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:41 heartbeat  up=47.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:41 motion     t=47840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:41 motion     t=48040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:42 motion     t=48240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:42 motion     t=48440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:42 motion     t=48640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:42 heartbeat  up=48.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:42 motion     t=48840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:42 motion     t=49040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:43 motion     t=49240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:43 motion     t=49440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:43 motion     t=49640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:43 heartbeat  up=49.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:43 motion     t=49840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:43 motion     t=50040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:44 motion     t=50240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:44 motion     t=50440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:44 motion     t=50640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:44 heartbeat  up=50.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:44 motion     t=50840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:44 motion     t=51040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:45 motion     t=51240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:45 motion     t=51440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:45 motion     t=51640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:45 heartbeat  up=51.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:45 motion     t=51840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:45 motion     t=52040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:45 motion     t=52240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:46 motion     t=52440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:34:46 motion     t=52640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:46 heartbeat  up=52.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:46 motion     t=52840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:46 motion     t=53040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:47 motion     t=53240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:47 motion     t=53440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:47 motion     t=53640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:47 heartbeat  up=53.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:47 motion     t=53840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:47 motion     t=54040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:48 motion     t=54240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:48 motion     t=54440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:48 motion     t=54640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:48 heartbeat  up=54.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:48 motion     t=54840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:48 motion     t=55040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:49 motion     t=55240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:49 motion     t=55440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:49 motion     t=55640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:49 heartbeat  up=55.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:49 motion     t=55840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:49 motion     t=56040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:50 motion     t=56240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:50 motion     t=56440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:50 motion     t=56640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:50 heartbeat  up=56.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:50 motion     t=56840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:50 motion     t=57040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:51 motion     t=57240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:51 motion     t=57440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:51 motion     t=57640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:51 heartbeat  up=57.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:51 motion     t=57840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:51 motion     t=58040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:51 motion     t=58240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:52 motion     t=58440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:52 motion     t=58640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:52 heartbeat  up=58.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:52 motion     t=58840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:52 motion     t=59040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:53 motion     t=59240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:53 motion     t=59440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:53 motion     t=59640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:53 heartbeat  up=59.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:53 motion     t=59840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:53 motion     t=60040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:53 motion     t=60240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:54 motion     t=60440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:54 motion     t=60640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:54 heartbeat  up=60.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:54 motion     t=60840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:54 motion     t=61040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:55 motion     t=61240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:55 motion     t=61440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:55 motion     t=61640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:55 heartbeat  up=61.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:34:55 motion     t=61840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:55 motion     t=62040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:55 motion     t=62240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:56 motion     t=62440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:56 motion     t=62640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:56 heartbeat  up=62.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:56 motion     t=62840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:56 motion     t=63040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:57 motion     t=63240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:57 motion     t=63440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:57 motion     t=63640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:57 heartbeat  up=63.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:57 motion     t=63840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:57 motion     t=64040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:57 motion     t=64240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:58 motion     t=64440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:58 motion     t=64640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:58 heartbeat  up=64.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:58 motion     t=64840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:58 motion     t=65040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:59 motion     t=65240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:59 motion     t=65440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:59 motion     t=65640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:59 heartbeat  up=65.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:34:59 motion     t=65840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:34:59 motion     t=66040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:00 motion     t=66240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:00 motion     t=66440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:00 motion     t=66640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:00 heartbeat  up=66.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:00 motion     t=66840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:00 motion     t=67040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:01 motion     t=67240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:01 motion     t=67440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:01 motion     t=67640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:01 heartbeat  up=67.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:01 motion     t=67840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:01 motion     t=68040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:01 motion     t=68240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:02 motion     t=68440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:02 motion     t=68640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:02 heartbeat  up=68.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:02 motion     t=68840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:03 motion     t=69040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:03 motion     t=69240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:03 motion     t=69440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:03 motion     t=69640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:03 heartbeat  up=69.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:03 motion     t=69840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:03 motion     t=70040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:04 motion     t=70240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:04 motion     t=70440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:04 motion     t=70640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:04 heartbeat  up=70.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:04 motion     t=70840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:04 motion     t=71040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:04 motion     t=71240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:05 motion     t=71440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:05 motion     t=71640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:05 heartbeat  up=71.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:05 motion     t=71840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:05 motion     t=72040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:06 motion     t=72240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:06 motion     t=72440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:06 motion     t=72640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:06 heartbeat  up=72.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:06 motion     t=72840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:06 motion     t=73040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:07 motion     t=73240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:07 motion     t=73440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:07 motion     t=73640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:07 heartbeat  up=73.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:07 motion     t=73840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:07 motion     t=74040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:08 motion     t=74240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:08 motion     t=74440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:08 motion     t=74640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:08 heartbeat  up=74.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:08 motion     t=74840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:08 motion     t=75040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:09 motion     t=75240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:09 motion     t=75440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:09 motion     t=75640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:09 heartbeat  up=75.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:09 motion     t=75840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:09 motion     t=76040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:09 motion     t=76240ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:10 motion     t=76440ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:10 motion     t=76640ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:10 heartbeat  up=76.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:10 motion     t=76840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:10 motion     t=77040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:10 motion     t=77240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:11 motion     t=77440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:11 motion     t=77640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:11 heartbeat  up=77.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:11 motion     t=77840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:11 motion     t=78040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:11 motion     t=78240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:12 motion     t=78440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:12 motion     t=78640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:12 heartbeat  up=78.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:12 motion     t=78840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:12 motion     t=79040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:12 motion     t=79240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:13 motion     t=79440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:13 motion     t=79640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:13 heartbeat  up=79.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:13 motion     t=79840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:13 motion     t=80040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:13 motion     t=80240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:14 motion     t=80440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:14 motion     t=80640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:14 heartbeat  up=80.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:14 motion     t=80840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:14 motion     t=81040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:15 motion     t=81240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:15 motion     t=81440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:15 motion     t=81640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:15 heartbeat  up=81.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:15 motion     t=81840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:15 motion     t=82040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:16 motion     t=82240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:16 motion     t=82440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:16 motion     t=82640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:16 heartbeat  up=82.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:16 motion     t=82840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:16 motion     t=83040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:17 motion     t=83240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 motion     t=83440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 motion     t=83640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 heartbeat  up=83.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:19 motion     t=83840ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 motion     t=84040ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 motion     t=84240ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 motion     t=84440ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 motion     t=84640ms v=+0.0cm/s d=0cm encL=0 encR=1
+14:35:19 heartbeat  up=84.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:19 motion     t=84840ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:19 motion     t=85040ms v=+0.0cm/s d=0cm encL=0 encR=0
+14:35:19 motion     t=85240ms v=+0.0cm/s d=0cm encL=66 encR=0
+14:35:19 motion     t=85440ms v=+0.0cm/s d=0cm encL=135 encR=23
+14:35:19 motion     t=85640ms v=+0.0cm/s d=0cm encL=211 encR=82
+14:35:19 heartbeat  up=85.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:19 motion     t=85840ms v=+0.0cm/s d=0cm encL=291 encR=160
+14:35:19 motion     t=86040ms v=+0.0cm/s d=0cm encL=404 encR=262
+14:35:19 motion     t=86240ms v=+0.0cm/s d=0cm encL=515 encR=369
+14:35:20 motion     t=86440ms v=+0.0cm/s d=0cm encL=573 encR=428
+14:35:20 motion     t=86640ms v=+0.0cm/s d=0cm encL=491 encR=412
+14:35:20 heartbeat  up=86.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:20 motion     t=86840ms v=+0.0cm/s d=0cm encL=345 encR=328
+14:35:20 motion     t=87040ms v=+0.0cm/s d=0cm encL=162 encR=327
+14:35:21 motion     t=87240ms v=+0.0cm/s d=0cm encL=11 encR=320
+14:35:21 motion     t=87440ms v=+0.0cm/s d=0cm encL=-169 encR=310
+14:35:21 motion     t=87640ms v=+0.0cm/s d=0cm encL=-298 encR=302
+14:35:21 heartbeat  up=87.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:21 motion     t=87840ms v=+0.0cm/s d=0cm encL=-299 encR=294
+14:35:21 motion     t=88040ms v=+0.0cm/s d=0cm encL=-299 encR=254
+14:35:21 motion     t=88240ms v=+0.0cm/s d=0cm encL=-298 encR=242
+14:35:22 motion     t=88440ms v=+0.0cm/s d=0cm encL=-298 encR=242
+14:35:22 motion     t=88640ms v=+0.0cm/s d=0cm encL=-298 encR=242
+14:35:22 heartbeat  up=88.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:22 motion     t=88840ms v=+0.0cm/s d=0cm encL=-298 encR=242
+14:35:22 motion     t=89040ms v=+0.0cm/s d=0cm encL=-298 encR=243
+14:35:23 motion     t=89240ms v=+0.0cm/s d=0cm encL=-298 encR=244
+14:35:23 motion     t=89440ms v=+0.0cm/s d=0cm encL=-298 encR=247
+14:35:23 motion     t=89640ms v=+0.0cm/s d=0cm encL=-323 encR=298
+14:35:23 heartbeat  up=89.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:23 motion     t=89840ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:23 motion     t=90040ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:23 motion     t=90240ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:24 motion     t=90440ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:24 motion     t=90640ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:24 heartbeat  up=90.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:24 motion     t=90840ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:24 motion     t=91040ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:25 motion     t=91240ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:25 motion     t=91440ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:25 motion     t=91640ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:25 heartbeat  up=91.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:25 motion     t=91840ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:26 motion     t=92040ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:26 motion     t=92240ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:26 motion     t=92440ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:26 motion     t=92640ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:26 heartbeat  up=92.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:26 motion     t=92840ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:26 motion     t=93040ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:27 motion     t=93240ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:27 motion     t=93440ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:27 motion     t=93640ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:27 heartbeat  up=93.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:27 motion     t=93840ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:27 motion     t=94040ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:28 motion     t=94240ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:28 motion     t=94440ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:28 motion     t=94640ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:28 heartbeat  up=94.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:28 motion     t=94840ms v=+0.0cm/s d=0cm encL=-339 encR=305
+14:35:28 motion     t=95040ms v=+0.0cm/s d=0cm encL=-424 encR=305
+14:35:28 motion     t=95240ms v=+0.0cm/s d=0cm encL=-512 encR=305
+14:35:29 motion     t=95440ms v=+0.0cm/s d=0cm encL=-512 encR=305
+14:35:29 motion     t=95640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:29 heartbeat  up=95.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:29 motion     t=95840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:29 motion     t=96040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:30 motion     t=96240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:30 motion     t=96440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:30 motion     t=96640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:30 heartbeat  up=96.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:30 motion     t=96840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:30 motion     t=97040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:30 motion     t=97240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:31 motion     t=97440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:31 motion     t=97640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:31 heartbeat  up=97.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:31 motion     t=97840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:31 motion     t=98040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:32 motion     t=98240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:32 motion     t=98440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:32 motion     t=98640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:32 heartbeat  up=98.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:32 motion     t=98840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:32 motion     t=99040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:33 motion     t=99240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:33 motion     t=99440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:33 motion     t=99640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:33 heartbeat  up=99.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:33 motion     t=99840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:33 motion     t=100040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:34 motion     t=100240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:34 motion     t=100440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:34 motion     t=100640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:34 heartbeat  up=100.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:34 motion     t=100840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:34 motion     t=101040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:34 motion     t=101240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:35 motion     t=101440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:35 motion     t=101640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:35 heartbeat  up=101.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:35 motion     t=101840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:35 motion     t=102040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:36 motion     t=102240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:36 motion     t=102440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:36 motion     t=102640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:36 heartbeat  up=102.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:36 motion     t=102840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:36 motion     t=103040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:37 motion     t=103240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:37 motion     t=103440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:37 motion     t=103640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:37 heartbeat  up=103.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:37 motion     t=103840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:37 motion     t=104040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:38 motion     t=104240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:38 motion     t=104440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:38 motion     t=104640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:38 heartbeat  up=104.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:38 motion     t=104840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:39 motion     t=105040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:39 motion     t=105240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:39 motion     t=105440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:39 motion     t=105640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:39 heartbeat  up=105.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:39 motion     t=105840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:39 motion     t=106040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:40 motion     t=106240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:40 motion     t=106440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:40 motion     t=106640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:40 heartbeat  up=106.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:40 motion     t=106840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:40 motion     t=107040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:41 motion     t=107240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:41 motion     t=107440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:41 motion     t=107640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:41 heartbeat  up=107.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:41 motion     t=107840ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:41 motion     t=108040ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:42 motion     t=108240ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:42 motion     t=108440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:42 motion     t=108640ms v=+0.0cm/s d=0cm encL=-511 encR=304
+14:35:42 heartbeat  up=108.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:42 motion     t=108840ms v=+0.0cm/s d=0cm encL=-510 encR=304
+14:35:43 motion     t=109040ms v=+0.0cm/s d=0cm encL=-510 encR=304
+14:35:43 motion     t=109240ms v=+0.0cm/s d=0cm encL=-511 encR=304
+14:35:43 motion     t=109440ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:44 motion     t=109640ms v=+0.0cm/s d=0cm encL=-512 encR=304
+14:35:44 heartbeat  up=109.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:44 motion     t=109840ms v=+0.0cm/s d=0cm encL=-494 encR=304
+14:35:44 motion     t=110040ms v=+0.0cm/s d=0cm encL=-346 encR=304
+14:35:44 motion     t=110240ms v=+0.0cm/s d=0cm encL=-260 encR=304
+14:35:44 motion     t=110440ms v=+0.0cm/s d=0cm encL=-188 encR=304
+14:35:44 motion     t=110640ms v=+0.0cm/s d=0cm encL=-108 encR=304
+14:35:44 heartbeat  up=110.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:44 motion     t=110840ms v=+0.0cm/s d=0cm encL=-32 encR=304
+14:35:44 motion     t=111040ms v=+0.0cm/s d=0cm encL=-14 encR=304
+14:35:44 motion     t=111240ms v=+0.0cm/s d=0cm encL=83 encR=304
+14:35:45 motion     t=111440ms v=+0.0cm/s d=0cm encL=170 encR=304
+14:35:45 motion     t=111640ms v=+0.0cm/s d=0cm encL=195 encR=304
+14:35:45 heartbeat  up=111.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:45 motion     t=111840ms v=+0.0cm/s d=0cm encL=244 encR=304
+14:35:45 motion     t=112040ms v=+0.0cm/s d=0cm encL=341 encR=304
+14:35:45 motion     t=112240ms v=+0.0cm/s d=0cm encL=433 encR=304
+14:35:46 motion     t=112440ms v=+0.0cm/s d=0cm encL=571 encR=304
+14:35:46 motion     t=112640ms v=+0.0cm/s d=0cm encL=647 encR=304
+14:35:46 heartbeat  up=112.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:46 motion     t=112840ms v=+0.0cm/s d=0cm encL=752 encR=304
+14:35:46 motion     t=113040ms v=+0.0cm/s d=0cm encL=830 encR=304
+14:35:47 motion     t=113240ms v=+0.0cm/s d=0cm encL=918 encR=304
+14:35:47 motion     t=113440ms v=+0.0cm/s d=0cm encL=1026 encR=304
+14:35:47 motion     t=113640ms v=+0.0cm/s d=0cm encL=1089 encR=304
+14:35:47 heartbeat  up=113.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:47 motion     t=113840ms v=+0.0cm/s d=0cm encL=1204 encR=304
+14:35:47 motion     t=114040ms v=+0.0cm/s d=0cm encL=1291 encR=304
+14:35:48 motion     t=114240ms v=+0.0cm/s d=0cm encL=1397 encR=304
+14:35:48 motion     t=114440ms v=+0.0cm/s d=0cm encL=1466 encR=304
+14:35:48 motion     t=114640ms v=+0.0cm/s d=0cm encL=1553 encR=304
+14:35:48 heartbeat  up=114.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:48 motion     t=114840ms v=+0.0cm/s d=0cm encL=1659 encR=304
+14:35:49 motion     t=115040ms v=+0.0cm/s d=0cm encL=1743 encR=304
+14:35:49 motion     t=115240ms v=+0.0cm/s d=0cm encL=1830 encR=304
+14:35:49 motion     t=115440ms v=+0.0cm/s d=0cm encL=1893 encR=304
+14:35:49 motion     t=115640ms v=+0.0cm/s d=0cm encL=1957 encR=304
+14:35:49 heartbeat  up=115.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:49 motion     t=115840ms v=+0.0cm/s d=0cm encL=1989 encR=304
+14:35:49 motion     t=116040ms v=+0.0cm/s d=0cm encL=2082 encR=304
+14:35:49 motion     t=116240ms v=+0.0cm/s d=0cm encL=2116 encR=304
+14:35:50 motion     t=116440ms v=+0.0cm/s d=0cm encL=2164 encR=304
+14:35:50 motion     t=116640ms v=+0.0cm/s d=0cm encL=2194 encR=304
+14:35:50 heartbeat  up=116.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:50 motion     t=116840ms v=+0.0cm/s d=0cm encL=2192 encR=304
+14:35:50 motion     t=117040ms v=+0.0cm/s d=0cm encL=2192 encR=304
+14:35:51 motion     t=117240ms v=+0.0cm/s d=0cm encL=2192 encR=304
+14:35:51 motion     t=117440ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:51 motion     t=117640ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:51 heartbeat  up=117.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:51 motion     t=117840ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:51 motion     t=118040ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:52 motion     t=118240ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:52 motion     t=118440ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:52 motion     t=118640ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:52 heartbeat  up=118.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:52 motion     t=118840ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:52 motion     t=119040ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:52 motion     t=119240ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:53 motion     t=119440ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:53 motion     t=119640ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:53 heartbeat  up=119.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:53 motion     t=119840ms v=+0.0cm/s d=0cm encL=2193 encR=304
+14:35:53 motion     t=120040ms v=+0.0cm/s d=0cm encL=2193 encR=305
+14:35:53 motion     t=120240ms v=+0.0cm/s d=0cm encL=2193 encR=397
+14:35:54 motion     t=120440ms v=+0.0cm/s d=0cm encL=2193 encR=566
+14:35:54 motion     t=120640ms v=+0.0cm/s d=0cm encL=2193 encR=713
+14:35:54 heartbeat  up=120.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:54 motion     t=120840ms v=+0.0cm/s d=0cm encL=2193 encR=738
+14:35:54 motion     t=121040ms v=+0.0cm/s d=0cm encL=2193 encR=776
+14:35:54 motion     t=121240ms v=+0.0cm/s d=0cm encL=2193 encR=892
+14:35:55 motion     t=121440ms v=+0.0cm/s d=0cm encL=2193 encR=1025
+14:35:55 motion     t=121640ms v=+0.0cm/s d=0cm encL=2193 encR=1140
+14:35:55 heartbeat  up=121.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:55 motion     t=121840ms v=+0.0cm/s d=0cm encL=2193 encR=1140
+14:35:55 motion     t=122040ms v=+0.0cm/s d=0cm encL=2193 encR=1192
+14:35:56 motion     t=122240ms v=+0.0cm/s d=0cm encL=2193 encR=1278
+14:35:56 motion     t=122440ms v=+0.0cm/s d=0cm encL=2193 encR=1347
+14:35:56 motion     t=122640ms v=+0.0cm/s d=0cm encL=2193 encR=1487
+14:35:56 heartbeat  up=122.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:56 motion     t=122840ms v=+0.0cm/s d=0cm encL=2193 encR=1502
+14:35:56 motion     t=123040ms v=+0.0cm/s d=0cm encL=2193 encR=1504
+14:35:57 motion     t=123240ms v=+0.0cm/s d=0cm encL=2193 encR=1604
+14:35:57 motion     t=123440ms v=+0.0cm/s d=0cm encL=2193 encR=1704
+14:35:57 motion     t=123640ms v=+0.0cm/s d=0cm encL=2193 encR=1750
+14:35:57 heartbeat  up=123.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:35:57 motion     t=123840ms v=+0.0cm/s d=0cm encL=2193 encR=1842
+14:35:57 motion     t=124040ms v=+0.0cm/s d=0cm encL=2193 encR=1925
+14:35:58 motion     t=124240ms v=+0.0cm/s d=0cm encL=2193 encR=1925
+14:35:58 motion     t=124440ms v=+0.0cm/s d=0cm encL=2193 encR=1952
+14:35:58 motion     t=124640ms v=+0.0cm/s d=0cm encL=2193 encR=2082
+14:35:58 heartbeat  up=124.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:58 motion     t=124840ms v=+0.0cm/s d=0cm encL=2193 encR=2191
+14:35:59 motion     t=125040ms v=+0.0cm/s d=0cm encL=2193 encR=2224
+14:35:59 motion     t=125240ms v=+0.0cm/s d=0cm encL=2193 encR=2259
+14:35:59 motion     t=125440ms v=+0.0cm/s d=0cm encL=2193 encR=2353
+14:35:59 motion     t=125640ms v=+0.0cm/s d=0cm encL=2193 encR=2358
+14:35:59 heartbeat  up=125.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:35:59 motion     t=125840ms v=+0.0cm/s d=0cm encL=2193 encR=2358
+14:36:00 motion     t=126040ms v=+0.0cm/s d=0cm encL=2193 encR=2380
+14:36:00 motion     t=126240ms v=+0.0cm/s d=0cm encL=2193 encR=2514
+14:36:00 motion     t=126440ms v=+0.0cm/s d=0cm encL=2193 encR=2607
+14:36:00 motion     t=126640ms v=+0.0cm/s d=0cm encL=2193 encR=2714
+14:36:00 heartbeat  up=126.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:00 motion     t=126840ms v=+0.0cm/s d=0cm encL=2193 encR=2767
+14:36:00 motion     t=127040ms v=+0.0cm/s d=0cm encL=2193 encR=2798
+14:36:01 motion     t=127240ms v=+0.0cm/s d=0cm encL=2193 encR=2874
+14:36:01 motion     t=127440ms v=+0.0cm/s d=0cm encL=2193 encR=2991
+14:36:01 motion     t=127640ms v=+0.0cm/s d=0cm encL=2193 encR=3060
+14:36:01 heartbeat  up=127.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:01 motion     t=127840ms v=+0.0cm/s d=0cm encL=2193 encR=3061
+14:36:01 motion     t=128040ms v=+0.0cm/s d=0cm encL=2193 encR=3162
+14:36:02 motion     t=128240ms v=+0.0cm/s d=0cm encL=2193 encR=3246
+14:36:02 motion     t=128440ms v=+0.0cm/s d=0cm encL=2193 encR=3246
+14:36:02 motion     t=128640ms v=+0.0cm/s d=0cm encL=2193 encR=3246
+14:36:02 heartbeat  up=128.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:02 motion     t=128840ms v=+0.0cm/s d=0cm encL=2193 encR=3309
+14:36:02 motion     t=129040ms v=+0.0cm/s d=0cm encL=2193 encR=3405
+14:36:03 motion     t=129240ms v=+0.0cm/s d=0cm encL=2193 encR=3500
+14:36:03 motion     t=129440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:03 motion     t=129640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:03 heartbeat  up=129.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:03 motion     t=129840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:04 motion     t=130040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:04 motion     t=130240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:04 motion     t=130440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:04 motion     t=130640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:04 heartbeat  up=130.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:04 motion     t=130840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:04 motion     t=131040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:04 motion     t=131240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:05 motion     t=131440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:05 motion     t=131640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:05 heartbeat  up=131.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:05 motion     t=131840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:06 motion     t=132040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:06 motion     t=132240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:06 motion     t=132440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:06 motion     t=132640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:06 heartbeat  up=132.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:06 motion     t=132840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:06 motion     t=133040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:07 motion     t=133240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:07 motion     t=133440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:07 motion     t=133640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:07 heartbeat  up=133.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:07 motion     t=133840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:08 motion     t=134040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:08 motion     t=134240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:08 motion     t=134440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:08 motion     t=134640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:08 heartbeat  up=134.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:08 motion     t=134840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:08 motion     t=135040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:09 motion     t=135240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:09 motion     t=135440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:09 motion     t=135640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:09 heartbeat  up=135.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:09 motion     t=135840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:09 motion     t=136040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:09 motion     t=136240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:10 motion     t=136440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:10 motion     t=136640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:10 heartbeat  up=136.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:10 motion     t=136840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:10 motion     t=137040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:10 motion     t=137240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:11 motion     t=137440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:11 motion     t=137640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:11 heartbeat  up=137.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:11 motion     t=137840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:11 motion     t=138040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:12 motion     t=138240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:12 motion     t=138440ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:12 motion     t=138640ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:12 heartbeat  up=138.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:12 motion     t=138840ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:12 motion     t=139040ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:13 motion     t=139240ms v=+0.0cm/s d=0cm encL=2193 encR=3511
+14:36:13 motion     t=139440ms v=+0.0cm/s d=0cm encL=2193 encR=3510
+14:36:13 motion     t=139640ms v=+0.0cm/s d=0cm encL=2194 encR=3490
+14:36:13 heartbeat  up=139.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:13 motion     t=139840ms v=+0.0cm/s d=0cm encL=2194 encR=3443
+14:36:13 motion     t=140040ms v=+0.0cm/s d=0cm encL=2194 encR=3414
+14:36:13 motion     t=140240ms v=+0.0cm/s d=0cm encL=2194 encR=3414
+14:36:14 motion     t=140440ms v=+0.0cm/s d=0cm encL=2194 encR=3415
+14:36:14 motion     t=140640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:14 heartbeat  up=140.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:14 motion     t=140840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:14 motion     t=141040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:14 motion     t=141240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:15 motion     t=141440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:15 motion     t=141640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:15 heartbeat  up=141.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:15 motion     t=141840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:15 motion     t=142040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:16 motion     t=142240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:16 motion     t=142440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:16 motion     t=142640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:16 heartbeat  up=142.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:16 motion     t=142840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:16 motion     t=143040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:16 motion     t=143240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:17 motion     t=143440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:17 motion     t=143640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:17 heartbeat  up=143.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:17 motion     t=143840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:17 motion     t=144040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:17 motion     t=144240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:18 motion     t=144440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:18 motion     t=144640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:18 heartbeat  up=144.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:18 motion     t=144840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:18 motion     t=145040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:18 motion     t=145240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:19 motion     t=145440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:19 motion     t=145640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:19 heartbeat  up=145.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:19 motion     t=145840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:19 motion     t=146040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:20 motion     t=146240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:20 motion     t=146440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:20 motion     t=146640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:20 heartbeat  up=146.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:20 motion     t=146840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:20 motion     t=147040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:21 motion     t=147240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:21 motion     t=147440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:21 motion     t=147640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:21 heartbeat  up=147.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:21 motion     t=147840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:21 motion     t=148040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:22 motion     t=148240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:22 motion     t=148440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:22 motion     t=148640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:22 heartbeat  up=148.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:22 motion     t=148840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:22 motion     t=149040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:23 motion     t=149240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:23 motion     t=149440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:23 motion     t=149640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:23 heartbeat  up=149.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:23 motion     t=149840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:23 motion     t=150040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:24 motion     t=150240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:24 motion     t=150440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:24 motion     t=150640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:24 heartbeat  up=150.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:24 motion     t=150840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:24 motion     t=151040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:25 motion     t=151240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:25 motion     t=151440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:25 motion     t=151640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:25 heartbeat  up=151.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:25 motion     t=151840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:25 motion     t=152040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:26 motion     t=152240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:26 motion     t=152440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:26 motion     t=152640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:26 heartbeat  up=152.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:26 motion     t=152840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:26 motion     t=153040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:27 motion     t=153240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:27 motion     t=153440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:27 motion     t=153640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:27 heartbeat  up=153.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:27 motion     t=153840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:27 motion     t=154040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:28 motion     t=154240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:28 motion     t=154440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:28 motion     t=154640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:28 heartbeat  up=154.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:28 motion     t=154840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:28 motion     t=155040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:29 motion     t=155240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:29 motion     t=155440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:29 motion     t=155640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:29 heartbeat  up=155.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:29 motion     t=155840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=156040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=156240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=156440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=156640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 heartbeat  up=156.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:36:32 motion     t=156840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=157040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=157240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=157440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=157640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 heartbeat  up=157.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:32 motion     t=157840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=158040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=158240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=158440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=158640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 heartbeat  up=158.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:32 motion     t=158840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:32 motion     t=159040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:33 motion     t=159240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:33 motion     t=159440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:33 motion     t=159640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:33 heartbeat  up=159.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:33 motion     t=159840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:33 motion     t=160040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:34 motion     t=160240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 motion     t=160440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 motion     t=160640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 heartbeat  up=160.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:36:35 motion     t=160840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 motion     t=161040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 motion     t=161240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 motion     t=161440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 motion     t=161640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 heartbeat  up=161.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:35 motion     t=161840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:35 motion     t=162040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:36 motion     t=162240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:36 motion     t=162440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:36 motion     t=162640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:36 heartbeat  up=162.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:36:36 motion     t=162840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:36 motion     t=163040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:36 motion     t=163240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:37 motion     t=163440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:37 motion     t=163640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:37 heartbeat  up=163.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:37 motion     t=163840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:37 motion     t=164040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:38 motion     t=164240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:38 motion     t=164440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:38 motion     t=164640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:38 heartbeat  up=164.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:38 motion     t=164840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:38 motion     t=165040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:39 motion     t=165240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:39 motion     t=165440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:39 motion     t=165640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:39 heartbeat  up=165.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:39 motion     t=165840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:39 motion     t=166040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:40 motion     t=166240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:40 motion     t=166440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:40 motion     t=166640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:40 heartbeat  up=166.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:40 motion     t=166840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:40 motion     t=167040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:40 motion     t=167240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:41 motion     t=167440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:41 motion     t=167640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:41 heartbeat  up=167.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:41 motion     t=167840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:41 motion     t=168040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:42 motion     t=168240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:42 motion     t=168440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:42 motion     t=168640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:42 heartbeat  up=168.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:42 motion     t=168840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:42 motion     t=169040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:43 motion     t=169240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:43 motion     t=169440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:43 motion     t=169640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:43 heartbeat  up=169.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:43 motion     t=169840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:43 motion     t=170040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:44 motion     t=170240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:44 motion     t=170440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:44 motion     t=170640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:44 heartbeat  up=170.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:44 motion     t=170840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:44 motion     t=171040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:45 motion     t=171240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:45 motion     t=171440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:45 motion     t=171640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:45 heartbeat  up=171.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:45 motion     t=171840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:45 motion     t=172040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:46 motion     t=172240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:46 motion     t=172440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:46 motion     t=172640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:46 heartbeat  up=172.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:46 motion     t=172840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:46 motion     t=173040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:47 motion     t=173240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:47 motion     t=173440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:47 motion     t=173640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:47 heartbeat  up=173.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:47 motion     t=173840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:48 motion     t=174040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:48 motion     t=174240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:48 motion     t=174440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:48 motion     t=174640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:48 heartbeat  up=174.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:48 motion     t=174840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:48 motion     t=175040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:49 motion     t=175240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:49 motion     t=175440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:49 motion     t=175640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:49 heartbeat  up=175.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:49 motion     t=175840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:49 motion     t=176040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:49 motion     t=176240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:50 motion     t=176440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:50 motion     t=176640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:50 heartbeat  up=176.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:50 motion     t=176840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:50 motion     t=177040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:51 motion     t=177240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:51 motion     t=177440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:51 motion     t=177640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:51 heartbeat  up=177.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:51 motion     t=177840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:52 motion     t=178040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:52 motion     t=178240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:52 motion     t=178440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:52 motion     t=178640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:52 heartbeat  up=178.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:52 motion     t=178840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:53 motion     t=179040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:53 motion     t=179240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:53 motion     t=179440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:53 motion     t=179640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:53 heartbeat  up=179.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:53 motion     t=179840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:53 motion     t=180040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:54 motion     t=180240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:54 motion     t=180440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:54 motion     t=180640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:54 heartbeat  up=180.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:54 motion     t=180840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:54 motion     t=181040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:55 motion     t=181240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:55 motion     t=181440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:55 motion     t=181640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:55 heartbeat  up=181.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:55 motion     t=181840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:56 motion     t=182040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:56 motion     t=182240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:56 motion     t=182440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:56 motion     t=182640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:56 heartbeat  up=182.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:56 motion     t=182840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:56 motion     t=183040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:56 motion     t=183240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:57 motion     t=183440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:57 motion     t=183640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:57 heartbeat  up=183.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:57 motion     t=183840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:57 motion     t=184040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:58 motion     t=184240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:58 motion     t=184440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:58 motion     t=184640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:58 heartbeat  up=184.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:58 motion     t=184840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:58 motion     t=185040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:59 motion     t=185240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:59 motion     t=185440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:59 motion     t=185640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:59 heartbeat  up=185.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:36:59 motion     t=185840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:36:59 motion     t=186040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:00 motion     t=186240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:00 motion     t=186440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:00 motion     t=186640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:00 heartbeat  up=186.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:00 motion     t=186840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:00 motion     t=187040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:00 motion     t=187240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:01 motion     t=187440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:01 motion     t=187640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:01 heartbeat  up=187.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:01 motion     t=187840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:01 motion     t=188040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:02 motion     t=188240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:02 motion     t=188440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:02 motion     t=188640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:02 heartbeat  up=188.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:02 motion     t=188840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:02 motion     t=189040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:03 motion     t=189240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:03 motion     t=189440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:03 motion     t=189640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:03 heartbeat  up=189.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:03 motion     t=189840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:03 motion     t=190040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:03 motion     t=190240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:04 motion     t=190440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:04 motion     t=190640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:04 heartbeat  up=190.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:04 motion     t=190840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:04 motion     t=191040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:04 motion     t=191240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:05 motion     t=191440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:05 motion     t=191640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:05 heartbeat  up=191.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:05 motion     t=191840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:05 motion     t=192040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:06 motion     t=192240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:06 motion     t=192440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:06 motion     t=192640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:06 heartbeat  up=192.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:06 motion     t=192840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:06 motion     t=193040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:07 motion     t=193240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:07 motion     t=193440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:07 motion     t=193640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:07 heartbeat  up=193.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:07 motion     t=193840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:07 motion     t=194040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:08 motion     t=194240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:08 motion     t=194440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:08 motion     t=194640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:08 heartbeat  up=194.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:08 motion     t=194840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:09 motion     t=195040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:09 motion     t=195240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:09 motion     t=195440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:09 motion     t=195640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:09 heartbeat  up=195.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:09 motion     t=195840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:09 motion     t=196040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:10 motion     t=196240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:10 motion     t=196440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:10 motion     t=196640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:10 heartbeat  up=196.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:10 motion     t=196840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:10 motion     t=197040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:10 motion     t=197240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:11 motion     t=197440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:11 motion     t=197640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:11 heartbeat  up=197.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:11 motion     t=197840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:11 motion     t=198040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:11 motion     t=198240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:12 motion     t=198440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:12 motion     t=198640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:12 heartbeat  up=198.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:12 motion     t=198840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:12 motion     t=199040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:12 motion     t=199240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:13 motion     t=199440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:13 motion     t=199640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:13 heartbeat  up=199.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:13 motion     t=199840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:13 motion     t=200040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:13 motion     t=200240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:14 motion     t=200440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:14 motion     t=200640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:14 heartbeat  up=200.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:14 motion     t=200840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:14 motion     t=201040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:15 motion     t=201240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:15 motion     t=201440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:15 motion     t=201640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:15 heartbeat  up=201.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:15 motion     t=201840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:15 motion     t=202040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:16 motion     t=202240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:16 motion     t=202440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:16 motion     t=202640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:16 heartbeat  up=202.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:16 motion     t=202840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:16 motion     t=203040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:16 motion     t=203240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:17 motion     t=203440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:17 motion     t=203640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:17 heartbeat  up=203.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:17 motion     t=203840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:17 motion     t=204040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:18 motion     t=204240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:18 motion     t=204440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:18 motion     t=204640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:18 heartbeat  up=204.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:18 motion     t=204840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:18 motion     t=205040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:18 motion     t=205240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:19 motion     t=205440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:19 motion     t=205640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:19 heartbeat  up=205.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:19 motion     t=205840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:19 motion     t=206040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:20 motion     t=206240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:20 motion     t=206440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:20 motion     t=206640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:20 heartbeat  up=206.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:20 motion     t=206840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:20 motion     t=207040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:20 motion     t=207240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:21 motion     t=207440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:21 motion     t=207640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:21 heartbeat  up=207.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:21 motion     t=207840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:21 motion     t=208040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:21 motion     t=208240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:22 motion     t=208440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:22 motion     t=208640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:22 heartbeat  up=208.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:22 motion     t=208840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:22 motion     t=209040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:23 motion     t=209240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:23 motion     t=209440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:23 motion     t=209640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:23 heartbeat  up=209.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:23 motion     t=209840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:23 motion     t=210040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:24 motion     t=210240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:24 motion     t=210440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:24 motion     t=210640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:24 heartbeat  up=210.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:24 motion     t=210840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:24 motion     t=211040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:25 motion     t=211240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:25 motion     t=211440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:25 motion     t=211640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:25 heartbeat  up=211.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:25 motion     t=211840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:25 motion     t=212040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:26 motion     t=212240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:26 motion     t=212440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:26 motion     t=212640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:26 heartbeat  up=212.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:26 motion     t=212840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:26 motion     t=213040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:27 motion     t=213240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:27 motion     t=213440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:27 motion     t=213640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:27 heartbeat  up=213.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:27 motion     t=213840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:27 motion     t=214040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:28 motion     t=214240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:28 motion     t=214440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:28 motion     t=214640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:28 heartbeat  up=214.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:28 motion     t=214840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:28 motion     t=215040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:29 motion     t=215240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:29 motion     t=215440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:29 motion     t=215640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:29 heartbeat  up=215.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:29 motion     t=215840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:29 motion     t=216040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:29 motion     t=216240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:30 motion     t=216440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:30 motion     t=216640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:30 heartbeat  up=216.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:30 motion     t=216840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:30 motion     t=217040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:31 motion     t=217240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:31 motion     t=217440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:31 motion     t=217640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:31 heartbeat  up=217.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:31 motion     t=217840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:31 motion     t=218040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:31 motion     t=218240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:32 motion     t=218440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:32 motion     t=218640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:32 heartbeat  up=218.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:32 motion     t=218840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:32 motion     t=219040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:33 motion     t=219240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:33 motion     t=219440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:33 motion     t=219640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:33 heartbeat  up=219.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:33 motion     t=219840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:33 motion     t=220040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:34 motion     t=220240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:34 motion     t=220440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:34 motion     t=220640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:34 heartbeat  up=220.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:34 motion     t=220840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:34 motion     t=221040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:34 motion     t=221240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:35 motion     t=221440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:35 motion     t=221640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:35 heartbeat  up=221.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:35 motion     t=221840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:35 motion     t=222040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:36 motion     t=222240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:36 motion     t=222440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:36 motion     t=222640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:36 heartbeat  up=222.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:36 motion     t=222840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:37 motion     t=223040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:37 motion     t=223240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:37 motion     t=223440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:37 motion     t=223640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:37 heartbeat  up=223.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:37 motion     t=223840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:37 motion     t=224040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:38 motion     t=224240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:38 motion     t=224440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:38 motion     t=224640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:38 heartbeat  up=224.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:38 motion     t=224840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:38 motion     t=225040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:39 motion     t=225240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:39 motion     t=225440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:39 motion     t=225640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:39 heartbeat  up=225.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:39 motion     t=225840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:39 motion     t=226040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:40 motion     t=226240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:40 heartbeat  up=226.3s state=READY_WAITING faults=IMU_I2C,IMU_WDOG
+14:37:40 heartbeat  up=226.4s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:40 motion     t=226440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:40 motion     t=226640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:40 heartbeat  up=226.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:40 motion     t=226840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:40 motion     t=227040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:41 motion     t=227240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:41 motion     t=227440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:41 motion     t=227640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:41 heartbeat  up=227.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:41 motion     t=227840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:42 motion     t=228040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:42 motion     t=228240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:42 motion     t=228440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:42 motion     t=228640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:42 heartbeat  up=228.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:42 motion     t=228840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:42 motion     t=229040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:42 motion     t=229240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:43 motion     t=229440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:43 motion     t=229640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:43 heartbeat  up=229.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:44 motion     t=229840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:44 motion     t=230040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:44 motion     t=230240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:44 motion     t=230440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:44 motion     t=230640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:44 heartbeat  up=230.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:44 motion     t=230840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:44 motion     t=231040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:44 motion     t=231240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:45 motion     t=231440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:45 motion     t=231640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:45 heartbeat  up=231.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:45 motion     t=231840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:45 motion     t=232040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:45 motion     t=232240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:46 motion     t=232440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:46 motion     t=232640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:46 heartbeat  up=232.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:46 motion     t=232840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:46 motion     t=233040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:47 motion     t=233240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:47 motion     t=233440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:47 motion     t=233640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:47 heartbeat  up=233.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:47 motion     t=233840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:47 motion     t=234040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:47 motion     t=234240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:48 motion     t=234440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:48 motion     t=234640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:48 heartbeat  up=234.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:48 motion     t=234840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:49 motion     t=235040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:49 motion     t=235240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:49 motion     t=235440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:49 motion     t=235640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:49 heartbeat  up=235.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:49 motion     t=235840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:49 motion     t=236040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:50 motion     t=236240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:50 motion     t=236440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:50 motion     t=236640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:50 heartbeat  up=236.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:50 motion     t=236840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:50 motion     t=237040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:50 motion     t=237240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:51 motion     t=237440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:51 motion     t=237640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:51 heartbeat  up=237.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:51 motion     t=237840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:51 motion     t=238040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:52 motion     t=238240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:52 motion     t=238440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:52 motion     t=238640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:52 heartbeat  up=238.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:52 motion     t=238840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:52 motion     t=239040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:53 motion     t=239240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:53 motion     t=239440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:53 motion     t=239640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:53 heartbeat  up=239.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:53 motion     t=239840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:53 motion     t=240040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:54 motion     t=240240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:54 motion     t=240440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:54 motion     t=240640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:54 heartbeat  up=240.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:54 motion     t=240840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:54 motion     t=241040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:54 motion     t=241240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:55 motion     t=241440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:55 motion     t=241640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:55 heartbeat  up=241.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:55 motion     t=241840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:56 motion     t=242040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:56 motion     t=242240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:56 motion     t=242440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:56 motion     t=242640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:56 heartbeat  up=242.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:56 motion     t=242840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:56 motion     t=243040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:57 motion     t=243240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:57 motion     t=243440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:57 motion     t=243640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:57 heartbeat  up=243.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:57 motion     t=243840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:57 motion     t=244040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:57 motion     t=244240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:58 motion     t=244440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:58 motion     t=244640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:58 heartbeat  up=244.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:58 motion     t=244840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:58 motion     t=245040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:59 motion     t=245240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:59 motion     t=245440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:59 motion     t=245640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:59 heartbeat  up=245.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:37:59 motion     t=245840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:59 motion     t=246040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:37:59 motion     t=246240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:00 motion     t=246440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:00 motion     t=246640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:00 heartbeat  up=246.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:00 motion     t=246840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:00 motion     t=247040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:01 motion     t=247240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:01 motion     t=247440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:01 motion     t=247640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:01 heartbeat  up=247.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:01 motion     t=247840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=248040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=248240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=248440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=248640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 heartbeat  up=248.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:04 motion     t=248840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=249040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=249240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=249440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=249640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 heartbeat  up=249.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:04 motion     t=249840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=250040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=250240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=250440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=250640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 heartbeat  up=250.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:04 motion     t=250840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=251040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:04 motion     t=251240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:05 motion     t=251440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:05 motion     t=251640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:05 heartbeat  up=251.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:05 motion     t=251840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:05 motion     t=252040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:06 motion     t=252240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:06 motion     t=252440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:06 motion     t=252640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:06 heartbeat  up=252.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:06 motion     t=252840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:06 motion     t=253040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:06 motion     t=253240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:07 motion     t=253440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:07 motion     t=253640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:07 heartbeat  up=253.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:07 motion     t=253840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:07 motion     t=254040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:08 motion     t=254240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:08 motion     t=254440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:08 motion     t=254640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:08 heartbeat  up=254.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:08 motion     t=254840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:08 motion     t=255040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:08 motion     t=255240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:09 motion     t=255440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:09 motion     t=255640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:09 heartbeat  up=255.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:10 motion     t=255840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:10 motion     t=256040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:10 motion     t=256240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:10 motion     t=256440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:10 motion     t=256640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:10 heartbeat  up=256.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:10 motion     t=256840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:10 motion     t=257040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:11 motion     t=257240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:11 motion     t=257440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:11 motion     t=257640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:11 heartbeat  up=257.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:11 motion     t=257840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:11 motion     t=258040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:12 motion     t=258240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:12 motion     t=258440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:12 motion     t=258640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:12 heartbeat  up=258.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:12 motion     t=258840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:12 motion     t=259040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:12 motion     t=259240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:13 motion     t=259440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:13 motion     t=259640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:13 heartbeat  up=259.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:13 motion     t=259840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:13 motion     t=260040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:13 motion     t=260240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:14 motion     t=260440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:14 motion     t=260640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:14 heartbeat  up=260.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:14 motion     t=260840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:14 motion     t=261040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:14 motion     t=261240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:15 motion     t=261440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:15 motion     t=261640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:15 heartbeat  up=261.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:15 motion     t=261840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:15 motion     t=262040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:16 motion     t=262240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:16 motion     t=262440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:16 motion     t=262640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:16 heartbeat  up=262.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:16 motion     t=262840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:16 motion     t=263040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:16 motion     t=263240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:17 motion     t=263440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:17 motion     t=263640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:17 heartbeat  up=263.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:17 motion     t=263840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:17 motion     t=264040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:17 motion     t=264240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:18 motion     t=264440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:18 motion     t=264640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:18 heartbeat  up=264.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:18 motion     t=264840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:18 motion     t=265040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:19 motion     t=265240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:19 motion     t=265440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:19 motion     t=265640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:19 heartbeat  up=265.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:19 motion     t=265840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:19 motion     t=266040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:20 motion     t=266240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:20 motion     t=266440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:20 motion     t=266640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:20 heartbeat  up=266.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:20 motion     t=266840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:20 motion     t=267040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:21 motion     t=267240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:21 motion     t=267440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:21 motion     t=267640ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:21 heartbeat  up=267.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:21 motion     t=267840ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:21 motion     t=268040ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:22 motion     t=268240ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:22 motion     t=268440ms v=+0.0cm/s d=0cm encL=2194 encR=3416
+14:38:22 motion     t=268640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:22 heartbeat  up=268.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:22 motion     t=268840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:22 motion     t=269040ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:23 motion     t=269240ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:23 motion     t=269440ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:23 motion     t=269640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:23 heartbeat  up=269.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:24 motion     t=269840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:24 motion     t=270040ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:24 motion     t=270240ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:24 motion     t=270440ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:24 motion     t=270640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:24 heartbeat  up=270.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:24 motion     t=270840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:24 motion     t=271040ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:24 motion     t=271240ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:25 motion     t=271440ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:25 motion     t=271640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:25 heartbeat  up=271.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:25 motion     t=271840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:25 motion     t=272040ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:25 motion     t=272240ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:26 motion     t=272440ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:26 motion     t=272640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:26 heartbeat  up=272.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:26 motion     t=272840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:26 motion     t=273040ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:26 motion     t=273240ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:27 motion     t=273440ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:27 motion     t=273640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:27 heartbeat  up=273.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:27 motion     t=273840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:27 motion     t=274040ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:28 motion     t=274240ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:28 motion     t=274440ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:28 motion     t=274640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:28 heartbeat  up=274.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:28 motion     t=274840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+
+Part 2: --broker 127.0.0.1 so the dashboard survives the hotspot drop (14:38-14:47, stopped when the test was aborted)
+
+connected to 127.0.0.1:1883; subscribing car/#
+14:38:29 status     car ONLINE
+14:38:29 motion     t=275840ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:29 motion     t=276040ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:29 motion     t=276240ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:30 motion     t=276440ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:30 motion     t=276640ms v=+0.0cm/s d=0cm encL=2193 encR=3416
+14:38:30 heartbeat  up=276.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:30 motion     t=276840ms v=+0.0cm/s d=0cm encL=2192 encR=3415
+14:38:30 motion     t=277040ms v=+0.0cm/s d=0cm encL=2192 encR=3414
+14:38:31 motion     t=277240ms v=+0.0cm/s d=0cm encL=2192 encR=3414
+14:38:31 motion     t=277440ms v=+0.0cm/s d=0cm encL=2192 encR=3409
+14:38:31 motion     t=277640ms v=+0.0cm/s d=0cm encL=2192 encR=3397
+14:38:31 heartbeat  up=277.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:31 motion     t=277840ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:31 motion     t=278040ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:31 motion     t=278240ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:32 motion     t=278440ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:32 motion     t=278640ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:32 heartbeat  up=278.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:32 motion     t=278840ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:32 motion     t=279040ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:33 motion     t=279240ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:33 motion     t=279440ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:33 motion     t=279640ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:33 heartbeat  up=279.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:33 motion     t=279840ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:33 motion     t=280040ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:34 motion     t=280240ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:34 motion     t=280440ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:34 motion     t=280640ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:34 heartbeat  up=280.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:34 motion     t=280840ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:34 motion     t=281040ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:34 motion     t=281240ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:35 motion     t=281440ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:35 motion     t=281640ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:35 heartbeat  up=281.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:35 motion     t=281840ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:35 motion     t=282040ms v=+0.0cm/s d=0cm encL=2191 encR=3397
+14:38:36 motion     t=282240ms v=+0.0cm/s d=0cm encL=2191 encR=3398
+14:38:36 motion     t=282440ms v=+0.0cm/s d=0cm encL=2191 encR=3398
+14:38:36 motion     t=282640ms v=+0.0cm/s d=0cm encL=2191 encR=3398
+14:38:36 heartbeat  up=282.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:36 motion     t=282840ms v=+0.0cm/s d=0cm encL=2191 encR=3398
+14:38:36 motion     t=283040ms v=+0.0cm/s d=0cm encL=2192 encR=3398
+14:38:37 motion     t=283240ms v=+0.0cm/s d=0cm encL=2192 encR=3398
+14:38:37 motion     t=283440ms v=+0.0cm/s d=0cm encL=2192 encR=3398
+14:38:37 motion     t=283640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:37 heartbeat  up=283.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:37 motion     t=283840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:37 motion     t=284040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:38 motion     t=284240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:38 motion     t=284440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:38 motion     t=284640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:38 heartbeat  up=284.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:38 motion     t=284840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:38 motion     t=285040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:39 motion     t=285240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:39 motion     t=285440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:39 motion     t=285640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:39 heartbeat  up=285.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:39 motion     t=285840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:39 motion     t=286040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:40 motion     t=286240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:40 motion     t=286440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:40 motion     t=286640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:40 heartbeat  up=286.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:40 motion     t=286840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:40 motion     t=287040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:41 motion     t=287240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:41 motion     t=287440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:41 motion     t=287640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:41 heartbeat  up=287.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:41 motion     t=287840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:41 motion     t=288040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:42 motion     t=288240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:42 motion     t=288440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:42 motion     t=288640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:42 heartbeat  up=288.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:42 motion     t=288840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:43 motion     t=289040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:43 motion     t=289240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:43 motion     t=289440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:43 motion     t=289640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:43 heartbeat  up=289.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:43 motion     t=289840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:43 motion     t=290040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:43 motion     t=290240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:44 motion     t=290440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:44 motion     t=290640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:44 heartbeat  up=290.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:44 motion     t=290840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:44 motion     t=291040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:44 motion     t=291240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:45 motion     t=291440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:45 motion     t=291640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:45 heartbeat  up=291.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:45 motion     t=291840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:45 motion     t=292040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:46 motion     t=292240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:46 motion     t=292440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:46 motion     t=292640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:46 heartbeat  up=292.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:46 motion     t=292840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:46 motion     t=293040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:46 motion     t=293240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:47 motion     t=293440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:47 motion     t=293640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:47 heartbeat  up=293.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:47 motion     t=293840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:47 motion     t=294040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:47 motion     t=294240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:48 motion     t=294440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:48 motion     t=294640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:48 heartbeat  up=294.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:48 motion     t=294840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:49 motion     t=295040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:49 motion     t=295240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:49 motion     t=295440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:49 motion     t=295640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:49 heartbeat  up=295.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:49 motion     t=295840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:49 motion     t=296040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:50 motion     t=296240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:50 motion     t=296440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:50 motion     t=296640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:50 heartbeat  up=296.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:50 motion     t=296840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:50 motion     t=297040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:50 motion     t=297240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:51 motion     t=297440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:51 motion     t=297640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:51 heartbeat  up=297.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:51 motion     t=297840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:51 motion     t=298040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:51 motion     t=298240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:52 motion     t=298440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:52 motion     t=298640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:52 heartbeat  up=298.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:52 motion     t=298840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:52 motion     t=299040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:53 motion     t=299240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:53 motion     t=299440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:53 motion     t=299640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:53 heartbeat  up=299.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:53 motion     t=299840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:53 motion     t=300040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:54 motion     t=300240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:54 motion     t=300440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:54 motion     t=300640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:54 heartbeat  up=300.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:54 motion     t=300840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:54 motion     t=301040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:54 motion     t=301240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:55 motion     t=301440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:55 motion     t=301640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:55 heartbeat  up=301.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:55 motion     t=301840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:55 motion     t=302040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:55 motion     t=302240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:56 motion     t=302440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:56 motion     t=302640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:56 heartbeat  up=302.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:38:56 motion     t=302840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:56 motion     t=303040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:56 motion     t=303240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:57 motion     t=303440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:57 motion     t=303640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:57 heartbeat  up=303.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:57 motion     t=303840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:57 motion     t=304040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:58 motion     t=304240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:58 motion     t=304440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:58 motion     t=304640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:58 heartbeat  up=304.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:38:58 motion     t=304840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:58 motion     t=305040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:59 motion     t=305240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:59 motion     t=305440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:59 motion     t=305640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:38:59 heartbeat  up=305.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:38:59 motion     t=305840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=306040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=306240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=306440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=306640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 heartbeat  up=306.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:39:01 motion     t=306840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=307040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=307240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=307440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 motion     t=307640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:01 heartbeat  up=307.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:39:01 motion     t=307840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=308040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=308240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=308440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=308640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 heartbeat  up=308.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:03 motion     t=308840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=309040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=309240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=309440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=309640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 heartbeat  up=309.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:03 motion     t=309840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=310040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:03 motion     t=310240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:04 motion     t=310440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:04 motion     t=310640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:04 heartbeat  up=310.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:39:04 motion     t=310840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:04 motion     t=311040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:04 motion     t=311240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:05 motion     t=311440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:05 motion     t=311640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:05 heartbeat  up=311.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:39:05 motion     t=311840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:05 motion     t=312040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:05 motion     t=312240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:06 motion     t=312440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:06 motion     t=312640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:06 heartbeat  up=312.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:06 motion     t=312840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:06 motion     t=313040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:07 motion     t=313240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:07 motion     t=313440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:07 motion     t=313640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:07 heartbeat  up=313.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG,NO_ECHO
+14:39:07 motion     t=313840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:07 motion     t=314040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:07 motion     t=314240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:08 motion     t=314440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:08 motion     t=314640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:08 heartbeat  up=314.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:08 motion     t=314840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:08 motion     t=315040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:08 motion     t=315240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:09 motion     t=315440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:09 motion     t=315640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:09 heartbeat  up=315.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:09 motion     t=315840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:09 motion     t=316040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:09 motion     t=316240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:10 motion     t=316440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:10 motion     t=316640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:10 heartbeat  up=316.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:10 motion     t=316840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:10 motion     t=317040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:11 motion     t=317240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:11 motion     t=317440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:11 motion     t=317640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:11 heartbeat  up=317.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:11 motion     t=317840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:11 motion     t=318040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:11 motion     t=318240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:12 motion     t=318440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:12 motion     t=318640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:12 heartbeat  up=318.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:12 motion     t=318840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:12 motion     t=319040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:12 motion     t=319240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:13 motion     t=319440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:13 motion     t=319640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:13 heartbeat  up=319.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:13 motion     t=319840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:13 motion     t=320040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:13 motion     t=320240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:14 motion     t=320440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:14 motion     t=320640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:14 heartbeat  up=320.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:14 motion     t=320840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:14 motion     t=321040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:14 motion     t=321240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:15 motion     t=321440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:15 motion     t=321640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:15 heartbeat  up=321.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:15 motion     t=321840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:15 motion     t=322040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:15 motion     t=322240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:16 motion     t=322440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:16 motion     t=322640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:16 heartbeat  up=322.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:16 motion     t=322840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:16 motion     t=323040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:16 motion     t=323240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:17 motion     t=323440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:17 motion     t=323640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:17 heartbeat  up=323.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:17 motion     t=323840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:17 motion     t=324040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:17 motion     t=324240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:18 motion     t=324440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:18 motion     t=324640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:18 heartbeat  up=324.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:18 motion     t=324840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:18 motion     t=325040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:18 motion     t=325240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:19 motion     t=325440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:19 motion     t=325640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:19 heartbeat  up=325.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:19 motion     t=325840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:19 motion     t=326040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:20 motion     t=326240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:20 motion     t=326440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:20 motion     t=326640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:20 heartbeat  up=326.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:20 motion     t=326840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:20 motion     t=327040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:20 motion     t=327240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:21 motion     t=327440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:21 motion     t=327640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:21 heartbeat  up=327.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:21 motion     t=327840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:21 motion     t=328040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:21 motion     t=328240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:22 motion     t=328440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:22 motion     t=328640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:22 heartbeat  up=328.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:22 motion     t=328840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:22 motion     t=329040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:22 motion     t=329240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:23 motion     t=329440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:23 motion     t=329640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:23 heartbeat  up=329.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:23 motion     t=329840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:23 motion     t=330040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:24 motion     t=330240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:24 motion     t=330440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:24 motion     t=330640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:24 heartbeat  up=330.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:24 motion     t=330840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:24 motion     t=331040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:24 motion     t=331240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:25 motion     t=331440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:25 motion     t=331640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:25 heartbeat  up=331.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:25 motion     t=331840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:25 motion     t=332040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:25 motion     t=332240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:26 motion     t=332440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:26 motion     t=332640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:26 heartbeat  up=332.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:26 motion     t=332840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:26 motion     t=333040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:26 motion     t=333240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:27 motion     t=333440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:27 motion     t=333640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:27 heartbeat  up=333.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:27 motion     t=333840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:27 motion     t=334040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:27 motion     t=334240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:28 motion     t=334440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:28 motion     t=334640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:28 heartbeat  up=334.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:28 motion     t=334840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:28 motion     t=335040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:29 motion     t=335240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:29 motion     t=335440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:29 motion     t=335640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:29 heartbeat  up=335.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:29 motion     t=335840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:29 motion     t=336040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:29 motion     t=336240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:30 motion     t=336440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:30 motion     t=336640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:30 heartbeat  up=336.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:30 motion     t=336840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:30 motion     t=337040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:31 motion     t=337240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:31 motion     t=337440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:31 motion     t=337640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:31 heartbeat  up=337.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:31 motion     t=337840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:31 motion     t=338040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:31 motion     t=338240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:32 motion     t=338440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:32 motion     t=338640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:32 heartbeat  up=338.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:32 motion     t=338840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:32 motion     t=339040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:33 motion     t=339240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:33 motion     t=339440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:33 motion     t=339640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:33 heartbeat  up=339.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:33 motion     t=339840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:33 motion     t=340040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:33 motion     t=340240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:34 motion     t=340440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:34 motion     t=340640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:34 heartbeat  up=340.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:34 motion     t=340840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:34 motion     t=341040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:34 motion     t=341240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:35 motion     t=341440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:35 motion     t=341640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:35 heartbeat  up=341.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:35 motion     t=341840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:35 motion     t=342040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:36 motion     t=342240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:36 motion     t=342440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:36 motion     t=342640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:36 heartbeat  up=342.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:36 motion     t=342840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:36 motion     t=343040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:37 motion     t=343240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:37 motion     t=343440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:37 motion     t=343640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:37 heartbeat  up=343.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:37 motion     t=343840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:37 motion     t=344040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:37 motion     t=344240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:38 motion     t=344440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:38 motion     t=344640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:38 heartbeat  up=344.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:38 motion     t=344840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:38 motion     t=345040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:38 motion     t=345240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:39 motion     t=345440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:39 motion     t=345640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:39 heartbeat  up=345.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:39 motion     t=345840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:39 motion     t=346040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:39 motion     t=346240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:40 motion     t=346440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:40 motion     t=346640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:40 heartbeat  up=346.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:40 motion     t=346840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:40 motion     t=347040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:41 motion     t=347240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:41 motion     t=347440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:41 motion     t=347640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:41 heartbeat  up=347.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:41 motion     t=347840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:41 motion     t=348040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:42 motion     t=348240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:42 motion     t=348440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:42 motion     t=348640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:42 heartbeat  up=348.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:42 motion     t=348840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:42 motion     t=349040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:43 motion     t=349240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:43 motion     t=349440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:43 motion     t=349640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:43 heartbeat  up=349.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:43 motion     t=349840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:43 motion     t=350040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:44 motion     t=350240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:44 motion     t=350440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:44 motion     t=350640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:44 heartbeat  up=350.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:44 motion     t=350840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:44 motion     t=351040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:45 motion     t=351240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:45 motion     t=351440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:45 motion     t=351640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:45 heartbeat  up=351.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:45 motion     t=351840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:45 motion     t=352040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:45 motion     t=352240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:46 motion     t=352440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:46 motion     t=352640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:46 heartbeat  up=352.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:46 motion     t=352840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:46 motion     t=353040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:47 motion     t=353240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:47 motion     t=353440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:47 motion     t=353640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:47 heartbeat  up=353.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:47 motion     t=353840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:47 motion     t=354040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:47 motion     t=354240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:48 motion     t=354440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:48 motion     t=354640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:48 heartbeat  up=354.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:48 motion     t=354840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:48 motion     t=355040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:48 motion     t=355240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:49 motion     t=355440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:49 motion     t=355640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:49 heartbeat  up=355.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:49 motion     t=355840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:49 motion     t=356040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:50 motion     t=356240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:50 motion     t=356440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:50 motion     t=356640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:50 heartbeat  up=356.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:50 motion     t=356840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:50 motion     t=357040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:50 motion     t=357240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:51 motion     t=357440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:51 motion     t=357640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:51 heartbeat  up=357.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:51 motion     t=357840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:51 motion     t=358040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:52 motion     t=358240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:52 motion     t=358440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:52 motion     t=358640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:52 heartbeat  up=358.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:52 motion     t=358840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:52 motion     t=359040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:52 motion     t=359240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:53 motion     t=359440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:53 motion     t=359640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:53 heartbeat  up=359.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:53 motion     t=359840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:53 motion     t=360040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:54 motion     t=360240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:54 motion     t=360440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:54 motion     t=360640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:54 heartbeat  up=360.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:54 motion     t=360840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:54 motion     t=361040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:54 motion     t=361240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:55 motion     t=361440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:55 motion     t=361640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:55 heartbeat  up=361.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:55 motion     t=361840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:55 motion     t=362040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:55 motion     t=362240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:56 motion     t=362440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:56 motion     t=362640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:56 heartbeat  up=362.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:56 motion     t=362840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:56 motion     t=363040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:56 motion     t=363240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:57 motion     t=363440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:57 motion     t=363640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:57 heartbeat  up=363.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:57 motion     t=363840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:57 motion     t=364040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:57 motion     t=364240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:58 motion     t=364440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:58 motion     t=364640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:58 heartbeat  up=364.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:58 motion     t=364840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:58 motion     t=365040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:59 motion     t=365240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:59 motion     t=365440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:59 motion     t=365640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:59 heartbeat  up=365.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:39:59 motion     t=365840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:39:59 motion     t=366040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:00 motion     t=366240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:00 motion     t=366440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:00 motion     t=366640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:00 heartbeat  up=366.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:00 motion     t=366840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:00 motion     t=367040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:00 motion     t=367240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:01 motion     t=367440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:01 motion     t=367640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:01 heartbeat  up=367.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:01 motion     t=367840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:01 motion     t=368040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:01 motion     t=368240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:02 motion     t=368440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:02 motion     t=368640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:02 heartbeat  up=368.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:02 motion     t=368840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:02 motion     t=369040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:03 motion     t=369240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:03 motion     t=369440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:03 motion     t=369640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:03 heartbeat  up=369.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:03 motion     t=369840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:03 motion     t=370040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:03 motion     t=370240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:04 motion     t=370440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:04 motion     t=370640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:04 heartbeat  up=370.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:04 motion     t=370840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:04 motion     t=371040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:05 motion     t=371240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:05 motion     t=371440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:05 motion     t=371640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:05 heartbeat  up=371.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:05 motion     t=371840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:05 motion     t=372040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:06 motion     t=372240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:06 motion     t=372440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:06 motion     t=372640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:06 heartbeat  up=372.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:06 motion     t=372840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:06 motion     t=373040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:07 motion     t=373240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:07 motion     t=373440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:07 motion     t=373640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:07 heartbeat  up=373.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:07 motion     t=373840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:07 motion     t=374040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:07 motion     t=374240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:08 motion     t=374440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 motion     t=374640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 heartbeat  up=374.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:09 motion     t=374840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 motion     t=375040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 motion     t=375240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 motion     t=375440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 motion     t=375640ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 heartbeat  up=375.6s state=SAFETY_FAULT_LATCHED faults=FAULT_LATCHED,IMU_I2C,IMU_WDOG
+14:40:09 motion     t=375840ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 motion     t=376040ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:09 motion     t=376240ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:10 motion     t=376440ms v=+0.0cm/s d=0cm encL=2193 encR=3398
+14:40:13 WARNING no heartbeat for 3 s
+14:40:18 status     car OFFLINE (last will)
