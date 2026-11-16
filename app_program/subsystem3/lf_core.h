@@ -107,6 +107,22 @@
 #define LF_SEARCH_Q7            (64)
 /** Gentle right turn while looking for the line after a u-turn, Q7. TUNE */
 #define LF_ACQUIRE_STEER_Q7     (32)
+/** Steering held after a u-turn from CENTRE's first solid black, Q7, in
+ *  place of lf_edge_steer() (which gives only +4 on solid black).  The car
+ *  reaches the line still angled across it, and the sensors sit 120 mm ahead
+ *  of the axle: at +4 CENTRE slid on over the line's left edge, the unstable
+ *  one, and the core then steered the wrong way (S3-U14 u-turn, 5 Nov 2026,
+ *  CENTRE on 19 of 88 polls).  Simulated: 12..16 all work, 18 and 32
+ *  overshoot.  Left and right turns do not use it. TUNE */
+#define LF_UTURN_HOLD_Q7        (14)
+/** The hold ends when CENTRE has read at least this (the line's body) and
+ *  then falls below LF_EDGE_TARGET_PM: it has crossed the body to the right
+ *  edge, where edge tracking is stable. */
+#define LF_UTURN_HOLD_FULL_PM   (950U)
+/** The hold ends after this much travel at the latest. TUNE */
+#define LF_UTURN_HOLD_MM        (300U)
+/** The same in encoder counts. */
+#define LF_UTURN_HOLD_CNT       ((LF_UTURN_HOLD_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 
 /** Search the remembered side this long, then the other side until
  *  LF_T_SEARCH_MS. TUNE */
@@ -288,6 +304,9 @@ typedef struct
     bool           piv_left;        /**< it turned left */
     bool           piv_c_seen;      /**< CENTRE saw a line after that */
     bool           piv_r_seen;      /**< RIGHT saw a line after that */
+    bool           hold_on;         /**< the hold after a u-turn is steering (LF_UTURN_HOLD_Q7) */
+    bool           hold_full;       /**< CENTRE has been on the line's body during it */
+    uint32_t       hold_cnt0;       /**< fwd_cnt when it started */
 } lf_core_t;
 
 /* ---------------------------------------------------------------------------

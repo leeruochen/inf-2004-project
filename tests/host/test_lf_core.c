@@ -1834,6 +1834,151 @@ static void test_uturn_memory(void)
     CHECK(r.max_steer == LF_ACQUIRE_STEER_Q7);
 }
 
+/* Feed (dc, dr) until ON_LINE; the hysteresis makes it the third sample. */
+static void find_line(lf_core_t *p_lf, uint16_t dc, uint16_t dr)
+{
+    CHECK(until_state(p_lf, dc, dr, LF_ST_ON_LINE, 10U) == LF_HYST_SAMPLES);
+}
+
+/* Test 29 (LF-3.4): the hold after a u-turn.  S3-U14 u-turn, 5 Nov 2026
+ * 14:22: the pivot and the reacquisition worked, then CENTRE left the line
+ * over its LEFT edge (on for 19 of 88 polls).  On first black the steering
+ * fell from +32 to the edge steering's +4 while the car was still angled
+ * across the line.  Now +14 is held until CENTRE has crossed the line's body
+ * to its right edge, or 300 mm.  Expected values by hand:
+ *   edge steering (d - 900) x 24 / 500: 800 -> -4, 850 -> -2, 1000 -> +4;
+ *   300 mm x 2464 / 207 = 3571 counts = the 298th sample at 12 counts each
+ *   (297 x 12 = 3564, 298 x 12 = 3576). */
+static void test_uturn_hold(void)
+{
+    lf_core_t lf;
+    run_t     r;
+    lf_out_t  o;
+
+    CHECK(LF_UTURN_HOLD_Q7 == 14);
+    CHECK(LF_UTURN_HOLD_CNT == 3571U);
+
+    /* First black after a u-turn, either landing side: +14 at once, and it
+     * stays on the line's body (edge steering alone would give -4 and +4). */
+    uturn_pivot(&lf, 1000U, 0U);                /* line left of CENTRE */
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 800U, 0U);
+    CHECK(lf.steer_q7 == 14);
+    r = run(&lf, 20U, 800U, 0U);
+    CHECK(r.posts >= 5U);
+    CHECK(r.min_steer == 14);
+    CHECK(r.max_steer == 14);
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.min_steer == 14);
+    CHECK(r.max_steer == 14);
+    CHECK(r.last.state == LF_ST_ON_LINE);
+
+    /* CENTRE was on the body and now reaches the right edge: the hold is
+     * over, edge steering from this sample on, and it does not come back. */
+    o = feed(&lf, 850U, 0U);
+    CHECK(o.steer_q7 == -2);
+    o = feed(&lf, 1000U, 0U);
+    CHECK(o.steer_q7 == 4);
+    r = run(&lf, 40U, 1000U, 0U);
+    CHECK(r.max_steer == 4);
+
+    uturn_pivot(&lf, 0U, 1000U);                /* line right of CENTRE */
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 1000U, 0U);
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.min_steer == 14);
+    CHECK(r.max_steer == 14);
+
+    /* Never on the body (below 950): the hold ends by distance, 300 mm. */
+    uturn_pivot(&lf, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 800U, 0U);
+    r = run(&lf, 297U, 800U, 0U);
+    CHECK(r.min_steer == 14);
+    CHECK(r.max_steer == 14);
+    o = feed(&lf, 800U, 0U);
+    CHECK(o.steer_q7 == -4);
+    r = run(&lf, 40U, 1000U, 0U);
+    CHECK(r.max_steer == 4);
+
+    /* CENTRE off the line: the hold ends and recovery steering takes over
+     * (CENTRE saw the line last, so the side is LEFT). */
+    uturn_pivot(&lf, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 1000U, 0U);
+    (void)run(&lf, 5U, 1000U, 0U);
+    o = feed(&lf, 0U, 0U);
+    CHECK(o.steer_q7 == -(LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7));
+    r = run(&lf, 40U, 1000U, 0U);
+    CHECK(r.max_steer == 4);
+
+    /* A cross line during the hold: the junction comes first, and the hold
+     * is not picked up again after it. */
+    uturn_pivot(&lf, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 1000U, 0U);
+    (void)run(&lf, 5U, 1000U, 0U);
+    (void)run(&lf, 3U, 1000U, 1000U);
+    CHECK(lf.state == LF_ST_JUNCTION);
+    r = run(&lf, 200U, 1000U, 0U);
+    CHECK(r.junctions == 1U);
+    CHECK(r.max_steer == 4);
+    CHECK(r.last.state == LF_ST_ON_LINE);
+
+    /* Avoidance during the hold: the same. */
+    uturn_pivot(&lf, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 1000U, 0U);
+    g_in.avoid_active = true;
+    (void)run(&lf, 5U, 1000U, 0U);
+    CHECK(lf.state == LF_ST_SUSPENDED);
+    g_in.avoid_active = false;
+    g_in.reacquired = true;
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.last.state == LF_ST_ON_LINE);
+    CHECK(r.max_steer == 4);
+    g_in.reacquired = false;
+
+    /* Left and right 90 degree turns are untouched: edge steering at once. */
+    pivot(&lf, -1, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 1000U, 0U);
+    CHECK(lf.steer_q7 == 4);
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.min_steer == 4);
+    CHECK(r.max_steer == 4);
+    pivot(&lf, 1, 0U, 1000U);
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 1000U, 0U);
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.min_steer == 4);
+    CHECK(r.max_steer == 4);
+
+    /* A u-turn pivot that never got to 135 degrees: where the car stands
+     * is not known, so no hold. */
+    start_tracking(&lf);
+    post_junction(&lf);
+    g_in.manoeuvre = LF_MAN_UTURN;
+    g_in.yaw_cnt = 0;
+    (void)run(&lf, 2U, 0U, 0U);
+    g_in.yaw_cnt = 2000;
+    (void)run(&lf, 10U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    (void)run(&lf, 10U, 0U, 0U);
+    find_line(&lf, 1000U, 0U);
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.min_steer == 4);
+    CHECK(r.max_steer == 4);
+
+    /* Found only by the search after a u-turn: no hold either. */
+    uturn_pivot(&lf, 1000U, 0U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 400U) <= 400U);
+    find_line(&lf, 1000U, 0U);
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.min_steer == 4);
+    CHECK(r.max_steer == 4);
+}
+
 /* Test 22: the simulator against the 4 Nov 2026 hardware runs, so a change
  * to the model cannot quietly drift away from the real car.  Expected
  * values are the logged ones, not computed the way the model computes. */
@@ -2061,6 +2206,7 @@ int main(void)
     test_cross_exit();
     test_pivot_memory();
     test_uturn_memory();
+    test_uturn_hold();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

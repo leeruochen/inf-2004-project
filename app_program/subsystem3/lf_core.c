@@ -47,6 +47,10 @@ _Static_assert(LF_D_JCT_LOOK_MM < LF_D_JCT_POST_MM, "the look past the cross end
 _Static_assert((LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7) <= LF_STEER_FULL_Q7, "the ramp starts inside full steering");
 _Static_assert(((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) < LF_T_JCT_MAX_MS,
                "at cruise the travel ends before the time cap");
+_Static_assert((LF_UTURN_HOLD_Q7 > 0) && (LF_UTURN_HOLD_Q7 <= LF_ACQUIRE_STEER_Q7),
+               "the hold steers right, no harder than the look for the line");
+_Static_assert((LF_EDGE_TARGET_PM < LF_UTURN_HOLD_FULL_PM) && (LF_UTURN_HOLD_FULL_PM <= LF_PM_FULL),
+               "the line's body reads above the edge target");
 
 /* ---------------------------------------------------------------------------
  * Calibration, normalisation, zones, edge steering
@@ -231,6 +235,7 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
     p_lf->timer_n = 0U;
     p_lf->lost_n = 0U;
     p_lf->post_now = true;      /* post at once in the new state */
+    p_lf->hold_on = false;      /* the hold after a u-turn never outlives a state */
 }
 
 /*
@@ -271,6 +276,40 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     {
         p_lf->recover_q7 = LF_RECOVER_Q7;
         p_lf->steer_q7 = lf_edge_steer(p_v->d_c);
+    }
+}
+
+/*
+ * The hold after a u-turn (ON_LINE, entered from the u-turn's look for the
+ * line).  The pivot leaves the car angled across the line, and the sensors
+ * sit LF_D_PIVOT_MM ahead of the axle, so at the edge steering's +4 CENTRE
+ * slides on across the body and out over the LEFT edge before the heading
+ * has come round.  Hold LF_UTURN_HOLD_Q7 (right) instead, until one of:
+ *   - CENTRE has been on the body (>= LF_UTURN_HOLD_FULL_PM) and falls
+ *     below LF_EDGE_TARGET_PM: it is at the right edge, the stable one;
+ *   - CENTRE is off the line: recovery steering knows better;
+ *   - LF_UTURN_HOLD_CNT of travel (fwd_cnt is free-running: the unsigned
+ *     difference is right across a wrap).
+ * Then online_steer() as always, from this same sample.
+ */
+static void hold_steer(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
+{
+    uint32_t const travelled = p_in->fwd_cnt - p_lf->hold_cnt0;
+
+    if (p_v->d_c >= LF_UTURN_HOLD_FULL_PM)
+    {
+        p_lf->hold_full = true;
+    }
+    if ((p_lf->hold_full && (p_v->d_c < LF_EDGE_TARGET_PM))
+        || (p_v->c_now == LF_ZONE_LIGHT)
+        || (travelled >= LF_UTURN_HOLD_CNT))
+    {
+        p_lf->hold_on = false;
+        online_steer(p_lf, p_v);
+    }
+    else
+    {
+        p_lf->steer_q7 = LF_UTURN_HOLD_Q7;
     }
 }
 
@@ -417,6 +456,10 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
             enter(p_lf, LF_ST_LINE_LOST);
             may_post = false;
         }
+        else if (p_lf->hold_on)
+        {
+            hold_steer(p_lf, p_in, p_v);
+        }
         else
         {
             online_steer(p_lf, p_v);
@@ -494,6 +537,7 @@ static bool jct_travel(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
  * line.  Otherwise the Vehicle Controller is turning: post nothing while it
  * turns, then wait T_turn (T_uturn) for CENTRE to see solid black.  After a
  * pivot, steer gently towards the side pivot_side() found while it looks.
+ * A u-turn's solid black starts the hold (hold_steer).
  */
 static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
                         lf_out_t *p_out)
@@ -559,6 +603,15 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
         if (p_v->zc == LF_ZONE_DARK)
         {
             enter_on_line(p_lf, p_v);
+            if (uturn && p_lf->piv_late)
+            {
+                /* Only after a pivot that got past 135 degrees: the car is
+                 * then known to stand angled across the line it came along. */
+                p_lf->hold_on = true;
+                p_lf->hold_full = false;
+                p_lf->hold_cnt0 = p_in->fwd_cnt;
+                p_lf->steer_q7 = LF_UTURN_HOLD_Q7;
+            }
         }
         else if (p_lf->timer_n >= limit)
         {
@@ -683,6 +736,9 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->piv_left = false;
     p_lf->piv_c_seen = false;
     p_lf->piv_r_seen = false;
+    p_lf->hold_on = false;
+    p_lf->hold_full = false;
+    p_lf->hold_cnt0 = 0U;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
     p_lf->jct_pending = false;
