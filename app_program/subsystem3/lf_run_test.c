@@ -1379,8 +1379,11 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                 lf2_drive(&k_curve[g]);
                 lf2_curve_report(k_curve_group[g], run);
                 lf2_trace_dump("curve");
-                TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.n_lost == 0U) && s_run.still,
-                           "(k1) reached the exit straight, no TRACK_LOST");
+                /* On the line at the STOP: a drive stopped by distance while
+                 * it was still searching (A/B 16 Nov) is not a pass. */
+                TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.n_lost == 0U) && s_run.still
+                                   && (s_run.st_end == LF_ST_ON_LINE),
+                           "(k1) on the line at the exit stop, no TRACK_LOST");
                 TEST_CHECK(LF2_ID, (s_run.cv_n_det == 0U) && (s_run.n_jct == 0U),
                            "(k2) no junction detected (a curve has none)");
                 TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.cv_exit_polls > 0U)
