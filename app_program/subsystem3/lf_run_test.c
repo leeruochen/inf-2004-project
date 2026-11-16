@@ -1147,10 +1147,23 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
         "turn", "CENTRE on the right half of the line, RIGHT on white, 30 cm before the cross",
         LF2_TURN_NO_CROSS_MM, LF2_TURN_MS, false, true, false
     };
-    static lf2_drive_t const k_curve =
+    /* The physical cue for the direction: on a U-loop the loop's other
+     * straight line lies on the side the car will turn (16 Nov: a run with
+     * the directions alternated could not be labelled from the log). */
+    static lf2_drive_t const k_curve[3] =
     {
-        "curve", "CENTRE on the right half of the line, RIGHT on white, on the start mark",
-        LF2_CURVE_MM, LF2_MS_FOR(LF2_CURVE_MM), false, false, true
+        {
+            "LEFT curve", "loop's other line on the car's LEFT; CENTRE on mark, RIGHT on white",
+            LF2_CURVE_MM, LF2_MS_FOR(LF2_CURVE_MM), false, false, true
+        },
+        {
+            "RIGHT curve", "loop's other line on the car's RIGHT; CENTRE on mark, RIGHT white",
+            LF2_CURVE_MM, LF2_MS_FOR(LF2_CURVE_MM), false, false, true
+        },
+        {
+            "S-curve", "start mark on the S-curve's straight; CENTRE on mark, RIGHT on white",
+            LF2_CURVE_MM, LF2_MS_FOR(LF2_CURVE_MM), false, false, true
+        }
     };
     static char const * const k_curve_group[3] =
     {
@@ -1347,12 +1360,14 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     {
         for (uint32_t g = 0U; g < LF2_CURVE_GROUPS; g++)
         {
-            dbg_printf("[LF] >>> %s: drives %lu-%lu.  Put the car on the start mark for the %s",
+            dbg_printf("[LF] >>> %s: drives %lu-%lu, all %lu the same way.  Do not alternate.",
                        k_curve_group[g], (unsigned long)((g * LF2_CURVE_RUNS) + 1U),
-                       (unsigned long)((g + 1U) * LF2_CURVE_RUNS), k_curve_group[g]);
+                       (unsigned long)((g + 1U) * LF2_CURVE_RUNS), (unsigned long)LF2_CURVE_RUNS);
             for (uint32_t run = 1U; run <= LF2_CURVE_RUNS; run++)
             {
-                lf2_drive(&k_curve);
+                dbg_printf("[LF] >>> drive %lu of %lu: %s", (unsigned long)((g * LF2_CURVE_RUNS) + run),
+                           (unsigned long)(LF2_CURVE_GROUPS * LF2_CURVE_RUNS), k_curve_group[g]);
+                lf2_drive(&k_curve[g]);
                 lf2_curve_report(k_curve_group[g], run);
                 lf2_trace_dump("curve");
                 TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.n_lost == 0U) && s_run.still,
