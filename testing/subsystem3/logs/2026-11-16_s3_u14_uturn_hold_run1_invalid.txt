@@ -1,0 +1,137 @@
+15:16:17.262  [capture] COM5 for 600 s -> build\s3-u14u2-run-20261116-1516.txt
+15:16:17.346  pre-kernel ok
+15:16:17.348  
+15:16:17.350  
+15:16:17.352  microT-Kernel Version 3.00
+15:16:17.352  
+15:16:17.354  [IPC] kernel spec version 3.00 OK
+15:16:17.356  [IPC] 8 objects created, MBF depth self-check OK
+15:16:17.357  [S3] IR_R (GP26/ADC0) ADC sanity OK
+15:16:17.357  [S3] IR_C (GP28/ADC2) ADC sanity OK
+15:16:17.363  [S4] IMU init OK
+15:16:17.365  [S4] tasks started
+15:16:17.368  [SAFETY] task started
+15:16:17.370  [IMU] task started
+15:16:17.373  [IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+15:16:17.374  [IMU] chip LSM303D, accel+mag at 0x1D
+15:16:17.374  [TEL] backend: console ([TEL] <topic> <hex>)
+15:16:17.471  [LF] S3-U14 on the track, motors LIVE, cruise 200 mm/s
+15:16:17.475  [LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts
+15:16:17.482  [TEL] link DISCONNECTED -> CONNECTING
+15:16:17.504  [TEL] link CONNECTING -> CONNECTED
+15:16:17.626  [LF] boot calibration REFUSED no contrast: C avg 153 (137..173), R avg 252 (234..274)
+15:16:18.166  [IMU] level reference: board at 8 half-deg when flat (0 tries)
+15:16:18.463  [TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+15:16:18.473  [LF] 1 s: 168 samples, 0 missed so far
+15:16:18.477  [TEST] S3-U14 FAIL  (a) samples every 5 ms (195-205/s), none missed   (lf_run_test.c:1052)
+15:16:18.477  [LF] boot cal: status 2, C avg 153, R avg 252 -> white 0 black 0
+15:16:18.477  [TEST] S3-U14 FAIL  (b) boot calibration accepted   (lf_run_test.c:1061)
+15:16:18.495  [LF] VC state 1 (need 0 or 1; 3 = fault, see [SAFETY]), cal 2
+15:16:18.495  [TEST] S3-U14 FAIL  (c-h) not run: VC not READY or cal refused   (lf_run_test.c:1069)
+15:16:18.495  [TEST] subsystem3 SUMMARY 0 passed, 3 failed
+15:16:19.463  [TEL] car/telemetry/motion 01010fd00700000000000000000000000000
+15:16:20.466  [TEL] car/telemetry/motion 01010fb80b00000000000000000000000000
+15:16:21.466  [TEL] car/telemetry/motion 01010fa00f00000000000000000000000000
+15:16:21.476  [IMU] hump pitch=-12 half-deg
+15:16:21.484  [TEL] car/telemetry/hump 010405aa0f00007a
+15:16:22.465  [TEL] car/telemetry/motion 01010f881300000000ccffffffffffffff03
+15:16:22.465  [TEL] car/telemetry/heartbeat 010706881300000100
+15:16:23.468  [TEL] car/telemetry/motion 01010f701700000000ccffffffffffffff03
+15:16:24.470  [TEL] car/telemetry/motion 01010f581b00000000ccffffffffffffff03
+15:16:25.469  [TEL] car/telemetry/motion 01010f401f00000000ccffffffffffffff03
+15:16:26.473  [TEL] car/telemetry/motion 01010f282300000000ccffffffffffffff03
+15:16:27.341  [DBG] alive: SDK timer 12405 ms, kernel time 9879 ms, difference 2526 ms
+15:16:27.462  [TEL] car/telemetry/motion 01010f102700000000ccffffffffffffff03
+15:16:27.466  [TEL] car/telemetry/heartbeat 010706102700000100
+15:16:28.466  [TEL] car/telemetry/motion 01010ff82a00000000ccffffffffffffff03
+15:16:29.466  [TEL] car/telemetry/motion 01010fe02e00000000ccffffffffffffff03
+15:16:30.464  [TEL] car/telemetry/motion 01010fc83200000000ccffffffffffffff03
+15:16:31.464  [TEL] car/telemetry/motion 01010fb03600000000ccffffffffffffff03
+15:16:32.468  [TEL] car/telemetry/motion 01010f983a00000000ccffffffffffffff03
+15:16:32.473  [TEL] car/telemetry/heartbeat 010706983a00000100
+15:16:33.469  [TEL] car/telemetry/motion 01010f803e00000000ccffffffffffffff03
+15:16:34.470  [TEL] car/telemetry/motion 01010f684200000000ccffffffffffffff03
+15:16:35.470  [TEL] car/telemetry/motion 01010f504600000000ccffffffffffffff03
+15:16:36.473  [TEL] car/telemetry/motion 01010f384a00000000ccffffffffffffff03
+15:16:37.330  [DBG] alive: SDK timer 22405 ms, kernel time 19879 ms, difference 2526 ms
+15:16:37.461  [TEL] car/telemetry/motion 01010f204e00000000ccffffffffffffff03
+15:16:37.463  [TEL] car/telemetry/heartbeat 010706204e00000100
+15:16:38.463  [TEL] car/telemetry/motion 01010f085200000000ccffffffffffffff03
+15:16:38.992  [IMU] hump pitch=16 half-deg
+15:16:38.992  [TEL] car/telemetry/hump 0104052454000008
+15:16:39.453  [TEL] car/telemetry/motion 01010ff055000000008c0100004401000000
+15:16:40.480  [TEL] car/telemetry/motion 01010fd859000000008c0100008c01000000
+15:16:41.467  [TEL] car/telemetry/motion 01010fc05d000000008c0100008c01000000
+15:16:42.467  [TEL] car/telemetry/motion 01010fa861000000008c0100008c01000000
+15:16:42.475  [TEL] car/telemetry/heartbeat 010706a86100000100
+15:16:43.468  [TEL] car/telemetry/motion 01010f9065000000008c0100008c01000000
+15:16:44.470  [TEL] car/telemetry/motion 01010f7869000000008c0100008c01000000
+15:16:45.472  [TEL] car/telemetry/motion 01010f606d000000008c0100008c01000000
+15:16:46.475  [TEL] car/telemetry/motion 01010f4871000000008c0100008c01000000
+15:16:47.354  [DBG] alive: SDK timer 32416 ms, kernel time 29890 ms, difference 2526 ms
+15:16:47.465  [TEL] car/telemetry/motion 01010f3075000000008c0100008c01000000
+15:16:47.473  [TEL] car/telemetry/heartbeat 010706307500000100
+15:16:48.466  [TEL] car/telemetry/motion 01010f1879000000008c0100008c01000000
+15:16:49.454  [TEL] car/telemetry/motion 01010f007d000000008c0100008c01000000
+15:16:50.464  [TEL] car/telemetry/motion 01010fe880000000008c0100008c01000000
+15:16:51.454  [TEL] car/telemetry/motion 01010fd084000000008c0100008c01000000
+15:16:52.459  [TEL] car/telemetry/motion 01010fb888000000008c0100008c01000000
+15:16:52.459  [TEL] car/telemetry/heartbeat 010706b88800000100
+15:16:53.469  [TEL] car/telemetry/motion 01010fa08c000000008c0100008c01000000
+15:16:54.469  [TEL] car/telemetry/motion 01010f8890000000008c0100008c01000000
+15:16:55.473  [TEL] car/telemetry/motion 01010f7094000000008c0100008c01000000
+15:16:56.472  [TEL] car/telemetry/motion 01010f5898000000008c0100008c01000000
+15:16:57.342  [DBG] alive: SDK timer 42416 ms, kernel time 39890 ms, difference 2526 ms
+15:16:57.462  [TEL] car/telemetry/motion 01010f409c000000008c0100008c01000000
+15:16:57.464  [TEL] car/telemetry/heartbeat 010706409c00000100
+15:16:58.466  [TEL] car/telemetry/motion 01010f28a0000000008c0100008c01000000
+15:16:59.465  [TEL] car/telemetry/motion 01010f10a4000000008c0100008c01000000
+15:17:00.464  [TEL] car/telemetry/motion 01010ff8a7000000008c0100008c01000000
+15:17:01.468  [TEL] car/telemetry/motion 01010fe0ab000000008c0100008c01000000
+15:17:02.468  [TEL] car/telemetry/motion 01010fc8af000000008c0100008c01000000
+15:17:02.470  [TEL] car/telemetry/heartbeat 010706c8af00000100
+15:17:03.467  [TEL] car/telemetry/motion 01010fb0b3000000008c0100008c01000000
+15:17:04.470  [TEL] car/telemetry/motion 01010f98b7000000008c0100008c01000000
+15:17:05.462  [TEL] car/telemetry/motion 01010f80bb000000008c0100008c01000000
+15:17:06.472  [TEL] car/telemetry/motion 01010f68bf000000008c0100008c01000000
+15:17:07.346  [DBG] alive: SDK timer 52416 ms, kernel time 49890 ms, difference 2526 ms
+15:17:07.463  [TEL] car/telemetry/motion 01010f50c3000000008c0100008c01000000
+15:17:07.475  [TEL] car/telemetry/heartbeat 01070650c300000100
+15:17:08.465  [TEL] car/telemetry/motion 01010f38c7000000008c0100008c01000000
+15:17:09.456  [TEL] car/telemetry/motion 01010f20cb000000008c0100008c01000000
+15:17:10.465  [TEL] car/telemetry/motion 01010f08cf000000008c0100008c01000000
+15:17:11.467  [TEL] car/telemetry/motion 01010ff0d2000000008c0100008c01000000
+15:17:12.468  [TEL] car/telemetry/motion 01010fd8d6000000008c0100008c01000000
+15:17:12.472  [TEL] car/telemetry/heartbeat 010706d8d600000100
+15:17:13.462  [TEL] car/telemetry/motion 01010fc0da000000008c0100008c01000000
+15:17:14.469  [TEL] car/telemetry/motion 01010fa8de000000008c0100008c01000000
+15:17:15.474  [TEL] car/telemetry/motion 01010f90e2000000008c0100008c01000000
+15:17:16.474  [TEL] car/telemetry/motion 01010f78e6000000008c0100008c01000000
+15:17:17.364  [DBG] alive: SDK timer 62427 ms, kernel time 59901 ms, difference 2526 ms
+15:17:17.369  [STACK] init: 380 of 1152 B used, 772 never used
+15:17:17.369  [STACK] dbg_drain: 632 of 1664 B used, 1032 never used
+15:17:17.382  [STACK] tel: 520 of 4736 B used, 4216 never used
+15:17:17.385  [STACK] vc: 356 of 1664 B used, 1308 never used
+15:17:17.389  [STACK] motion: 184 of 1664 B used, 1480 never used
+15:17:17.393  [STACK] lf: 572 of 1664 B used, 1092 never used
+15:17:17.397  [STACK] safety: 148 of 1664 B used, 1516 never used
+15:17:17.403  [STACK] imu: 556 of 2176 B used, 1620 never used
+15:17:17.406  [STACK] obs_scan: 344 of 1664 B used, 1320 never used
+15:17:17.411  [STACK] obs_avoid: 288 of 1664 B used, 1376 never used
+15:17:17.419  [STACK] app_test: 624 of 1664 B used, 1040 never used
+15:17:17.424  [STACK] stack top check: 0 mismatches
+15:17:17.428  [MBF] nav_in: 64 B buffer, 64 B free
+15:17:17.430  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:17:17.438  [MBF] obstacle: 24 B buffer, 24 B free
+15:17:17.438  [MBF] telemetry: 384 B buffer, 384 B free
+15:17:17.464  [TEL] car/telemetry/motion 01010f60ea000000008c0100008c01000000
+15:17:17.464  [TEL] car/telemetry/heartbeat 01070660ea00000100
+15:17:17.472  [TEL] CONNECTED tx=74 txf=0 off=1 ev=3 bad=0 qd=0 od=0 cmd=0/0
+15:17:18.468  [TEL] car/telemetry/motion 01010f48ee000000008c0100008c01000000
+15:17:19.464  [TEL] car/telemetry/motion 01010f30f2000000008c0100008c01000000
+15:17:20.469  [TEL] car/telemetry/motion 01010f18f6000000008c0100008c01000000
+15:17:21.470  [TEL] car/telemetry/motion 01010f00fa000000008c0100008c01000000
+15:17:22.470  [TEL] car/telemetry/motion 01010fe8fd000000008c0100008c01000000
+15:17:22.480  [TEL] car/telemetry/heartbeat 010706e8fd00000100
+15:17:23.472  [TEL] car/telemetry/motion 01010fd001010000008c0100008c01000000
+15:17:24.483  [capture] done
