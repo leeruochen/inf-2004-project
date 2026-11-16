@@ -216,15 +216,19 @@
  *  straight.  The exit straight is judged over the last LF2_CURVE_EXIT_MM
  *  before the STOP.  TUNE per piece */
 #define LF2_CURVE_ONLY          ((S3_CURVE_TEST != 0) ? 1U : 0U)
-#define LF2_CURVE_GROUPS        (2U)        /* 3 with an S-curve piece */
-#define LF2_CURVE_RUNS          (3U)
-/* 16 Nov 2026, sample mat (300 mm tiles; the U-loop is two quarter-circle
- * tiles): start mark one tile before the curved tiles; 1000 mm of wheel
- * travel puts the sensors about 0.3-0.5 m up the exit straight (the wheels
- * cut the loop: the sensors run 120 mm ahead of the axle), which is about
- * two tiles long; the last 200 mm is clear of the loop either way. */
+/* 16 Nov 2026, A/B on one 90 deg RIGHT bend (sample mat, 300 mm tiles; one
+ * curved tile, at least two straight tiles after it): start mark one tile
+ * before the curved tile.  The line ends about 1.1 m from the mark; at 900 mm
+ * of wheel travel the sensors are about 0.15-0.25 m short of the end (on a
+ * bend the wheels travel less than the line: the sensors run 120 mm ahead of
+ * the axle), and the last 200 mm before the STOP is well past the bend.  A
+ * first LINE_LOST below about 650 mm of travel is at the bend.  Only the RIGHT
+ * group runs: the bend turns right from the only start. */
+#define LF2_CURVE_FIRST         (1U)        /* 0 LEFT, 1 RIGHT, 2 S-curve */
+#define LF2_CURVE_GROUPS        (1U)
+#define LF2_CURVE_RUNS          (5U)
 #define LF2_CURVE_START_MM      (300U)
-#define LF2_CURVE_MM            (1000U)
+#define LF2_CURVE_MM            (900U)
 #define LF2_CURVE_EXIT_MM       (200U)
 /** |steer| at or above this counts as "hard" steering: recovery past its
  *  first 100 ms, the search, or more (lf_core.h: recovery 32 + ramp, search 64). */
@@ -250,7 +254,7 @@ _Static_assert((LF2_JMAT_DELAY_MIN_MM < LF_D_JCT_POST_MM) && (LF_D_JCT_POST_MM <
                "the (j2) window brackets the junction post distance");
 _Static_assert((LF2_CURVE_EXIT_MM + LF2_CURVE_START_MM) < LF2_CURVE_MM,
                "the exit window starts after the curve's start");
-_Static_assert((LF2_CURVE_GROUPS >= 1U) && (LF2_CURVE_GROUPS <= 3U), "left, right, S");
+_Static_assert((LF2_CURVE_GROUPS >= 1U) && ((LF2_CURVE_FIRST + LF2_CURVE_GROUPS) <= 3U), "left, right, S");
 _Static_assert(LF2_CURVE_MM < 0xFFFFU, "trace mm is uint16_t");
 
 /** Why a drive ended. */
@@ -1153,11 +1157,11 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     static lf2_drive_t const k_curve[3] =
     {
         {
-            "LEFT curve", "loop's other line on the car's LEFT; CENTRE on mark, RIGHT on white",
+            "LEFT curve", "the line bends LEFT ahead; CENTRE on the mark, RIGHT on white",
             LF2_CURVE_MM, LF2_MS_FOR(LF2_CURVE_MM), false, false, true
         },
         {
-            "RIGHT curve", "loop's other line on the car's RIGHT; CENTRE on mark, RIGHT white",
+            "RIGHT curve", "the line bends RIGHT ahead; CENTRE on the mark, RIGHT on white",
             LF2_CURVE_MM, LF2_MS_FOR(LF2_CURVE_MM), false, false, true
         },
         {
@@ -1358,14 +1362,19 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     /* (k) Curves: the same piece driven each way, then an S-curve. */
     if ((LF2_CURVE_ONLY != 0U) && pose_a_ok)
     {
-        for (uint32_t g = 0U; g < LF2_CURVE_GROUPS; g++)
+#ifdef LF_CURVE_START_Q7
+        dbg_printf("[LF] variant B: curve recovery start %d after steady tracking", (int)LF_CURVE_START_Q7);
+#else
+        dbg_puts("[LF] variant A: production line following (recovery start 32)");
+#endif
+        for (uint32_t g = LF2_CURVE_FIRST; g < (LF2_CURVE_FIRST + LF2_CURVE_GROUPS); g++)
         {
             dbg_printf("[LF] >>> %s: drives %lu-%lu, all %lu the same way.  Do not alternate.",
-                       k_curve_group[g], (unsigned long)((g * LF2_CURVE_RUNS) + 1U),
-                       (unsigned long)((g + 1U) * LF2_CURVE_RUNS), (unsigned long)LF2_CURVE_RUNS);
+                       k_curve_group[g], (unsigned long)(((g - LF2_CURVE_FIRST) * LF2_CURVE_RUNS) + 1U),
+                       (unsigned long)((g - LF2_CURVE_FIRST + 1U) * LF2_CURVE_RUNS), (unsigned long)LF2_CURVE_RUNS);
             for (uint32_t run = 1U; run <= LF2_CURVE_RUNS; run++)
             {
-                dbg_printf("[LF] >>> drive %lu of %lu: %s", (unsigned long)((g * LF2_CURVE_RUNS) + run),
+                dbg_printf("[LF] >>> drive %lu of %lu: %s", (unsigned long)(((g - LF2_CURVE_FIRST) * LF2_CURVE_RUNS) + run),
                            (unsigned long)(LF2_CURVE_GROUPS * LF2_CURVE_RUNS), k_curve_group[g]);
                 lf2_drive(&k_curve[g]);
                 lf2_curve_report(k_curve_group[g], run);
