@@ -722,7 +722,11 @@ static void test_lost_and_search(void)
     CHECK((n * 5U) <= 115U);
 
     /* LINE_LOST posts nothing for 120 ms (Motion's 100 ms hold + one
-     * period), then the search starts on the remembered side (left). */
+     * period), then the search starts on the remembered side (left).  The
+     * search's time pattern is checked slowly (4 counts a sample, ~67 mm/s:
+     * 2 s of search is 1596 counts, under its 1785-count travel limit); at
+     * the cruise speeds that limit ends it sooner (test 32). */
+    g_fwd_step = 4U;
     r = run(&lf, 23U, 0U, 0U);
     CHECK(r.posts == 0U);
     CHECK(r.last.state == LF_ST_LINE_LOST);
@@ -745,6 +749,7 @@ static void test_lost_and_search(void)
     CHECK(r.track_lost == 0U);
     CHECK(r.posts == 0U);
     CHECK(r.last.state == LF_ST_IDLE);
+    g_fwd_step = 12U;
 
     /* Overshoot left: RIGHT was the last sensor on the line -> the line is
      * on the right: recovery steer right, search right first. */
@@ -2198,11 +2203,11 @@ static void test_lost_by_distance(void)
         start_tracking(&lf);
         g_fwd_step = steps[i];
         n[i] = until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 200U);
-        CHECK_AT(steps[i], n[i] <= 200U);
+        CHECK(n[i] <= 200U);
     }
     for (int i = 0; i < 5; i++)
     {
-        CHECK_AT(steps[i], ((int32_t)n[i] - (int32_t)n[0]) == later[i]);
+        CHECK(((int32_t)n[i] - (int32_t)n[0]) == later[i]);
     }
     CHECK(n[0] * LF_SAMPLE_PERIOD_MS >= LF_T_LOST_MS);  /* never sooner than T_lost */
 
@@ -2272,6 +2277,89 @@ static void test_sim_slow_straights(void)
     }
 }
 
+/* Samples of a search, from its first (the sample the state became
+ * REACQUIRING) to the one that reports TRACK_LOST; 0 if not within limit. */
+static uint32_t search_samples(lf_core_t *p_lf, uint32_t limit)
+{
+    for (uint32_t i = 2U; i <= limit; i++)
+    {
+        if (feed(p_lf, 0U, 0U).event == LF_EV_TRACK_LOST)
+        {
+            return i;
+        }
+    }
+    return 0U;
+}
+
+/* LF_D_SEARCH_MAX_MM 150 mm x 2464 / 207 = 1785 counts, worked by hand. */
+#define SEARCH_MAX_CNT  (1785U)
+
+/* Test 32: a search after a genuine loss while driving ends in TRACK_LOST
+ * after 150 mm of its own travel, or at T_search (400 samples) if that comes
+ * first.  The search's travel starts after its first sample, so it ends on
+ * sample 1 + ceil(1785 / step): 12 counts (200 mm/s) -> 150, 9 (150 mm/s)
+ * -> 200, 6 (100 mm/s) -> 299; stalled (0) -> 400, as before.  Searches that
+ * do not follow a loss while driving keep T_search alone: after a junction
+ * turn's look (junction turns as they were), at run start, after an
+ * avoidance hand-back (Buddy 5's bypass ends near the line). */
+static void test_search_cap(void)
+{
+    uint32_t const steps[4] = { 12U, 9U, 6U, 0U };
+    lf_core_t lf;
+
+    for (int i = 0; i < 4; i++)
+    {
+        uint32_t const capped = 1U + ((SEARCH_MAX_CNT + steps[i] - 1U) / ((steps[i] > 0U) ? steps[i] : 1U));
+        uint32_t const want = (steps[i] == 0U) ? 400U : ((capped < 400U) ? capped : 400U);
+        uint32_t n;
+
+        start_tracking(&lf);
+        g_fwd_step = steps[i];
+        CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 300U) <= 300U);
+        n = search_samples(&lf, 500U);
+        CHECK(n == want);
+        if (n != want)
+        {
+            printf("  search cap step %u: TRACK_LOST at search sample %u, want %u\n",
+                   (unsigned)steps[i], (unsigned)n, (unsigned)want);
+        }
+    }
+    g_fwd_step = 12U;
+
+    /* Lost after going straight on over a junction: capped too. */
+    start_tracking(&lf);
+    post_junction(&lf);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 300U) <= 300U);
+    CHECK(search_samples(&lf, 500U) == 150U);
+
+    /* After a junction turn's look ran out: T_search alone (as before). */
+    start_tracking(&lf);
+    post_junction(&lf);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&lf, 50U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 300U) <= 300U);
+    CHECK(search_samples(&lf, 500U) == 400U);
+
+    /* Run start off the line: T_search alone. */
+    reset_inputs();
+    lf_core_init(&lf, &k_cal);
+    (void)run(&lf, 5U, 0U, 0U);
+    g_in.running = true;
+    CHECK(feed(&lf, 0U, 0U).state == LF_ST_REACQUIRING);
+    CHECK(search_samples(&lf, 500U) == 400U);
+
+    /* Avoidance hand-back without the line: T_search alone. */
+    start_tracking(&lf);
+    g_in.avoid_active = true;
+    (void)run(&lf, 20U, 0U, 0U);
+    g_in.avoid_active = false;
+    g_in.reacquired = true;
+    CHECK(feed(&lf, 0U, 0U).state == LF_ST_REACQUIRING);
+    CHECK(search_samples(&lf, 500U) == 400U);
+    g_in.reacquired = false;
+}
+
 int main(void)
 {
     test_constants();
@@ -2305,6 +2393,7 @@ int main(void)
     test_uturn_hold();
     test_lost_by_distance();
     test_sim_slow_straights();
+    test_search_cap();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

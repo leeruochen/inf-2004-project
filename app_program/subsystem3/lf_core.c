@@ -419,11 +419,23 @@ static void enter_on_line(lf_core_t *p_lf, lf_view_t const *p_v)
     online_steer(p_lf, p_v);
 }
 
-static void enter_search(lf_core_t *p_lf)
+/* capped: the search follows a loss while driving the line, so its own
+ * travel is limited to LF_D_SEARCH_MAX_CNT as well as T_search. */
+static void enter_search(lf_core_t *p_lf, bool capped)
 {
     enter(p_lf, LF_ST_REACQUIRING);
     p_lf->timer_n = 1U;         /* this sample is the search's first */
     p_lf->steer_q7 = side_steer(p_lf->side, LF_SEARCH_Q7);
+    p_lf->srch_capped = capped;
+    p_lf->srch_cnt = 0U;
+}
+
+/* LINE_LOST; driving: the line was lost while the car drove it (not at the
+ * end of a junction turn's look). */
+static void enter_lost(lf_core_t *p_lf, bool driving)
+{
+    enter(p_lf, LF_ST_LINE_LOST);
+    p_lf->lost_driving = driving;
 }
 
 static void enter_turn(lf_core_t *p_lf, lf_manoeuvre_t man)
@@ -464,7 +476,7 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
         }
         else if (lost_check(p_lf, p_in, p_v))
         {
-            enter(p_lf, LF_ST_LINE_LOST);
+            enter_lost(p_lf, true);
             may_post = false;
         }
         else if (p_lf->hold_on)
@@ -577,7 +589,7 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
         }
         else if (lost_check(p_lf, p_in, p_v))
         {
-            enter(p_lf, LF_ST_LINE_LOST);
+            enter_lost(p_lf, true);
             may_post = false;
         }
         else
@@ -630,7 +642,7 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
             {
                 p_lf->side = LF_SIDE_RIGHT;
             }
-            enter(p_lf, LF_ST_LINE_LOST);
+            enter_lost(p_lf, false);    /* the turn's look ran out: T_search alone */
             may_post = false;
         }
         else
@@ -656,7 +668,7 @@ static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
     }
     else if (p_lf->timer_n >= LF_N_STOP)
     {
-        enter_search(p_lf);
+        enter_search(p_lf, p_lf->lost_driving);
         may_post = true;
     }
     else
@@ -668,17 +680,23 @@ static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
 }
 
 /* REACQUIRING_TRACK: search steer towards the remembered side, then the other
- * side, until CENTRE sees solid black or T_search runs out. */
-static bool st_search(lf_core_t *p_lf, lf_view_t const *p_v, lf_out_t *p_out)
+ * side, until CENTRE sees solid black or T_search runs out, or (a search
+ * after a loss while driving) its own travel reaches LF_D_SEARCH_MAX_CNT. */
+static bool st_search(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v, lf_out_t *p_out)
 {
     bool may_post = true;
 
     p_lf->timer_n++;
+    if (p_lf->srch_capped)
+    {
+        p_lf->srch_cnt += p_in->fwd_cnt - p_lf->prev_fwd;  /* at most 400 samples of a few dozen counts */
+    }
     if (p_v->zc == LF_ZONE_DARK)
     {
         enter_on_line(p_lf, p_v);
     }
-    else if (p_lf->timer_n >= LF_N_SEARCH)
+    else if ((p_lf->timer_n >= LF_N_SEARCH)
+             || (p_lf->srch_capped && (p_lf->srch_cnt >= LF_D_SEARCH_MAX_CNT)))
     {
         p_out->event = LF_EV_TRACK_LOST;        /* once: then IDLE until a new run */
         enter(p_lf, LF_ST_IDLE);
@@ -709,7 +727,7 @@ static bool st_suspended(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *
         }
         else
         {
-            enter_search(p_lf);
+            enter_search(p_lf, false);  /* hand-back without the line: T_search alone */
         }
         may_post = true;
     }
@@ -756,6 +774,9 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->jct_line_ahead = false;
     p_lf->jct_cnt0 = 0U;
     p_lf->prev_fwd = 0U;
+    p_lf->lost_driving = false;
+    p_lf->srch_capped = false;
+    p_lf->srch_cnt = 0U;
     enter(p_lf, LF_ST_IDLE);
 }
 
@@ -819,7 +840,7 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
             else
             {
                 p_lf->side = LF_SIDE_LEFT;
-                enter_search(p_lf);
+                enter_search(p_lf, false);  /* run start off the line: T_search alone */
                 may_post = true;
             }
         }
@@ -855,7 +876,7 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
                 }
                 else
                 {
-                    may_post = st_search(p_lf, &v, p_out);
+                    may_post = st_search(p_lf, p_in, &v, p_out);
                 }
                 break;
             case LF_ST_SUSPENDED:

@@ -147,6 +147,21 @@
  *  or very slow car (20 mm at 50 mm/s). */
 #define LF_T_LOST_MAX_MS        (400U)
 
+/** A search that follows a genuine loss while driving the line (LINE_LOST
+ *  from ON_LINE, or going straight on past a junction) ends in TRACK_LOST
+ *  after this much of its own forward travel, if T_search has not ended it
+ *  first.  The VC drives the search's arcs at the cruise speed, so T_search
+ *  alone let the car wander: host model, tight bends at 150 mm/s, the car
+ *  stopped 15-36 cm from the line; with 150 mm mostly within 5 cm, and the
+ *  searches that found the line (gentle bends) found it well inside 150 mm.
+ *  150 mm of the search's 64 arc is about 75 degrees of turn, past a line
+ *  lost to either side.  Not used after a junction turn's look, at run
+ *  start, or after an avoidance hand-back: those keep T_search alone.
+ *  Shortens design.md T_search: ARCHITECTURE.md D13 (proposed). TUNE */
+#define LF_D_SEARCH_MAX_MM      (150U)
+/** The same in encoder counts. */
+#define LF_D_SEARCH_MAX_CNT     ((LF_D_SEARCH_MAX_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+
 /** Sensing point of the line sensors to the wheel axle, which is Motion's
  *  pivot centre for a turn (task_motion.c TURN_L/TURN_R/UTURN drive the
  *  wheels in opposite directions).  Ruler on the car, 4 Nov 2026. */
@@ -306,6 +321,9 @@ typedef struct
     uint32_t       lost_n;          /**< consecutive samples with both LIGHT */
     uint32_t       lost_cnt;        /**< forward counts over those samples */
     uint32_t       prev_fwd;        /**< fwd_cnt at the previous sample */
+    bool           lost_driving;    /**< this LINE_LOST came while driving the line */
+    bool           srch_capped;     /**< this search ends at LF_D_SEARCH_MAX_CNT */
+    uint32_t       srch_cnt;        /**< its forward counts so far */
     uint32_t       timer_n;         /**< samples spent in the current state/phase */
     bool           post_now;        /**< post at the next sample that may post (state entry) */
     int32_t        steer_q7;        /**< last computed steering */
