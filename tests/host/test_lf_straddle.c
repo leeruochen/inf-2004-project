@@ -168,15 +168,25 @@ static void test_two_pose_cal(void)
     CHECK((r.cal.c.white == 167U) && (r.cal.c.black == 1888U));    /* CENTRE's own */
     CHECK((r.cal.r.white == 157U) && (r.cal.r.black == 2124U));    /* RIGHT's own, not CENTRE's */
 
-    /* Lowered sensors, 22:04: CENTRE black 702 (span 555 > 400): tells
-     * them apart but below the mounting criteria -> WEAK, refused. */
+    /* Lowered sensors, 22:04: CENTRE black 702 (span 535): accepted now, the
+     * follower handles it (host model, span 560).  Straddle mount, 20 Nov:
+     * black 1274, white 145. */
     cb = stats_const(702U, 32U);
+    CHECK(lf_cal_from_two_poses(&cb, &rw, &cw, &rb, &r));
+    cb = stats_const(1274U, 32U);
+    CHECK(lf_cal_from_two_poses(&cb, &rw, &cw, &rb, &r));
+    /* Below the criteria: black 580 (span 413, above the core's 400 but
+     * under 600 / 450) -> WEAK, refused; black 450 (span 283) -> BLIND. */
+    cb = stats_const(580U, 32U);
     CHECK(!lf_cal_from_two_poses(&cb, &rw, &cw, &rb, &r));
     CHECK((r.c == LF_SENS_WEAK) && (r.r == LF_SENS_OK));
+    cb = stats_const(450U, 32U);
+    CHECK(!lf_cal_from_two_poses(&cb, &rw, &cw, &rb, &r));
+    CHECK(r.c == LF_SENS_BLIND);
 
     /* Blind RIGHT: a steady white-ish level in both poses (passes the rail
      * and noise checks), which the old single-pose rule never saw. */
-    cb = stats_const(1888U, 32U); rb = stats_const(160U, 32U);
+    cb = stats_const(1888U, 32U); rb = stats_const(160U, 32U);   /* RIGHT: 160 over black, 157 over white */
     CHECK(!lf_cal_from_two_poses(&cb, &rw, &cw, &rb, &r));
     CHECK((r.c == LF_SENS_OK) && (r.r == LF_SENS_BLIND));
 

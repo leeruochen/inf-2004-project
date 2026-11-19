@@ -106,9 +106,11 @@
 /** Pose A: CENTRE on the line's middle must read at least this, or the boot
  *  calibration is too high for the 900 pm target (see the guide). */
 #define LF2_POSE_A_MIN_PM       (950U)
-/** Pose A sets the calibration, so it needs a limit of its own: black has
- *  read 1694-1967 on the mat, and grey would pass a check against itself. */
-#define LF2_POSE_A_MIN_RAW      (1500U)
+/** Pose A sets the calibration, so it needs a limit of its own: grey would
+ *  pass a check against itself.  The same black limit as the two-pose
+ *  mounting criteria (lf_core.h): 1500 here refused the straddle mount's
+ *  1250-1430, which the follower handles (host model). */
+#define LF2_POSE_A_MIN_RAW      (LF_CAL_BLACK_MIN_RAW)
 /** Tries at pose A before the test gives up. */
 #define LF2_POSE_A_TRIES        (3U)
 /** LF-3.3: only the straight drive, this many times. */

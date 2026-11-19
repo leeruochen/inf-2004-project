@@ -78,14 +78,16 @@
  *  correction.  On the black side the car has the line's width to spare. */
 #define LF_EDGE_TARGET_PM       (900U)
 
-/** Mounting criteria for the two-pose calibration, from the car (19 Nov
- *  2026, sensors ~10 mm above the mat): white 116-200, black 1888-2124
- *  (CENTRE and RIGHT, line middle); with the sensors lowered, black fell to
- *  700-1040 with white unchanged, and pose A failed.  Below these a sensor is
- *  LF_SENS_WEAK: re-mount it, do not drive on it. TUNE */
-#define LF_CAL_BLACK_MIN_RAW    (1500U)
+/** Mounting criteria for the two-pose calibration, from the car: white
+ *  116-200 throughout (19-20 Nov 2026); black 1888-2124 at ~10 mm, 1250-1430
+ *  in the straddle mount, 700-1040 with the sensors lowered.  The line
+ *  follower only uses the span (everything is darkness 0..1000 of it), and
+ *  in the host model straddle followed every 90 degree bend at a span of 560
+ *  (black 700) with the sensor noise doubled; the limits keep a margin above
+ *  LF_MIN_SPAN_RAW (400).  Below them a sensor is LF_SENS_WEAK: re-mount it. TUNE */
+#define LF_CAL_BLACK_MIN_RAW    (600U)
 #define LF_CAL_WHITE_MAX_RAW    (400U)
-#define LF_CAL_SPAN_GOOD_RAW    (1200U)
+#define LF_CAL_SPAN_GOOD_RAW    (450U)
 
 /** Calibration refused if black - white is smaller than this (raw counts;
  *  same contrast rule as S3-U09, about 10 % of the 12-bit scale). */
