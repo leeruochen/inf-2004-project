@@ -2176,6 +2176,102 @@ static void test_sim_recovery_starts(void)
     }
 }
 
+/* Test 30: LINE_LOST needs the distance as well as the time.  Expected
+ * sample counts worked by hand: LF_D_LOST_MM 20 mm = 20 x 2464 / 207 = 238
+ * counts; the fixture moves g_fwd_step counts per 5 ms sample, so the streak
+ * of both-LIGHT samples must cover 238 counts and last at least 20 samples
+ * (T_lost 100 ms):
+ *   24 counts (400 mm/s): 10 samples of travel, the 20-sample time decides;
+ *   12 counts (200 mm/s): 20 samples -> the same as 400 (nothing changes);
+ *    9 counts (150 mm/s): 27 samples -> 7 later;
+ *    6 counts (100 mm/s): 40 samples -> 20 later;
+ *    0 counts (stalled):  the 400 ms cap, 80 samples -> 60 later. */
+static void test_lost_by_distance(void)
+{
+    uint32_t const steps[5] = { 24U, 12U, 9U, 6U, 0U };
+    int32_t const later[5] = { 0, 0, 7, 20, 60 };
+    uint32_t n[5];
+    lf_core_t lf;
+
+    for (int i = 0; i < 5; i++)
+    {
+        start_tracking(&lf);
+        g_fwd_step = steps[i];
+        n[i] = until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 200U);
+        CHECK_AT(steps[i], n[i] <= 200U);
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        CHECK_AT(steps[i], ((int32_t)n[i] - (int32_t)n[0]) == later[i]);
+    }
+    CHECK(n[0] * LF_SAMPLE_PERIOD_MS >= LF_T_LOST_MS);  /* never sooner than T_lost */
+
+    /* The benefit: at 100 mm/s a 30-sample dip (15 mm, under 20 mm) is a
+     * correction coming back, not a lost line.  Time alone ended it. */
+    start_tracking(&lf);
+    g_fwd_step = 6U;
+    {
+        bool lost = false;
+
+        for (uint32_t i = 0U; i < 30U; i++)
+        {
+            lost = lost || (feed(&lf, 0U, 0U).state == LF_ST_LINE_LOST);
+        }
+        for (uint32_t i = 0U; i < 20U; i++)
+        {
+            lost = lost || (feed(&lf, 500U, 0U).state == LF_ST_LINE_LOST);
+        }
+        CHECK(!lost);
+        CHECK(feed(&lf, 500U, 0U).state == LF_ST_ON_LINE);
+    }
+    g_fwd_step = 12U;
+}
+
+/* Test 31: straights from offset and angled starts at the bring-up cruise
+ * speeds (closed loop).  At 150 and 100 mm/s the time-only T_lost declared
+ * corrections lost (host model: 1 of 27 runs at 150, 9 of 27 at 100 left
+ * ON_LINE after the settle; hardware S3-U17 16 Nov: launch LINE_LOST 3 of 5
+ * at 150 against 1 of 5 at 200).  Gate: always ON_LINE after 3 s, no
+ * TRACK_LOST.  Deferred: at 100 mm/s with the nose 10 deg left the car
+ * weaves about +-30 mm (Motion's shared PID target, task_motion.c; the model
+ * with per-wheel targets settles in 1-2.5 s), so the edge error is reported,
+ * not gated. */
+static void test_sim_slow_straights(void)
+{
+    double const speeds[2] = { 150.0, 100.0 };
+    double const ys[3] = { -6.0, 0.0, 6.0 };
+    double const ths_deg[3] = { -10.0, 0.0, 10.0 };
+
+    for (int i = 0; i < 2; i++)
+    {
+        uint32_t clean = 0U;
+        double worst = 0.0;
+
+        for (int a = 0; a < 3; a++)
+        {
+            for (int b = 0; b < 3; b++)
+            {
+                for (uint32_t seed = 0U; seed < 3U; seed++)
+                {
+                    sim_t s;
+                    loop_t l;
+
+                    sim_init(&s);
+                    s.rng = 12345U + (seed * 7919U);
+                    s.speed_mmps = speeds[i];
+                    l = drive_straight(&s, ys[a], ths_deg[b] * SIM_PI / 180.0, 9.0, 3.0, 6000.0);
+                    clean += (l.always_on_line && (s.n_track_lost == 0U) && (s.n_junction == 0U)) ? 1U : 0U;
+                    worst = fmax(worst, l.max_err_mm);
+                    DEFER(l.max_err_mm <= 9.0);
+                }
+            }
+        }
+        CHECK_AT(speeds[i], clean == 27U);
+        printf("  straight starts %3.0f mm/s: %u/27 ON_LINE throughout after 3 s, max |CENTRE - edge| %.1f mm\n",
+               speeds[i], clean, worst);
+    }
+}
+
 int main(void)
 {
     test_constants();
@@ -2207,6 +2303,8 @@ int main(void)
     test_pivot_memory();
     test_uturn_memory();
     test_uturn_hold();
+    test_lost_by_distance();
+    test_sim_slow_straights();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

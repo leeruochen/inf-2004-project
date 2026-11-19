@@ -23,6 +23,7 @@
 
 /* Sample counts (5 ms each). */
 #define LF_N_LOST       LF_SAMPLES(LF_T_LOST_MS)        /* 20  = 100 ms */
+#define LF_N_LOST_MAX   LF_SAMPLES(LF_T_LOST_MAX_MS)    /* 80  = 400 ms */
 #define LF_N_TURN       LF_SAMPLES(LF_T_TURN_MS)        /* 100 = 500 ms */
 #define LF_N_UTURN      LF_SAMPLES(LF_T_UTURN_MS)       /* 200 = 1 s    */
 #define LF_N_SEARCH     LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
@@ -51,6 +52,8 @@ _Static_assert((LF_UTURN_HOLD_Q7 > 0) && (LF_UTURN_HOLD_Q7 <= LF_ACQUIRE_STEER_Q
                "the hold steers right, no harder than the look for the line");
 _Static_assert((LF_EDGE_TARGET_PM < LF_UTURN_HOLD_FULL_PM) && (LF_UTURN_HOLD_FULL_PM <= LF_PM_FULL),
                "the line's body reads above the edge target");
+_Static_assert((LF_N_LOST_MAX > LF_N_LOST) && (LF_D_LOST_CNT > 0U),
+               "LINE_LOST: the time cap is longer than T_lost, the distance is set");
 
 /* ---------------------------------------------------------------------------
  * Calibration, normalisation, zones, edge steering
@@ -234,6 +237,7 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
     p_lf->state = st;
     p_lf->timer_n = 0U;
     p_lf->lost_n = 0U;
+    p_lf->lost_cnt = 0U;
     p_lf->post_now = true;      /* post at once in the new state */
     p_lf->hold_on = false;      /* the hold after a u-turn never outlives a state */
 }
@@ -387,19 +391,26 @@ static void update_side(lf_core_t *p_lf, lf_view_t const *p_v)
     }
 }
 
-/* Both confirmed LIGHT for LF_T_LOST_MS -> true. */
-static bool lost_check(lf_core_t *p_lf, lf_view_t const *p_v)
+/* Both confirmed LIGHT for LF_T_LOST_MS and LF_D_LOST_MM of travel, or for
+ * LF_T_LOST_MAX_MS whatever the travel -> true.  The travel is this streak's
+ * own: each sample adds its forward counts (fwd_cnt only grows; the unsigned
+ * difference is right across a wrap, and a streak is at most LF_N_LOST_MAX
+ * samples of a few dozen counts, far from overflow). */
+static bool lost_check(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
 {
     if ((p_v->zc == LF_ZONE_LIGHT) && (p_v->zr == LF_ZONE_LIGHT))
     {
         p_lf->lost_n++;
+        p_lf->lost_cnt += p_in->fwd_cnt - p_lf->prev_fwd;
     }
     else
     {
         p_lf->lost_n = 0U;
+        p_lf->lost_cnt = 0U;
     }
 
-    return (p_lf->lost_n >= LF_N_LOST);
+    return (p_lf->lost_n >= LF_N_LOST)
+           && ((p_lf->lost_cnt >= LF_D_LOST_CNT) || (p_lf->lost_n >= LF_N_LOST_MAX));
 }
 
 static void enter_on_line(lf_core_t *p_lf, lf_view_t const *p_v)
@@ -451,7 +462,7 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
             p_lf->jct_cnt0 = p_in->fwd_cnt;
             p_lf->steer_q7 = 0;
         }
-        else if (lost_check(p_lf, p_v))
+        else if (lost_check(p_lf, p_in, p_v))
         {
             enter(p_lf, LF_ST_LINE_LOST);
             may_post = false;
@@ -564,7 +575,7 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
             p_lf->junction_armed = true;
             enter_on_line(p_lf, p_v);
         }
-        else if (lost_check(p_lf, p_v))
+        else if (lost_check(p_lf, p_in, p_v))
         {
             enter(p_lf, LF_ST_LINE_LOST);
             may_post = false;
@@ -744,6 +755,7 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->jct_pending = false;
     p_lf->jct_line_ahead = false;
     p_lf->jct_cnt0 = 0U;
+    p_lf->prev_fwd = 0U;
     enter(p_lf, LF_ST_IDLE);
 }
 
@@ -877,6 +889,8 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
                         && ((p_lf->state == LF_ST_ON_LINE) || (v.zc == LF_ZONE_DARK));
     p_out->d_c_pm = v.d_c;
     p_out->d_r_pm = v.d_r;
+    /* Every sample, every state: the next sample's travel is its own. */
+    p_lf->prev_fwd = p_in->fwd_cnt;
 }
 
 void lf_core_step(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_out)

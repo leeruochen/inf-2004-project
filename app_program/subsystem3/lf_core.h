@@ -131,6 +131,22 @@
  *  (MOTION_T_HOLD_MS) stops the car before the search starts. */
 #define LF_T_STOP_MS            (MOTION_T_HOLD_MS + MOTION_PERIOD_MS)
 
+/** LINE_LOST needs both sensors LIGHT for LF_T_LOST_MS (design.md T_lost)
+ *  AND for this much forward travel: the distance T_lost covered at
+ *  200 mm/s, the speed the recovery was tuned at (LF-3.3).  A time alone
+ *  covers less line as the car slows, and ended corrections that were still
+ *  coming back: launch LINE_LOST in 3 of 5 drives at 150 mm/s against 1 of 5
+ *  at 200 (S3-U17, 16 Nov 2026); host model, straights from offset starts,
+ *  1 of 27 runs lost at 150 mm/s and 9 of 27 at 100, none with this rule.
+ *  At 200 mm/s and above the time is the longer, so nothing changes there.
+ *  Deviation from design.md T_lost: ARCHITECTURE.md D13 (proposed). TUNE */
+#define LF_D_LOST_MM            (20U)
+/** The same in encoder counts. */
+#define LF_D_LOST_CNT           ((LF_D_LOST_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+/** LINE_LOST after this long with both LIGHT whatever the travel: a stalled
+ *  or very slow car (20 mm at 50 mm/s). */
+#define LF_T_LOST_MAX_MS        (400U)
+
 /** Sensing point of the line sensors to the wheel axle, which is Motion's
  *  pivot centre for a turn (task_motion.c TURN_L/TURN_R/UTURN drive the
  *  wheels in opposite directions).  Ruler on the car, 4 Nov 2026. */
@@ -288,6 +304,8 @@ typedef struct
     bool           junction_armed;  /**< false from a junction until RIGHT is LIGHT */
     lf_side_t      side;            /**< side memory */
     uint32_t       lost_n;          /**< consecutive samples with both LIGHT */
+    uint32_t       lost_cnt;        /**< forward counts over those samples */
+    uint32_t       prev_fwd;        /**< fwd_cnt at the previous sample */
     uint32_t       timer_n;         /**< samples spent in the current state/phase */
     bool           post_now;        /**< post at the next sample that may post (state entry) */
     int32_t        steer_q7;        /**< last computed steering */
