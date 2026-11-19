@@ -70,12 +70,19 @@
  * ------------------------------------------------------------------------- */
 
 #ifndef LF_SD_KP_Q7
-/** Steering for one sensor fully on black and the other white, Q7. TUNE */
-#define LF_SD_KP_Q7             (96)
+/** Steering for one sensor fully on black and the other white, Q7.  Full
+ *  steering: on the car (20 Nov, the track's U-bend) 96 overshot and lost the
+ *  line, and slowing the car did not help in the host model (below ~100 mm/s
+ *  the U-bend failed at every radius).  Host model, U-bend R 130-180 over
+ *  three motor models: Kp 64 -> 8/108 passes, 80 -> 38, 96 -> 70, 127 -> 80;
+ *  with the hold at 127 too: U-bends 117/120 at the fitted model, 90 degree
+ *  bends 119/120, straights clean. TUNE */
+#define LF_SD_KP_Q7             (127)
 #endif
 #ifndef LF_SD_HOLD_Q7
-/** Steering held towards the side of a deep contact once both are white. TUNE */
-#define LF_SD_HOLD_Q7           (96)
+/** Steering held towards the side of a deep contact once both are white
+ *  (see LF_SD_KP_Q7). TUNE */
+#define LF_SD_HOLD_Q7           (127)
 #endif
 #ifndef LF_SD_HOLD_MM
 /** The hold lasts at most this much travel, then LINE_LOST. TUNE */

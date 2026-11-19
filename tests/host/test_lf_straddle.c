@@ -8,7 +8,7 @@
  *  Expected values are worked by hand from the constants:
  *    20 mm etc. in counts = mm x 2464 / 207 (ENC_QUAD_MULT x ENC_CPR /
  *    WHEEL_CIRC_MM); the fixture moves 12 counts per 5 ms sample (~200 mm/s).
- *    steering = LF_SD_KP_Q7 (96) x (dr - dl) / 1000.
+ *    steering = LF_SD_KP_Q7 (127) x (dr - dl) / 1000, truncated towards 0.
  *  The closed-loop checks use tests/host/lf_sim.h with the sensors mounted
  *  one each side of the line (spacing 26 mm, CENTRE = LEFT at +13 mm).
  */
@@ -232,9 +232,9 @@ static void test_steer(void)
     CHECK(r.last.line_found);
 
     r = run(&sd, 8U, 500U, 0U);                         /* line under LEFT */
-    CHECK((r.min_steer == -48) && (r.max_steer == -48));  /* 96 x -500 / 1000 */
+    CHECK((r.min_steer == -63) && (r.max_steer == -63));  /* 127 x -500 / 1000 = -63.5 */
     r = run(&sd, 8U, 0U, 1000U);                        /* under RIGHT */
-    CHECK((r.min_steer == 96) && (r.max_steer == 96));
+    CHECK((r.min_steer == 127) && (r.max_steer == 127));
     r = run(&sd, 8U, 300U, 300U);                       /* both partly: centred */
     CHECK((r.min_steer == 0) && (r.max_steer == 0));
     CHECK(r.last.d_c_pm == 300U);                       /* LEFT darkness in d_c */
@@ -544,7 +544,9 @@ static void test_sim_straights(void)
             }
         }
         CHECK(clean == 9U);
-        CHECK(worst <= 15.0);
+        /* Full steering (127) weaves up to ~19 mm either side of the midpoint on a
+         * straight (96: 14 mm), still ON_LINE with no loss; it buys U-bends. */
+        CHECK(worst <= 20.0);
         printf("  straddle straight starts %3.0f mm/s: %u/9 clean, max |line - midpoint| %.1f mm\n",
                speeds[vi], clean, worst);
     }
