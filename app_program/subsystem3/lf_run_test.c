@@ -1293,6 +1293,8 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     dbg_printf("[LF] %s on the track, motors LIVE, cruise %lu mm/s", LF2_ID,
                (unsigned long)LF2_CRUISE_MMPS);
     dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
+    dbg_printf("[LF] build: sensors %lu mm ahead of the axle (LF_D_PIVOT_MM), cruise %lu mm/s",
+               (unsigned long)LF_D_PIVOT_MM, (unsigned long)LF2_CRUISE_MMPS);
     dbg_puts("[LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts");
 
     /* (a) The task runs every 5 ms.  First let the boot calibration end. */
