@@ -63,6 +63,11 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf);
 /** Reset the manoeuvre state machine.  Called by subsystem5_init(). */
 void obs_avoid_init(void);
 
+/** Abandon any manoeuvre in progress and return to OBS_AV_IDLE.
+ *  Called when a run starts, so the car never inherits a bypass that was
+ *  begun while it was standing still.  See the definition for why. */
+void obs_avoid_abandon(void);
+
 /** True once obs_avoid_task_entry() has started. */
 bool obs_avoid_is_running(void);
 

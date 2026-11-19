@@ -46,6 +46,25 @@
 /** Idle wake-up period while there is no obstacle. */
 #define OBS_IDLE_POLL_MS        (100U)
 
+/** How often a straight-line leg re-sends its drive command.
+ *
+ *  Motion Control holds an UNBOUNDED command for only MOTION_T_HOLD_MS
+ *  (100 ms) and then stops the car (task_motion.c, stop_internal).  A
+ *  command counts as a bounded manoeuvre, and so gets the much longer
+ *  MOTION_MANOEUVRE_MAX_MS hold, only when its argument is non-zero: the
+ *  bypass turns carry OBS_BYPASS_TURN_DEG and are therefore bounded, but
+ *  DREP_BYPASS_CONTINUE packs DREP_MC_FWD with argument 0 and is not.
+ *
+ *  MEASURED on the car, 2026-11-13 (INT-S5-01): with one CONTINUE per leg
+ *  the car moved about 2 cm -- 100 ms at the bypass speed -- and stopped,
+ *  never reaching an obstacle 30 cm ahead.  The turns worked throughout,
+ *  which is why the fault looked like "it rotates but will not drive".
+ *
+ *  The legs are open-loop timed, so the command must be refreshed faster
+ *  than the hold expires.  Half of MOTION_T_HOLD_MS leaves a whole period
+ *  of margin for scheduling jitter at this task's priority. */
+#define OBS_LEG_REFRESH_MS      ((uint32_t)MOTION_T_HOLD_MS / 2U)
+
 /** Time for the Vehicle Controller to complete one 45 degree bypass turn.
  *
  *  MEASURED on the car, 2026-11-04 (S5-U32): six in-place 45 degree turns
@@ -222,6 +241,15 @@ static void send_bypass(uint32_t bypass)
 static void send_turn(uint32_t side)
 {
     send_bypass((side == OBS_SIDE_LEFT) ? DREP_BYPASS_LEFT : DREP_BYPASS_RIGHT);
+}
+
+/** True in the states where the car is meant to be driving in a straight
+ *  line under an unbounded DREP_MC_FWD, which Motion Control drops after
+ *  MOTION_T_HOLD_MS unless it is re-sent (see OBS_LEG_REFRESH_MS). */
+static bool state_is_straight_leg(uint32_t state)
+{
+    return (state == OBS_AV_LEG_OUT) || (state == OBS_AV_LEG_ALONG)
+           || (state == OBS_AV_LEG_BACK);
 }
 
 /** The opposite side, for the turns that come back towards the line. */
@@ -527,6 +555,38 @@ void obs_avoid_init(void)
     s_last_seq = 0U;
 }
 
+/** Abandon any manoeuvre in progress and return to OBS_AV_IDLE.
+ *
+ *  The scanner runs from boot, so if an obstacle is already in front of the
+ *  car while the run has not started the avoidance state machine cycles
+ *  through complete bypasses that nothing ever drives: the legs are
+ *  open-loop timed and assume the car is moving.  MEASURED on the car,
+ *  2026-11-19: at the moment the run began the state machine was in
+ *  OBS_AV_LEG_ALONG, left over from the boot settle, so the first real
+ *  detection could not open a fresh manoeuvre -- it ran the stale budget
+ *  out ("bypass budget exhausted") and went idle without ever turning.
+ *
+ *  A manoeuvre started before the car could move carries no information
+ *  about where the car now is, so the run must begin from a clean state.
+ *  This also clears EVF_NAV_AVOID_ACTIVE, since no avoidance is active.
+ *
+ *  NOTE: the production fix belongs at the start of a run, which S5 cannot
+ *  currently observe -- there is no run-state flag in EVF_NAV (ipc_types.h
+ *  defines only AVOID_ACTIVE, LINE_FOUND and LINE_REACQUIRED).  Adding one
+ *  changes a shared header and needs team agreement. */
+void obs_avoid_abandon(void)
+{
+    if (s_state != OBS_AV_IDLE)
+    {
+        dbg_printf("[S5] avoid abandon in %s: run starting", state_name(s_state));
+    }
+    clear_nav_flag(EVF_NAV_AVOID_ACTIVE);
+    clear_nav_flag(EVF_NAV_LINE_REACQUIRED);
+    s_state = OBS_AV_IDLE;
+    s_step_deadline_ms = 0U;
+    s_budget_deadline_ms = 0U;
+}
+
 void obs_avoid_task_entry(INT stacd, void *p_exinf)
 {
     (void)stacd;
@@ -544,6 +604,13 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
             int32_t const left = (int32_t)(s_step_deadline_ms - now_ms);
 
             wait_ms = (left > 0) ? (uint32_t)left : 0U;
+
+            /* A straight leg must not sleep past the motion hold, or the
+             * car stops mid-leg.  Wake early enough to re-send. */
+            if (state_is_straight_leg(s_state) && (wait_ms > OBS_LEG_REFRESH_MS))
+            {
+                wait_ms = OBS_LEG_REFRESH_MS;
+            }
         }
 
         obstacle_profile_t prof;
@@ -607,6 +674,16 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
         if ((int32_t)(app_period_now_ms() - s_step_deadline_ms) >= 0)
         {
             step_expired(app_period_now_ms());
+        }
+        else if (state_is_straight_leg(s_state))
+        {
+            /* Still mid-leg: refresh the drive command before Motion
+             * Control's hold expires and stops the car. */
+            send_bypass(DREP_BYPASS_CONTINUE);
+        }
+        else
+        {
+            /* Turns are bounded manoeuvres and hold themselves. */
         }
     }
 }

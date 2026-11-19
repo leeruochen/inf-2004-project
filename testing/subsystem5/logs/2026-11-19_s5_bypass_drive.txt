@@ -1,0 +1,183 @@
+INT-S5-01  Driving bypass on the car -- 2026-11-19
+===================================================
+
+Setup: Pico W on the mat, 750 ml Owala bottle ahead.  Serial capture at
+115200, 290 s, covering the boot self-tests and the drive.
+
+A temporary bring-up harness (not committed) stood in for Subsystem 3:
+it sent REMOTE_RESET / REMOTE_START past the boot settle and then a
+drep_nav_steer(0) every 50 ms, because task_lf does not publish on main
+yet.  Nothing faked EVF_NAV_LINE_FOUND.
+
+RESULT: PASS for detect -> avoid -> move away.
+  Full four-turn bypass, every state in order, no aborts.
+  Chose LEFT correctly (clrR = 17 mm, no room on the right).
+  Range to the obstacle grew monotonically through the manoeuvre:
+      detection 100 mm -> LEG_OUT 133 -> LEG_ALONG 169 -> LEG_BACK 215.
+
+NOT VERIFIED: return to the track.  LEG_BACK expired with no line, as
+expected -- nothing on main sets EVF_NAV_LINE_FOUND.  Control went back
+to the VC, which re-commands forward at cruise, so the car then drove
+blind into the bottle and Subsystem 4's IMU latched a lift fault
+(cos_tilt = 830/1000, about 32 deg).  Every later bypass aborted with
+"safety fault latched" until it re-armed.  Blocked on buddy3/lf3-link.
+
+Two boot failures, both artifacts of the bottle standing in front of the
+car during the 200 s settle, not regressions:
+  S5-U05  echo line idle LOW      -- something was in range at that instant
+  S5-U24  starts with no aborts   -- the avoid task had been cycling
+                                     bypasses against the bottle
+Re-run with a clear field at boot before recording either.
+
+Fixes under test here:
+  - straight legs re-send DREP_BYPASS_CONTINUE every OBS_LEG_REFRESH_MS,
+    since Motion Control drops an unbounded command after
+    MOTION_T_HOLD_MS (100 ms) and the legs are open-loop timed;
+  - obs_avoid_abandon() returns the state machine to IDLE at run start.
+    The previous run began in LEG_ALONG, inherited from the boot settle,
+    and the first real detection could not open a fresh manoeuvre.
+
+--- capture extract ---
+
+[S5RAW] near=133 edges 30..90 deg width=69
+[S5] bypass LEFT: d=13 cm w=70 mm out=820 ms along=480 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[S5] avoid abandon in TURN_OUT: run starting
+[S5BU] REMOTE_START sent -- car should drive now
+[IMU] hump pitch=23 half-deg
+[IMU] hump pitch=12 half-deg
+[IMU] hump pitch=-28 half-deg
+[IMU] lift peak 1s: v=19/100 mm/s acc=36 mg cos=918/866
+[IMU] hump pitch=13 half-deg
+[S5] coarse hit 57 mm @ 120 deg, fine scan
+[IMU] hump pitch=-26 half-deg
+[IMU] lift peak 1s: v=0/100 mm/s acc=11 mg cos=864/866
+[S5] obstacle 100 mm @ 110 deg w=50 clrL=635 clrR=17
+[S5RAW]   30 deg = 976 mm
+[S5RAW]   40 deg = 134 mm
+[S5RAW]   50 deg = 133 mm
+[S5RAW]   70 deg = 134 mm
+[S5RAW]   80 deg = 134 mm
+[S5RAW]   90 deg = 142 mm
+[S5RAW]   100 deg = 100 mm
+[S5RAW]   110 deg = 101 mm
+[S5RAW]   120 deg = 104 mm
+[S5RAW]   130 deg = 112 mm
+[S5RAW]   140 deg = 565 mm
+[S5RAW]   150 deg = 554 mm
+[S5RAW] near=100 edges 100..130 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[IMU] hump pitch=12 half-deg
+[IMU] hump pitch=-42 half-deg
+[IMU] lift peak 1s: v=0/100 mm/s acc=47 mg cos=926/866
+[S5] coarse hit 100 mm @ 100 deg, fine scan
+[S5] obstacle 133 mm @ 40 deg w=50 clrL=635 clrR=635
+[S5RAW]   40 deg = 134 mm
+[S5RAW]   50 deg = 133 mm
+[S5RAW]   70 deg = 353 mm
+[S5RAW]   90 deg = 361 mm
+[S5RAW]   100 deg = 353 mm
+[S5RAW]   130 deg = 385 mm
+[S5RAW]   140 deg = 565 mm
+[S5RAW]   150 deg = 516 mm
+[S5RAW] near=133 edges 40..50 deg width=50
+[S5] bypass LEFT: d=13 cm w=50 mm out=760 ms along=400 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[S5] avoid -> LEG_OUT (760 ms)
+[IMU] hump pitch=16 half-deg
+[IMU] lift peak 1s: v=0/100 mm/s acc=195 mg cos=891/866
+[IMU] hump pitch=-10 half-deg
+[DBG] alive: SDK timer 209997 ms, kernel time 206861 ms, difference 3136 ms
+[IMU] hump pitch=-10 half-deg
+[S5] avoid -> TURN_IN1 (550 ms)
+[IMU] hump pitch=-19 half-deg
+[S5] coarse hit 133 mm @ 40 deg, fine scan
+[IMU] lift peak 1s: v=0/100 mm/s acc=144 mg cos=873/866
+[S5] avoid -> LEG_ALONG (400 ms)
+[IMU] hump pitch=14 half-deg
+[S5] obstacle 169 mm @ 30 deg w=50 clrL=635 clrR=635
+[S5RAW]   20 deg = 186 mm
+[S5RAW]   30 deg = 169 mm
+[S5RAW]   40 deg = 186 mm
+[S5RAW]   70 deg = 323 mm
+[S5RAW]   90 deg = 517 mm
+[S5RAW]   100 deg = 353 mm
+[S5RAW]   120 deg = 412 mm
+[S5RAW]   130 deg = 385 mm
+[S5RAW]   140 deg = 565 mm
+[S5RAW] near=169 edges 20..40 deg width=50
+[S5] avoid -> TURN_IN2 (550 ms)
+[IMU] hump pitch=-21 half-deg
+[IMU] hump pitch=-10 half-deg
+[IMU] lift peak 1s: v=43/100 mm/s acc=96 mg cos=959/866
+[S5] avoid -> LEG_BACK (2000 ms)
+[IMU] hump pitch=20 half-deg
+[S5] coarse hit 186 mm @ 40 deg, fine scan
+[IMU] lift peak 1s: v=59/100 mm/s acc=55 mg cos=952/866
+[S5] obstacle 215 mm @ 150 deg w=50 clrL=635 clrR=67
+[S5RAW]   10 deg = 568 mm
+[S5RAW]   20 deg = 553 mm
+[S5RAW]   30 deg = 542 mm
+[S5RAW]   40 deg = 533 mm
+[S5RAW]   50 deg = 515 mm
+[S5RAW]   60 deg = 516 mm
+[S5RAW]   70 deg = 498 mm
+[S5RAW]   90 deg = 697 mm
+[S5RAW]   100 deg = 353 mm
+[S5RAW]   120 deg = 238 mm
+[S5RAW]   130 deg = 385 mm
+[S5RAW]   140 deg = 565 mm
+[S5RAW]   150 deg = 215 mm
+[S5RAW] near=215 edges 150..150 deg width=50
+[IMU] lift peak 1s: v=48/100 mm/s acc=50 mg cos=997/866
+[S5] avoid handoff in LEG_BACK, line not found: LEG_BACK dwell elapsed
+[S5] avoid -> IDLE (reacquired=0)
+[IMU] hump pitch=-47 half-deg
+[IMU] hump pitch=15 half-deg
+[IMU] hump pitch=14 half-deg
+[IMU] hump pitch=16 half-deg
+[TEST] S4-U01 PASS  accelerometer found and identified
+[TEST] S4-U02 PASS  magnetometer present
+[TEST] S4-U03 PASS  accel configured (imu_is_ready)
+[TEST] S4-U04 PASS  IMU task reads new samples
+[TEST] S4-U05 PASS  z-axis ~1 g at rest
+[TEST] S4-U06 PASS  magnitude ~1 g at rest
+[TEST] S4-U07 PASS  pitch within 10 deg of the boot level reference
+[TEST] S4-U08 PASS  IMU task running
+[TEST] S4-U09 PASS  Safety task running
+[TEST] S4-U10 PASS  IMU period ~10 ms
+[TEST] S4-U11 PASS  no I2C errors
+[TEST] S4-U12 PASS  no IMU watchdog timeouts
+[TEST] S4-U17 PASS  lift detector armed, no false lift event with the car at rest
+[S4] S4-U14..U16, U18..U20, U23 skipped: operator-guided, -DS4_MANUAL_TESTS=ON
+[TEST] subsystem4 SUMMARY 13 passed, 0 failed
+[TEST] S5-U01 PASS  servo angle to pulse: endpoints, centre, clamp
+[TEST] S5-U02 PASS  servo PWM slice 7 runs at SERVO_PWM_FREQ_HZ
+[TEST] S5-U03 PASS  slice 7 channel A (GP14, another owner) stays LOW
+[TEST] S5-U04 PASS  echo width to mm: zero, over-range, 1160 us = ~199 mm
+[TEST] S5-U05 FAIL  echo handler registered and echo line idle LOW   (subsystem5_test.c:92)
+[TEST] S5-U06 PASS  cos/sin tables: 0, 90 and 180 degrees
+[TEST] S5-U07 PASS  lateral sign convention: positive is to the car's right
+[TEST] S5-U08 PASS  median of three samples ignores no-echo and rejects an outlier
+[TEST] S5-U09 PASS  an empty sweep is not an obstacle
+[TEST] S5-U10 PASS  one near bearing dead ahead: 150 mm at 90 degrees
+[TEST] S5-U11 PASS  a wide obstacle smeared to 40..140 degrees recovers >= 200 mm wide
+[TEST] S5-U12 PASS  with nothing beside it, both clearances saturate at 635 mm
+[TEST] S5-U13 PASS  an object 110 mm to the right cuts clear_R but not clear_L
+[TEST] S5-U14 PASS  profile round-trip: 20 cm at 90 degrees, sequence kept
+[TEST] S5-U15 PASS  a 0 degree bearing clamps to index 0 and flags OOR
+[TEST] S5-U16 PASS  an invalid result packs as distance 0 (no echo)
+[TEST] S5-U17 PASS  both sides clear, obstacle on the left: pass on the right
+[TEST] S5-U18 PASS  both sides clear, obstacle on the right: pass on the left
+[TEST] S5-U19 PASS  only the left has OBS_BYPASS_CLEAR_MIN_MM: pass on the left
+[TEST] S5-U20 PASS  neither side has room: the car reports blocked
+[TEST] S5-U21 PASS  out-leg distance and its duration grow with obstacle width
+[TEST] S5-U22 PASS  power-up sensor check passed (servo PWM, echo handler, echo idle)
+[TEST] S5-U23 PASS  both subsystem 5 tasks are running
+[TEST] S5-U24 FAIL  avoidance starts in a valid state with no aborts   (subsystem5_test.c:298)
+[TEST] S5-U25 PASS  the scanner completes a coarse sweep on the 60 ms grid
+[TEST] S5-U26 PASS  the ultrasonic sensor returned at least one echo
+[TEST] S5-U29 PASS  a 50 mm object at 158 mm reports inside NFR15's band (50..78 mm)
+[TEST] S5-U30 PASS  a background return 80 mm behind the obstacle does not widen the run
+[TEST] S5-U31 PASS  a flat wall at 60..120 degrees stays one run despite its range rise
+[TEST] subsystem5 SUMMARY 27 passed, 2 failed
