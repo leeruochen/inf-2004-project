@@ -25,6 +25,8 @@
 #include "task_tel.h"
 
 #include "../subsystem2/subsystem2.h"   /* motion_get_state(), vc_get_system_state() */
+#include "../subsystem4/subsystem4.h"   /* status line: IMU getters (dashboard integration) */
+#include "../subsystem5/subsystem5.h"   /* status line: obstacle getters (dashboard integration) */
 #include "config/timing.h"
 #include "drv_wifi.h"
 #include "tel_outbox.h"
@@ -470,16 +472,20 @@ static void publish_periodic(void)
         send_periodic(frame, drep_frame_motion(frame, ms.tick_ms, ms.w, ms.enc_count[0], ms.enc_count[1]));
     }
 
-    /* The sensor frame only once some producer has written a value. */
+    /* The sensor frame only once some producer has written a value; which
+     * fields are real readings goes in the frame's spare bits (dashboard). */
     if (((ir | range | att) & TEL_SNAP_VALID) != 0U)
     {
-        send_periodic(frame,
-                      drep_frame_sensor(frame, app_period_now_ms(),
-                                        ir & DREP_MASK(TEL_SNAP_IR_BITS),
-                                        (ir >> TEL_SNAP_IR_BITS) & DREP_MASK(TEL_SNAP_IR_BITS),
-                                        range & DREP_MASK(TEL_SNAP_RANGE_BITS),
-                                        drep_sext(att, TEL_SNAP_ATT_BITS),
-                                        drep_sext(att >> TEL_SNAP_ATT_BITS, TEL_SNAP_ATT_BITS)));
+        uint32_t const len = drep_frame_sensor(frame, app_period_now_ms(),
+                                               ir & DREP_MASK(TEL_SNAP_IR_BITS),
+                                               (ir >> TEL_SNAP_IR_BITS) & DREP_MASK(TEL_SNAP_IR_BITS),
+                                               range & DREP_MASK(TEL_SNAP_RANGE_BITS),
+                                               drep_sext(att, TEL_SNAP_ATT_BITS),
+                                               drep_sext(att >> TEL_SNAP_ATT_BITS, TEL_SNAP_ATT_BITS));
+
+        drep_frame_sensor_valid(frame, (ir & TEL_SNAP_VALID) != 0U, (range & TEL_SNAP_VALID) != 0U,
+                                (att & TEL_SNAP_VALID) != 0U);
+        send_periodic(frame, len);
     }
 }
 
@@ -571,6 +577,14 @@ static void log_status(void)
                (unsigned long)st.evt_rx, (unsigned long)st.evt_invalid,
                (unsigned long)st.evt_post_drops, (unsigned long)st.outbox_dropped,
                (unsigned long)st.cmd_accepted, (unsigned long)st.cmd_rejected);
+    /* Dashboard integration: what no telemetry frame carries, from the
+     * subsystems' public getters (console only). */
+    dbg_printf("[TEL] imu found=%d mag=%lu mg pitch=%ld half-deg",
+               subsystem4_imu_found() ? 1 : 0, (unsigned long)subsystem4_get_accel_mag_mg(),
+               (long)subsystem4_get_pitch_half_deg());
+    dbg_printf("[TEL] obs sensors_ok=%d avoid_state=%lu avoid_active=%d",
+               subsystem5_sensors_ok() ? 1 : 0, (unsigned long)subsystem5_get_avoid_state(),
+               subsystem5_avoid_is_active() ? 1 : 0);
 }
 
 /* ===========================================================================

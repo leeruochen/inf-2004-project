@@ -24,6 +24,7 @@
 #include "config/timing.h"
 #include "drv_imu.h"
 #include "imu_lift.h"
+#include "../subsystem1/subsystem1.h"   /* tel_set_attitude (IF-12, dashboard integration) */
 
 /* Consecutive I2C failures before FAULT_IMU_I2C (5 x 10 ms). */
 #define IMU_I2C_FAIL_THRESHOLD      (5U)
@@ -528,6 +529,9 @@ void imu_task_entry(INT stacd, void *p_exinf)
         int32_t const pitch = board_pitch - s_pitch_offset_half_deg;
 
         s_pitch_half_deg = pitch;
+        /* Dashboard integration (IF-12): newest attitude for the 200 ms
+         * sensor frame; one aligned store, never waits. */
+        tel_set_attitude(pitch, imu_roll_half_deg(s_fx_mg, s_fy_mg, s_fz_mg));
         check_lift();
         check_hump(pitch);
     }

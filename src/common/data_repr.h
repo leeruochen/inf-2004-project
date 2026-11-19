@@ -830,6 +830,22 @@ static inline uint32_t drep_frame_sensor(uint8_t *p_buf, uint32_t ts_ms, uint32_
     return DREP_FRAME_HDR_BYTES + drep_frame_len(DREP_FT_TELEMETRY_SENSOR);
 }
 
+/** Dashboard integration: which sensor-frame fields hold a real reading,
+ *  in the payload's spare bits 73..75 (after roll): IR (both raws),
+ *  ultrasonic, attitude (pitch and roll); 1 = written by its producer since
+ *  boot.  Frames without them (all 0) read as "not available", which is
+ *  what they were.  The payload length (10 bytes) does not change. */
+#define DREP_SENSOR_VALID_POS   ((DREP_FRAME_HDR_BYTES * 8U) + 73U)
+
+static inline void drep_frame_sensor_valid(uint8_t *p_buf, bool ir_ok, bool range_ok, bool att_ok)
+{
+    uint32_t pos = DREP_SENSOR_VALID_POS;
+
+    drep_bits_put(p_buf, &pos, ir_ok ? 1U : 0U, 1U);
+    drep_bits_put(p_buf, &pos, range_ok ? 1U : 0U, 1U);
+    drep_bits_put(p_buf, &pos, att_ok ? 1U : 0U, 1U);
+}
+
 static inline uint32_t drep_frame_barcode(uint8_t *p_buf, uint32_t ts_ms, uint32_t cmd)
 {
     uint32_t pos = drep_frame_begin(p_buf, DREP_FT_EVENT_BARCODE);

@@ -272,7 +272,7 @@ heartbeat and the commands):
 | Type | Binary payload (bits → bytes) | Fields |
 |---|---|---|
 | telemetry_motion | 24 + 10 + 16 + 2 × 32 = 114 → 15 | ts, speed, distance, enc_l, enc_r |
-| telemetry_sensor | 24 + 12 + 12 + 9 + 8 + 8 = 73 → 10 | ts, IR_R raw, IR_C raw, ultrasonic cm, pitch, roll (roll uses the pitch format: ASSUMPTION) |
+| telemetry_sensor | 24 + 12 + 12 + 9 + 8 + 8 + 3 = 76 → 10 | ts, IR_R raw, IR_C raw, ultrasonic cm, pitch, roll (roll uses the pitch format: ASSUMPTION), then 3 validity flags in the spare bits 73..75 (IR, ultrasonic, attitude; 1 = written by its producer since boot, 0 = not available; dashboard integration, 19 Nov) |
 | event_barcode | 24 + 2 = 26 → 4 | ts, command |
 | event_hump | 24 + 7 + 8 + 1 = 40 → 5 | ts, height, pitch, OOR |
 | event_obstacle | 24 + 37 = 61 → 8 | ts, obstacle_profile_t fields incl. the 2-bit sequence and OOR |

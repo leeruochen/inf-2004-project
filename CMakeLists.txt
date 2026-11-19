@@ -145,6 +145,16 @@ if(TEL_BACKEND_WIFI)
 else()
     target_compile_definitions(robocar_options INTERFACE TEL_BACKEND_WIFI=0)
 endif()
+# Dashboard integration: the Telemetry task's status lines ("[TEL] <link> tx=...",
+# "[TEL] imu ...", "[TEL] obs ...") every TEL_STATUS_PERIOD_MS instead of 60 s.
+# Empty = the default (60000).  Subsystem tests with the dashboard: 1000.
+set(TEL_STATUS_PERIOD_MS "" CACHE STRING "Telemetry status line period, ms (empty = 60000)")
+if(NOT TEL_STATUS_PERIOD_MS STREQUAL "")
+    if(NOT TEL_STATUS_PERIOD_MS MATCHES "^[0-9]+$" OR TEL_STATUS_PERIOD_MS LESS 200)
+        message(FATAL_ERROR "TEL_STATUS_PERIOD_MS='${TEL_STATUS_PERIOD_MS}': a whole number of ms, at least 200")
+    endif()
+    target_compile_definitions(robocar_options INTERFACE TEL_STATUS_LOG_PERIOD_MS=${TEL_STATUS_PERIOD_MS}U)
+endif()
 
 # --- Config header check (pure macros, our warning flags) --------------------
 add_library(config_check OBJECT "${PROJECT_SOURCE_DIR}/cmake/config_check.c")

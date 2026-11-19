@@ -92,6 +92,15 @@ void imu_raw_to_mg(imu_accel_raw_t const *p_raw,
  */
 int32_t imu_pitch_half_deg(int32_t x_mg, int32_t y_mg, int32_t z_mg);
 
+/*
+ * Dashboard integration: roll from the accelerometer, half-degrees (Q1):
+ * atan2(y, z) about the x (forward) axis of imu_pitch_half_deg, with y and z
+ * negated when z < 0 (the IMU is mounted upside down).  Not levelled (no
+ * boot offset) and its sign is not yet checked on the car: telemetry only,
+ * no safety decision uses it.
+ */
+int32_t imu_roll_half_deg(int32_t x_mg, int32_t y_mg, int32_t z_mg);
+
 /* Magnitude of the acceleration vector in milli-g. */
 uint32_t imu_accel_magnitude_mg(int32_t x_mg, int32_t y_mg, int32_t z_mg);
 

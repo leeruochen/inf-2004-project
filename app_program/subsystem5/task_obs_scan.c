@@ -44,6 +44,7 @@
 #include "drv_servo.h"
 #include "drv_ultrasonic.h"
 #include "src/debug/dbg.h"
+#include "../subsystem1/subsystem1.h"   /* tel_set_range_cm, tel_post_obstacle (IF-12, dashboard integration) */
 
 /* ---------------------------------------------------------------------------
  * Compile-time checks on the tuning constants this task depends on.
@@ -651,6 +652,7 @@ static void send_profile(obstacle_profile_t prof)
     {
         s_last_profile = prof;
         s_profile_count++;
+        tel_post_obstacle(prof);        /* dashboard integration (IF-12): newest wins, never waits */
         s_seq = (s_seq + 1U) & DREP_MASK(DREP_OBS_SEQ_BITS);
     }
     else
@@ -923,6 +925,10 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
         uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
 
         s_scan.dist_mm[s_slot] = mm;
+        if (s_slot == OBS_DEG_TO_SLOT(90U))
+        {
+            tel_set_range_cm((uint32_t)mm / 10U);   /* dashboard integration (IF-12): forward range, 0 = no echo */
+        }
 
         if (mm != 0U)
         {

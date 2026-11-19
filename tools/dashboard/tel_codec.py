@@ -125,8 +125,14 @@ class Frame:
             return (f"t={f['ts_ms']}ms v={f['speed_cmps']:+.1f}cm/s d={f['distance_cm']}cm "
                     f"encL={f['enc_l']} encR={f['enc_r']}")
         if self.type == FT_TELEMETRY_SENSOR:
-            return (f"t={f['ts_ms']}ms IR_R={f['ir_r_raw']} IR_C={f['ir_c_raw']} range={f['range_cm']}cm "
-                    f"pitch={f['pitch_deg']:+.1f} roll={f['roll_deg']:+.1f}")
+            if not f["flags_present"]:      # firmware before the validity flags
+                return (f"t={f['ts_ms']}ms IR_R={f['ir_r_raw']} IR_C={f['ir_c_raw']} range={f['range_cm']}cm "
+                        f"pitch={f['pitch_deg']:+.1f} roll={f['roll_deg']:+.1f} (validity flags absent)")
+            ir = f"IR_R={f['ir_r_raw']} IR_C={f['ir_c_raw']}" if f["ir_valid"] else "IR n/a"
+            rng = f"range={f['range_cm']}cm" if f["range_valid"] else "range n/a"
+            att = (f"pitch={f['pitch_deg']:+.1f} roll={f['roll_deg']:+.1f}" if f["att_valid"]
+                   else "pitch/roll n/a")
+            return f"t={f['ts_ms']}ms {ir} {rng} {att}"
         if self.type == FT_EVENT_BARCODE:
             return f"t={f['ts_ms']}ms {f['command']}"
         if self.type == FT_EVENT_HUMP:
@@ -164,6 +170,13 @@ def decode(data: bytes) -> Frame:
         f["range_cm"] = b.u(9)
         f["pitch_deg"] = b.s(8) / 2.0
         f["roll_deg"] = b.s(8) / 2.0
+        # Dashboard integration (19 Nov): validity flags in the spare bits
+        # 73..75 (data_repr.h DREP_SENSOR_VALID_POS).  Older firmware leaves
+        # them 0, so "flags_present" False means "validity unknown".
+        f["ir_valid"] = bool(b.u(1))
+        f["range_valid"] = bool(b.u(1))
+        f["att_valid"] = bool(b.u(1))
+        f["flags_present"] = f["ir_valid"] or f["range_valid"] or f["att_valid"]
     elif t == FT_EVENT_BARCODE:
         f["ts_ms"] = b.u(24)
         f["cmd"] = b.u(2)
@@ -206,6 +219,32 @@ def encode_cmd(cmd: str) -> Tuple[str, bytes]:
 
 
 _LOG_LINE = re.compile(r"\[TEL\]\s+(car/\S+)\s+([0-9a-fA-F]+)\s*$")
+
+# Dashboard integration: the Telemetry task's console status lines
+# (task_tel.c log_status; every TEL_STATUS_PERIOD_MS, default 60 s).
+_IMU_STATUS = re.compile(r"\[TEL\] imu found=(\d) mag=(\d+) mg pitch=(-?\d+) half-deg")
+_OBS_STATUS = re.compile(r"\[TEL\] obs sensors_ok=(\d) avoid_state=(\d+) avoid_active=(\d)")
+_LINK_STATUS = re.compile(r"\[TEL\] ([A-Z_]+) tx=(\d+) txf=(\d+) off=(\d+) ev=(\d+) bad=(\d+) "
+                          r"qd=(\d+) od=(\d+) cmd=(\d+)/(\d+)")
+
+
+def parse_status_line(line: str) -> Optional[Tuple[str, Dict[str, object]]]:
+    """('imu'|'obs'|'link', fields) from a '[TEL] imu/obs/<LINK> ...' status line, else None."""
+    m = _IMU_STATUS.search(line)
+    if m:
+        return "imu", {"found": m.group(1) == "1", "accel_mag_mg": int(m.group(2)),
+                       "pitch_deg": int(m.group(3)) / 2.0}
+    m = _OBS_STATUS.search(line)
+    if m:
+        return "obs", {"sensors_ok": m.group(1) == "1", "avoid_state": int(m.group(2)),
+                       "avoid_active": m.group(3) == "1"}
+    m = _LINK_STATUS.search(line)
+    if m:
+        keys = ("tx", "txf", "off", "ev", "bad", "qd", "od", "cmd_ok", "cmd_rej")
+        d: Dict[str, object] = {"link": m.group(1)}
+        d.update({k: int(v) for k, v in zip(keys, m.groups()[1:])})
+        return "link", d
+    return None
 
 
 def parse_log_line(line: str) -> Optional[Tuple[str, bytes]]:

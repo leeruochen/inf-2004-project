@@ -1,0 +1,2 @@
+# Batch files need CRLF for cmd.exe (the root .gitattributes checks out LF).
+*.cmd text eol=crlf
