@@ -160,7 +160,7 @@
 /** Nominal bypass speed. Closed to 25 cm/s on 2026-11-04 for NFR14. */
 #define MOTION_SPEED_BYPASS_NOMINAL_CMPS    (25U)
 /** Bring-up cruise speed. TUNE */
-#define MOTION_SPEED_CRUISE_BRINGUP_CMPS    (20U)
+#define MOTION_SPEED_CRUISE_BRINGUP_CMPS    (5U)
 /** Bring-up slow speed. TUNE */
 #define MOTION_SPEED_SLOW_BRINGUP_CMPS      (10U)
 /** Bring-up bypass speed. Aligned to 25 cm/s for NFR14. */
