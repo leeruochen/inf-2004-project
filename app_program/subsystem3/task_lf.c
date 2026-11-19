@@ -31,6 +31,12 @@
 #include "lf_core.h"
 #include "lf_link.h"
 #include "lf_sanity.h"
+#ifndef S3_LF_STRADDLE
+#define S3_LF_STRADDLE          (0)
+#endif
+#if S3_LF_STRADDLE
+#include "lf_straddle.h"                /* EXPERIMENT: straddle core */
+#endif
 #include "../subsystem1/subsystem1.h"   /* tel_set_ir_raw (IF-12, dashboard integration) */
 
 /** Boot calibration: samples per sensor, one per LF_SAMPLE_PERIOD_MS
@@ -39,8 +45,14 @@
 /** The test waits at most this long for a recalibration: it takes 160 ms. */
 #define LF_RECAL_WAIT_MS        (1000U)
 
-/* The pure modules' state.  Static, not on the 1.5 KB task stack. */
+/* The pure modules' state.  Static, not on the 1.5 KB task stack.  The
+ * EXPERIMENT straddle build (S3_LF_STRADDLE) runs lf_straddle.c's core in
+ * place of lf_core.c's, behind the same inputs and outputs. */
+#if S3_LF_STRADDLE
+static lf_sd_t          s_core;
+#else
 static lf_core_t        s_core;
+#endif
 static lf_link_t        s_link;
 static motion_state_t   s_ms;           /* last good Motion state copy */
 static lf_task_status_t s_st;           /* written by this task only */
@@ -51,6 +63,11 @@ static lf_task_status_t s_st;           /* written by this task only */
 static volatile bool    s_armed = false;
 /* Set by the test task, cleared here when the calibration has run. */
 static volatile bool    s_recal = false;
+/* A calibration from the test task (two-pose, lf_cal_from_two_poses):
+ * s_cal_new is written by the test task with dispatching disabled, then
+ * s_cal_set; this task applies it at its next sample and clears the flag. */
+static lf_cal_t         s_cal_new;
+static volatile bool    s_cal_set = false;
 #else
 #define s_armed         (true)
 #endif
@@ -202,7 +219,11 @@ static void lf_calibrate(void)
     s_st.cal = cal;
     s_st.cal_c_avg = lf_adc_stats_avg(&sc);
     s_st.cal_r_avg = lf_adc_stats_avg(&sr);
+#if S3_LF_STRADDLE
+    lf_sd_init(&s_core, (s_st.cal_status == LF_CAL_OK) ? &cal : NULL);
+#else
     lf_core_init(&s_core, (s_st.cal_status == LF_CAL_OK) ? &cal : NULL);
+#endif
 
     dbg_printf("[LF] boot calibration %s: C avg %u (%u..%u), R avg %u (%u..%u)",
                (s_st.cal_status == LF_CAL_OK) ? "OK"
@@ -253,7 +274,11 @@ static void lf_sample(void)
     in.yaw_cnt = lk.yaw_cnt;
     in.post_slot = lf_link_post_slot(s_ms.tick_ms, now_ms);
 
+#if S3_LF_STRADDLE
+    lf_sd_step(&s_core, &in, &out);
+#else
     lf_core_step(&s_core, &in, &out);
+#endif
 
     /* 3. Act.  While disarmed (APP_TEST) the core is IDLE: nothing to send. */
     if (armed)
@@ -349,6 +374,19 @@ static void lf_task(INT stacd, void *p_exinf)
             app_period_init(&per, LF_SAMPLE_PERIOD_MS);
             s_recal = false;
         }
+        if (s_cal_set)
+        {
+            s_st.cal = s_cal_new;
+            s_st.cal_status = LF_CAL_OK;
+#if S3_LF_STRADDLE
+            lf_sd_init(&s_core, &s_cal_new);
+#else
+            lf_core_init(&s_core, &s_cal_new);
+#endif
+            dbg_printf("[LF] two-pose calibration in use: C white %u black %u, R white %u black %u",
+                       s_cal_new.c.white, s_cal_new.c.black, s_cal_new.r.white, s_cal_new.r.black);
+            s_cal_set = false;
+        }
 #endif
         lf_sample();
     }
@@ -376,6 +414,24 @@ void lf_task_get_status(lf_task_status_t *p_out)
 void lf_task_test_arm(bool armed)
 {
     s_armed = armed;    /* the task clears LINE_FOUND itself on disarming */
+}
+
+void lf_task_test_set_cal(lf_cal_t const *p_cal)
+{
+    uint32_t waited_ms = 0U;
+
+    if (p_cal != NULL)
+    {
+        (void)tk_dis_dsp();
+        s_cal_new = *p_cal;
+        s_cal_set = true;
+        (void)tk_ena_dsp();
+        while (s_cal_set && (waited_ms < LF_RECAL_WAIT_MS))
+        {
+            (void)tk_dly_tsk((RELTIM)LF_SAMPLE_PERIOD_MS);
+            waited_ms += LF_SAMPLE_PERIOD_MS;
+        }
+    }
 }
 
 void lf_task_test_recalibrate(void)

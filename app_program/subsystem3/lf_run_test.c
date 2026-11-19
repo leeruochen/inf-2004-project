@@ -138,6 +138,23 @@
 #if (S3_DRIVE_MM > 0) && ((S3_DRIVE_MM < 300) || (S3_DRIVE_MM > 20000))
 #error "lf_run_test.c: S3_DRIVE_MM is 300..20000 mm"
 #endif
+/** EXPERIMENT straddle build (sources.cmake -DS3_LF_STRADDLE=ON): the
+ *  sensors one each side of the line; placement and the start check follow. */
+#ifndef S3_LF_STRADDLE
+#define S3_LF_STRADDLE          (0)
+#endif
+#if S3_LF_STRADDLE
+#define LF2_MODE_TEXT           "STRADDLE (sensors one each side of the line, 26 mm apart)"
+#define LF2_START_TEXT          "the line centred between the two sensors, both on white, square to the line"
+#define LF2_POSE_A_HINT         " (straddle mount: slide the car about 13 mm to the RIGHT)"
+#define LF2_POSE_B_HINT         " (straddle mount: slide the car about 13 mm to the LEFT)"
+#else
+#define LF2_MODE_TEXT           "EDGE (CENTRE on the line's right edge, RIGHT on white)"
+#define LF2_START_TEXT          "CENTRE on black, RIGHT on white, square to the line"
+#define LF2_POSE_A_HINT         ""
+#define LF2_POSE_B_HINT         ""
+#endif
+
 /** Test ID of this build's checks. */
 #if (S3_DRIVE_MM > 0)
 #define LF2_ID                  "S3-U19"
@@ -511,9 +528,17 @@ static bool lf2_start_ok(uint16_t raw_c, uint16_t raw_r)
     uint32_t const span = (uint32_t)s_now.cal.c.black - white;
     uint32_t const lifted = white + ((span * LF2_JMAT_LIFTED_PCT) / 100U);
 
+#if S3_LF_STRADDLE
+    /* Straddle: the line between the sensors, both on white (lifted, both
+     * read far above black instead). */
+    return (raw_c <= lifted) && (raw_r <= lifted)
+           && (lf_norm(&s_now.cal.c, raw_c) < LF_LIGHT_MAX_PM)
+           && (lf_norm(&s_now.cal.r, raw_r) < LF_LIGHT_MAX_PM);
+#else
     return (raw_c <= lifted)
            && (lf_norm(&s_now.cal.c, raw_c) >= LF2_JMAT_BLACK_MIN_PM)
            && (lf_norm(&s_now.cal.r, raw_r) < LF_LIGHT_MAX_PM);
+#endif
 }
 
 /* Hold a jmat drive until CENTRE sits steady on black and RIGHT on white,
@@ -531,7 +556,7 @@ static bool lf2_place_guard(char const *p_tag, char const *p_place)
     bool     ready = false;
 
     dbg_printf("[LF] >>> %s: %s", p_tag, p_place);
-    dbg_puts("[LF] >>> put the car against the tape, hands off: it starts when CENTRE is steady on black");
+    dbg_printf("[LF] >>> put the car against the tape, hands off: it starts when it is steady with %s", LF2_START_TEXT);
     for (uint32_t tick = 0U; (tick < wait_ticks) && !ready; tick++)
     {
         bool ok;
@@ -564,7 +589,7 @@ static bool lf2_place_guard(char const *p_tag, char const *p_place)
         dbg_printf("[LF] place: CENTRE %u pm, RIGHT %u pm: %s", lf_norm(&s_now.cal.c, s_now.raw_c),
                    lf_norm(&s_now.cal.r, s_now.raw_r),
                    ok ? (moved ? "OK, keep still" : "lift the car and put it at the start")
-                      : "NOT READY: CENTRE on black, RIGHT on white");
+                      : "NOT READY: " LF2_START_TEXT);
         if (!ready)
         {
             (void)tk_dly_tsk((RELTIM)LF2_JMAT_LIVE_MS);
@@ -577,7 +602,8 @@ static bool lf2_place_guard(char const *p_tag, char const *p_place)
 /* Static measurement in one pose, motors stopped.  Returns the average
  * darkness of CENTRE and RIGHT; keeps RIGHT's raw range. */
 static void lf2_static(char const *p_tag, char const *p_place,
-                       uint16_t *p_dc, uint16_t *p_dr, uint16_t *p_rmin, uint16_t *p_rmax)
+                       uint16_t *p_dc, uint16_t *p_dr, uint16_t *p_rmin, uint16_t *p_rmax,
+                       lf_adc_stats_t *p_sc, lf_adc_stats_t *p_sr)
 {
     uint32_t sum_c = 0U;
     uint32_t sum_r = 0U;
@@ -593,9 +619,25 @@ static void lf2_static(char const *p_tag, char const *p_place,
     {
         lf2_place(p_tag, p_place, false);
     }
+    if (p_sc != NULL)
+    {
+        lf_adc_stats_reset(p_sc);
+    }
+    if (p_sr != NULL)
+    {
+        lf_adc_stats_reset(p_sr);
+    }
     for (uint32_t t = 0U; t < LF2_STATIC_MS; t += LF2_POLL_MS)
     {
         lf_task_get_status(&s_now);
+        if (p_sc != NULL)
+        {
+            lf_adc_stats_add(p_sc, s_now.raw_c);
+        }
+        if (p_sr != NULL)
+        {
+            lf_adc_stats_add(p_sr, s_now.raw_r);
+        }
         sum_c += s_now.raw_c;
         sum_r += s_now.raw_r;
         c_min = (s_now.raw_c < c_min) ? s_now.raw_c : c_min;
@@ -1236,9 +1278,15 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     uint16_t rmin;
     uint16_t rmax;
     bool     pose_a_ok;
+    lf_adc_stats_t a_c;     /* pose A: CENTRE over black */
+    lf_adc_stats_t a_r;     /* pose A: RIGHT over white */
+    lf_adc_stats_t b_c;     /* pose B: CENTRE over white */
+    lf_adc_stats_t b_r;     /* pose B: RIGHT over black */
+    lf_cal2_t      cal2;
 
     dbg_printf("[LF] %s on the track, motors LIVE, cruise %lu mm/s", LF2_ID,
                (unsigned long)LF2_CRUISE_MMPS);
+    dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
     dbg_puts("[LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts");
 
     /* (a) The task runs every 5 ms.  First let the boot calibration end. */
@@ -1291,13 +1339,15 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
      * RIGHT's resting noise over white; pose B RIGHT's black level (the
      * residual risk of the S3-U09 waiver). */
     pose_a_ok = false;
+    lf_adc_stats_reset(&a_c);
+    lf_adc_stats_reset(&a_r);
     for (uint32_t tries = 0U; (tries < LF2_POSE_A_TRIES) && !pose_a_ok; tries++)
     {
-        lf2_place("pose A", "CENTRE on black in the middle of the line, RIGHT on white, hands off", false);
+        lf2_place("pose A", "CENTRE on black in the middle of the line, RIGHT on white, hands off" LF2_POSE_A_HINT, false);
         dbg_puts("[LF] calibrating here, keep the car still");
         lf_task_test_recalibrate();
         lf_task_get_status(&s_now);
-        lf2_static("pose A", NULL, &dc, &dr, &rmin, &rmax);
+        lf2_static("pose A", NULL, &dc, &dr, &rmin, &rmax, &a_c, &a_r);
         s_static_r_min = rmin;
         s_static_r_max = rmax;
         pose_a_ok = (s_now.cal_status == LF_CAL_OK) && (s_now.cal_c_avg >= LF2_POSE_A_MIN_RAW)
@@ -1312,9 +1362,34 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                "(g2) pose A: calibrated on black, CENTRE >= 950 pm, RIGHT on white");
     if (pose_a_ok)
     {
-        lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off", &dc, &dr, &rmin, &rmax);
+        static char const *const k_sens[] = { "OK", "DISCONNECTED", "NOISY", "BLIND", "WEAK (re-mount)" };
+        bool cal2_ok;
+
+        lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off" LF2_POSE_B_HINT,
+                   &dc, &dr, &rmin, &rmax, &b_c, &b_r);
         TEST_CHECK(LF2_ID, dr > LF_DARK_MIN_PM,
                    "(g) static: RIGHT on black is DARK (> 750 pm)");
+        /* (g3) Each sensor's own black and white from poses A and B, against
+         * the mounting criteria (lf_core.h LF_CAL_*). */
+        cal2_ok = lf_cal_from_two_poses(&a_c, &a_r, &b_c, &b_r, &cal2);
+        dbg_printf("[LF] two-pose: CENTRE white %u black %u span %d %s; RIGHT white %u black %u span %d %s",
+                   cal2.cal.c.white, cal2.cal.c.black, (int)cal2.cal.c.black - (int)cal2.cal.c.white,
+                   k_sens[cal2.c], cal2.cal.r.white, cal2.cal.r.black,
+                   (int)cal2.cal.r.black - (int)cal2.cal.r.white, k_sens[cal2.r]);
+        dbg_printf("[LF] mounting criteria: black >= %u, white <= %u, span >= %u raw",
+                   LF_CAL_BLACK_MIN_RAW, LF_CAL_WHITE_MAX_RAW, LF_CAL_SPAN_GOOD_RAW);
+        TEST_CHECK(LF2_ID, cal2_ok,
+                   "(g3) two-pose calibration: both sensors meet the mounting criteria");
+        if (cal2_ok)
+        {
+            lf_task_test_set_cal(&cal2.cal);
+            lf_task_get_status(&s_now);
+        }
+        else
+        {
+            dbg_puts("[LF] >>> STOP: no drives.  Fix the sensor mounting (height ~10 mm, both the same) and restart.");
+            pose_a_ok = false;
+        }
     }
     else
     {
@@ -1417,7 +1492,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
 #elif defined(LF_CURVE_START_Q7)
         dbg_printf("[LF] variant B: curve recovery start %d after steady tracking", (int)LF_CURVE_START_Q7);
 #else
-        dbg_puts("[LF] variant A: production line following (recovery start 32)");
+        dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
 #endif
         for (uint32_t g = LF2_CURVE_FIRST; g < (LF2_CURVE_FIRST + LF2_CURVE_GROUPS); g++)
         {
@@ -1452,11 +1527,11 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     {
         static lf2_drive_t const k_drive =
         {
-            "drive", "on a STRAIGHT part of the line: CENTRE on black, RIGHT on white, square to the line",
+            "drive", "on a STRAIGHT part of the line: " LF2_START_TEXT,
             (uint32_t)S3_DRIVE_MM, LF2_MS_FOR((uint32_t)S3_DRIVE_MM) + LF2_DRIVE_EXTRA_MS, false, false, true
         };
 
-        dbg_puts("[LF] variant A: production line following (recovery start 32)");
+        dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
         dbg_printf("[LF] DRIVE: %lu drives, each up to %lu mm of wheel travel or %lu ms; obstacle avoidance may "
                    "take over and hand back", (unsigned long)LF2_DRIVE_RUNS, (unsigned long)S3_DRIVE_MM,
                    (unsigned long)k_drive.max_ms);
