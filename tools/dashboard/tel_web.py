@@ -14,9 +14,15 @@ Sources (one at a time):
     log file     a saved log, or one still being written (follow)
     MQTT         subscribes to car/# and saves build/dash-mqtt-*.txt
 
-Safety: there is no START control (stationary tests must never drive the
-motors; use the CLI with --allow-motion).  STOP and RESET go out over MQTT
-only.  It listens on 127.0.0.1 unless --host says otherwise.
+Dashboard v2 (Buddy 1) adds, on the same frames: the recording table and CSV
+export (tel_record.Recorder), sensor health and the data-gap table
+(tel_record.Health), the line-sensor calibration helper (tel_calib) and
+remote commands with confirmation (tel_control).
+
+Safety: START is sent only after "arm motion" (one START per arming, see
+tel_control); STOP, RESET and the emergency STOP go out over MQTT only.  A
+command is shown as done only when the car's telemetry confirms it.  It
+listens on 127.0.0.1 unless --host says otherwise.
 """
 
 from __future__ import annotations
@@ -34,8 +40,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Deque, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
+import tel_calib as calib
 import tel_codec as codec
+import tel_control as control
 import tel_dashboard as dash
+import tel_record as record
 import tel_views as views
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -45,12 +54,18 @@ PAGE = os.path.join(HERE, "tel_web.html")
 VIEW_NAMES = ("imu", "obstacle", "lf", "barcode", "vc", "mqtt")
 FEED_MAX = 400                  # event lines kept per view
 CONSOLE_MAX = 600               # raw console lines kept
-ALLOWED_CMDS = ("stop", "reset")   # never "start"
 TRACKED = ("[LF]", "[BC]", "[VC]", "[S5] avoid", "[SAFETY]", "[capture]")
 
 
 def _r(name: str, value: object, kind: str, note: str = "") -> dict:
     return {"name": name, "value": str(value), "kind": kind, "note": note}
+
+
+def _now_sod() -> float:
+    """The laptop's local time as seconds of day: the clock of every line stamp."""
+    t = time.time()
+    lt = time.localtime(t)
+    return lt.tm_hour * 3600 + lt.tm_min * 60 + lt.tm_sec + (t % 1)
 
 
 class Monitor:
@@ -67,6 +82,8 @@ class Monitor:
         self._client = None
         self._save = None
         self.gen = 0
+        self.rules = calib.load_rules(repo)
+        self.limits = {k: int(v["value"]) for k, v in self.rules.items()}
         self._reset("none", "no source")
 
     # -- state ----------------------------------------------------------------
@@ -82,6 +99,13 @@ class Monitor:
                     "lines": 0, "frames": 0, "mqtt_connected": None, "car_status": "", "file": ""}
         self.last_rx: Optional[float] = None
         self.last_hb_rx: Optional[float] = None
+        # Dashboard v2: one of each per source, so a new source starts clean.
+        self.rec = record.Recorder()
+        self.rec.limits = self.limits
+        self.health = record.Health(self.limits)
+        self.cal = calib.Calibration(self.rules)
+        self.ctl = control.Controller()
+        self.last_t: Optional[float] = None     # newest line stamp, seconds of day
 
     @property
     def ev(self) -> views.Evidence:
@@ -91,12 +115,16 @@ class Monitor:
         line = line.rstrip("\r\n")
         if not line:
             return
-        stamp = line[:12] if views._wall_s(line) is not None else ""
+        t = views._wall_s(line)
+        stamp = line[:12] if t is not None else ""
         body = line[line.find("["):] if "[" in line else line
         with self.lock:
             self.src["lines"] += 1
             self.last_rx = time.monotonic()
-            if codec.parse_log_line(body) is not None:
+            if t is not None:
+                self.last_t = t
+            parsed = codec.parse_log_line(body)
+            if parsed is not None:
                 self.src["frames"] += 1
                 if "car/telemetry/heartbeat" in body:
                     self.last_hb_rx = self.last_rx
@@ -109,6 +137,28 @@ class Monitor:
                 for out in s.feed_line(line):
                     self.seq += 1
                     self.feed[v].append((self.seq, f"{stamp} {out}" if stamp else out))
+            if parsed is not None:
+                self._frame_v2(parsed[1])
+            elif not body.startswith("[DASH]"):
+                self.cal.on_console(body)
+
+    def _frame_v2(self, data: bytes) -> None:
+        """Recording, health, calibration and command confirmation for one frame (lock held)."""
+        try:
+            fr = codec.decode(data)
+        except codec.FrameError:
+            return              # tel_views already shows the reject
+        sim = bool(self.sessions["imu"].latest.get(fr.name, {}).get("sim"))
+        t = self.last_t
+        self.rec.add(fr, t, sim)
+        self.health.on_frame(fr, t, sim)
+        self.cal.on_frame(fr, t, sim)
+        if self.src["kind"] == "mqtt":     # only a live car can confirm a command
+            now = time.monotonic()
+            if fr.type == codec.FT_HEARTBEAT:
+                self.ctl.on_heartbeat(str(fr.fields["state"]), now)
+            elif fr.type == codec.FT_TELEMETRY_MOTION:
+                self.ctl.on_motion(float(fr.fields["speed_cmps"]), now)
 
     # -- sources --------------------------------------------------------------
 
@@ -174,11 +224,18 @@ class Monitor:
         def on_connect(c, userdata, flags, *rest):
             with self.lock:
                 self.src["mqtt_connected"] = True
+                self.ctl.set_connected(True, time.monotonic())
             c.subscribe("car/#", qos=1)
 
         def on_disconnect(c, userdata, *rest):
             with self.lock:
                 self.src["mqtt_connected"] = False
+                self.ctl.set_connected(False, time.monotonic())
+                self.health.set_link(False, "the laptop lost the broker connection", _now_sod())
+
+        def on_publish(c, userdata, mid, *rest):
+            with self.lock:         # QoS 1: the broker's PUBACK for one of our commands
+                self.ctl.on_puback(mid, time.monotonic())
 
         def on_message(c, userdata, msg):
             if msg.topic.startswith("car/cmd/"):
@@ -187,6 +244,7 @@ class Monitor:
                 state = "ONLINE" if msg.payload == b"1" else "OFFLINE (last will)"
                 with self.lock:
                     self.src["car_status"] = state
+                    self.ctl.set_car_status(state)
                 line = f"{dash._stamp()}  [DASH] car/status {state}"
             else:
                 line = f"{dash._stamp()}  [TEL] {msg.topic} {bytes(msg.payload).hex()}"
@@ -197,6 +255,7 @@ class Monitor:
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
         client.on_message = on_message
+        client.on_publish = on_publish
         try:
             client.connect(broker, port, keepalive=30)
         except (OSError, ValueError) as exc:
@@ -209,18 +268,122 @@ class Monitor:
         self._client = client
         return ""
 
-    def send_cmd(self, cmd: str) -> Tuple[int, str]:
-        if cmd not in ALLOWED_CMDS:
-            return 403, ("START is not available here: stationary tests must never drive the motors. "
-                         "Use the CLI: tel_dashboard.py send start --allow-motion")
-        with self.lock:
-            connected = self._client is not None and self.src["mqtt_connected"]
-        if not connected:
-            return 409, "STOP/RESET need the MQTT source connected (a USB console build takes no commands)"
+    def _publish(self, cmd: str) -> Optional[int]:
+        """One command frame, QoS 1.  Returns paho's message id (None if the client gives none)."""
         topic, frame = codec.encode_cmd(cmd)
-        self._client.publish(topic, frame, qos=1)
+        info = self._client.publish(topic, frame, qos=1)
         self.feed_line(f"{dash._stamp()}  [DASH] sent {cmd}: {topic} {frame.hex()}")
-        return 200, f"sent {cmd}"
+        return getattr(info, "mid", None)
+
+    def send_cmd(self, cmd: str) -> Tuple[int, str, Optional[dict]]:
+        """START / STOP / RESET (and PAUSE, refused).  Returns (HTTP code, message, command entry)."""
+        now = time.monotonic()
+        with self.lock:
+            if self._client is None and cmd in ("stop", "reset") and self.src["kind"] != "mqtt":
+                return 409, ("STOP/RESET need the MQTT source connected (a USB console build takes no "
+                             "commands)"), None
+            reason = self.ctl.refuse_reason(cmd, now)
+            if not reason and self._client is None:
+                reason = "not connected to the broker"
+            if reason:
+                entry = self.ctl.refused(cmd, reason, now, dash._stamp())
+                code = 501 if cmd == "pause" else 403 if reason == control.START_NOT_ARMED else 409
+                return code, reason, entry.as_dict(now)
+            before = self.ctl.state
+        mid = self._publish(cmd)
+        with self.lock:
+            entry = self.ctl.sent(cmd, now, dash._stamp(), [mid], before)
+            return 200, f"sent {cmd}", entry.as_dict(time.monotonic())
+
+    def estop(self) -> Tuple[int, str, Optional[dict]]:
+        """STOP, several times in a row.  Never blocked by the car's state."""
+        now = time.monotonic()
+        with self.lock:
+            if self._client is None or not self.src["mqtt_connected"]:
+                entry = self.ctl.refused("estop", "not connected to the broker: STOP cannot be sent. "
+                                         "Stop the car by hand (pick it up or switch it off).", now, dash._stamp())
+                return 409, entry.detail, entry.as_dict(now)
+            before = self.ctl.state
+        repeats, spacing = control.estop_plan()
+        mids = []
+        for i in range(repeats):
+            mids.append(self._publish("stop"))
+            if i + 1 < repeats:
+                time.sleep(spacing)
+        with self.lock:
+            entry = self.ctl.sent("estop", now, dash._stamp(), mids, before)
+            return 200, f"emergency STOP sent {repeats} times", entry.as_dict(time.monotonic())
+
+    def arm(self, on: bool) -> str:
+        with self.lock:
+            if not on:
+                self.ctl.disarm("disarmed by the user")
+                return ""
+            return self.ctl.arm(time.monotonic())
+
+    # -- recording, calibration, export ------------------------------------------
+
+    def record(self, action: str) -> str:
+        with self.lock:
+            if action == "start":
+                self.rec.start_recording()
+            elif action == "stop":
+                self.rec.stop_recording()
+            else:
+                return "action must be start or stop"
+        return ""
+
+    def calib_action(self, action: str, target: str = "", seconds: float = calib.CAPTURE_S) -> str:
+        with self.lock:
+            if action == "capture":
+                if not self.src["live"]:
+                    return "a capture needs a live source (MQTT, USB capture, or a followed log)"
+                return self.cal.start(target, self.last_t if self.src["kind"] == "file" else _now_sod(), seconds)
+            if action == "cancel":
+                self.cal.cancel()
+            elif action == "reset":
+                self.cal.reset()
+            elif action == "use_car":
+                return self.cal.use_car_values()
+            else:
+                return "action must be capture, cancel, reset or use_car"
+        return ""
+
+    def table(self, after: Optional[int], before: Optional[int], limit: int) -> dict:
+        with self.lock:
+            self.rec.flush(self._clock_now())
+            return self.rec.page(after, before, limit)
+
+    def export_csv(self, what: str, scope: str) -> Tuple[str, str]:
+        """(filename, CSV text) for the table ('rows') or the data-gap events ('gaps')."""
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        with self.lock:
+            if what == "gaps":
+                return f"robocar-data-gaps-{stamp}.csv", record.gaps_csv(self.health.gap_rows(self._clock_now()))
+            self.rec.flush(None)
+            return f"robocar-telemetry-{scope}-{stamp}.csv", self.rec.csv_text(scope)
+
+    def _clock_now(self) -> Optional[float]:
+        """'Now' in the line clock for a live source; None for a finished replay."""
+        if not self.src["live"]:
+            return None
+        return self.last_t if self.src["kind"] == "file" else _now_sod()
+
+    def _update_link(self) -> None:
+        """The source as a whole: broker up, car ONLINE, lines still arriving (lock held)."""
+        if not self.src["live"]:
+            return
+        age = None if self.last_rx is None else time.monotonic() - self.last_rx
+        ok, why = True, ""
+        if self.src["kind"] == "mqtt" and not self.src["mqtt_connected"]:
+            ok, why = False, "the laptop is not connected to the broker"
+        elif self.src["kind"] == "mqtt" and self.src["car_status"].startswith("OFFLINE"):
+            ok, why = False, "the car is OFFLINE (the broker published its last will)"
+        elif age is not None and age > record.DISCONNECT_S:
+            what = "from the car" if self.src["kind"] == "mqtt" else f"in the {self.src['kind']} source"
+            ok, why = False, f"no data {what} for {age:.0f} s"
+        if ok != self.health.link[0] or (not ok and why != self.health.link[1]):
+            self.health.set_link(ok, why, self._clock_now())
 
     def stop(self) -> None:
         self._stop.set()
@@ -298,6 +461,11 @@ class Monitor:
                 src["data_age_s"] = round(now - self.last_rx, 1)
             if src["live"] and self.last_hb_rx is not None:
                 src["hb_age_s"] = round(now - self.last_hb_rx, 1)
+            clk = self._clock_now()
+            self._update_link()
+            self.health.evaluate(clk)
+            self.rec.flush(clk)
+            page = self.rec.page(limit=1)
             return {
                 "source": src,
                 "gen": self.gen,
@@ -306,6 +474,13 @@ class Monitor:
                 "feed": {v: [t for s, t in q if s > since] for v, q in self.feed.items()},
                 "console": [t for s, t in self.console if s > since],
                 "app_test": self.ev.app_test, "s1_ran": self.ev.s1_ran,
+                # Dashboard v2
+                "health": self.health.snapshot(clk),
+                "gaps": self.health.gap_rows(clk)[-200:],
+                "ctl": self.ctl.snapshot(now),
+                "calib": self.cal.snapshot(clk),
+                "table": {"total": page["total"], "last_seq": page["last_seq"], "recording": page["recording"],
+                          "latest": page["rows"][-1] if page["rows"] else None},
             }
 
     def check(self, kind: str, expect_cm: Optional[List[int]], expect_width_mm: Optional[int]) -> List[dict]:
@@ -489,6 +664,21 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _csv(self, filename: str, text: str) -> None:
+        body = text.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/csv; charset=utf-8")
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    @staticmethod
+    def _int(q, key: str) -> Optional[int]:
+        v = q.get(key, [""])[0]
+        return int(v) if v.strip().lstrip("-").isdigit() else None
+
     def do_GET(self):
         u = urlparse(self.path)
         q = parse_qs(u.query)
@@ -499,6 +689,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")     # an updated page shows at the next reload
             self.end_headers()
             self.wfile.write(body)
         elif u.path == "/api/state":
@@ -517,6 +708,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {"error": "expected distances and width must be whole numbers"})
                 return
             self._json(200, m.check(kind, cm, w))
+        elif u.path == "/api/table":
+            self._json(200, m.table(self._int(q, "after"), self._int(q, "before"), self._int(q, "limit") or 200))
+        elif u.path == "/api/export.csv":
+            what = q.get("what", ["rows"])[0]
+            scope = q.get("scope", ["all"])[0]
+            if what not in ("rows", "gaps") or scope not in ("all", "recording"):
+                self._json(400, {"error": "what must be rows or gaps; scope all or recording"})
+                return
+            self._csv(*m.export_csv(what, scope))
         else:
             self._json(404, {"error": "not found"})
 
@@ -544,8 +744,25 @@ class Handler(BaseHTTPRequestHandler):
                 err = "type must be file, usb, mqtt or stop"
             self._json(400 if err else 200, {"error": err} if err else {"ok": True})
         elif u.path == "/api/cmd":
-            code, msg = m.send_cmd(str(req.get("cmd", "")))
-            self._json(code, {"error": msg} if code != 200 else {"ok": msg})
+            code, msg, entry = m.send_cmd(str(req.get("cmd", "")))
+            self._json(code, {"error": msg, "cmd": entry} if code != 200 else {"ok": msg, "cmd": entry})
+        elif u.path == "/api/estop":
+            code, msg, entry = m.estop()
+            self._json(code, {"error": msg, "cmd": entry} if code != 200 else {"ok": msg, "cmd": entry})
+        elif u.path == "/api/arm":
+            err = m.arm(bool(req.get("armed")))
+            self._json(409 if err else 200, {"error": err} if err else {"ok": True})
+        elif u.path == "/api/record":
+            err = m.record(str(req.get("action", "")))
+            self._json(400 if err else 200, {"error": err} if err else {"ok": True})
+        elif u.path == "/api/calib":
+            try:
+                seconds = float(req.get("seconds", calib.CAPTURE_S))
+            except (TypeError, ValueError):
+                self._json(400, {"error": "seconds must be a number"})
+                return
+            err = m.calib_action(str(req.get("action", "")), str(req.get("target", "")), seconds)
+            self._json(400 if err else 200, {"error": err} if err else {"ok": True})
         else:
             self._json(404, {"error": "not found"})
 

@@ -90,12 +90,16 @@ class WebApi(unittest.TestCase):
         self.assertTrue(_wait(lambda: not self.s.jget("/api/state")[1]["source"]["running"]))
         return self.s.jget("/api/state?since=0")[1]
 
-    def test_page_has_no_start_control(self):
+    def test_page_start_needs_arming(self):
+        # Dashboard v2: START is on the page, but only behind "Arm motion" and a confirm
+        # dialog; the server refuses it unless armed (test_start_refused_even_when_asked).
         code, body = self.s.get("/")
         self.assertEqual(code, 200)
         page = body.decode()
         self.assertIn("Robocar dashboard", page)
-        self.assertNotRegex(page, r'cmd:\s*"start"')
+        self.assertIn("Arm motion", page)
+        self.assertIn("EMERGENCY STOP", page)
+        self.assertRegex(page, r'if \(!confirm\("START drives the motors[^"]*"\)\) return;\s*sendCmd\("start"\)')
         for label in ("MEASURED", "DERIVED", "REPORTED", "SIMULATED", "N/A"):
             self.assertIn(label, page)
 
@@ -210,6 +214,151 @@ class WebApi(unittest.TestCase):
         self.assertEqual(res["Heartbeats delivered to the laptop"], "PASS")
         saved = [f for f in os.listdir(self.tmp) if f.startswith("dash-mqtt-")]
         self.assertEqual(len(saved), 1)          # the session is kept like listen --save
+
+
+class _Info:
+    def __init__(self, mid):
+        self.mid = mid
+
+
+def _motion_hex(ts, speed=0.0):
+    return tv._W(1).put(ts, 24).put(int(round(speed * 10)), 10).put(0, 16).put(0, 32).put(0, 32).hex()
+
+
+class WebV2(unittest.TestCase):
+    """Dashboard v2: commands with confirmation, the table, CSV export, data gaps, calibration."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.s = _Server(web.Monitor(roots=[web.REPO, self.tmp], out_dir=self.tmp))
+
+    def tearDown(self):
+        self.s.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _mqtt(self):
+        fake = tv._FakeClient([("car/status", b"1"),
+                               ("car/telemetry/heartbeat", bytes.fromhex(tv.heartbeat(5000).split()[-1]))])
+        fake.on_disconnect = fake.on_publish = None
+        fake.published = []
+
+        def publish(topic, frame, qos=0):
+            fake.published.append((topic, frame))
+            mid = len(fake.published)
+            if fake.on_publish:
+                fake.on_publish(fake, None, mid)       # the broker's PUBACK, at once
+            return _Info(mid)
+
+        fake.publish = publish
+        with mock.patch.dict("sys.modules", {"paho": mock.MagicMock(), "paho.mqtt": mock.MagicMock(),
+                                             "paho.mqtt.client": mock.MagicMock()}), \
+                mock.patch.object(dash, "_new_client", return_value=(None, fake)):
+            code, j = self.s.post("/api/source", {"type": "mqtt", "broker": "10.0.0.2", "port": 1883})
+        self.assertEqual(code, 200, j)
+        return fake
+
+    def _car(self, fake, topic, hexframe):
+        fake.on_message(fake, None, tv._FakeMsg(topic, bytes.fromhex(hexframe)))
+
+    def _history(self):
+        return self.s.jget("/api/state")[1]["ctl"]["history"]
+
+    def test_start_arm_confirm_and_estop(self):
+        fake = self._mqtt()
+        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 403)           # not armed
+        self.assertEqual(fake.published, [])
+        self.assertEqual(self.s.post("/api/arm", {"armed": True})[0], 200)
+        code, j = self.s.post("/api/cmd", {"cmd": "start"})
+        self.assertEqual(code, 200, j)
+        self.assertEqual(fake.published, [("car/cmd/start", bytes.fromhex("010800"))])
+        self.assertEqual(self._history()[0]["result"], "PENDING")    # the broker has it, the car has not said
+        self.assertEqual(self._history()[0]["broker"], "ok")
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(5300, "NAV_LINE_TRACKING").split()[-1])
+        self.assertEqual(self._history()[0]["result"], "CONFIRMED")
+        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 403)           # one START per arming
+        code, j = self.s.post("/api/estop", {})
+        self.assertEqual(code, 200, j)
+        self.assertEqual([t for t, _ in fake.published[1:]], ["car/cmd/stop"] * 3)
+        self._car(fake, "car/telemetry/motion", _motion_hex(5400, 0.0))
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(5500, "READY_WAITING").split()[-1])
+        h = self._history()[0]
+        self.assertEqual((h["cmd"], h["result"]), ("estop", "CONFIRMED"))
+        code, j = self.s.post("/api/cmd", {"cmd": "pause"})
+        self.assertEqual(code, 501)
+        self.assertIn("PAUSED", j["error"])
+        self.assertEqual(self._history()[0]["result"], "REFUSED")
+
+    def test_estop_without_broker(self):
+        code, j = self.s.post("/api/estop", {})
+        self.assertEqual(code, 409)
+        self.assertIn("by hand", j["error"])
+        self.assertEqual(self.s.post("/api/arm", {"armed": True})[0], 409)
+
+    def _log(self):
+        """5 rows/s for 4 s, a 6 s silence, then an IR reading at the top of the ADC."""
+        lines, t = [], 36000.0
+        def put(tt, txt):
+            h, rem = divmod(tt, 3600)
+            m, s = divmod(rem, 60)
+            lines.append(f"{int(h):02d}:{int(m):02d}:{s:06.3f}  {txt}")
+        for i in range(20):
+            if i % 5 == 0:
+                put(t, tv.heartbeat(int(t * 1000) % 10**9))
+            put(t, f"[TEL] car/telemetry/motion {_motion_hex(int(t * 1000) % (1 << 24), 5.0)}")
+            put(t + 0.01, tv.sensor(int(t * 1000) % (1 << 24), pitch=1.0, rng=30, ir=(600 + i, 150 + i),
+                                    flags=(True, True, True)))
+            t += 0.2
+        t += 6.0
+        for i in range(5):
+            put(t, tv.sensor(int(t * 1000) % (1 << 24), pitch=1.0, rng=30, ir=(4095 if i == 2 else 640 + i, 150),
+                             flags=(True, True, True)))
+            t += 0.2
+        path = os.path.join(self.tmp, "run.txt")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(lines) + "\n")
+        return path
+
+    def test_table_export_and_gaps(self):
+        self.assertEqual(self.s.post("/api/source", {"type": "file", "path": self._log()})[0], 200)
+        self.assertTrue(_wait(lambda: not self.s.jget("/api/state")[1]["source"]["running"]))
+        code, page = self.s.jget("/api/table?limit=5")
+        self.assertEqual(code, 200)
+        self.assertEqual(page["total"], 25)
+        self.assertEqual(len(page["rows"]), 5)
+        first = self.s.jget("/api/table?before=3")[1]["rows"]
+        self.assertEqual([r["seq"] for r in first], [1, 2])
+        self.assertEqual((first[0]["speed"], first[0]["ir_c"], first[0]["range_cm"]), (5.0, 600, 30))
+        code, body = self.s.get("/api/export.csv?what=rows&scope=all")
+        self.assertEqual(code, 200)
+        text = body.decode()
+        self.assertTrue(text.startswith("seq,time,car_ms,ir_centre_raw"))
+        self.assertEqual(len(text.strip().splitlines()), 26)
+        st = self.s.jget("/api/state")[1]
+        kinds = {(g["sensor"], g["state"]) for g in st["gaps"]}
+        self.assertIn(("ir_c", "STALE"), kinds)       # the 6 s silence
+        self.assertIn(("ir_c", "INVALID"), kinds)     # raw 4095
+        self.assertIn("INVALID", self.s.get("/api/export.csv?what=gaps")[1].decode())
+        self.assertEqual(self.s.get("/api/export.csv?what=pictures")[0], 400)
+        self.assertEqual(self.s.post("/api/record", {"action": "start"})[0], 200)
+        self.assertTrue(self.s.jget("/api/state")[1]["table"]["recording"]["active"])
+        self.assertEqual(self.s.post("/api/record", {"action": "stop"})[0], 200)
+        self.assertEqual(self.s.post("/api/record", {"action": "rewind"})[0], 400)
+
+    def test_calibration_endpoints(self):
+        rel = "testing/subsystem3/logs/2026-11-03_s3_lf1_run2.txt"
+        if not os.path.exists(os.path.join(web.REPO, rel)):
+            self.skipTest("log not in this checkout")
+        self.assertEqual(self.s.post("/api/source", {"type": "file", "path": rel})[0], 200)
+        self.assertTrue(_wait(lambda: not self.s.jget("/api/state")[1]["source"]["running"]))
+        code, j = self.s.post("/api/calib", {"action": "capture", "target": "white"})
+        self.assertEqual(code, 400)
+        self.assertIn("live source", j["error"])
+        self.assertEqual(self.s.post("/api/calib", {"action": "use_car"})[0], 200)
+        res = self.s.jget("/api/state")[1]["calib"]["result"]
+        self.assertEqual((res["c"]["verdict"], res["r"]["verdict"]), ("OK", "NO_CONTRAST"))
+        self.assertEqual(self.s.post("/api/calib", {"action": "reset"})[0], 200)
+        self.assertEqual(self.s.jget("/api/state")[1]["calib"]["result"]["c"]["verdict"], "INCOMPLETE")
+        self.assertEqual(self.s.post("/api/calib", {"action": "capture", "seconds": "x"})[0], 400)
 
 
 class PageScript(unittest.TestCase):
