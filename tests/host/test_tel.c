@@ -334,6 +334,14 @@ static void test_golden_frames(void)
     check_hex(b, drep_frame_motion(b, 0x123456U, drep_ms_pack(-123, 4567U), -1000, 123456),
               "01010f563412855f4760f0ffff0389070000");
     check_hex(b, drep_frame_sensor(b, 1000U, 4095U, 2048U, 400U, -90, 45), "01020ae80300ff0f80904d5b00");
+    /* Dashboard integration: the validity flags in the spare bits 73..75;
+     * the fields before them are unchanged. */
+    (void)drep_frame_sensor(b, 1000U, 4095U, 2048U, 400U, -90, 45);
+    drep_frame_sensor_valid(b, true, true, true);
+    check_hex(b, DREP_FRAME_HDR_BYTES + drep_frame_len(DREP_FT_TELEMETRY_SENSOR), "01020ae80300ff0f80904d5b0e");
+    (void)drep_frame_sensor(b, 1000U, 4095U, 2048U, 400U, -90, 45);
+    drep_frame_sensor_valid(b, false, true, false);
+    check_hex(b, DREP_FRAME_HDR_BYTES + drep_frame_len(DREP_FT_TELEMETRY_SENSOR), "01020ae80300ff0f80904d5b04");
     check_hex(b, drep_frame_barcode(b, 777U, DREP_BC_CMD_UTURN), "01030409030003");
     check_hex(b, drep_frame_hump(b, 5000U, hump.payload & 0xFFFFU), "010405881300aa70");
     check_hex(b, drep_frame_obstacle(b, 123456U, prof), "01050840e201192c43d41f");

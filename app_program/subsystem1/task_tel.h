@@ -27,7 +27,9 @@
 #define TEL_CMD_MAX_PER_WAKE        (4U)
 
 /** Status line period ("[TEL] CONNECTED tx=..."). */
-#define TEL_STATUS_LOG_PERIOD_MS    (60000U)
+#ifndef TEL_STATUS_LOG_PERIOD_MS
+#define TEL_STATUS_LOG_PERIOD_MS    (60000U)    /* CMake TEL_STATUS_PERIOD_MS overrides (dashboard tests: 1000) */
+#endif
 
 /**
  * Console backend only (TEL_BACKEND_WIFI=OFF): print every Nth periodic frame

@@ -103,7 +103,7 @@ packed LSB-first and little-endian, with masks and shifts only.
 | Type | Payload fields, in bit order | Bytes on the wire |
 |---|---|---|
 | 1 motion | ts 24, speed 10 (signed, 0.1 cm/s), distance 16 (cm), enc_l 32, enc_r 32 (signed) | 18 |
-| 2 sensor | ts 24, IR_R 12, IR_C 12, range 9 (cm), pitch 8, roll 8 (signed, 0.5°) | 13 |
+| 2 sensor | ts 24, IR_R 12, IR_C 12, range 9 (cm), pitch 8, roll 8 (signed, 0.5°), valid 3 (bits 73..75: IR, range, attitude; 1 = a producer wrote it, 0 = not available) | 13 |
 | 3 barcode | ts 24, command 2 (0 L, 1 R, 2 straight, 3 U-turn) | 7 |
 | 4 hump | ts 24, height 7 (mm), pitch 8 (signed, 0.5°), OOR 1 | 8 |
 | 5 obstacle | ts 24, distance 9, bearing index 4 (30° + 10° × i), width 7, clear_L 7 (×5 mm), seq 2, OOR 1, clear_R 7 (×5 mm) | 11 |

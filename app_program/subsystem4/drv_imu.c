@@ -367,6 +367,22 @@ int32_t imu_pitch_half_deg(int32_t x_mg, int32_t y_mg, int32_t z_mg)
     return atan2_half_deg(x_mg, (int32_t)yz);
 }
 
+int32_t imu_roll_half_deg(int32_t x_mg, int32_t y_mg, int32_t z_mg)
+{
+    (void)x_mg;
+    /* Our IMU sits upside down: z = -0.91 g at rest (S4 console log,
+     * 13 Nov), while nose-up still reads positive pitch (S4-U15), so x is
+     * not flipped and the board is turned 180 deg about x (y and z both
+     * negated).  Taking z's own sign keeps roll near 0 when flat for either
+     * mounting (only wrong past 90 deg of roll, where the lift check has
+     * already stopped the car). */
+    if (z_mg < 0)
+    {
+        return atan2_half_deg(-y_mg, -z_mg);
+    }
+    return atan2_half_deg(y_mg, z_mg);
+}
+
 uint32_t imu_accel_magnitude_mg(int32_t x_mg, int32_t y_mg, int32_t z_mg)
 {
     /* Worst case (16 g scale) 3 x 24564^2 = 1.81e9 mg^2: fits uint32_t. */
