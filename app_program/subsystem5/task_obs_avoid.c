@@ -77,8 +77,23 @@
  *  550 ms is the mean plus about one spread, so a slow turn still finishes
  *  inside its dwell.  The previous value, 700 ms, was a guess and cost
  *  600 ms of the 3.0 s NFR14 budget across the four turns for nothing.
- *  TUNE: re-measure if the bypass speed or the surface changes. */
-#define OBS_TURN_DWELL_MS       (550U)
+ *
+ *  SCALED WITH THE SPEED, 2026-11-19.  Those six turns were timed at the
+ *  then 25 cm/s bypass speed.  The turn itself is closed-loop on the
+ *  encoders, so the ANGLE does not change with speed -- but the TIME it
+ *  takes is inversely proportional to it.  When the bypass speed dropped
+ *  to 5 cm/s the dwell stayed at 550 ms, so this task sent the next
+ *  command about 1.9 s before the car had finished turning: MEASURED on
+ *  the car, none of the four turns completed, the path collapsed and the
+ *  car ended up back at the obstacle.
+ *
+ *  Deriving it from the speed keeps the two in step whatever the speed is
+ *  set to: 550 ms at 25 cm/s, 2750 ms at 5 cm/s.
+ *  TUNE: re-measure on a different surface -- this scaling assumes only
+ *  that turn time goes as 1 / speed, which the encoder closed loop makes
+ *  reasonable but which has not been measured below 25 cm/s. */
+#define OBS_TURN_DWELL_MS       ((550U * 25U) \
+                                 / (uint32_t)MOTION_SPEED_BYPASS_CMPS)
 
 /** Straight run alongside the obstacle, past its depth.  The ultrasonic only
  *  ever sees the obstacle's FRONT FACE -- it cannot measure depth -- so this
@@ -100,10 +115,60 @@
  *  is wide, plus 50 mm".  A deeper obstacle than that will be clipped on the
  *  way back in.  Measure the real obstacles on the track and raise this again
  *  if any of them are deep; correctness wins over the grade-A target.  TUNE */
-#define OBS_ALONG_EXTRA_MM      ((uint32_t)OBS_SIDE_MARGIN_MM)
+/** How deep the obstacle is, along the car's direction of travel.
+ *
+ *  HARDCODED, and it has to be: the ultrasonic only ever sees the front
+ *  face, so depth cannot be measured from a sweep at any resolution.
+ *  Width comes from the fine sweep and sets the out-leg; depth is the one
+ *  number that has to be told to the car.
+ *
+ *  150 mm: the obstacle measured for the final test (Buddy 5, 2026-11-19).
+ *  TUNE: measure the real obstacle and set this.  Too small clips the
+ *  obstacle on the way back in; too large only wastes a little travel. */
+#define OBS_OBSTACLE_DEPTH_MM   (150U)
 
-/** Longest wait for subsystem 3 to report the line again. */
-#define OBS_LEG_BACK_MAX_MS     ((uint32_t)LF_T_SEARCH_MS)
+/** Extra sideways swing on the out-leg, beyond the geometric minimum.
+ *
+ *  MEASURED on the car, 2026-11-19: with the minimum only, the car did not
+ *  get far enough out, so the turn back in pointed it at the obstacle
+ *  rather than past it.  The legs are open-loop timed and under-travel at
+ *  5 cm/s.  TUNE: reduce once the legs are closed-loop on the encoders. */
+#define OBS_OUT_EXTRA_MM        (100U)
+
+/** Allowance added to the depth for the car's own length and a margin.
+ *
+ *  The sensor is at the FRONT of the car, so the car is not past the
+ *  obstacle when the sensor is -- its rear still has to clear it.  About
+ *  150 mm of chassis sits behind the sensor on this car, plus
+ *  OBS_SIDE_MARGIN_MM of margin.
+ *
+ *  MEASURED on the car, 2026-11-19: with the along-leg at width + 50 mm
+ *  (150 mm for a 100 mm obstacle) the car turned back in too early and did
+ *  not clear the object.  Was OBS_SIDE_MARGIN_MM alone.
+ *
+ *  TUNE (owner-to-confirm, buddy 5): the 150 mm of chassis behind the
+ *  sensor is an estimate, not a measurement.  Measure from the ultrasonic
+ *  face to the back of the car and set this to that plus the margin. */
+#define OBS_ALONG_EXTRA_MM      (300U + (uint32_t)OBS_SIDE_MARGIN_MM)
+
+/** Longest wait for subsystem 3 to report the line again.
+ *
+ *  SCALED WITH THE SPEED, 2026-11-19, for the same reason as
+ *  OBS_TURN_DWELL_MS.  LF_T_SEARCH_MS is 2000 ms, which at the old 25 cm/s
+ *  bypass speed was about 500 mm of travel -- far enough to get back
+ *  across the line.  At 5 cm/s it is only 100 mm, and the car has roughly
+ *  200 mm to come back diagonally, so the leg expired having covered half
+ *  the distance and the line was never reached: MEASURED on the car, the
+ *  turns were correct by then and it still reported "line not found".
+ *
+ *  Scaling keeps the DISTANCE this leg covers the same at any speed:
+ *  2000 ms at 25 cm/s, 10000 ms at 5 cm/s.
+ *
+ *  This is only a cap -- the leg ends as soon as EVF_NAV_LINE_FOUND
+ *  appears -- so a generous value costs nothing when the line is found and
+ *  simply gives the car room to reach it when it has further to go. */
+#define OBS_LEG_BACK_MAX_MS     (((uint32_t)LF_T_SEARCH_MS * 25U) \
+                                 / (uint32_t)MOTION_SPEED_BYPASS_CMPS)
 
 /** Reverse dwell when the car is boxed in (VC reverses VC_BYPASS_REV_CM).
  *  TODO(owner-to-confirm, buddy 5 with buddy 2): task_vc.c keeps
@@ -116,6 +181,23 @@
  *  private to subsystem 2.  TODO(owner-to-confirm, buddy 5 with buddy 2):
  *  keep the two in step, or have S2 export it. */
 #define OBS_BYPASS_TURN_DEG     (45U)
+
+/** How long after a run starts obstacle action is held off.
+ *
+ *  A run should not begin with the car already inside OBS_DETECT_MM of
+ *  something: it stops on the spot and the bypass geometry is computed
+ *  from a range it never had room to act on.  Giving the car a moment to
+ *  pull away from wherever it was placed makes the first detection a real
+ *  approach rather than an artefact of the starting position.
+ *
+ *  2000 ms is about 100 mm at the 5 cm/s bring-up cruise.  Scanning,
+ *  profiling and telemetry all continue through the grace: only the
+ *  decision to act is held.
+ *
+ *  LIMIT: an obstacle genuinely closer than that at the start is driven
+ *  into.  The grace is for bring-up, where the car is placed by hand on a
+ *  known-clear line, not a substitute for starting on clear track. */
+#define OBS_START_GRACE_MS      (2000U)
 
 /** tan and sin of the bypass angle, scaled by 1000.  At 45 degrees the
  *  diagonal is sqrt(2) times the lateral offset it buys. */
@@ -139,6 +221,8 @@ static uint32_t s_state = OBS_AV_IDLE;
 static uint32_t s_side = OBS_SIDE_LEFT;
 static uint32_t s_step_deadline_ms = 0U;
 static uint32_t s_budget_deadline_ms = 0U;
+/** Obstacle action is held off until this time (OBS_START_GRACE_MS). */
+static uint32_t s_grace_until_ms = 0U;
 static uint32_t s_leg_out_ms = 0U;
 static uint32_t s_leg_along_ms = 0U;
 static bool     s_have_seq = false;
@@ -155,10 +239,18 @@ static uint32_t s_sent_count = 0U;
 uint32_t obs_leg_out_mm(uint32_t width_mm)
 {
     /* Half the obstacle, half the car, plus the margin, is how far the car
-     * must move sideways.  At 45 degrees the diagonal is sqrt(2) times that. */
+     * must move sideways.  At 45 degrees the diagonal is sqrt(2) times that.
+     *
+     * Plus OBS_OUT_EXTRA_MM: MEASURED on the car, 2026-11-19, the geometric
+     * minimum was not enough in practice.  The legs are open-loop timed
+     * from MOTION_SPEED_BYPASS_CMPS, and at the 5 cm/s bring-up speed the
+     * car travels less than the commanded distance, so a leg sized to the
+     * exact geometry falls short.  Swinging wider also leaves room for the
+     * run back in to meet the line at a shallower angle. */
     uint32_t const lateral_mm = (width_mm / 2U)
                                 + ((uint32_t)CAR_WIDTH_MM / 2U)
-                                + (uint32_t)OBS_SIDE_MARGIN_MM;
+                                + (uint32_t)OBS_SIDE_MARGIN_MM
+                                + (uint32_t)OBS_OUT_EXTRA_MM;
 
     return (lateral_mm * OBS_DIAG_PER_LATERAL_M1000) / 1000U;
 }
@@ -404,7 +496,13 @@ static void start_manoeuvre(obstacle_profile_t prof, uint32_t now_ms)
 
     s_side = side;
     s_leg_out_ms = obs_mm_to_ms(obs_leg_out_mm(drep_obs_width_mm(prof)));
-    s_leg_along_ms = obs_mm_to_ms(drep_obs_width_mm(prof) + OBS_ALONG_EXTRA_MM);
+    /* The along-leg is set by the obstacle's DEPTH, not its width: width
+     * is what the sweep can see, depth is what the car has to drive past.
+     * The out-leg is diagonal, so it has already carried the car about
+     * one lateral offset forward; the rest is left as margin rather than
+     * subtracted, which errs towards clearing the obstacle. */
+    s_leg_along_ms = obs_mm_to_ms((uint32_t)OBS_OBSTACLE_DEPTH_MM
+                                  + OBS_ALONG_EXTRA_MM);
 
     dbg_printf("[S5] bypass %s: d=%lu cm w=%lu mm out=%lu ms along=%lu ms",
                (s_side == OBS_SIDE_LEFT) ? "LEFT" : "RIGHT",
@@ -504,6 +602,14 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
         return;
     }
 
+    /* Still pulling away from where the car was placed: keep scanning and
+     * reporting, but do not act yet (OBS_START_GRACE_MS). */
+    if ((s_state == OBS_AV_IDLE)
+        && ((int32_t)(now_ms - s_grace_until_ms) < 0))
+    {
+        return;
+    }
+
     uint32_t const dist_mm = drep_obs_distance_cm(prof) * 10U;
 
     if (dist_mm > ((uint32_t)OBS_D_DETECT_CM * 10U))
@@ -516,7 +622,22 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
         /* Slow down first and let one more profile confirm the geometry
          * before committing to a side (specs.md FR8). */
         set_nav_flag(EVF_NAV_AVOID_ACTIVE);
+        /* AVOID_SLOW first: this is the message the Vehicle Controller
+         * takes AVOID authority on, so it has to go out before any bypass
+         * command will be honoured. */
         send_nav(drep_nav_avoid(DREP_NAV_AVOID_SLOW, 0U));
+        /* Then actually HALT, rather than crawling on.
+         *
+         * MEASURED on the car, 2026-11-19: slowing was not enough.  The
+         * side is chosen on the NEXT profile, and a full coarse-plus-fine
+         * scan cycle takes on the order of a second; at the 15 cm/s
+         * bring-up cruise the car covered the remaining detect distance in
+         * less than that and drove into the obstacle before it had decided
+         * anything.  Stopping makes the decision distance independent of
+         * how long the scan takes: the car halts, the scanner completes a
+         * fresh sweep, obs_choose_side() picks the clear side from it, and
+         * only then does the car move again. */
+        send_bypass(DREP_BYPASS_STOP);
         /* Arm the whole-manoeuvre budget HERE, not only in
          * start_manoeuvre(): the task loop checks it in every state but
          * OBS_AV_IDLE, so leaving it at its previous value makes the budget
@@ -585,6 +706,7 @@ void obs_avoid_abandon(void)
     s_state = OBS_AV_IDLE;
     s_step_deadline_ms = 0U;
     s_budget_deadline_ms = 0U;
+    s_grace_until_ms = app_period_now_ms() + (uint32_t)OBS_START_GRACE_MS;
 }
 
 void obs_avoid_task_entry(INT stacd, void *p_exinf)
@@ -664,9 +786,31 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
         {
             if ((read_flags(EVF_NAV) & EVF_NAV_LINE_FOUND) != 0U)
             {
-                send_turn(s_side);
-                enter_state(OBS_AV_TURN_STRAIGHT, OBS_TURN_DWELL_MS,
-                            app_period_now_ms());
+                /* Hand over AT ONCE, without straightening first.
+                 *
+                 * The car used to pivot back towards the line
+                 * (OBS_AV_TURN_STRAIGHT) and release only once that turn
+                 * had finished.  That dwell scales with the bypass speed,
+                 * so at 5 cm/s it is 2750 ms: MEASURED on the car, the
+                 * sensor crossed the line, the car then pivoted for most
+                 * of three seconds, and Line Following took over with
+                 * CENTRE reading 168 raw -- plain white, the line well
+                 * behind it.  reacquired=1 was reported and the line was
+                 * lost all the same.
+                 *
+                 * Line Following is the right owner of the approach: it
+                 * has REACQUIRING and a recovery ramp for exactly this,
+                 * and st_suspended() is written to resume from
+                 * LINE_REACQUIRED and track as soon as CENTRE is on black.
+                 * Releasing while the line is still under the sensor hands
+                 * it the one thing it needs.
+                 *
+                 * TRADE-OFF: the car is still at the bypass angle when it
+                 * takes over, so it meets the line off-axis rather than
+                 * square.  That is what its recovery is for, and an
+                 * off-axis line it can see beats a square approach to a
+                 * line it has already driven past. */
+                release(app_period_now_ms(), true);
                 continue;
             }
         }

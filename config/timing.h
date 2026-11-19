@@ -138,8 +138,31 @@
 #define OBS_ECHO_TIMEOUT_MS             (30U)
 /** Pings filtered per bearing (NFR15). TUNE */
 #define OBS_PINGS_PER_BEARING           (3U)
+/** 1 = the slow bring-up bypass (5 cm/s) is in use.
+ *
+ *  NFR14 (obstacle avoidance within 5.0 s) CANNOT PASS while this is 1:
+ *  at 5 cm/s the out-leg alone takes about 3.9 s and a full bypass runs to
+ *  roughly 10 s.  It is set because reacquiring the line matters more
+ *  during bring-up than the timing figure does -- at 25 cm/s the car drove
+ *  past the line before Line Following could resume.
+ *
+ *  Clear it (0) together with MOTION_SPEED_BYPASS_BRINGUP_CMPS (back to
+ *  25) and MOTION_SPEED_BYPASS_MIN_CMPS (back to 15) for the NFR14 run.
+ *  Nothing else needs changing: the guards below come back with it. */
+#ifndef OBS_BYPASS_SLOW_BRINGUP
+#define OBS_BYPASS_SLOW_BRINGUP         (1U)
+#endif
+
 /** Target time for a full bypass manoeuvre (NFR14). TUNE */
+#if OBS_BYPASS_SLOW_BRINGUP
+/* At 5 cm/s, with the turn dwell and the run-back cap both scaled with
+ * the speed (task_obs_avoid.c): four turns of about 2750 ms plus legs of
+ * roughly 4660 + 3000 + 10000 ms, near 29 s for a 100 mm obstacle.
+ * 40 s leaves margin for a wider one. */
+#define OBS_BYPASS_BUDGET_MS            (60000U)
+#else
 #define OBS_BYPASS_BUDGET_MS            (3000U)
+#endif
 /** Worst-case avoidance time: bypass budget + T_search (NFR14 hard limit 5.0 s). */
 #define OBS_AVOID_WORST_CASE_MS         (OBS_BYPASS_BUDGET_MS + LF_T_SEARCH_MS)
 
@@ -201,7 +224,7 @@
 #error "timing.h: BC_CAPTURE_TIMEOUT_MS no longer fits a 20-bit microsecond gap"
 #endif
 
-#if OBS_AVOID_WORST_CASE_MS > 5000U
+#if !OBS_BYPASS_SLOW_BRINGUP && (OBS_AVOID_WORST_CASE_MS > 5000U)
 #error "timing.h: bypass budget + T_search exceeds 5.0 s (NFR14)"
 #endif
 

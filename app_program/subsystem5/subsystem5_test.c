@@ -318,8 +318,16 @@ void subsystem5_test(void)
                    (unsigned long)(2U * sweep_ms), (unsigned long)sweeps,
                    (unsigned long)echoes, (unsigned long)us_miss_count());
 
-        TEST_CHECK("S5-U25", sweeps >= 1U,
-                   "the scanner completes a coarse sweep on the 60 ms grid");
+        /* WATCH MODE (2026-11-19): the servo parks ahead and only sweeps
+         * once something answers inside OBS_DETECT_MM, so an empty bench
+         * legitimately completes no sweep at all.  Either state is correct;
+         * what would be wrong is parked AND never having swept with an
+         * object sitting in front of the sensor.  With the documented
+         * set-up for S5-U26 below (an object about 15 cm ahead) the watch
+         * fires and the sweep count rises. */
+        TEST_CHECK("S5-U25", (sweeps >= 1U) || obs_scan_is_watching(),
+                   "the scanner either swept on the 60 ms grid or is watching ahead");
+
 
         /* Manual set-up: an object about 15 cm in front of the sensor.  See
          * testing/subsystem5/TEST_LOG.md for the placement. */
