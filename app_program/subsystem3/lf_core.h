@@ -124,6 +124,18 @@
 /** The same in encoder counts. */
 #define LF_UTURN_HOLD_CNT       ((LF_UTURN_HOLD_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 
+/* EXPERIMENT C (branch buddy3/ab-rescue, 16 Nov 2026), NOT production: RIGHT
+ * keeps the line.  On a right bend the line slides right under the car:
+ * CENTRE goes white first, and RIGHT reaches the line a few mm later.  On
+ * the car (S3-U17 A/B) LINE_LOST was declared on a sample where RIGHT read
+ * black in 8 of 10 drives: T_lost ended before RIGHT's 3-sample zone filter
+ * confirmed it, and in LINE_LOST a line under RIGHT did nothing.  C: RIGHT
+ * not LIGHT by this sample's own reading for LF_RESCUE_N consecutive samples
+ * stops the lost count, and in LINE_LOST returns to ON_LINE (side RIGHT, so
+ * the recovery steers right from LF_RECOVER_Q7).  Two samples, not one, so a
+ * single noisy reading cannot keep the car going.  A/B on the car decides. TUNE */
+#define LF_RESCUE_N             (2U)
+
 /** Search the remembered side this long, then the other side until
  *  LF_T_SEARCH_MS. TUNE */
 #define LF_SEARCH_SWAP_MS       (700U)
@@ -343,6 +355,7 @@ typedef struct
     bool           hold_on;         /**< the hold after a u-turn is steering (LF_UTURN_HOLD_Q7) */
     bool           hold_full;       /**< CENTRE has been on the line's body during it */
     uint32_t       hold_cnt0;       /**< fwd_cnt when it started */
+    uint32_t       r_dark_n;        /**< C: consecutive samples RIGHT is not LIGHT (its own reading; saturates) */
 } lf_core_t;
 
 /* ---------------------------------------------------------------------------

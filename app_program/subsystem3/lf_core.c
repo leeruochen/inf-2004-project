@@ -48,6 +48,8 @@ _Static_assert(LF_D_JCT_LOOK_MM < LF_D_JCT_POST_MM, "the look past the cross end
 _Static_assert((LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7) <= LF_STEER_FULL_Q7, "the ramp starts inside full steering");
 _Static_assert(((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) < LF_T_JCT_MAX_MS,
                "at cruise the travel ends before the time cap");
+_Static_assert((LF_RESCUE_N >= 2U) && (LF_RESCUE_N < LF_HYST_SAMPLES + 1U),
+               "C: RIGHT's rescue needs 2 samples, and no more than the zone filter it bypasses");
 _Static_assert((LF_UTURN_HOLD_Q7 > 0) && (LF_UTURN_HOLD_Q7 <= LF_ACQUIRE_STEER_Q7),
                "the hold steers right, no harder than the look for the line");
 _Static_assert((LF_EDGE_TARGET_PM < LF_UTURN_HOLD_FULL_PM) && (LF_UTURN_HOLD_FULL_PM <= LF_PM_FULL),
@@ -395,10 +397,11 @@ static void update_side(lf_core_t *p_lf, lf_view_t const *p_v)
  * LF_T_LOST_MAX_MS whatever the travel -> true.  The travel is this streak's
  * own: each sample adds its forward counts (fwd_cnt only grows; the unsigned
  * difference is right across a wrap, and a streak is at most LF_N_LOST_MAX
- * samples of a few dozen counts, far from overflow). */
+ * samples of a few dozen counts, far from overflow).  C: not while RIGHT has
+ * read the line for LF_RESCUE_N samples, before its zone filter confirms it. */
 static bool lost_check(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
 {
-    if ((p_v->zc == LF_ZONE_LIGHT) && (p_v->zr == LF_ZONE_LIGHT))
+    if ((p_v->zc == LF_ZONE_LIGHT) && (p_v->zr == LF_ZONE_LIGHT) && (p_lf->r_dark_n < LF_RESCUE_N))
     {
         p_lf->lost_n++;
         p_lf->lost_cnt += p_in->fwd_cnt - p_lf->prev_fwd;
@@ -655,13 +658,20 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
 }
 
 /* LINE_LOST: post nothing so Motion's hold timeout stops the car, then
- * search.  The line coming back meanwhile ends it early. */
+ * search.  The line coming back meanwhile ends it early: under CENTRE, or (C)
+ * under RIGHT for LF_RESCUE_N samples, which returns to the recovery towards
+ * the right (update_side has made the side RIGHT). */
 static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
 {
     bool may_post = false;
 
     p_lf->timer_n++;
     if (p_v->zc == LF_ZONE_DARK)
+    {
+        enter_on_line(p_lf, p_v);
+        may_post = true;
+    }
+    else if (p_lf->r_dark_n >= LF_RESCUE_N)
     {
         enter_on_line(p_lf, p_v);
         may_post = true;
@@ -768,6 +778,7 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->hold_on = false;
     p_lf->hold_full = false;
     p_lf->hold_cnt0 = 0U;
+    p_lf->r_dark_n = 0U;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
     p_lf->jct_pending = false;
@@ -802,6 +813,18 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
     v.zc = lf_zone_update(&p_lf->zc, v.d_c);
     v.zr = lf_zone_update(&p_lf->zr, v.d_r);
     update_side(p_lf, &v);
+    if (v.r_now == LF_ZONE_LIGHT)
+    {
+        p_lf->r_dark_n = 0U;
+    }
+    else if (p_lf->r_dark_n < LF_RESCUE_N)
+    {
+        p_lf->r_dark_n++;
+    }
+    else
+    {
+        /* saturated: RIGHT has the line */
+    }
     if ((p_in->manoeuvre == LF_MAN_TURN) || (p_in->manoeuvre == LF_MAN_UTURN))
     {
         pivot_watch(p_lf, p_in, &v);

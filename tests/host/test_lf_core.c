@@ -1984,6 +1984,81 @@ static void test_uturn_hold(void)
     CHECK(r.max_steer == 4);
 }
 
+/* Test 30 (EXPERIMENT C, branch buddy3/ab-rescue): RIGHT keeps the line.
+ * S3-U17 A/B, 16 Nov 2026: on a right bend CENTRE went white, RIGHT reached the
+ * line about 18-22 samples later, and in 8 of 10 drives LINE_LOST was declared
+ * on a sample where RIGHT read black: T_lost (20 samples of both confirmed
+ * LIGHT) ended before RIGHT's 3-sample zone filter confirmed it, and in
+ * LINE_LOST a line under RIGHT did nothing.  C: RIGHT not LIGHT (its own
+ * reading, this sample) for LF_RESCUE_N consecutive samples stops the lost
+ * count, and in LINE_LOST returns to ON_LINE: the recovery then steers to the
+ * right, from LF_RECOVER_Q7.  Expected values by hand: LF_RESCUE_N 2; the
+ * first right post is 32 + 1 = 33. */
+static uint32_t lost_entries(lf_core_t *p_lf, uint32_t n, uint16_t dc, uint16_t dr, int32_t *p_max)
+{
+    uint32_t entries = 0U;
+
+    for (uint32_t i = 0U; i < n; i++)
+    {
+        lf_state_t const before = p_lf->state;
+        lf_out_t const o = feed(p_lf, dc, dr);
+
+        entries += ((o.state == LF_ST_LINE_LOST) && (before != LF_ST_LINE_LOST)) ? 1U : 0U;
+        if (o.post_steer && (o.steer_q7 > *p_max))
+        {
+            *p_max = o.steer_q7;
+        }
+    }
+    return entries;
+}
+
+static void test_rescue(void)
+{
+    lf_core_t lf;
+    lf_out_t  o;
+    int32_t   mx;
+
+    CHECK(LF_RESCUE_N == 2U);
+
+    /* RIGHT reaches the line 18, 20, 22 and 26 samples after CENTRE went
+     * white (the hardware spread): the core ends ON_LINE steering right. */
+    for (uint32_t k = 18U; k <= 26U; k += 2U)
+    {
+        start_tracking(&lf);
+        (void)run(&lf, 120U, 1000U, 0U);
+        mx = -1000;
+        (void)lost_entries(&lf, k, 0U, 0U, &mx);
+        mx = -1000;
+        (void)lost_entries(&lf, 12U, 0U, 1000U, &mx);
+        CHECK(lf.state == LF_ST_ON_LINE);
+        CHECK(mx >= (LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7));
+        CHECK(lf.side == LF_SIDE_RIGHT);
+    }
+
+    /* Before T_lost ends (18 samples), no LINE_LOST at all. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    mx = -1000;
+    CHECK(lost_entries(&lf, 18U, 0U, 0U, &mx) == 0U);
+    CHECK(lost_entries(&lf, 12U, 0U, 1000U, &mx) == 0U);
+
+    /* One noisy RIGHT sample does not count: LINE_LOST as before. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    mx = -1000;
+    (void)lost_entries(&lf, 19U, 0U, 0U, &mx);
+    o = feed(&lf, 0U, 1000U);
+    (void)o;
+    CHECK(lost_entries(&lf, 10U, 0U, 0U, &mx) == 1U);
+    CHECK(lf.state == LF_ST_LINE_LOST);
+
+    /* A real loss (both white): LINE_LOST, the stop, the search, as before. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 40U) <= 40U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 40U) <= 40U);
+}
+
 /* Test 22: the simulator against the 4 Nov 2026 hardware runs, so a change
  * to the model cannot quietly drift away from the real car.  Expected
  * values are the logged ones, not computed the way the model computes. */
@@ -2394,6 +2469,7 @@ int main(void)
     test_lost_by_distance();
     test_sim_slow_straights();
     test_search_cap();
+    test_rescue();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");
