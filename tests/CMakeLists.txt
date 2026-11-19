@@ -111,3 +111,14 @@ target_include_directories(test_imu_lift PRIVATE "${ROBOCAR_ROOT}")
 target_compile_options(test_imu_lift PRIVATE -Wall -Wextra -Werror)
 set_target_properties(test_imu_lift PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME imu_lift COMMAND test_imu_lift)
+
+# Hump detector and height estimator (app_program/subsystem4/imu_hump.c, pure
+# C): Subsystem 4 test S4-U24 (FR11, NFR11). Simulates the car rolling over
+# hump profiles (needs libm).
+add_executable(test_imu_hump host/test_imu_hump.c
+    "${ROBOCAR_ROOT}/app_program/subsystem4/imu_hump.c")
+target_include_directories(test_imu_hump PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_imu_hump PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_imu_hump PRIVATE m)
+set_target_properties(test_imu_hump PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME imu_hump COMMAND test_imu_hump)

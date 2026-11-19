@@ -66,7 +66,16 @@ uint32_t imu_get_last_lift_event(void);
 /** Humps reported since boot (one per hump). */
 uint32_t imu_get_hump_count(void);
 
-/** Pitch of the last reported hump, half-degrees (positive = nose up). */
+/** Peak pitch of the last reported hump, half-degrees (positive = nose up). */
 int32_t imu_get_last_hump_pitch_half_deg(void);
+
+/** Estimated height of the last reported hump, mm (imu_hump.h, FR11). */
+int32_t imu_get_last_hump_height_mm(void);
+
+/** Highest hump of the run so far, mm (FR11 "highest hump peak"). */
+int32_t imu_get_max_hump_height_mm(void);
+
+/** Humps dropped because the car turned during them. */
+uint32_t imu_get_hump_dropped_count(void);
 
 #endif /* TASK_IMU_H */

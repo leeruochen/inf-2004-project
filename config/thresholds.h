@@ -16,8 +16,19 @@
 
 /** a_move: acceleration that means "the car started moving" (0.05 g). TUNE */
 #define IMU_A_MOVE_G_X1000          (50U)
-/** degree_hump: pitch that, with a vertical spike, means a hump. TUNE */
-#define IMU_HUMP_PITCH_DEG          (5U)
+/** degree_hump: pitch that means a hump.  Was 5 deg (design.md); the 10 mm
+ *  track hump tilts the car only ~4-4.5 deg (S4-U26 trace, 19 Nov 2026), and
+ *  the car's cruise noise is within ~+-2 deg.  TUNE */
+#define IMU_HUMP_PITCH_DEG          (3U)
+/** Distance between the car's two ground contacts along its length (driven
+ *  wheel axle to the front contact), for the hump height (imu_hump.h):
+ *  height = wheelbase x sin(pitch) while one end is on the hump.
+ *  PROVISIONAL: 120 mm is the line sensors' distance in front of the axle
+ *  (Buddy 3, ruler, 4 Nov 2026, lf_core.h LF_D_PIVOT_MM), the closest value
+ *  on record.  TODO(owner-to-confirm, buddy 4): measure axle centre to the
+ *  front contact with a ruler, or calibrate with S4-U25 (wheelbase =
+ *  object height / sin(pitch)). */
+#define IMU_HUMP_WHEELBASE_MM       (120U)
 /* Lift / overturn detection (replaces g_collision; requirement change of
  * 11 Nov 2026, app_program/subsystem4/imu_lift.h).  Either one, held for
  * 50 ms, brakes the motors and latches the fault. */
