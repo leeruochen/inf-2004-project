@@ -123,6 +123,36 @@
  *  after every touch and zig-zagged +-4 mm down a straight. TUNE */
 #define LF_SD_DEEP_MM           (6U)
 #endif
+#ifndef LF_SD_OVER_RAW
+/** A reading above this is not the tape: it is the floor beyond the mat (or a
+ *  lifted car).  Tape peaks seen on the car, 4 logs and 3 mounts, 19-20 Nov:
+ *  2249-2706 raw; the floor read 3179 at first contact and 3500-3950 after
+ *  (20 Nov, 01:58, both sensors for 1.7 m).  An absolute ADC level, because
+ *  calibrated black does not scale with it (2520 on a black of 1178). TUNE */
+#define LF_SD_OVER_RAW          (3000U)
+#endif
+#ifndef LF_SD_OVER_N
+/** Either sensor above LF_SD_OVER_RAW for this many samples (50 ms): the
+ *  car is off the track: TRACK_LOST, the VC stops it. */
+#define LF_SD_OVER_N            (10U)
+#endif
+#ifndef LF_SD_BOTHDARK_MM
+/** Both sensors DARK outside a junction for this much travel is not a line
+ *  (a cross line is 18 mm wide and the junction travel already covers it):
+ *  LINE_LOST.  Without it both-DARK sat in ON_LINE with steering 0 for
+ *  1.7 m (20 Nov). */
+#define LF_SD_BOTHDARK_MM       (60U)
+#endif
+#ifndef LF_SD_MEM_Q7
+/** A graze while the car has been steering one way: the steering averaged
+ *  over LF_SD_MEM_MM of travel is at least this (Q7) -> treat it as a bend:
+ *  hold that way (as after a deep contact) instead of going straight.  A
+ *  weave on a straight averages near 0. TUNE */
+#define LF_SD_MEM_Q7            (40)
+#endif
+#ifndef LF_SD_MEM_MM
+#define LF_SD_MEM_MM            (60U)
+#endif
 #ifndef LF_SD_JCT_N
 /** Both confirmed DARK for this many samples is a junction (30 ms). TUNE */
 #define LF_SD_JCT_N             (6U)
@@ -135,6 +165,8 @@
 #define LF_SD_CONF_CNT          ((LF_SD_CONF_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_PROBE_CNT         ((LF_SD_PROBE_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_DEEP_CNT          ((LF_SD_DEEP_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+#define LF_SD_BOTHDARK_CNT      ((LF_SD_BOTHDARK_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+#define LF_SD_MEM_CNT           ((LF_SD_MEM_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 /** LF_SD_HOLD_DEG as left-minus-right counts, as LF_PIVOT_HALF_CNT is 45 deg:
  *  track 114 mm x 2464 / 207 counts per mm = 1357 counts per radian. */
 #define LF_SD_HOLD_YAW_CNT      ((LF_SD_HOLD_DEG * LF_PIVOT_HALF_CNT) / 45U)
@@ -181,6 +213,10 @@ typedef struct
     bool           srch_capped;     /**< this search ends at LF_D_SEARCH_MAX_CNT */
     uint32_t       srch_cnt;        /**< its forward counts so far */
     uint32_t       fault_n;         /**< consecutive samples with a sensor at a rail */
+    uint32_t       over_n;          /**< consecutive samples with a sensor above LF_SD_OVER_RAW */
+    uint32_t       bd_cnt;          /**< forward counts with both sensors DARK in ON_LINE */
+    int32_t        mem_q15;         /**< steering averaged over ~LF_SD_MEM_MM of travel, Q7 x 256 (an integer
+                                     *   average of Q7 values stalls 59 short of its target) */
 } lf_sd_t;
 
 /* ---------------------------------------------------------------------------

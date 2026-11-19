@@ -382,19 +382,153 @@ static void test_suspended_and_fault(void)
     CHECK(r.max_steer > 0);
     g_in.reacquired = false;
 
-    /* RIGHT at the high rail for 40 samples: TRACK_LOST, then IDLE. */
+    /* RIGHT stuck at the low rail (a disconnected or shorted sensor) for 40
+     * samples: TRACK_LOST, then IDLE.  (The high rail is caught earlier, as
+     * "over", in test_floor.) */
     start_centred(&sd);
     {
         uint32_t tl = 0U;
 
         for (uint32_t i = 0U; i < 39U; i++)
         {
-            tl += (feed_raw(&sd, 140U, 4095U).event == LF_EV_TRACK_LOST) ? 1U : 0U;
+            tl += (feed_raw(&sd, 140U, 0U).event == LF_EV_TRACK_LOST) ? 1U : 0U;
         }
         CHECK(tl == 0U);
-        CHECK(feed_raw(&sd, 140U, 4095U).event == LF_EV_TRACK_LOST);
+        CHECK(feed_raw(&sd, 140U, 0U).event == LF_EV_TRACK_LOST);
         CHECK(sd.state == LF_ST_IDLE);
     }
+}
+
+/* Test 7: the floor is not a line (the 20 Nov log: both sensors read 3500-3950
+ * raw for 1.7 m after the car left the mat, and the core drove on, found the
+ * "line", reported two junctions and kept LINE_FOUND set).  The tape never
+ * read above 2706 in four logs; LF_SD_OVER_RAW is 3000, held for 10 samples. */
+static void test_floor(void)
+{
+    lf_sd_t sd;
+    run_t r;
+    uint32_t tl = 0U;
+
+    /* The tape's peak is still the tape: no stop, the steering follows it. */
+    start_centred(&sd);
+    for (uint32_t i = 0U; i < 40U; i++)
+    {
+        r.last = feed_raw(&sd, 140U, 2706U);
+        tl += (r.last.event == LF_EV_TRACK_LOST) ? 1U : 0U;
+    }
+    CHECK(tl == 0U);
+    CHECK(sd.state != LF_ST_IDLE);
+
+    /* Both sensors on the floor (3800, 3700): TRACK_LOST on the 10th sample,
+     * once; never a junction; the core goes IDLE. */
+    start_centred(&sd);
+    tl = 0U;
+    for (uint32_t i = 0U; i < 9U; i++)
+    {
+        lf_out_t const o = feed_raw(&sd, 3800U, 3700U);
+
+        tl += (o.event == LF_EV_TRACK_LOST) ? 1U : 0U;
+        CHECK(o.event != LF_EV_JUNCTION);
+    }
+    CHECK(tl == 0U);
+    CHECK(feed_raw(&sd, 3800U, 3700U).event == LF_EV_TRACK_LOST);
+    CHECK(sd.state == LF_ST_IDLE);
+    CHECK(!feed_raw(&sd, 3800U, 3700U).line_found);
+
+    /* A brief floor reading (9 samples), then tape again: no stop. */
+    start_centred(&sd);
+    for (uint32_t i = 0U; i < 9U; i++)
+    {
+        (void)feed_raw(&sd, 140U, 3179U);
+    }
+    r.last = feed_raw(&sd, 140U, 900U);
+    CHECK(r.last.event == LF_EV_NONE);
+    CHECK(sd.state == LF_ST_ON_LINE);
+
+    /* The search does not accept the floor as the line (20 Nov: RIGHT 3179
+     * ended the search): in REACQUIRING, floor readings stop the car. */
+    start_centred(&sd);
+    (void)run(&sd, 30U, 0U, 0U);
+    {
+        uint32_t n = 0U;
+
+        while ((sd.state != LF_ST_REACQUIRING) && (n < 400U))
+        {
+            (void)feed(&sd, 0U, 0U);
+            n++;
+        }
+        CHECK(sd.state == LF_ST_REACQUIRING);
+        tl = 0U;
+        for (uint32_t i = 0U; i < 10U; i++)
+        {
+            tl += (feed_raw(&sd, 3300U, 3600U).event == LF_EV_TRACK_LOST) ? 1U : 0U;
+        }
+        CHECK(tl == 1U);
+        CHECK(sd.state == LF_ST_IDLE);
+    }
+}
+
+/* Test 8: both sensors DARK outside a junction is not a line.  After a
+ * cross line the junction travel covers 120 mm; both DARK for another 60 mm
+ * (714 counts = 60 samples at 12) in ON_LINE is LINE_LOST, not steering 0
+ * for ever. */
+static void test_both_dark(void)
+{
+    lf_sd_t sd;
+    uint32_t n = 0U;
+    uint32_t junctions = 0U;
+
+    start_centred(&sd);
+    for (uint32_t i = 0U; i < 8U; i++)
+    {
+        (void)feed(&sd, 1000U, 1000U);
+    }
+    CHECK(sd.state == LF_ST_JUNCTION);
+    /* the car goes on over a dark surface: the junction posts, then ON_LINE,
+     * then the 60 mm limit */
+    while ((sd.state != LF_ST_LINE_LOST) && (n < 600U))
+    {
+        lf_out_t const o = feed(&sd, 1000U, 1000U);
+
+        junctions += (o.event == LF_EV_JUNCTION) ? 1U : 0U;
+        n++;
+    }
+    CHECK(sd.state == LF_ST_LINE_LOST);
+    CHECK(junctions == 1U);                 /* one JUNCTION, then lost */
+    CHECK((n >= 119U + 60U - 6U) && (n <= 119U + 60U + 12U));
+}
+
+/* Test 9: a graze while the car has been steering one way is a bend: hold
+ * that way, not straight.  (20 Nov, drive 1: RIGHT grazed at 606 mm after
+ * steering +96, both white, the core went straight 110 mm, the line was lost.)
+ * A weave on a straight, steering both ways, still goes straight on. */
+static void test_bend_memory(void)
+{
+    lf_sd_t sd;
+    run_t r;
+
+    start_centred(&sd);
+    for (uint32_t i = 0U; i < 60U; i++)
+    {
+        (void)feed(&sd, 0U, 700U);          /* the line under RIGHT: steers right (~+67) */
+    }
+    (void)run(&sd, 3U, 0U, 80U);            /* a graze: 80 pm, shallow */
+    CHECK(!sd.deep);
+    r = run(&sd, 8U, 0U, 0U);               /* both white */
+    CHECK(sd.bw == LF_SD_BW_HOLD);
+    CHECK((r.min_steer == LF_SD_HOLD_Q7) && (r.max_steer == LF_SD_HOLD_Q7));
+
+    /* Weave: right then left in turn, a graze, both white: straight on. */
+    start_centred(&sd);
+    for (uint32_t k = 0U; k < 6U; k++)
+    {
+        (void)run(&sd, 10U, 0U, 700U);
+        (void)run(&sd, 10U, 700U, 0U);
+    }
+    (void)run(&sd, 3U, 0U, 80U);
+    r = run(&sd, 8U, 0U, 0U);
+    CHECK(sd.bw == LF_SD_BW_CENTRED);
+    CHECK((r.min_steer == 0) && (r.max_steer == 0));
 }
 
 /* ---------------------------------------------------------------------------
@@ -607,6 +741,9 @@ int main(void)
     test_deep_hold();
     test_junction();
     test_suspended_and_fault();
+    test_floor();
+    test_both_dark();
+    test_bend_memory();
     test_sim_bends();
     test_sim_straights();
     printf("lf_straddle: %d deferred checks not yet a gate, %d of them failing (U-bends)\n",

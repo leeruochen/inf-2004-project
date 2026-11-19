@@ -30,6 +30,8 @@
 _Static_assert((LF_SD_KP_Q7 > 0) && (LF_SD_KP_Q7 <= LF_STEER_FULL_Q7), "Kp fits full steering");
 _Static_assert((LF_SD_HOLD_Q7 > 0) && (LF_SD_HOLD_Q7 <= LF_STEER_FULL_Q7), "the hold fits full steering");
 _Static_assert((LF_SD_PROBE_Q7 > 0) && (LF_SD_PROBE_Q7 < LF_SD_KP_Q7), "the probe is gentle");
+_Static_assert((LF_SD_OVER_RAW > 2706U) && (LF_SD_OVER_RAW < ADC_STUCK_HIGH_RAW), "the floor limit sits above the tape's peak");
+_Static_assert((LF_SD_BOTHDARK_CNT > 0U) && (LF_SD_MEM_CNT > 0U) && (LF_SD_MEM_Q7 > 0), "both-dark and memory limits set");
 _Static_assert(LF_SD_JCT_N >= 1U, "a junction needs at least one confirmed sample");
 _Static_assert((LF_SD_CONF_CNT > 0U) && (LF_SD_PROBE_CNT > 0U) && (LF_SD_HOLD_CNT > 0U),
                "the both-white limits are set");
@@ -151,7 +153,15 @@ static bool sd_both_white(lf_sd_t *p_sd, lf_in_t const *p_in, uint32_t dcnt)
 
     if (p_sd->bw == LF_SD_BW_NONE)
     {
-        p_sd->bw = p_sd->deep ? LF_SD_BW_HOLD : LF_SD_BW_CENTRED;
+        int32_t const lim = (int32_t)LF_SD_MEM_Q7 * 256;
+        bool const turning = (p_sd->mem_q15 >= lim) || (p_sd->mem_q15 <= -lim);
+
+        if (turning && !p_sd->deep)
+        {
+            /* A graze, but the car has been steering one way: a bend. */
+            p_sd->side = (p_sd->mem_q15 > 0) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
+        }
+        p_sd->bw = (p_sd->deep || turning) ? LF_SD_BW_HOLD : LF_SD_BW_CENTRED;
         p_sd->bw_cnt = 0U;
         p_sd->hold_yaw0 = p_in->yaw_cnt;
     }
@@ -180,6 +190,21 @@ static bool sd_both_white(lf_sd_t *p_sd, lf_in_t const *p_in, uint32_t dcnt)
         lost = true;
     }
     return lost;
+}
+
+/* Both sensors confirmed DARK in ON_LINE for LF_SD_BOTHDARK_CNT of travel:
+ * a cross line is long past, so this is not a line. */
+static bool sd_both_dark_too_long(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt)
+{
+    if ((p_v->zl == LF_ZONE_DARK) && (p_v->zr == LF_ZONE_DARK))
+    {
+        p_sd->bd_cnt += dcnt;
+    }
+    else
+    {
+        p_sd->bd_cnt = 0U;
+    }
+    return (p_sd->bd_cnt >= LF_SD_BOTHDARK_CNT);
 }
 
 /* Both confirmed DARK for LF_SD_JCT_N samples, once per cross line. */
@@ -231,6 +256,11 @@ static bool sd_st_on_line(lf_sd_t *p_sd, lf_in_t const *p_in, sd_view_t const *p
         p_sd->jct_pending = true;
         p_sd->jct_cnt0 = p_in->fwd_cnt;
         p_sd->steer_q7 = 0;
+    }
+    else if (sd_both_dark_too_long(p_sd, p_v, dcnt))
+    {
+        sd_enter_lost(p_sd, true);              /* not a line: stop, then the capped search */
+        may_post = false;
     }
     else if (p_v->contact)
     {
@@ -438,6 +468,9 @@ void lf_sd_init(lf_sd_t *p_sd, lf_cal_t const *p_cal)
         p_sd->srch_capped = false;
         p_sd->srch_cnt = 0U;
         p_sd->fault_n = 0U;
+        p_sd->over_n = 0U;
+        p_sd->bd_cnt = 0U;
+        p_sd->mem_q15 = 0;
         sd_enter(p_sd, LF_ST_IDLE);
     }
 }
@@ -449,8 +482,12 @@ static void lf_sd_step_body(lf_sd_t *p_sd, lf_in_t const *p_in, lf_out_t *p_out)
     bool           rising;
     uint32_t const dcnt = p_in->fwd_cnt - p_sd->prev_fwd;
 
-    v.dl = p_sd->cal_ok ? lf_norm(&p_sd->cal.c, p_in->raw_c) : 0U;
-    v.dr = p_sd->cal_ok ? lf_norm(&p_sd->cal.r, p_in->raw_r) : 0U;
+    bool const over = (p_in->raw_c > LF_SD_OVER_RAW) || (p_in->raw_r > LF_SD_OVER_RAW);
+
+    /* Above the tape's peak: the floor, not black.  Not a line (darkness 0:
+     * it cannot touch, find or hold anything); LF_SD_OVER_N of it stops the car. */
+    v.dl = (p_sd->cal_ok && (p_in->raw_c <= LF_SD_OVER_RAW)) ? lf_norm(&p_sd->cal.c, p_in->raw_c) : 0U;
+    v.dr = (p_sd->cal_ok && (p_in->raw_r <= LF_SD_OVER_RAW)) ? lf_norm(&p_sd->cal.r, p_in->raw_r) : 0U;
     v.contact = (v.dl >= LF_LIGHT_MAX_PM) || (v.dr >= LF_LIGHT_MAX_PM);
     v.zl = lf_zone_update(&p_sd->zl, v.dl);
     v.zr = lf_zone_update(&p_sd->zr, v.dr);
@@ -459,6 +496,7 @@ static void lf_sd_step_body(lf_sd_t *p_sd, lf_in_t const *p_in, lf_out_t *p_out)
     p_sd->prev_running = p_in->running;
     p_out->event = LF_EV_NONE;
 
+    p_sd->over_n = over ? (p_sd->over_n + 1U) : 0U;
     if (p_in->running && (p_sd->state != LF_ST_IDLE) && (sd_rail(p_in->raw_c) || sd_rail(p_in->raw_r)))
     {
         p_sd->fault_n++;
@@ -500,6 +538,14 @@ static void lf_sd_step_body(lf_sd_t *p_sd, lf_in_t const *p_in, lf_out_t *p_out)
                 may_post = true;
             }
         }
+    }
+    else if ((p_sd->over_n >= LF_SD_OVER_N)
+             && ((p_sd->state == LF_ST_ON_LINE) || (p_sd->state == LF_ST_JUNCTION)
+                 || (p_sd->state == LF_ST_REACQUIRING)))
+    {
+        p_out->event = LF_EV_TRACK_LOST;            /* off the track: the VC stops the car */
+        sd_enter(p_sd, LF_ST_IDLE);
+        p_sd->steer_q7 = 0;
     }
     else if (p_sd->fault_n >= LF_SD_FAULT_N)
     {
@@ -571,6 +617,17 @@ static void lf_sd_step_body(lf_sd_t *p_sd, lf_in_t const *p_in, lf_out_t *p_out)
                         && ((p_sd->state == LF_ST_ON_LINE) || (v.zl != LF_ZONE_LIGHT) || (v.zr != LF_ZONE_LIGHT));
     p_out->d_c_pm = v.dl;
     p_out->d_r_pm = v.dr;
+    /* Steering averaged over about LF_SD_MEM_MM of travel (moving only). */
+    if ((dcnt > 0U) && (p_sd->state == LF_ST_ON_LINE))
+    {
+        int32_t const w = (dcnt > LF_SD_MEM_CNT) ? (int32_t)LF_SD_MEM_CNT : (int32_t)dcnt;
+
+        p_sd->mem_q15 += (((p_sd->steer_q7 * 256) - p_sd->mem_q15) * w) / (int32_t)LF_SD_MEM_CNT;
+    }
+    else if (p_sd->state != LF_ST_ON_LINE)
+    {
+        p_sd->mem_q15 = 0;
+    }
     p_sd->prev_fwd = p_in->fwd_cnt;
 }
 
