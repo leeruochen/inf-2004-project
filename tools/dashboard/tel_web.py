@@ -79,6 +79,7 @@ class Monitor:
         self.roots = [os.path.realpath(p) for p in (roots or [repo])]
         self.out_dir = out_dir or os.path.join(repo, "build")
         self.lock = threading.RLock()
+        self._connecting = threading.Lock()     # held while connect_mqtt sets up a client
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._proc: Optional[subprocess.Popen] = None
@@ -211,6 +212,20 @@ class Monitor:
         return ""
 
     def connect_mqtt(self, broker: str, port: int) -> str:
+        """One connection at a time: a second Connect while one is being set up is turned away.
+
+        The HTTP server runs each request in its own thread, so a double click used to
+        start two paho clients; the old one was never stopped and the two kept taking
+        the broker connection off each other (19 Nov 2026).
+        """
+        if not self._connecting.acquire(blocking=False):
+            return "a connection is already being set up: wait a moment"
+        try:
+            return self._connect_mqtt(broker, port)
+        finally:
+            self._connecting.release()
+
+    def _connect_mqtt(self, broker: str, port: int) -> str:
         try:
             import paho.mqtt.client  # noqa: F401  (only to give a clear message)
         except ImportError:
@@ -219,6 +234,7 @@ class Monitor:
         os.makedirs(self.out_dir, exist_ok=True)
         out = os.path.join(self.out_dir, "dash-mqtt-" + time.strftime("%Y%m%d-%H%M%S") + ".txt")
         _, client = dash._new_client("robocar-web")
+        self._client = client               # current before any callback can run (see _current)
         save = open(out, "w", encoding="utf-8", buffering=1)
         header = f"{dash._stamp()}  [DASH] source=mqtt broker={broker}:{port}"
         save.write(header + "\n")
@@ -229,23 +245,29 @@ class Monitor:
         self._save = save
 
         def on_connect(c, userdata, flags, *rest):
+            if self._client is not c:
+                return              # a connection that was replaced or stopped
             with self.lock:
                 self.src["mqtt_connected"] = True
                 self.ctl.set_connected(True, time.monotonic())
             c.subscribe("car/#", qos=1)
 
         def on_disconnect(c, userdata, *rest):
+            if self._client is not c:
+                return
             with self.lock:
                 self.src["mqtt_connected"] = False
                 self.ctl.set_connected(False, time.monotonic())
                 self.health.set_link(False, "the laptop lost the broker connection", _now_sod())
 
         def on_publish(c, userdata, mid, *rest):
+            if self._client is not c:
+                return
             with self.lock:         # QoS 1: the broker's PUBACK for one of our commands
                 self.ctl.on_puback(mid, time.monotonic())
 
         def on_message(c, userdata, msg):
-            if msg.topic.startswith("car/cmd/"):
+            if self._client is not c or msg.topic.startswith("car/cmd/"):
                 return
             if msg.topic == codec.STATUS_TOPIC:
                 state = "ONLINE" if msg.payload == b"1" else "OFFLINE (last will)"
@@ -268,11 +290,11 @@ class Monitor:
         except (OSError, ValueError) as exc:
             save.close()
             self._save = None
+            self._client = None
             with self.lock:
                 self.src.update(running=False, error=f"cannot reach {broker}:{port}: {exc}")
             return self.src["error"]
         client.loop_start()
-        self._client = client
         return ""
 
     def _publish(self, cmd: str) -> Optional[int]:

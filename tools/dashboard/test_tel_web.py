@@ -385,6 +385,65 @@ class WebV2(unittest.TestCase):
         self.assertEqual(self.s.post("/api/calib", {"action": "capture", "seconds": "x"})[0], 400)
 
 
+class OneConnection(unittest.TestCase):
+    """Regression, 19 Nov 2026: two clients with one id took the broker connection off each other."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.s = _Server(web.Monitor(roots=[web.REPO, self.tmp], out_dir=self.tmp))
+
+    def tearDown(self):
+        self.s.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_every_client_gets_its_own_id(self):
+        made = []
+
+        class Client:
+            def __init__(self, *a, client_id="", **k):
+                made.append(client_id)
+
+        client_mod = mock.MagicMock()
+        client_mod.Client = Client
+        mqtt_mod = mock.MagicMock(client=client_mod)
+        with mock.patch.dict("sys.modules", {"paho": mock.MagicMock(mqtt=mqtt_mod), "paho.mqtt": mqtt_mod,
+                                             "paho.mqtt.client": client_mod}):
+            for base in ("robocar-web", "robocar-web", "robocar-dashboard"):
+                dash._new_client(base)
+        self.assertEqual(len(set(made)), 3)
+        self.assertTrue(made[0].startswith("robocar-web-") and made[2].startswith("robocar-dashboard-"))
+
+    def _connect(self, fake):
+        with mock.patch.dict("sys.modules", {"paho": mock.MagicMock(), "paho.mqtt": mock.MagicMock(),
+                                             "paho.mqtt.client": mock.MagicMock()}), \
+                mock.patch.object(dash, "_new_client", return_value=(None, fake)):
+            return self.s.post("/api/source", {"type": "mqtt", "broker": "10.0.0.2", "port": 1883})
+
+    def test_second_connect_while_one_is_set_up(self):
+        self.assertTrue(self.s.monitor._connecting.acquire(blocking=False))     # one is in progress
+        try:
+            code, j = self._connect(tv._FakeClient([]))
+        finally:
+            self.s.monitor._connecting.release()
+        self.assertEqual(code, 400)
+        self.assertIn("already being set up", j["error"])
+
+    def test_a_replaced_client_is_ignored(self):
+        hb = bytes.fromhex(tv.heartbeat(5000).split()[-1])
+        old = tv._FakeClient([("car/telemetry/heartbeat", hb)])
+        old.on_disconnect = old.on_publish = None
+        self.assertEqual(self._connect(old)[0], 200)
+        new = tv._FakeClient([("car/telemetry/heartbeat", hb)])
+        new.on_disconnect = new.on_publish = None
+        self.assertEqual(self._connect(new)[0], 200)
+        n = self.s.jget("/api/state")[1]["source"]["frames"]
+        old.on_message(old, None, tv._FakeMsg("car/telemetry/heartbeat", hb))     # the old one, late
+        old.on_connect(old, None, {}, 0)
+        self.assertEqual(self.s.jget("/api/state")[1]["source"]["frames"], n)
+        new.on_message(new, None, tv._FakeMsg("car/telemetry/heartbeat", hb))
+        self.assertEqual(self.s.jget("/api/state")[1]["source"]["frames"], n + 1)
+
+
 class PageScript(unittest.TestCase):
     def test_node_syntax(self):
         node = shutil.which("node")
