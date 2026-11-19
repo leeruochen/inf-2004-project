@@ -4,6 +4,18 @@ Dashboard integration, 19 Nov 2026 (branch `buddy3/dashboard-integration`, not m
 It uses Buddy 1's `tel_dashboard.py` with per-subsystem views (`--view`) and
 evidence checks (`check`) added in `tel_views.py`.
 
+## The quickest way: the browser dashboard
+
+Double-click `tools\dashboard\dashboard.cmd`, or run `python tools\dashboard\tel_web.py` from the repo root.
+
+1. Flash the stationary firmware: drag `build\robocar-dash-stationary-<hash>.uf2` onto the RPI-RP2 drive.
+2. **USB (Windows) → Start capture**. This runs `tools\serial_capture.ps1` into `build\dash-live-*.txt` and shows it live.
+3. Open your subsystem's tab, follow its *Test procedure*, then press **Run check**.
+
+You can also pick any saved log from the **Log** list (tick *follow* for a log that's still being
+written, e.g. by `stationary_test.ps1`), or connect to **MQTT** with a WiFi build. An MQTT session
+is saved to `build\dash-mqtt-*.txt`. Only one source can read the USB port at a time.
+
 ## What each label means
 
 | Label | Meaning |

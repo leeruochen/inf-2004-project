@@ -116,6 +116,10 @@ class Session:
         self._last_bits: Optional[int] = None
         self._last_state: Optional[str] = None
         self._last_motion_moving = False
+        self._na_shown: set = set()     # sensor fields whose N/A line was printed (once until a value)
+        # Newest frame of each type, for live readings (web UI):
+        # name -> {"f": fields, "sim": simulated, "n": frames of that type so far}
+        self.latest: Dict[str, dict] = {}
 
     # -- input --------------------------------------------------------------
 
@@ -186,6 +190,9 @@ class Session:
         ev = self.ev
         f = fr.fields
         simulated = ev.in_s1_test
+        prev = self.latest.get(fr.name)
+        self.latest[fr.name] = {"f": dict(f), "n": (prev["n"] + 1) if prev else 1,
+                                "sim": simulated or (fr.type == codec.FT_TELEMETRY_SENSOR and ev.s1_ran)}
         if fr.type == codec.FT_TELEMETRY_SENSOR:
             ev.sensor_frames += 1
             # Once the S1 tests ran, their snapshot values stay in every later
@@ -274,22 +281,31 @@ class Session:
                 out += self._show("obstacle", f"range      {f['range_cm']} cm{why}")
                 out += self._show("lf", f"IR         CENTRE {f['ir_c_raw']} RIGHT {f['ir_r_raw']}{why}")
                 return out
+            def na(key: str, view: str, text: str) -> List[str]:
+                if key in self._na_shown:
+                    return []
+                self._na_shown.add(key)
+                return self._show(view, text)
+
+            for key, ok in (("att", f["att_valid"]), ("range", f["range_valid"]), ("ir", f["ir_valid"])):
+                if ok:
+                    self._na_shown.discard(key)
             if f["att_valid"]:
                 out += self._show("imu", f"attitude   pitch {f['pitch_deg']:+.1f} deg [DERIVED from accelerometer, "
                                          f"levelled at boot]; roll {f['roll_deg']:+.1f} deg [DERIVED, not "
                                          f"levelled, sign unchecked]")
             else:
-                out += self._show("imu", "attitude   N/A (no attitude producer in this firmware yet)")
+                out += na("att", "imu", "attitude   N/A (no attitude producer in this firmware yet)")
             if f["range_valid"]:
                 r = f"{f['range_cm']} cm" if f["range_cm"] else "no echo (0)"
                 out += self._show("obstacle", f"range      {r} straight ahead [MEASURED ultrasonic at servo 90 deg]")
             else:
-                out += self._show("obstacle", "range      N/A (no ultrasonic producer in this firmware)")
+                out += na("range", "obstacle", "range      N/A (no ultrasonic producer in this firmware)")
             if f["ir_valid"]:
                 out += self._show("lf", f"IR         CENTRE {f['ir_c_raw']} RIGHT {f['ir_r_raw']} raw [MEASURED ADC]")
             else:
-                out += self._show("lf", "IR         N/A (no line-following task in this firmware: subsystem 3 "
-                                        "is a stub on main)")
+                out += na("ir", "lf", "IR         N/A (no line-following task in this firmware: subsystem 3 "
+                                      "is a stub on main)")
             return out
         if fr.type == codec.FT_EVENT_HUMP:
             h = (f"height {f['height_mm']} mm [DERIVED estimate]" if f["height_mm"]
