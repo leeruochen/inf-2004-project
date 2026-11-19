@@ -147,6 +147,30 @@ class WebApi(unittest.TestCase):
         self.assertEqual(res["Pitch follows a hand tilt (span >= 10 deg)"], "NO DATA")
         self.assertTrue(st["feed"]["imu"])
 
+    def test_real_lf_log_state(self):
+        rel = "testing/subsystem3/logs/2026-11-05_s3_u15_run7.txt"
+        if not os.path.exists(os.path.join(web.REPO, rel)):
+            self.skipTest("log not in this checkout (line-following branch only)")
+        self._open(rel)
+        st = self._done()
+        self.assertEqual(_reading(st, "lf", "LF state")["kind"], "REPORTED")
+        # an APP_TEST build that ran the S1 tests: their injected IR values, never MEASURED
+        self.assertTrue(st["s1_ran"])
+        self.assertEqual(_reading(st, "lf", "IR CENTRE raw")["kind"], "SIMULATED")
+
+    def test_lf_ir_from_sensor_frames(self):
+        path = os.path.join(self.tmp, "lf.txt")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(tv.sensor(1000, ir=(1712, 180), flags=(True, False, False)) + "\n")
+            fh.write("[LF] ON_LINE -> LINE_LOST  c=300 r=180 dc=90 dr=20 vc=4\n")
+        self._open(path)
+        st = self._done()
+        self.assertEqual((_reading(st, "lf", "IR CENTRE raw")["value"], _reading(st, "lf", "IR CENTRE raw")["kind"]),
+                         ("1712", "MEASURED"))
+        self.assertEqual(_reading(st, "lf", "IR RIGHT raw")["value"], "180")
+        self.assertEqual(_reading(st, "lf", "LF state")["value"], "LINE_LOST")
+        self.assertEqual(_reading(st, "imu", "pitch")["kind"], "N/A")             # no attitude in this frame
+
     def test_follow_live_synthetic_run(self):
         path = os.path.join(self.tmp, "live.txt")
         self._open(path, follow=True)          # does not exist yet: the source waits for it

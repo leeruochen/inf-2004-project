@@ -10,7 +10,7 @@
  *
  *  Integer widths: raw ADC <= 4095 and darkness <= 1000, so
  *  (raw - white) * 1000 <= 4 095 000 fits uint32_t; steering products
- *  (d - 500) * LF_KP_Q7 stay within +-64 000 in int32_t.
+ *  (d - LF_EDGE_TARGET_PM) * LF_KP_Q7 stay within +-21 600 in int32_t.
  */
 
 #include <stdbool.h>
@@ -28,20 +28,29 @@
 #define LF_N_SEARCH     LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
 #define LF_N_SWAP       LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
 #define LF_N_STOP       LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
-#define LF_N_SIDE_MEM   LF_SAMPLES(LF_SIDE_MEMORY_MS)   /* 20  = 100 ms */
-#define LF_N_POST       LF_STEER_POST_EVERY_N_SAMPLES   /* 4   = 20 ms  */
-
-/* r_quiet_n saturates here (anything above the side memory is "long ago"). */
-#define LF_QUIET_MAX    (LF_N_SIDE_MEM + 1U)
+#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 180 = 900 ms */
 
 _Static_assert((uint32_t)LF_ST_COUNT == DREP_FSM_LF_STATES,
                "lf_state_t is the telemetry LF FSM code");
 _Static_assert(LF_LIGHT_MAX_PM < LF_EDGE_TARGET_PM, "edge target above LIGHT");
-_Static_assert(LF_EDGE_TARGET_PM < LF_DARK_MIN_PM, "edge target below DARK");
+_Static_assert(LF_EDGE_TARGET_PM < LF_PM_FULL, "the line's body steers right");
+_Static_assert(LF_RECOVER_Q7 <= LF_SEARCH_Q7, "the search is never gentler than recovery");
+_Static_assert(LF_SEARCH_Q7 <= LF_STEER_FULL_Q7, "the search fits full steering");
 _Static_assert(LF_DARK_MIN_PM < LF_PM_FULL, "DARK reachable");
 _Static_assert(LF_N_SWAP < LF_N_SEARCH, "the search swaps sides before T_search");
-_Static_assert(LF_N_POST > 0U, "steering post period >= sample period");
+_Static_assert(LF_STEER_POST_PERIOD_MS == MOTION_PERIOD_MS,
+               "one steering post per Motion period, in its post slot");
 _Static_assert(LF_STEER_FULL_Q7 <= DREP_STEER_Q7_MAX, "full steering fits Q7");
+_Static_assert((ENC_CPR > 0U) && (WHEEL_CIRC_MM > 0U), "encoder geometry known");
+_Static_assert(LF_D_JCT_LEAD_MM < LF_D_PIVOT_MM, "JUNCTION posted after detection");
+_Static_assert(LF_D_JCT_LOOK_MM < LF_D_JCT_POST_MM, "the look past the cross ends before the post");
+_Static_assert((LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7) <= LF_STEER_FULL_Q7, "the ramp starts inside full steering");
+_Static_assert(((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) < LF_T_JCT_MAX_MS,
+               "at cruise the travel ends before the time cap");
+_Static_assert((LF_UTURN_HOLD_Q7 > 0) && (LF_UTURN_HOLD_Q7 <= LF_ACQUIRE_STEER_Q7),
+               "the hold steers right, no harder than the look for the line");
+_Static_assert((LF_EDGE_TARGET_PM < LF_UTURN_HOLD_FULL_PM) && (LF_UTURN_HOLD_FULL_PM <= LF_PM_FULL),
+               "the line's body reads above the edge target");
 
 /* ---------------------------------------------------------------------------
  * Calibration, normalisation, zones, edge steering
@@ -177,7 +186,7 @@ lf_zone_t lf_zone_update(lf_zone_filt_t *p_f, uint16_t d_pm)
 int32_t lf_edge_steer(uint16_t d_c_pm)
 {
     int32_t const d = (d_c_pm > LF_PM_FULL) ? (int32_t)LF_PM_FULL : (int32_t)d_c_pm;
-    int32_t s = ((d - (int32_t)LF_EDGE_TARGET_PM) * LF_KP_Q7) / (int32_t)LF_EDGE_TARGET_PM;
+    int32_t s = ((d - (int32_t)LF_EDGE_TARGET_PM) * LF_KP_Q7) / LF_KP_SPAN_PM;
 
     if (s > LF_STEER_FULL_Q7)
     {
@@ -225,20 +234,23 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
     p_lf->state = st;
     p_lf->timer_n = 0U;
     p_lf->lost_n = 0U;
-    p_lf->post_n = 0U;          /* post at once in the new state */
+    p_lf->post_now = true;      /* post at once in the new state */
+    p_lf->hold_on = false;      /* the hold after a u-turn never outlives a state */
 }
 
 /*
  * ON_LINE steering, in priority order:
  *   1. CENTRE on the line (not LIGHT) and RIGHT seeing darkness right now:
- *      with the sensors 22 mm apart on an 18 mm line this never comes from a
+ *      with the sensors 26 mm apart on an 18 mm line this never comes from a
  *      drift (CENTRE has left the line before RIGHT can reach it), so it is a
  *      cross line arriving (or an angled line) -> hold the last steering
  *      until the junction is confirmed or rejected.  CENTRE's extra darkness
  *      there is the cross line, not a drift.
- *   2. CENTRE white: off the line -> full steer towards the remembered side.
- *      This includes the overshoot left across the whole line: RIGHT then
- *      sees the line, and update_side() has made the side RIGHT.
+ *   2. CENTRE white: off the line -> recovery steer towards the remembered
+ *      side, growing the longer CENTRE stays off (LF_RECOVER_RAMP_Q7), and
+ *      from the base value again if the side changes.  This includes the
+ *      overshoot left across the whole line: RIGHT then sees the line, and
+ *      update_side() has made the side RIGHT.
  *   3. Otherwise: proportional edge steering from CENTRE.
  */
 static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
@@ -249,27 +261,125 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     }
     else if (p_v->c_now == LF_ZONE_LIGHT)
     {
-        p_lf->steer_q7 = side_steer(p_lf->side, LF_STEER_FULL_Q7);
+        if (p_lf->side != p_lf->recover_side)
+        {
+            p_lf->recover_side = p_lf->side;
+            p_lf->recover_q7 = LF_RECOVER_Q7;
+        }
+        if (p_lf->recover_q7 < LF_STEER_FULL_Q7)
+        {
+            p_lf->recover_q7 += LF_RECOVER_RAMP_Q7;
+        }
+        p_lf->steer_q7 = side_steer(p_lf->side, p_lf->recover_q7);
     }
     else
     {
+        p_lf->recover_q7 = LF_RECOVER_Q7;
         p_lf->steer_q7 = lf_edge_steer(p_v->d_c);
     }
 }
 
-/* Side memory.  While CENTRE is on the line, the side is RIGHT if RIGHT saw
- * darkness within LF_SIDE_MEMORY_MS, else LEFT (CENTRE slid off its edge).
- * Once CENTRE is off the line the side is kept; RIGHT seeing the line then
- * still makes it RIGHT. */
+/*
+ * The hold after a u-turn (ON_LINE, entered from the u-turn's look for the
+ * line).  The pivot leaves the car angled across the line, and the sensors
+ * sit LF_D_PIVOT_MM ahead of the axle, so at the edge steering's +4 CENTRE
+ * slides on across the body and out over the LEFT edge before the heading
+ * has come round.  Hold LF_UTURN_HOLD_Q7 (right) instead, until one of:
+ *   - CENTRE has been on the body (>= LF_UTURN_HOLD_FULL_PM) and falls
+ *     below LF_EDGE_TARGET_PM: it is at the right edge, the stable one;
+ *   - CENTRE is off the line: recovery steering knows better;
+ *   - LF_UTURN_HOLD_CNT of travel (fwd_cnt is free-running: the unsigned
+ *     difference is right across a wrap).
+ * Then online_steer() as always, from this same sample.
+ */
+static void hold_steer(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
+{
+    uint32_t const travelled = p_in->fwd_cnt - p_lf->hold_cnt0;
+
+    if (p_v->d_c >= LF_UTURN_HOLD_FULL_PM)
+    {
+        p_lf->hold_full = true;
+    }
+    if ((p_lf->hold_full && (p_v->d_c < LF_EDGE_TARGET_PM))
+        || (p_v->c_now == LF_ZONE_LIGHT)
+        || (travelled >= LF_UTURN_HOLD_CNT))
+    {
+        p_lf->hold_on = false;
+        online_steer(p_lf, p_v);
+    }
+    else
+    {
+        p_lf->steer_q7 = LF_UTURN_HOLD_Q7;
+    }
+}
+
+/* During a pivot, note what the sensors see late in it: the line the car is
+ * turning onto goes by under them, and the order says where it ended up. */
+static void pivot_watch(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
+{
+    if (!p_lf->piv_on)
+    {
+        p_lf->piv_on = true;
+        p_lf->piv_yaw0 = p_in->yaw_cnt;
+        p_lf->piv_late = false;
+        p_lf->piv_c_seen = false;
+        p_lf->piv_r_seen = false;
+    }
+    {
+        int32_t const d = (int32_t)((uint32_t)p_in->yaw_cnt - (uint32_t)p_lf->piv_yaw0);
+        uint32_t const turned = (d < 0) ? (uint32_t)(-d) : (uint32_t)d;
+        uint32_t const late = (p_in->manoeuvre == LF_MAN_UTURN) ? LF_PIVOT_UTURN_CNT : LF_PIVOT_HALF_CNT;
+
+        p_lf->piv_left = (d < 0);
+        if (turned >= late)
+        {
+            p_lf->piv_late = true;
+            p_lf->piv_c_seen = p_lf->piv_c_seen || (p_v->c_now != LF_ZONE_LIGHT);
+            p_lf->piv_r_seen = p_lf->piv_r_seen || (p_v->r_now != LF_ZONE_LIGHT);
+        }
+    }
+}
+
+/* Where the pivot left the line.  A left pivot sweeps the sensors left, so
+ * the new line reaches CENTRE first, then RIGHT: once either has seen it, it
+ * is to the right, between them or past RIGHT (S3-U14: CENTRE crossed it at
+ * 82-87 degrees and the pivot ended at 92).  Seen by neither: still ahead, to
+ * the left.  A right pivot, a u-turn included, reaches RIGHT first: seen by
+ * CENTRE, it has gone past and is to the left; otherwise it is to the right. */
+static lf_side_t pivot_side(lf_core_t const *p_lf)
+{
+    lf_side_t side;
+
+    if (p_lf->piv_left)
+    {
+        side = (p_lf->piv_c_seen || p_lf->piv_r_seen) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
+    }
+    else
+    {
+        side = p_lf->piv_c_seen ? LF_SIDE_LEFT : LF_SIDE_RIGHT;
+    }
+    return side;
+}
+
+/* Side memory: the line is on the side of the sensor that saw it last.
+ * RIGHT sits right of CENTRE, so RIGHT on the line means the line is to the
+ * right; CENTRE on it with RIGHT off means that if CENTRE now slides off, it
+ * leaves to the right and the line is to the left.  With both off, the side
+ * is kept.  Which sensor saw the line last is what counts, not how long ago:
+ * coming back from the left, RIGHT crosses the line first, then CENTRE, and
+ * CENTRE can cross all 18 mm in 25 ms.  A rule based on time still said
+ * "right" after that and drove the car away from the line (S3-U12, 4 Nov).
+ * Between CENTRE leaving to the left and RIGHT arriving (the 26 mm spacing
+ * less the line) the side is briefly wrong: RIGHT corrects it within 8 mm. */
 static void update_side(lf_core_t *p_lf, lf_view_t const *p_v)
 {
-    if (p_v->c_now != LF_ZONE_LIGHT)
-    {
-        p_lf->side = (p_lf->r_quiet_n <= LF_N_SIDE_MEM) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
-    }
-    else if (p_v->r_now != LF_ZONE_LIGHT)
+    if (p_v->r_now != LF_ZONE_LIGHT)
     {
         p_lf->side = LF_SIDE_RIGHT;
+    }
+    else if (p_v->c_now != LF_ZONE_LIGHT)
+    {
+        p_lf->side = LF_SIDE_LEFT;
     }
     else
     {
@@ -302,7 +412,7 @@ static void enter_search(lf_core_t *p_lf)
 {
     enter(p_lf, LF_ST_REACQUIRING);
     p_lf->timer_n = 1U;         /* this sample is the search's first */
-    p_lf->steer_q7 = side_steer(p_lf->side, LF_STEER_FULL_Q7);
+    p_lf->steer_q7 = side_steer(p_lf->side, LF_SEARCH_Q7);
 }
 
 static void enter_turn(lf_core_t *p_lf, lf_manoeuvre_t man)
@@ -310,14 +420,14 @@ static void enter_turn(lf_core_t *p_lf, lf_manoeuvre_t man)
     enter(p_lf, LF_ST_JUNCTION);
     p_lf->man_seen = man;
     p_lf->man_done = false;
+    p_lf->jct_pending = false;
 }
 
 /* ---------------------------------------------------------------------------
  * States.  Each returns true if steering may be posted this sample.
  * ------------------------------------------------------------------------- */
 
-static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
-                       lf_out_t *p_out)
+static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
 {
     bool may_post = true;
 
@@ -334,15 +444,21 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
         }
         if (p_lf->junction_armed && (p_v->zc == LF_ZONE_DARK) && (p_v->zr == LF_ZONE_DARK))
         {
-            p_out->event = LF_EV_JUNCTION;
             p_lf->junction_armed = false;
-            enter_turn(p_lf, LF_MAN_NONE);      /* straight unless the VC turns */
+            enter_turn(p_lf, LF_MAN_NONE);      /* straight; JUNCTION after F */
+            p_lf->jct_pending = true;
+            p_lf->jct_line_ahead = false;
+            p_lf->jct_cnt0 = p_in->fwd_cnt;
             p_lf->steer_q7 = 0;
         }
         else if (lost_check(p_lf, p_v))
         {
             enter(p_lf, LF_ST_LINE_LOST);
             may_post = false;
+        }
+        else if (p_lf->hold_on)
+        {
+            hold_steer(p_lf, p_in, p_v);
         }
         else
         {
@@ -353,14 +469,78 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
     return may_post;
 }
 
+/* What RIGHT saw was the cross line, not the line we follow: forget it,
+ * or a slide off to the right just after the junction would search the
+ * wrong way. */
+static void forget_cross_line(lf_core_t *p_lf)
+{
+    p_lf->side = LF_SIDE_LEFT;
+}
+
 /*
- * JUNCTION_DETECTED.  man_seen NONE: straight across (steer 0) until RIGHT
- * is off the cross line.  Otherwise the Vehicle Controller is turning: post
- * nothing while it turns, then wait T_turn (T_uturn) for CENTRE to see solid
- * black.  After a u-turn the line is to the right of CENTRE: steer gently
- * right meanwhile.
+ * Junction detected, JUNCTION not posted yet: keep driving (steering is
+ * posted, so Motion's hold never stops the car) until the car has
+ * travelled LF_D_JCT_POST_CNT counts, or LF_N_JCT_MAX samples if the
+ * odometer is stuck.  On the cross line: straight (steer 0).  Once the
+ * line is seen going on past it (CENTRE on it, RIGHT white), track it as
+ * in ON_LINE, so the car is aligned with it at the pivot point, and a
+ * drift off it is steered back (the cross line is first wiped from the
+ * side memory).  Both sensors white before the line was seen going on:
+ * look left for LF_D_JCT_LOOK_CNT from detection.  No line ahead (a T
+ * junction): straight.  The line ending is not LINE_LOST here.
+ * Returns true if steering may be posted this sample: not in the sample
+ * of the post, so the Vehicle Controller acts on JUNCTION before any
+ * steering (it runs at a higher priority, so the next sample already sees
+ * its turn state).
  */
-static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
+static bool jct_travel(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
+                       lf_out_t *p_out)
+{
+    bool may_post = true;
+
+    if (!p_lf->jct_line_ahead && (p_v->c_now != LF_ZONE_LIGHT)
+        && (p_v->r_now == LF_ZONE_LIGHT))
+    {
+        p_lf->jct_line_ahead = true;
+        forget_cross_line(p_lf);
+    }
+    if (p_lf->jct_line_ahead)
+    {
+        online_steer(p_lf, p_v);
+    }
+    else if ((p_v->c_now == LF_ZONE_LIGHT) && (p_v->r_now == LF_ZONE_LIGHT)
+             && ((p_in->fwd_cnt - p_lf->jct_cnt0) < LF_D_JCT_LOOK_CNT))
+    {
+        p_lf->steer_q7 = -LF_RECOVER_Q7;    /* look left for the line */
+    }
+    else
+    {
+        p_lf->steer_q7 = 0;
+    }
+    p_lf->timer_n++;
+    if (((p_in->fwd_cnt - p_lf->jct_cnt0) >= LF_D_JCT_POST_CNT)
+        || (p_lf->timer_n >= LF_N_JCT_MAX))
+    {
+        p_out->event = LF_EV_JUNCTION;
+        p_lf->jct_pending = false;
+        forget_cross_line(p_lf);
+        may_post = false;
+    }
+
+    return may_post;
+}
+
+/*
+ * JUNCTION_DETECTED.  man_seen NONE: straight on (steer 0); first the
+ * travel to the JUNCTION post (jct_travel), then, if the Vehicle Controller
+ * did not turn, back to ON_LINE once RIGHT is white and CENTRE is on the
+ * line.  Otherwise the Vehicle Controller is turning: post nothing while it
+ * turns, then wait T_turn (T_uturn) for CENTRE to see solid black.  After a
+ * pivot, steer gently towards the side pivot_side() found while it looks.
+ * A u-turn's solid black starts the hold (hold_steer).
+ */
+static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v,
+                        lf_out_t *p_out)
 {
     bool may_post = false;
 
@@ -368,19 +548,19 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
     {
         p_lf->man_seen = p_in->manoeuvre;
         p_lf->man_done = false;
+        p_lf->jct_pending = false;          /* the VC turned anyway: no post */
         p_lf->timer_n = 0U;
     }
     else if (p_lf->man_seen == LF_MAN_NONE)
     {
         p_lf->steer_q7 = 0;
         may_post = true;
-        if (p_v->zr == LF_ZONE_LIGHT)
+        if (p_lf->jct_pending)
         {
-            /* What RIGHT saw was the cross line, not the line we follow:
-             * forget it, or a slide off to the right just after the
-             * junction would search the wrong way. */
-            p_lf->r_quiet_n = LF_QUIET_MAX;
-            p_lf->side = LF_SIDE_LEFT;
+            may_post = jct_travel(p_lf, p_in, p_v, p_out);
+        }
+        else if ((p_v->zr == LF_ZONE_LIGHT) && (p_v->zc != LF_ZONE_LIGHT))
+        {
             p_lf->junction_armed = true;
             enter_on_line(p_lf, p_v);
         }
@@ -402,18 +582,40 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
         if (!p_lf->man_done)
         {
             p_lf->man_done = true;
-            p_lf->post_n = 0U;              /* post at once after the turn */
+            p_lf->post_now = true;          /* post at once after the turn */
+            if (p_lf->piv_late)
+            {
+                p_lf->side = pivot_side(p_lf);
+            }
         }
         p_lf->timer_n++;
-        p_lf->steer_q7 = uturn ? LF_ACQUIRE_STEER_Q7 : 0;
+        if (p_lf->piv_late)
+        {
+            p_lf->steer_q7 = side_steer(p_lf->side, LF_ACQUIRE_STEER_Q7);
+        }
+        else
+        {
+            /* A stalled pivot: nothing known.  After a u-turn the line is
+             * most likely to the right of CENTRE. */
+            p_lf->steer_q7 = uturn ? LF_ACQUIRE_STEER_Q7 : 0;
+        }
         may_post = true;
         if (p_v->zc == LF_ZONE_DARK)
         {
             enter_on_line(p_lf, p_v);
+            if (uturn && p_lf->piv_late)
+            {
+                /* Only after a pivot that got past 135 degrees: the car is
+                 * then known to stand angled across the line it came along. */
+                p_lf->hold_on = true;
+                p_lf->hold_full = false;
+                p_lf->hold_cnt0 = p_in->fwd_cnt;
+                p_lf->steer_q7 = LF_UTURN_HOLD_Q7;
+            }
         }
         else if (p_lf->timer_n >= limit)
         {
-            if (uturn)
+            if (uturn && !p_lf->piv_late)
             {
                 p_lf->side = LF_SIDE_RIGHT;
             }
@@ -454,7 +656,7 @@ static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
     return may_post;
 }
 
-/* REACQUIRING_TRACK: full steer towards the remembered side, then the other
+/* REACQUIRING_TRACK: search steer towards the remembered side, then the other
  * side, until CENTRE sees solid black or T_search runs out. */
 static bool st_search(lf_core_t *p_lf, lf_view_t const *p_v, lf_out_t *p_out)
 {
@@ -476,7 +678,7 @@ static bool st_search(lf_core_t *p_lf, lf_view_t const *p_v, lf_out_t *p_out)
     {
         lf_side_t const s = (p_lf->timer_n > LF_N_SWAP) ? other_side(p_lf->side) : p_lf->side;
 
-        p_lf->steer_q7 = side_steer(s, LF_STEER_FULL_Q7);
+        p_lf->steer_q7 = side_steer(s, LF_SEARCH_Q7);
     }
 
     return may_post;
@@ -525,10 +727,23 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->prev_running = false;
     p_lf->junction_armed = true;
     p_lf->side = LF_SIDE_LEFT;
-    p_lf->r_quiet_n = LF_QUIET_MAX;
     p_lf->steer_q7 = 0;
+    p_lf->recover_q7 = LF_RECOVER_Q7;
+    p_lf->recover_side = LF_SIDE_LEFT;
+    p_lf->piv_on = false;
+    p_lf->piv_yaw0 = 0;
+    p_lf->piv_late = false;
+    p_lf->piv_left = false;
+    p_lf->piv_c_seen = false;
+    p_lf->piv_r_seen = false;
+    p_lf->hold_on = false;
+    p_lf->hold_full = false;
+    p_lf->hold_cnt0 = 0U;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
+    p_lf->jct_pending = false;
+    p_lf->jct_line_ahead = false;
+    p_lf->jct_cnt0 = 0U;
     enter(p_lf, LF_ST_IDLE);
 }
 
@@ -546,26 +761,22 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
     bool      may_post = false;
     bool      rising;
 
-    /* Sensors: darkness, instant zones, confirmed zones, RIGHT's age. */
+    /* Sensors: darkness, instant zones, confirmed zones, the side. */
     v.d_c = p_lf->cal_ok ? lf_norm(&p_lf->cal.c, p_in->raw_c) : 0U;
     v.d_r = p_lf->cal_ok ? lf_norm(&p_lf->cal.r, p_in->raw_r) : 0U;
     v.c_now = lf_zone_of(v.d_c);
     v.r_now = lf_zone_of(v.d_r);
     v.zc = lf_zone_update(&p_lf->zc, v.d_c);
     v.zr = lf_zone_update(&p_lf->zr, v.d_r);
-    if (v.r_now != LF_ZONE_LIGHT)
+    update_side(p_lf, &v);
+    if ((p_in->manoeuvre == LF_MAN_TURN) || (p_in->manoeuvre == LF_MAN_UTURN))
     {
-        p_lf->r_quiet_n = 0U;
-    }
-    else if (p_lf->r_quiet_n < LF_QUIET_MAX)
-    {
-        p_lf->r_quiet_n++;
+        pivot_watch(p_lf, p_in, &v);
     }
     else
     {
-        /* saturated */
+        p_lf->piv_on = false;
     }
-    update_side(p_lf, &v);
 
     rising = p_in->running && !p_lf->prev_running;
     p_lf->prev_running = p_in->running;
@@ -610,10 +821,10 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
         switch (p_lf->state)
         {
             case LF_ST_ON_LINE:
-                may_post = st_on_line(p_lf, p_in, &v, p_out);
+                may_post = st_on_line(p_lf, p_in, &v);
                 break;
             case LF_ST_JUNCTION:
-                may_post = st_junction(p_lf, p_in, &v);
+                may_post = st_junction(p_lf, p_in, &v, p_out);
                 break;
             case LF_ST_LINE_LOST:
                 if (p_in->manoeuvre != LF_MAN_NONE)
@@ -646,12 +857,18 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
         }
     }
 
-    /* Steering post cadence: every LF_N_POST samples, at once on entry. */
+    /* Steering post timing (LF-3.1b): Motion acts on the newest command
+     * once per 20 ms, when it reads its queue.  Post in the post slot, the
+     * last sample before that read, so the steering Motion acts on is at
+     * most one sample old whatever the two tasks' phase.  Also post at
+     * once on entering a state: if the state changes again before the slot,
+     * Motion still gets this state's command; otherwise the slot's post
+     * replaces it before Motion reads. */
     p_out->post_steer = false;
-    if (may_post)
+    if (may_post && (p_lf->post_now || p_in->post_slot))
     {
-        p_out->post_steer = (p_lf->post_n == 0U);
-        p_lf->post_n = (p_lf->post_n + 1U) % LF_N_POST;
+        p_out->post_steer = true;
+        p_lf->post_now = false;
     }
 
     p_out->state = p_lf->state;

@@ -314,6 +314,13 @@ const PROC = {
              "Box straight ahead at 50 cm from the sensor face, 15 s.",
              "Box at 20 cm, 15 s (inside 25 cm: an obstacle profile).",
              "Remove the box, 15 s. Enter the tape-measured distances and box width, then run the check."],
+  lf: ["Stationary firmware: move the car over the line by hand; IR CENTRE/RIGHT raw should rise on black.",
+        "Moving: controlled moving firmware (robocar-team-drive...), battery on, 40 cm clear each side of the line.",
+        "Pose A, pose B, then each drive starts after CENTRE is steady 3 s and the HANDS OFF warning.",
+        "Production line following stops at tight 90 deg tiles (TRACK_LOST): start with 1 m of straight."],
+  vc: ["Moving firmware only: the test starts and stops each drive through the VC (START / STOP / RESET).",
+       "Watch the VC state: NAV_LINE_TRACKING while following, OBSTACLE_AVOIDANCE during a bypass,",
+       "READY_WAITING after STOP or TRACK_LOST, SAFETY_FAULT_LATCHED after a lift (reset when still)."],
   mqtt: ["WiFi build (-DTEL_BACKEND_WIFI=ON, config/secrets.h) and a broker on this network.",
          "Connect above; let it run at least 30 s; run the check (heartbeat delivery and gaps)."]
 };

@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -55,6 +56,8 @@ VIEW_NAMES = ("imu", "obstacle", "lf", "barcode", "vc", "mqtt")
 FEED_MAX = 400                  # event lines kept per view
 CONSOLE_MAX = 600               # raw console lines kept
 TRACKED = ("[LF]", "[BC]", "[VC]", "[S5] avoid", "[SAFETY]", "[capture]")
+# task_lf.c: "[LF] ON_LINE -> LINE_LOST  c=1712 r=180 dc=... dr=... vc=4"
+_LF_MOVE = re.compile(r"\[LF\] ([A-Z_]+) -> ([A-Z_]+)\s+c=(\d+) r=(\d+)")
 
 
 def _r(name: str, value: object, kind: str, note: str = "") -> dict:
@@ -95,6 +98,7 @@ class Monitor:
         self.feed: Dict[str, Deque[Tuple[int, str]]] = {v: deque(maxlen=FEED_MAX) for v in VIEW_NAMES}
         self.console: Deque[Tuple[int, str]] = deque(maxlen=CONSOLE_MAX)
         self.last_line: Dict[str, str] = {}
+        self.lf_state: Optional[Tuple[str, int]] = None     # (state, transitions seen)
         self.src = {"kind": kind, "label": label, "running": False, "live": False, "error": "",
                     "lines": 0, "frames": 0, "mqtt_connected": None, "car_status": "", "file": ""}
         self.last_rx: Optional[float] = None
@@ -131,6 +135,9 @@ class Monitor:
             for p in TRACKED:
                 if body.startswith(p):
                     self.last_line[p] = body
+            m = _LF_MOVE.search(body)
+            if m:
+                self.lf_state = (m.group(2), (self.lf_state[1] + 1) if self.lf_state else 1)
             self.seq += 1
             self.console.append((self.seq, line))
             for v, s in self.sessions.items():
@@ -585,6 +592,11 @@ class Monitor:
         miss = "no line-following task in this firmware (subsystem 3 is a stub on main)"
         lf.append(_r("IR CENTRE raw", *sensor_value("ir_valid", "{ir_c_raw}", "MEASURED", "12-bit ADC", miss)))
         lf.append(_r("IR RIGHT raw", *sensor_value("ir_valid", "{ir_r_raw}", "MEASURED", "12-bit ADC", miss)))
+        if self.lf_state:
+            lf.append(_r("LF state", self.lf_state[0], "REPORTED",
+                         f"from the LF task's state-change lines ({self.lf_state[1]} so far); SUSPENDED = avoidance"))
+        else:
+            lf.append(_r("LF state", "", "N/A", "no [LF] state-change line yet"))
         lf.append(_r("last LF log line", self.last_line.get("[LF]", ""), "REPORTED" if "[LF]" in self.last_line
                      else "N/A", "" if "[LF]" in self.last_line else "no [LF] lines (LF branch firmware only)"))
         out["lf"] = lf

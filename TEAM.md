@@ -181,11 +181,11 @@ in `usermain()` step 1 (Batch B), before any `subsystemN_init()`.
 | IF-05 | echo ISR → S5 Scan | semaphore (owned by S5) | `SEM_ECHO` | echo received; 30 ms timeout = nothing in range. Signalled from the echo ISR via `hal_isr_sig()` | **S5 (2500596)** |
 | IF-06 | S4 IMU → S4 Safety; Safety → S2 VC | eventflag (owned by S4) | `EVF_SAFETY` | LIFTED (was COLLISION until 11 Nov 2026), IMU_ALIVE (set by IMU); FAULT_LATCHED set only by Safety, cleared only by S2 VC; STATUS_NO_ECHO (b7) set and cleared only by S5 Scan, which also reads LIFTED/FAULT_LATCHED to abort a bypass | S2 (2500530); **S5 (2500596)** for b7; S4 pending |
 | IF-07 | S5, S3 → readers | eventflag (owned by S5) | `EVF_NAV` | AVOID_ACTIVE, LINE_REACQUIRED (S5), LINE_FOUND (S3); readers poll | S2 (2500530); **S5 (2500596)**; S3 pending |
-| IF-08 | S2 Motion → S3 BC, S1, S4 IMU (hump distance, 19 Nov 2026) | shared data under a mutex, `TA_INHERIT` (owned by S2) | `MTX_MOTION`, `motion_state_t` | speed, distance, encoder counts; copy and release at once. Safety never takes it | S2 (2500530); S1/S3 pending |
+| IF-08 | S2 Motion → S3 BC and LF, S1, S4 IMU (hump distance, 19 Nov 2026) | shared data under a mutex, `TA_INHERIT` (owned by S2) | `MTX_MOTION`, `motion_state_t` | speed, distance, encoder counts, `tick_ms` (LF: odometer, turn done, post slot); copy and release at once. Safety never takes it | S2 (2500530); S1/S3 pending |
 | IF-09 | barcode ISR → S3 BC (internal) | ISR ring buffer, 64 edges (owned by S3) | barcode edge ring | bar/space edge times; overflow forces INVALID_READ_RESET | TODO(owner-to-confirm) |
 | IF-10 | PIO0 → S2 Motion (internal) | hardware counters read via `enc_get_count()` (owned by S2) | encoder count words | free-running signed counts, written only by the Motion task (Week 8, ARCHITECTURE.md D7) | S2 (2500530) |
 | IF-11 | S4 Safety → S2 | function call through `subsystem2.h` | `motion_emergency_brake()` | all four motor channels LOW | S2 (2500530); S4 pending |
-| IF-12 | S3, S4, S5 → S1 | function calls through `subsystem1.h` into single-writer shared words (owned by S1) | `tel_set_ir_raw()`, `tel_set_range_cm()`, `tel_set_attitude()`, `tel_post_obstacle()` | newest IR raws, forward range and pitch/roll for the 200 ms sensor frame, and the newest obstacle profile (seq-locked slot); one store each, never waits (`app_program/subsystem1/MQTT.md`). S4 and S5 call them on branch `buddy3/dashboard-integration`; S3 does not yet | S3 (2503319); S1/S4/S5 pending |
+| IF-12 | S3, S4, S5 → S1 | function calls through `subsystem1.h` into single-writer shared words (owned by S1) | `tel_set_ir_raw()`, `tel_set_range_cm()`, `tel_set_attitude()`, `tel_post_obstacle()` | newest IR raws, forward range and pitch/roll for the 200 ms sensor frame, and the newest obstacle profile (seq-locked slot); one store each, never waits (`app_program/subsystem1/MQTT.md`). S4 and S5 call them on branch `buddy3/dashboard-integration`, S3 (`tel_set_ir_raw`, every 5 ms sample) on `buddy3/lf-integration` | S3 (2503319); S1/S4/S5 pending |
 
 Each interface is tested by at least one integration test
 (`testing/integration/TEST_LOG.md`).
@@ -205,7 +205,7 @@ Limits are set in `config/mtk3/config.h` and checked in
 | Message buffer | 8 | 1 | 2 | | | 1 | |
 | Fixed memory pool | 4 | | | | | | |
 | Variable memory pool | 4 | | | | | | |
-| Cyclic handler | 8 | 1 | 0 (`app_period_wait`) | 1 | 1 | 0 (`app_period_wait`) | |
+| Cyclic handler | 8 | 1 | 0 (`app_period_wait`) | 0 (`app_period_wait`) | 1 | 0 (`app_period_wait`) | |
 | Alarm handler | 4 | | | | | | |
 
 The telemetry cyclic handler's period is open: delta D2 (20 ms wake) is

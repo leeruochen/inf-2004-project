@@ -93,15 +93,26 @@ add_test(NAME lf_sanity COMMAND test_lf_sanity)
 
 # Line-following core (app_program/subsystem3/lf_core.c + lf_sanity.c, pure
 # C): Subsystem 3 test S3-U10.  Includes a closed-loop simulator of the car,
-# track and sensors (host/lf_sim.h, needs libm).
+# track and sensors (host/lf_sim.h, needs libm), which runs lf_link.c too.
 add_executable(test_lf_core host/test_lf_core.c
     "${ROBOCAR_ROOT}/app_program/subsystem3/lf_core.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_link.c"
     "${ROBOCAR_ROOT}/app_program/subsystem3/lf_sanity.c")
 target_include_directories(test_lf_core PRIVATE "${ROBOCAR_ROOT}")
 target_compile_options(test_lf_core PRIVATE -Wall -Wextra -Werror)
 target_link_libraries(test_lf_core PRIVATE m)
 set_target_properties(test_lf_core PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME lf_core COMMAND test_lf_core)
+
+# Line-following link to Motion's published state (app_program/subsystem3/
+# lf_link.c, pure C): forward odometer and junction turn-done detector,
+# Subsystem 3 test S3-U11.
+add_executable(test_lf_link host/test_lf_link.c
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_link.c")
+target_include_directories(test_lf_link PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_lf_link PRIVATE -Wall -Wextra -Werror)
+set_target_properties(test_lf_link PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME lf_link COMMAND test_lf_link)
 
 # Lift / overturn detector (app_program/subsystem4/imu_lift.c, pure C):
 # Subsystem 4 test S4-U21 (requirement change of 11 Nov 2026).
