@@ -1409,7 +1409,10 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     /* (k) Curves: the same piece driven each way, then an S-curve. */
     if ((LF2_CURVE_ONLY != 0U) && pose_a_ok)
     {
-#if defined(LF_RESCUE_N)
+#if defined(LF_BEND_MIN_Q7)
+        dbg_printf("[LF] variant T80: C + bend memory (floor from the regain steering >= %d, easing to %d)",
+                   (int)LF_BEND_MIN_Q7, (int)LF_BEND_FLOOR_Q7);
+#elif defined(LF_RESCUE_N)
         dbg_printf("[LF] variant C: RIGHT keeps the line from being lost (%u samples)", (unsigned)LF_RESCUE_N);
 #elif defined(LF_CURVE_START_Q7)
         dbg_printf("[LF] variant B: curve recovery start %d after steady tracking", (int)LF_CURVE_START_Q7);

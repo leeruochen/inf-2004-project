@@ -245,6 +245,103 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
 }
 
 /*
+ * EXPERIMENT T80: the bend floor, CENTRE back on the body during bend memory.
+ * The first such sample decides: a floor below LF_BEND_MIN_Q7 means a short
+ * rescue (a drift), and the memory ends.
+ */
+static void bend_floor(lf_core_t *p_lf)
+{
+    if (!p_lf->bend_regain)
+    {
+        p_lf->bend_regain = true;
+        p_lf->bend_on = (p_lf->bend_q7 >= LF_BEND_MIN_Q7);
+    }
+    else
+    {
+        /* floor already fixed */
+    }
+    if (p_lf->bend_on)
+    {
+        if (p_lf->steer_q7 < p_lf->bend_q7)
+        {
+            p_lf->steer_q7 = p_lf->bend_q7;
+        }
+        else
+        {
+            /* the edge steering is stronger */
+        }
+        if (p_lf->bend_q7 > LF_BEND_FLOOR_Q7)
+        {
+            p_lf->bend_q7--;
+        }
+        else
+        {
+            /* at the floor */
+        }
+    }
+    else
+    {
+        /* not a bend */
+    }
+}
+
+/*
+ * EXPERIMENT T80: bend memory entry and exit, each sample before the state
+ * handler (r_dark_n already counts this sample).
+ */
+static void bend_track(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
+{
+    bool const light = (p_v->c_now == LF_ZONE_LIGHT);
+    bool const tracking = (p_lf->state == LF_ST_ON_LINE) || (p_lf->state == LF_ST_LINE_LOST)
+                          || (p_lf->state == LF_ST_REACQUIRING);
+
+    if (!tracking || !p_in->running || (p_in->manoeuvre != LF_MAN_NONE))
+    {
+        p_lf->bend_on = false;
+    }
+    else if (light && (p_lf->r_dark_n >= LF_RESCUE_N)
+             && ((p_lf->state == LF_ST_ON_LINE) || (p_lf->state == LF_ST_LINE_LOST)))
+    {
+        if (!p_lf->bend_on)
+        {
+            p_lf->bend_on = true;
+            p_lf->bend_cnt0 = p_in->fwd_cnt;
+            p_lf->bend_edge_n = 0U;
+        }
+        else
+        {
+            /* still rescuing */
+        }
+        p_lf->bend_regain = false;
+        p_lf->bend_q7 = (p_lf->steer_q7 > LF_BEND_FLOOR_Q7) ? p_lf->steer_q7 : LF_BEND_FLOOR_Q7;
+    }
+    else if (p_lf->bend_on)
+    {
+        if ((p_in->fwd_cnt - p_lf->bend_cnt0) >= LF_BEND_CNT)
+        {
+            p_lf->bend_on = false;
+        }
+        else if (!light && (p_v->d_c < LF_EDGE_TARGET_PM))
+        {
+            p_lf->bend_edge_n++;
+            p_lf->bend_on = (p_lf->bend_edge_n < LF_BEND_SETTLE_N);
+        }
+        else if (!light)
+        {
+            p_lf->bend_edge_n = 0U;
+        }
+        else
+        {
+            /* CENTRE white without RIGHT: keep the count */
+        }
+    }
+    else
+    {
+        /* off */
+    }
+}
+
+/*
  * ON_LINE steering, in priority order:
  *   1. CENTRE on the line (not LIGHT) and RIGHT seeing darkness right now:
  *      with the sensors 26 mm apart on an 18 mm line this never comes from a
@@ -282,6 +379,14 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     {
         p_lf->recover_q7 = LF_RECOVER_Q7;
         p_lf->steer_q7 = lf_edge_steer(p_v->d_c);
+        if (p_lf->bend_on && (p_v->d_c >= LF_EDGE_TARGET_PM))
+        {
+            bend_floor(p_lf);
+        }
+        else
+        {
+            /* edge steering */
+        }
     }
 }
 
@@ -779,6 +884,11 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->hold_full = false;
     p_lf->hold_cnt0 = 0U;
     p_lf->r_dark_n = 0U;
+    p_lf->bend_on = false;
+    p_lf->bend_regain = false;
+    p_lf->bend_q7 = LF_BEND_FLOOR_Q7;
+    p_lf->bend_cnt0 = 0U;
+    p_lf->bend_edge_n = 0U;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
     p_lf->jct_pending = false;
@@ -825,6 +935,7 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
     {
         /* saturated: RIGHT has the line */
     }
+    bend_track(p_lf, p_in, &v);
     if ((p_in->manoeuvre == LF_MAN_TURN) || (p_in->manoeuvre == LF_MAN_UTURN))
     {
         pivot_watch(p_lf, p_in, &v);

@@ -2059,6 +2059,117 @@ static void test_rescue(void)
     CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 40U) <= 40U);
 }
 
+/* Test 32 (EXPERIMENT T80, branch buddy3/ab-bend-150): bend memory.  S3-U17,
+ * C at 150 mm/s, 16 Nov 2026: RIGHT rescued the line on the right bend, the
+ * recovery ramped past +100, CENTRE came back onto the body and the edge
+ * steering fell to +4 (5 of 5 drives); the bend slid out again.  T80 keeps a
+ * right floor on the body side after a long rescue only.  Expected values by
+ * hand from the definitions: the floor is the steering one sample before the
+ * regain (the ramp is +1 per sample), easing by 1 per sample to 32; the edge
+ * steering at d_c 1000 is (1000 - 900) * 24 / 500 = +4, at 700 it is -9. */
+static void test_bend_memory(void)
+{
+    lf_core_t lf;
+    run_t     r;
+    int32_t   s;
+
+    CHECK(LF_BEND_MIN_Q7 == 80);
+    CHECK(LF_BEND_FLOOR_Q7 == 32);
+    CHECK(LF_BEND_SETTLE_N == 20U);
+    CHECK(LF_BEND_MM == 300U);
+    CHECK(lf_edge_steer(1000U) == 4);
+    CHECK(lf_edge_steer(700U) == -9);
+
+    /* A bend: CENTRE white, RIGHT on the line long enough to ramp past 80. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    CHECK(!lf.bend_on);
+    (void)run(&lf, 70U, 0U, 1000U);
+    CHECK(lf.bend_on);
+    CHECK(lf.state == LF_ST_ON_LINE);
+    s = lf.steer_q7;
+    CHECK(s > LF_BEND_MIN_Q7);
+    /* CENTRE back on the body, RIGHT white: no drop to +4. */
+    r = run(&lf, 1U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == (s - 1));
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == (s - 21));
+    CHECK(r.min_steer >= (s - 21));
+    CHECK(lf.bend_on);
+    /* Still on the body: eases down to the floor 32, not below. */
+    r = run(&lf, 120U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == LF_BEND_FLOOR_Q7);
+    CHECK(r.min_steer == LF_BEND_FLOOR_Q7);
+    /* At the right edge: the edge steering, unchanged (left if needed);
+     * 20 samples there end the memory. */
+    r = run(&lf, 19U, 700U, 0U);
+    CHECK(r.last.steer_q7 == -9);
+    CHECK(lf.bend_on);
+    r = run(&lf, 1U, 700U, 0U);
+    CHECK(!lf.bend_on);
+    r = run(&lf, 8U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == 4);
+
+    /* A drift: a short rescue (ramp below 80) leaves the edge steering as in C. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 12U, 0U, 1000U);
+    CHECK(lf.bend_on);
+    CHECK(lf.steer_q7 < LF_BEND_MIN_Q7);
+    r = run(&lf, 8U, 1000U, 0U);
+    CHECK(!lf.bend_on);
+    CHECK(r.last.steer_q7 == 4);
+    CHECK(r.max_steer == 4);
+
+    /* Distance cap: LF_BEND_MM of travel since entry ends it on the body. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 70U, 0U, 1000U);
+    /* Entry at the 2nd RIGHT sample: 68 samples in; 3571 counts = 298 samples. */
+    CHECK(LF_BEND_CNT == 3571U);
+    r = run(&lf, 225U, 1000U, 0U);
+    CHECK(lf.bend_on);
+    CHECK(r.last.steer_q7 == LF_BEND_FLOOR_Q7);
+    r = run(&lf, 10U, 1000U, 0U);
+    CHECK(!lf.bend_on);
+    CHECK(r.last.steer_q7 == 4);
+
+    /* A manoeuvre (junction turn, u-turn, avoidance) or the stop ends it. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 70U, 0U, 1000U);
+    CHECK(lf.bend_on);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)feed(&lf, 0U, 1000U);
+    CHECK(!lf.bend_on);
+    g_in.manoeuvre = LF_MAN_NONE;
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 70U, 0U, 1000U);
+    g_in.running = false;
+    (void)feed(&lf, 0U, 1000U);
+    CHECK(!lf.bend_on);
+
+    /* Noise: one RIGHT sample on the line while CENTRE is white does not start it. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 5U, 0U, 0U);
+    (void)feed(&lf, 0U, 1000U);
+    (void)run(&lf, 5U, 0U, 0U);
+    CHECK(!lf.bend_on);
+
+    /* Plain straight tracking at the edge never starts it. */
+    start_tracking(&lf);
+    r = run(&lf, 400U, 900U, 0U);
+    CHECK(!lf.bend_on);
+    CHECK(r.max_steer == 0);
+}
+
 /* Test 22: the simulator against the 4 Nov 2026 hardware runs, so a change
  * to the model cannot quietly drift away from the real car.  Expected
  * values are the logged ones, not computed the way the model computes. */
@@ -2470,6 +2581,7 @@ int main(void)
     test_sim_slow_straights();
     test_search_cap();
     test_rescue();
+    test_bend_memory();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

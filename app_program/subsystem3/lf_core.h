@@ -136,6 +136,25 @@
  * single noisy reading cannot keep the car going.  A/B on the car decides. TUNE */
 #define LF_RESCUE_N             (2U)
 
+/* EXPERIMENT T80 (branch buddy3/ab-bend-150, 17 Nov 2026, NOT for merge):
+ * bend memory.  C at 150 mm/s, 16 Nov: RIGHT rescued the line on a right bend
+ * and the recovery ramped to +105..+127, CENTRE came back onto the body, and
+ * the edge steering dropped to +4 at once: the bend slid out again.
+ *   On:  C's rescue moment (CENTRE LIGHT, RIGHT not LIGHT for LF_RESCUE_N
+ *        samples, ON_LINE or LINE_LOST); the floor is the steering then.
+ *   Use: when CENTRE is back with d_c >= LF_EDGE_TARGET_PM, and only if the
+ *        floor at that moment is >= LF_BEND_MIN_Q7 (a long rescue = a bend;
+ *        a short one is a drift): steering at least the floor, the floor
+ *        easing by 1 per sample down to LF_BEND_FLOOR_Q7.  Below the target
+ *        (at the right edge) the edge steering is unchanged.
+ *   Off: LF_BEND_SETTLE_N samples at the edge (d_c < target, not LIGHT),
+ *        LF_BEND_MM of travel, or any junction, turn, avoidance or stop. */
+#define LF_BEND_MIN_Q7          (80)
+#define LF_BEND_FLOOR_Q7        (32)
+#define LF_BEND_SETTLE_N        (20U)
+#define LF_BEND_MM              (300U)
+#define LF_BEND_CNT             ((LF_BEND_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+
 /** Search the remembered side this long, then the other side until
  *  LF_T_SEARCH_MS. TUNE */
 #define LF_SEARCH_SWAP_MS       (700U)
@@ -355,6 +374,11 @@ typedef struct
     bool           hold_on;         /**< the hold after a u-turn is steering (LF_UTURN_HOLD_Q7) */
     bool           hold_full;       /**< CENTRE has been on the line's body during it */
     uint32_t       hold_cnt0;       /**< fwd_cnt when it started */
+    bool           bend_on;         /**< T80: bend memory active */
+    bool           bend_regain;     /**< T80: CENTRE is back, the floor is fixed */
+    int32_t        bend_q7;         /**< T80: steering floor */
+    uint32_t       bend_cnt0;       /**< T80: fwd_cnt at entry */
+    uint32_t       bend_edge_n;     /**< T80: samples settled at the edge */
     uint32_t       r_dark_n;        /**< C: consecutive samples RIGHT is not LIGHT (its own reading; saturates) */
 } lf_core_t;
 
