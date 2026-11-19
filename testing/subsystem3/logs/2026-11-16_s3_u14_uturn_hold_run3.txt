@@ -1,0 +1,2312 @@
+15:20:49.636  [capture] COM5 for 600 s -> build\s3-u14u2-run-20261116-1520.txt
+15:20:49.731  
+15:20:49.747  
+15:20:49.747  microT-Kernel Version 3.00
+15:20:49.759  
+15:20:49.766  [IPC] kernel spec version 3.00 OK
+15:20:49.769  [IPC] 8 objects created, MBF depth self-check OK
+15:20:49.775  [S3] IR_R (GP26/ADC0) ADC sanity OK
+15:20:49.777  [S3] IR_C (GP28/ADC2) ADC sanity OK
+15:20:49.782  [S4] IMU init OK
+15:20:49.784  [S4] tasks started
+15:20:49.788  [SAFETY] task started
+15:20:49.790  [IMU] task started
+15:20:49.792  [IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+15:20:49.804  [IMU] chip LSM303D, accel+mag at 0x1D
+15:20:49.810  [TEL] backend: console ([TEL] <topic> <hex>)
+15:20:49.813  [LF] S3-U14 on the track, motors LIVE, cruise 200 mm/s
+15:20:49.813  [LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts
+15:20:49.818  [TEL] link DISCONNECTED -> CONNECTING
+15:20:49.818  [TEL] link CONNECTING -> CONNECTED
+15:20:49.825  [LF] boot calibration OK: C avg 1997 (1977..2016), R avg 152 (128..172)
+15:20:49.832  [LF] cal white 152 black 1997 (both sensors)
+15:20:50.174  [IMU] level reference: board at 8 half-deg when flat (0 tries)
+15:20:50.459  [TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+15:20:50.475  [LF] 1 s: 168 samples, 0 missed so far
+15:20:50.475  [TEST] S3-U14 FAIL  (a) samples every 5 ms (195-205/s), none missed   (lf_run_test.c:1052)
+15:20:50.475  [LF] boot cal: status 0, C avg 1997, R avg 152 -> white 152 black 1997
+15:20:50.475  [TEST] S3-U14 PASS  (b) boot calibration accepted
+15:20:51.470  [TEL] car/telemetry/motion 01010fd00700000000000000000000000000
+15:20:51.477  [TEST] S3-U14 PASS  (c) VC READY: no posts, no events, IDLE, flag clear
+15:20:51.477  [LF] >>> pose A: CENTRE on black in the middle of the line, RIGHT on white, hands off
+15:20:52.467  [TEL] car/telemetry/motion 01010fb80b00000000000000000000000000
+15:20:53.477  [TEL] car/telemetry/motion 01010fa00f00000000000000000000000000
+15:20:54.477  [TEL] car/telemetry/motion 01010f881300000000000000000000000000
+15:20:54.487  [TEL] car/telemetry/heartbeat 010706881300000100
+15:20:55.478  [TEL] car/telemetry/motion 01010f701700000000000000000000000000
+15:20:56.481  [TEL] car/telemetry/motion 01010f581b00000000000000000000000000
+15:20:56.489  [LF] ... 5
+15:20:57.469  [TEL] car/telemetry/motion 01010f401f00000000000000000000000000
+15:20:58.470  [TEL] car/telemetry/motion 01010f282300000000000000000000000000
+15:20:58.485  [LF] ... 3
+15:20:59.351  [DBG] alive: SDK timer 13015 ms, kernel time 9879 ms, difference 3136 ms
+15:20:59.473  [TEL] car/telemetry/motion 01010f102700000000000000000000000000
+15:20:59.487  [TEL] car/telemetry/heartbeat 010706102700000100
+15:20:59.487  [LF] ... 2
+15:21:00.474  [TEL] car/telemetry/motion 01010ff82a00000000000000000000000000
+15:21:00.484  [LF] ... 1
+15:21:01.475  [TEL] car/telemetry/motion 01010fe02e00000000000000000000000000
+15:21:01.481  [LF] calibrating here, keep the car still
+15:21:01.650  [LF] boot calibration OK: C avg 2006 (1989..2024), R avg 153 (135..171)
+15:21:01.655  [LF] cal white 153 black 2006 (both sensors)
+15:21:02.476  [TEL] car/telemetry/motion 01010fc83200000000000000000000000000
+15:21:03.476  [TEL] car/telemetry/motion 01010fb03600000000000000000000000000
+15:21:04.478  [TEL] car/telemetry/motion 01010f983a00000000000000000000000000
+15:21:04.483  [TEL] car/telemetry/heartbeat 010706983a00000100
+15:21:04.956  [LF] static pose A: C raw 1976..2023 avg 2000 = 996 pm
+15:21:04.966  [LF] static pose A: R raw 128..178 avg 153 = 0 pm
+15:21:04.966  [TEST] S3-U14 PASS  (g2) pose A: calibrated on black, CENTRE >= 950 pm, RIGHT on white
+15:21:04.972  [LF] >>> pose B: RIGHT over the line middle, CENTRE on white, hands off
+15:21:05.478  [TEL] car/telemetry/motion 01010f803e00000000000000000000000000
+15:21:06.481  [TEL] car/telemetry/motion 01010f684200000000000000000000000000
+15:21:06.766  [IMU] hump pitch=10 half-deg
+15:21:06.781  [TEL] car/telemetry/hump 0104058a43000005
+15:21:07.482  [TEL] car/telemetry/motion 01010f504600000000fcffffff0300000000
+15:21:08.484  [TEL] car/telemetry/motion 01010f384a00000000040000000000000000
+15:21:09.351  [DBG] alive: SDK timer 23015 ms, kernel time 19879 ms, difference 3136 ms
+15:21:09.472  [TEL] car/telemetry/motion 01010f204e00000000040000000000000000
+15:21:09.478  [TEL] car/telemetry/heartbeat 010706204e00000100
+15:21:09.968  [LF] ... 5
+15:21:10.474  [TEL] car/telemetry/motion 01010f085200000000040000000000000000
+15:21:11.476  [TEL] car/telemetry/motion 01010ff05500000000040000000000000000
+15:21:11.969  [LF] ... 3
+15:21:12.477  [TEL] car/telemetry/motion 01010fd85900000000040000000000000000
+15:21:12.960  [LF] ... 2
+15:21:13.478  [TEL] car/telemetry/motion 01010fc05d00000000040000000000000000
+15:21:13.972  [LF] ... 1
+15:21:14.478  [TEL] car/telemetry/motion 01010fa86100000000040000000000000000
+15:21:14.487  [TEL] car/telemetry/heartbeat 010706a86100000100
+15:21:15.473  [TEL] car/telemetry/motion 01010f906500000000040000000000000000
+15:21:16.480  [TEL] car/telemetry/motion 01010f786900000000040000000000000000
+15:21:17.481  [TEL] car/telemetry/motion 01010f606d00000000040000000000000000
+15:21:18.275  [LF] static pose B: C raw 133..176 avg 156 = 1 pm
+15:21:18.283  [LF] static pose B: R raw 1933..1978 avg 1957 = 973 pm
+15:21:18.302  [TEST] S3-U14 PASS  (g) static: RIGHT on black is DARK (> 750 pm)
+15:21:18.315  [LF] U-turn: turn run 1 of 3
+15:21:18.315  [LF] >>> turn: CENTRE on the right half of the line, RIGHT on white, 30 cm before the cross
+15:21:18.323  [LF] >>> put the car against the tape, hands off: it starts when CENTRE is steady on black
+15:21:18.323  [LF] place: CENTRE 1 pm, RIGHT 969 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:18.474  [TEL] car/telemetry/motion 01010f487100000000040000000000000000
+15:21:18.771  [LF] place: CENTRE 0 pm, RIGHT 971 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:19.266  [LF] place: CENTRE 5 pm, RIGHT 961 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:19.353  [DBG] alive: SDK timer 33017 ms, kernel time 29881 ms, difference 3136 ms
+15:21:19.464  [TEL] car/telemetry/motion 01010f307500000000040000000000000000
+15:21:19.479  [TEL] car/telemetry/heartbeat 010706307500000100
+15:21:19.772  [LF] place: CENTRE 1 pm, RIGHT 961 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:20.278  [LF] place: CENTRE 2 pm, RIGHT 955 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:20.475  [TEL] car/telemetry/motion 01010f187900000000040000000000000000
+15:21:20.772  [LF] place: CENTRE 13 pm, RIGHT 1000 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:20.906  [IMU] hump pitch=13 half-deg
+15:21:20.916  [TEL] car/telemetry/hump 010405c67a008006
+15:21:21.178  [IMU] lift peak 1s: v=28/100 mm/s acc=40 mg cos=939/866
+15:21:21.279  [LF] place: CENTRE 1000 pm, RIGHT 9 pm: OK, keep still
+15:21:21.476  [TEL] car/telemetry/motion 01010f007d00000000040000000400000000
+15:21:21.773  [LF] place: CENTRE 1000 pm, RIGHT 5 pm: OK, keep still
+15:21:22.278  [LF] place: CENTRE 995 pm, RIGHT 8 pm: OK, keep still
+15:21:22.478  [TEL] car/telemetry/motion 01010fe88000000000040000000400000000
+15:21:22.773  [LF] place: CENTRE 998 pm, RIGHT 9 pm: OK, keep still
+15:21:23.279  [LF] place: CENTRE 985 pm, RIGHT 9 pm: OK, keep still
+15:21:23.477  [TEL] car/telemetry/motion 01010fd08400000000040000000400000000
+15:21:23.775  [LF] >>> HANDS OFF: the car DRIVES in 3 s (catch and lift it to stop)
+15:21:23.779  [LF] place: CENTRE 983 pm, RIGHT 0 pm: OK, keep still
+15:21:24.280  [LF] place: CENTRE 982 pm, RIGHT 5 pm: OK, keep still
+15:21:24.479  [TEL] car/telemetry/motion 01010fb88800000000040000000400000000
+15:21:24.494  [TEL] car/telemetry/heartbeat 010706b88800000100
+15:21:24.777  [LF] place: CENTRE 992 pm, RIGHT 7 pm: OK, keep still
+15:21:25.282  [LF] place: CENTRE 986 pm, RIGHT 0 pm: OK, keep still
+15:21:25.479  [TEL] car/telemetry/motion 01010fa08c00000000040000000400000000
+15:21:25.788  [LF] place: CENTRE 980 pm, RIGHT 0 pm: OK, keep still
+15:21:26.274  [LF] place: CENTRE 986 pm, RIGHT 7 pm: OK, keep still
+15:21:26.481  [TEL] car/telemetry/motion 01010f889000000000040000000400000000
+15:21:26.785  [LF] place: CENTRE 994 pm, RIGHT 7 pm: OK, keep still
+15:21:26.791  [LF] IDLE -> ON_LINE  c=1990 r=164 dc=991 dr=5 vc=4
+15:21:26.800  [TEL] car/telemetry/heartbeat 010706c89100000400
+15:21:26.866  [IMU] hump pitch=14 half-deg
+15:21:26.877  [TEL] car/telemetry/hump 0104050e92000007
+15:21:26.899  [LF] d t=110 mm=8 st=1 vc=4 c=2228 r=153 dc=1000 dr=0 s=4
+15:21:27.010  [LF] d t=220 mm=29 st=1 vc=4 c=1915 r=164 dc=950 dr=5 s=2
+15:21:27.120  [LF] d t=330 mm=50 st=1 vc=4 c=1921 r=165 dc=954 dr=6 s=2
+15:21:27.229  [LF] d t=440 mm=77 st=1 vc=4 c=906 r=148 dc=406 dr=0 s=-12
+15:21:27.340  [LF] d t=550 mm=100 st=1 vc=4 c=173 r=162 dc=10 dr=4 s=-53
+15:21:27.345  [LF] ON_LINE -> LINE_LOST  c=173 r=174 dc=10 dr=11 vc=4
+15:21:27.449  [LF] d t=660 mm=127 st=3 vc=4 c=157 r=974 dc=2 dr=443 s=-53
+15:21:27.459  [LF] LINE_LOST -> REACQUIRING  c=175 r=185 dc=11 dr=17 vc=4
+15:21:27.483  [TEL] car/telemetry/motion 01010f7094007930007c160000141b000000
+15:21:27.509  [IMU] hump pitch=-18 half-deg
+15:21:27.519  [TEL] car/telemetry/hump 0104059894000077
+15:21:27.559  [LF] d t=770 mm=142 st=4 vc=4 c=175 r=209 dc=11 dr=30 s=64
+15:21:27.593  [IMU] hump pitch=21 half-deg
+15:21:27.597  [TEL] car/telemetry/hump 010405de9400800a
+15:21:27.669  [LF] d t=880 mm=165 st=4 vc=4 c=166 r=2313 dc=7 dr=1000 s=64
+15:21:27.780  [LF] d t=990 mm=186 st=4 vc=4 c=221 r=178 dc=36 dr=13 s=64
+15:21:27.802  [LF] REACQUIRING -> ON_LINE  c=2180 r=172 dc=1000 dr=10 vc=4
+15:21:27.890  [LF] d t=1100 mm=212 st=1 vc=4 c=2194 r=139 dc=1000 dr=0 s=4
+15:21:28.000  [LF] d t=1210 mm=234 st=1 vc=4 c=1406 r=175 dc=676 dr=11 s=-10
+15:21:28.111  [LF] d t=1320 mm=259 st=1 vc=4 c=1996 r=155 dc=994 dr=1 s=4
+15:21:28.220  [LF] d t=1430 mm=281 st=1 vc=4 c=794 r=166 dc=345 dr=7 s=-26
+15:21:28.331  [LF] d t=1540 mm=307 st=1 vc=4 c=161 r=192 dc=4 dr=21 s=-51
+15:21:28.336  [LF] ON_LINE -> LINE_LOST  c=173 r=195 dc=10 dr=22 vc=4
+15:21:28.440  [LF] d t=1650 mm=328 st=3 vc=4 c=149 r=347 dc=0 dr=104 s=-51
+15:21:28.451  [LF] LINE_LOST -> REACQUIRING  c=149 r=209 dc=0 dr=30 vc=4
+15:21:28.464  [TEL] car/telemetry/motion 01010f589800868000d43c0000c040000000
+15:21:28.480  [IMU] hump pitch=-19 half-deg
+15:21:28.496  [TEL] car/telemetry/hump 0104056c98008076
+15:21:28.550  [LF] d t=1760 mm=348 st=4 vc=4 c=192 r=200 dc=21 dr=25 s=64
+15:21:28.573  [IMU] hump pitch=16 half-deg
+15:21:28.576  [TEL] car/telemetry/hump 010405bc98000008
+15:21:28.662  [LF] d t=1871 mm=366 st=4 vc=4 c=172 r=254 dc=10 dr=54 s=64
+15:21:28.727  [LF] REACQUIRING -> ON_LINE  c=2360 r=272 dc=1000 dr=64 vc=4
+15:21:28.749  [LF] ON_LINE -> JUNCTION  c=2536 r=1974 dc=1000 dr=982 vc=4
+15:21:28.771  [LF] d t=1981 mm=392 st=2 vc=4 c=2510 r=1960 dc=1000 dr=975 s=0
+15:21:28.882  [LF] d t=2091 mm=414 st=2 vc=4 c=1422 r=155 dc=684 dr=1 s=-10
+15:21:28.992  [LF] d t=2201 mm=440 st=2 vc=4 c=951 r=146 dc=430 dr=0 s=-26
+15:21:29.101  [LF] d t=2311 mm=462 st=2 vc=4 c=1123 r=179 dc=523 dr=14 s=-18
+15:21:29.211  [LF] d t=2421 mm=487 st=2 vc=4 c=476 r=192 dc=174 dr=21 s=-47
+15:21:29.299  [TEL] car/telemetry/heartbeat 0107068c9b00000800
+15:21:29.321  [LF] d t=2531 mm=509 st=2 vc=8 c=1857 r=322 dc=919 dr=91 s=-3
+15:21:29.341  [IMU] hump pitch=22 half-deg
+15:21:29.354  [TEL] car/telemetry/hump 010405be9b00000b
+15:21:29.357  [DBG] alive: SDK timer 43018 ms, kernel time 39882 ms, difference 3136 ms
+15:21:29.431  [LF] d t=2641 mm=518 st=2 vc=8 c=515 r=306 dc=195 dr=82 s=-3
+15:21:29.466  [TEL] car/telemetry/motion 01010f409c00dfd300ec630000345c000000
+15:21:29.480  [TEL] car/telemetry/heartbeat 010706409c00000800
+15:21:29.541  [LF] d t=2751 mm=514 st=2 vc=8 c=200 r=219 dc=25 dr=35 s=-3
+15:21:29.651  [LF] d t=2861 mm=512 st=2 vc=8 c=153 r=149 dc=0 dr=0 s=-3
+15:21:29.655  [IMU] hump pitch=-10 half-deg
+15:21:29.663  [TEL] car/telemetry/hump 010405ea9c00007b
+15:21:29.762  [LF] d t=2971 mm=511 st=2 vc=8 c=174 r=178 dc=11 dr=13 s=-3
+15:21:29.871  [LF] d t=3081 mm=509 st=2 vc=8 c=180 r=176 dc=14 dr=12 s=-3
+15:21:29.981  [LF] d t=3191 mm=509 st=2 vc=8 c=173 r=153 dc=10 dr=0 s=-3
+15:21:30.092  [LF] d t=3301 mm=508 st=2 vc=8 c=154 r=209 dc=0 dr=30 s=-3
+15:21:30.179  [IMU] lift peak 1s: v=0/100 mm/s acc=23 mg cos=940/866
+15:21:30.203  [LF] d t=3411 mm=507 st=2 vc=8 c=1217 r=179 dc=574 dr=14 s=-3
+15:21:30.311  [LF] d t=3521 mm=506 st=2 vc=8 c=165 r=165 dc=6 dr=6 s=-3
+15:21:30.421  [LF] d t=3631 mm=506 st=2 vc=8 c=162 r=177 dc=4 dr=12 s=-3
+15:21:30.477  [TEL] car/telemetry/motion 01010f28a000fcfb00a07400008847000000
+15:21:30.534  [LF] d t=3741 mm=505 st=2 vc=8 c=154 r=149 dc=0 dr=0 s=-3
+15:21:30.642  [LF] d t=3851 mm=505 st=2 vc=8 c=162 r=161 dc=4 dr=4 s=-3
+15:21:30.751  [LF] d t=3961 mm=505 st=2 vc=8 c=177 r=153 dc=12 dr=0 s=-3
+15:21:30.864  [LF] d t=4071 mm=506 st=2 vc=8 c=163 r=152 dc=5 dr=0 s=-3
+15:21:30.971  [LF] d t=4181 mm=507 st=2 vc=8 c=169 r=159 dc=8 dr=3 s=-3
+15:21:31.082  [LF] d t=4291 mm=508 st=2 vc=8 c=170 r=138 dc=9 dr=0 s=-3
+15:21:31.191  [LF] d t=4401 mm=509 st=2 vc=8 c=157 r=141 dc=2 dr=0 s=-3
+15:21:31.300  [LF] d t=4511 mm=509 st=2 vc=8 c=177 r=176 dc=12 dr=12 s=-3
+15:21:31.411  [LF] d t=4621 mm=509 st=2 vc=8 c=154 r=1952 dc=0 dr=970 s=-3
+15:21:31.477  [TEL] car/telemetry/motion 01010f10a40000100180800000043d000000
+15:21:31.521  [LF] d t=4731 mm=509 st=2 vc=8 c=142 r=1909 dc=0 dr=947 s=-3
+15:21:31.521  [TEL] car/telemetry/heartbeat 01070638a400000400
+15:21:31.609  [IMU] hump pitch=20 half-deg
+15:21:31.620  [TEL] car/telemetry/hump 01040592a400000a
+15:21:31.629  [LF] d t=4841 mm=517 st=2 vc=4 c=181 r=1777 dc=15 dr=876 s=32
+15:21:31.741  [LF] d t=4951 mm=535 st=2 vc=4 c=154 r=276 dc=0 dr=66 s=32
+15:21:31.852  [LF] d t=5061 mm=562 st=2 vc=4 c=157 r=1320 dc=2 dr=629 s=32
+15:21:31.962  [LF] d t=5171 mm=585 st=2 vc=4 c=162 r=164 dc=4 dr=5 s=32
+15:21:32.047  [LF] JUNCTION -> ON_LINE  c=2065 r=166 dc=1000 dr=7 vc=4
+15:21:32.070  [LF] d t=5281 mm=613 st=1 vc=4 c=2162 r=137 dc=1000 dr=0 s=14
+15:21:32.181  [LF] d t=5391 mm=635 st=1 vc=4 c=2012 r=148 dc=1000 dr=0 s=14
+15:21:32.290  [LF] d t=5501 mm=661 st=1 vc=4 c=387 r=179 dc=126 dr=14 s=-38
+15:21:32.401  [LF] d t=5611 mm=683 st=1 vc=4 c=2020 r=136 dc=1000 dr=0 s=4
+15:21:32.479  [TEL] car/telemetry/motion 01010ff8a700d6600104a600003c60000000
+15:21:32.504  [LF] d t=5721 mm=709 st=1 vc=4 c=1960 r=177 dc=975 dr=12 s=3
+15:21:32.621  [LF] d t=5831 mm=730 st=1 vc=4 c=764 r=146 dc=329 dr=0 s=-27
+15:21:32.731  [LF] d t=5941 mm=756 st=1 vc=4 c=1883 r=152 dc=933 dr=0 s=1
+15:21:32.841  [LF] d t=6051 mm=778 st=1 vc=4 c=1623 r=169 dc=793 dr=8 s=-5
+15:21:32.951  [LF] d t=6161 mm=802 st=1 vc=4 c=1637 r=138 dc=800 dr=0 s=-10
+15:21:33.062  [LF] d t=6271 mm=824 st=1 vc=4 c=1573 r=157 dc=766 dr=2 s=-6
+15:21:33.172  [LF] d t=6381 mm=849 st=1 vc=4 c=720 r=146 dc=305 dr=0 s=-36
+15:21:33.282  [LF] d t=6491 mm=869 st=1 vc=4 c=1187 r=147 dc=558 dr=0 s=-16
+15:21:33.392  [LF] d t=6601 mm=894 st=1 vc=4 c=2100 r=165 dc=1000 dr=6 s=4
+15:21:33.469  [LF] ON_LINE -> IDLE  c=1863 r=138 dc=922 dr=0 vc=1
+15:21:33.480  [TEL] car/telemetry/motion 01010fe0ab0000b00118cc00001c88000000
+15:21:33.486  [TEL] car/telemetry/heartbeat 010706e0ab00000100
+15:21:33.555  [IMU] hump pitch=-16 half-deg
+15:21:33.560  [TEL] car/telemetry/hump 01040530ac000078
+15:21:33.965  [LF] turn: end along the branch at 6678 ms, 910 mm; then 12 mm, still 1, vc=1
+15:21:33.973  [LF] turn: speed 132 mm/s (cruise 200), first steer 4, ON_LINE at 11 ms
+15:21:33.984  [LF] turn: settle 29 mm, band 178/588 after, 150/508 2nd half
+15:21:33.992  [LF] turn: |steer| max 64, flips 20, LINE_LOST 1, LINE_FOUND 1
+15:21:33.994  [LF] turn: jct 1, track_lost 0, ev fail 0, dropped 0
+15:21:33.999  [LF] turn 1: START with CENTRE at 994 pm, launch LINE_LOST 1
+15:21:33.999  [LF] turn: detected 388 mm at 1970 ms, JUNCTION 509 mm at 2520 ms, delay 121 mm
+15:21:33.999  [LF] turn: command sent 1, VC turned 1, ended 1 at 4742 ms
+15:21:33.999  [LF] turn: wheels L 2148 R -2142 counts = 181 degrees by the encoders
+15:21:33.999  [LF] turn: back ON_LINE 528 ms after the turn, LINE_LOST on the way 0
+15:21:34.022  [LF] turn: branch 301 mm, CENTRE on 83/88 polls past 100 mm
+15:21:34.025  [LF] tr turn: t mm st c r s L R (256 rows, 20 ms)
+15:21:34.025  [LF] tr 22 0 1 1993 158 4 0 0
+15:21:34.034  [LF] tr 44 0 1 2034 152 3 9 12
+15:21:34.036  [LF] tr 66 3 1 2136 178 4 28 44
+15:21:34.036  [LF] tr 88 5 1 2198 166 4 52 80
+15:21:34.036  [LF] tr 110 8 1 2228 153 4 81 113
+15:21:34.036  [LF] tr 132 11 1 2077 170 4 115 147
+15:21:34.036  [LF] tr 154 17 1 1968 169 3 193 229
+15:21:34.047  [LF] tr 176 21 1 2001 132 4 238 278
+15:21:34.063  [LF] tr 198 25 1 1978 129 4 285 327
+15:21:34.063  [LF] tr 220 29 1 1915 164 2 332 375
+15:21:34.063  [LF] tr 242 33 1 1940 150 1 380 425
+15:21:34.063  [LF] tr 264 38 1 2013 173 3 430 477
+15:21:34.063  [LF] tr 286 42 1 1957 133 4 481 529
+15:21:34.063  [LF] tr 308 46 1 1868 140 1 531 580
+15:21:34.079  [LF] tr 330 50 1 1921 165 2 582 631
+15:21:34.079  [LF] tr 352 55 1 1941 157 3 635 686
+15:21:34.173  [LF] tr 374 64 1 1859 136 1 741 793
+15:21:34.178  [LF] tr 396 68 1 1755 150 0 793 846
+15:21:34.178  [LF] tr 418 73 1 1535 149 -5 844 900
+15:21:34.182  [LF] tr 440 77 1 906 148 -12 895 954
+15:21:34.185  [LF] tr 462 82 1 283 152 -33 946 1010
+15:21:34.191  [LF] tr 484 86 1 235 169 -37 994 1069
+15:21:34.191  [LF] tr 506 91 1 179 131 -41 1043 1127
+15:21:34.194  [LF] tr 528 95 1 162 154 -49 1092 1187
+15:21:34.273  [LF] tr 550 100 1 173 162 -53 1136 1247
+15:21:34.278  [LF] tr 572 104 3 170 181 -53 1179 1310
+15:21:34.278  [LF] tr 594 113 3 157 1594 -53 1264 1440
+15:21:34.285  [LF] tr 616 118 3 164 2102 -53 1305 1508
+15:21:34.288  [LF] tr 638 122 3 177 2150 -53 1345 1574
+15:21:34.288  [LF] tr 660 127 3 157 974 -53 1384 1641
+15:21:34.288  [LF] tr 682 130 4 165 178 64 1416 1696
+15:21:34.295  [LF] tr 704 133 4 155 162 64 1438 1732
+15:21:34.374  [LF] tr 726 135 4 155 153 64 1470 1765
+15:21:34.376  [LF] tr 748 139 4 173 203 64 1518 1800
+15:21:34.380  [LF] tr 770 142 4 175 209 64 1562 1837
+15:21:34.384  [LF] tr 792 146 4 180 216 64 1613 1867
+15:21:34.384  [LF] tr 814 153 4 177 1510 64 1724 1920
+15:21:34.389  [LF] tr 836 156 4 175 2078 64 1785 1950
+15:21:34.389  [LF] tr 858 161 4 163 2281 64 1851 1984
+15:21:34.389  [LF] tr 880 165 4 166 2313 64 1917 2022
+15:21:34.475  [LF] tr 902 169 4 157 1762 64 1983 2059
+15:21:34.479  [LF] tr 924 173 4 173 224 64 2050 2091
+15:21:34.479  [LF] tr 946 178 4 163 181 64 2115 2125
+15:21:34.479  [LF] tr 968 182 4 177 174 64 2182 2161
+15:21:34.486  [LF] tr 990 186 4 221 178 64 2249 2197
+15:21:34.489  [LF] tr 1012 191 4 1850 163 -64 2316 2234
+15:21:34.492  [LF] tr 1034 199 1 2196 162 4 2442 2314
+15:21:34.492  [LF] tr 1056 204 1 2181 147 4 2496 2363
+15:21:34.492  [TEL] car/telemetry/motion 01010fc8af0000b00124ce00005089000000
+15:21:34.574  [LF] tr 1078 208 1 2115 156 4 2552 2413
+15:21:34.584  [LF] tr 1100 212 1 2194 139 4 2603 2465
+15:21:34.584  [LF] tr 1122 217 1 2164 148 4 2653 2518
+15:21:34.592  [LF] tr 1144 221 1 2053 144 4 2703 2570
+15:21:34.595  [LF] tr 1166 225 1 797 147 4 2752 2624
+15:21:34.595  [LF] tr 1188 230 1 325 158 -37 2801 2677
+15:21:34.595  [LF] tr 1210 234 1 1406 175 -10 2848 2732
+15:21:34.603  [LF] tr 1232 238 1 2067 147 4 2892 2788
+15:21:34.677  [LF] tr 1254 247 1 1905 174 3 2982 2905
+15:21:34.681  [LF] tr 1276 251 1 1990 175 3 3028 2961
+15:21:34.681  [LF] tr 1298 255 1 2016 155 4 3073 3013
+15:21:34.686  [LF] tr 1320 259 1 1996 155 4 3120 3065
+15:21:34.689  [LF] tr 1342 263 1 2000 174 4 3166 3119
+15:21:34.689  [LF] tr 1364 268 1 1866 138 2 3216 3173
+15:21:34.689  [LF] tr 1386 272 1 1682 136 0 3266 3226
+15:21:34.689  [LF] tr 1408 276 1 1216 163 -15 3314 3278
+15:21:34.776  [LF] tr 1430 281 1 794 166 -26 3362 3330
+15:21:34.781  [LF] tr 1452 285 1 314 177 -35 3410 3384
+15:21:34.783  [LF] tr 1474 294 1 225 175 -39 3501 3500
+15:21:34.789  [LF] tr 1496 298 1 180 145 -43 3544 3561
+15:21:34.789  [LF] tr 1518 302 1 161 144 -47 3586 3625
+15:21:34.789  [LF] tr 1540 307 1 161 192 -51 3627 3687
+15:21:34.798  [LF] tr 1562 311 3 161 214 -51 3665 3752
+15:21:34.800  [LF] tr 1584 315 3 179 1669 -51 3703 3817
+15:21:34.877  [LF] tr 1606 320 3 176 2182 -51 3741 3885
+15:21:34.881  [LF] tr 1628 324 3 148 2045 -51 3779 3951
+15:21:34.884  [LF] tr 1650 328 3 149 347 -51 3813 4018
+15:21:34.886  [LF] tr 1672 332 4 178 203 64 3841 4073
+15:21:34.889  [LF] tr 1694 337 4 156 171 64 3892 4143
+15:21:34.896  [LF] tr 1716 340 4 185 192 64 3940 4179
+15:21:34.899  [LF] tr 1738 344 4 165 184 64 3984 4217
+15:21:34.902  [LF] tr 1760 348 4 192 200 64 4037 4249
+15:21:34.978  [LF] tr 1782 351 4 173 677 64 4094 4276
+15:21:34.982  [LF] tr 1805 355 4 172 2252 64 4152 4305
+15:21:34.982  [LF] tr 1827 358 4 178 2037 64 4213 4331
+15:21:34.982  [LF] tr 1849 362 4 175 1832 64 4276 4360
+15:21:34.989  [LF] tr 1871 366 4 172 254 64 4342 4393
+15:21:34.993  [LF] tr 1893 375 4 166 187 64 4479 4461
+15:21:34.993  [LF] tr 1915 379 4 219 150 64 4547 4492
+15:21:34.999  [LF] tr 1937 384 4 1857 220 -64 4618 4525
+15:21:35.077  [LF] tr 1959 388 1 2500 1602 4 4680 4568
+15:21:35.077  [LF] tr 1981 392 2 2510 1960 0 4736 4613
+15:21:35.077  [LF] tr 2003 397 2 2209 252 0 4794 4660
+15:21:35.089  [LF] tr 2025 401 2 1992 195 4 4852 4708
+15:21:35.091  [LF] tr 2047 406 2 1857 184 3 4908 4760
+15:21:35.094  [LF] tr 2069 410 2 1644 145 -4 4963 4812
+15:21:35.094  [LF] tr 2091 414 2 1422 155 -10 5015 4861
+15:21:35.099  [LF] tr 2113 423 2 989 137 -19 5121 4965
+15:21:35.189  [LF] tr 2135 428 2 548 169 -30 5172 5018
+15:21:35.189  [LF] tr 2157 432 2 453 177 -36 5220 5072
+15:21:35.189  [LF] tr 2179 436 2 568 163 -40 5267 5128
+15:21:35.197  [LF] tr 2201 440 2 951 146 -26 5312 5185
+15:21:35.201  [LF] tr 2223 445 2 1366 154 -16 5357 5243
+15:21:35.204  [LF] tr 2245 449 2 1469 173 -10 5402 5298
+15:21:35.207  [LF] tr 2267 453 2 1519 155 -8 5449 5353
+15:21:35.209  [LF] tr 2289 457 2 1389 157 -11 5497 5406
+15:21:35.265  [LF] tr 2311 462 2 1123 179 -18 5547 5457
+15:21:35.284  [LF] tr 2333 470 2 704 172 -27 5649 5558
+15:21:35.284  [LF] tr 2355 474 2 322 154 -35 5698 5609
+15:21:35.289  [LF] tr 2377 479 2 293 159 -39 5746 5662
+15:21:35.289  [LF] tr 2399 483 2 314 209 -43 5793 5715
+15:21:35.299  [LF] tr 2421 487 2 476 192 -47 5840 5771
+15:21:35.299  [LF] tr 2443 491 2 818 210 -51 5885 5827
+15:21:35.299  [LF] tr 2465 496 2 1121 241 -24 5929 5883
+15:21:35.379  [LF] tr 2487 500 2 1411 233 -16 5975 5940
+15:21:35.389  [LF] tr 2509 504 2 1680 258 -3 6024 5994
+15:21:35.397  [LF] tr 2531 509 2 1857 322 -3 6075 6046
+15:21:35.399  [LF] tr 2553 516 2 2001 623 -3 6173 6121
+15:21:35.401  [LF] tr 2575 517 2 1941 735 -3 6216 6112
+15:21:35.405  [LF] tr 2597 518 2 1583 624 -3 6250 6091
+15:21:35.409  [LF] tr 2619 518 2 915 402 -3 6282 6063
+15:21:35.409  [LF] tr 2641 518 2 515 306 -3 6311 6027
+15:21:35.477  [TEL] car/telemetry/motion 01010fb0b30000b00128ce00005089000000
+15:21:35.481  [TEL] car/telemetry/heartbeat 010706b0b300000100
+15:21:35.481  [LF] tr 2663 517 2 284 287 -3 6339 5987
+15:21:35.486  [LF] tr 2685 517 2 278 261 -3 6366 5945
+15:21:35.489  [LF] tr 2707 516 2 235 243 -3 6394 5900
+15:21:35.489  [LF] tr 2729 515 2 220 233 -3 6420 5856
+15:21:35.494  [LF] tr 2751 514 2 200 219 -3 6445 5812
+15:21:35.496  [LF] tr 2773 513 2 172 193 -3 6495 5723
+15:21:35.499  [LF] tr 2795 512 2 161 171 -3 6520 5678
+15:21:35.499  [LF] tr 2817 511 2 178 174 -3 6547 5635
+15:21:35.553  [IMU] hump pitch=10 half-deg
+15:21:35.559  [TEL] car/telemetry/hump 01040500b4000005
+15:21:35.577  [LF] tr 2839 511 2 179 178 -3 6579 5605
+15:21:35.579  [LF] tr 2861 512 2 153 149 -3 6614 5581
+15:21:35.581  [LF] tr 2883 512 2 160 171 -3 6645 5553
+15:21:35.587  [LF] tr 2905 512 2 174 147 -3 6669 5525
+15:21:35.590  [LF] tr 2927 511 2 166 166 -3 6695 5491
+15:21:35.593  [LF] tr 2949 511 2 174 164 -3 6720 5459
+15:21:35.595  [LF] tr 2971 511 2 174 178 -3 6744 5430
+15:21:35.598  [LF] tr 2993 510 2 172 178 -3 6791 5369
+15:21:35.687  [LF] tr 3015 510 2 156 138 -3 6813 5340
+15:21:35.690  [LF] tr 3037 510 2 158 182 -3 6835 5312
+15:21:35.690  [LF] tr 3059 509 2 156 141 -3 6855 5286
+15:21:35.697  [LF] tr 3081 509 2 180 176 -3 6875 5261
+15:21:35.697  [LF] tr 3103 509 2 163 153 -3 6896 5236
+15:21:35.697  [LF] tr 3125 509 2 171 136 -3 6916 5215
+15:21:35.697  [LF] tr 3147 509 2 160 170 -3 6936 5192
+15:21:35.697  [LF] tr 3169 509 2 149 178 -3 6955 5169
+15:21:35.787  [LF] tr 3191 509 2 173 153 -3 6974 5145
+15:21:35.790  [LF] tr 3213 508 2 158 192 -3 7012 5101
+15:21:35.792  [LF] tr 3235 508 2 147 525 -3 7032 5078
+15:21:35.797  [LF] tr 3257 508 2 154 1298 -3 7049 5056
+15:21:35.799  [LF] tr 3279 508 2 157 1286 -3 7068 5032
+15:21:35.799  [LF] tr 3301 508 2 154 209 -3 7088 5011
+15:21:35.805  [LF] tr 3323 508 2 187 148 -3 7107 4988
+15:21:35.808  [LF] tr 3345 507 2 206 171 -3 7126 4965
+15:21:35.834  [IMU] hump pitch=13 half-deg
+15:21:35.834  [TEL] car/telemetry/hump 01040518b5008006
+15:21:35.888  [LF] tr 3367 507 2 735 159 -3 7145 4943
+15:21:35.893  [LF] tr 3389 507 2 1420 150 -3 7164 4920
+15:21:35.893  [LF] tr 3411 507 2 1217 179 -3 7181 4898
+15:21:35.900  [LF] tr 3433 507 2 233 140 -3 7219 4857
+15:21:35.900  [LF] tr 3455 507 2 190 179 -3 7237 4837
+15:21:35.905  [LF] tr 3477 506 2 151 145 -3 7255 4814
+15:21:35.907  [LF] tr 3499 506 2 154 147 -3 7273 4793
+15:21:35.912  [LF] tr 3521 506 2 165 165 -3 7291 4772
+15:21:35.912  [IMU] hump pitch=-10 half-deg
+15:21:35.916  [TEL] car/telemetry/hump 01040568b500007b
+15:21:35.968  [SAFETY] BRAKE: lifted or overturned
+15:21:35.983  [IMU] LIFTED (raised): cos_tilt=988/1000 up_accel=94 mg v=135 mm/s
+15:21:35.983  [TEL] car/telemetry/fault 010605a4b5000400
+15:21:35.991  [LF] tr 3543 506 2 153 179 -3 7311 4751
+15:21:35.991  [LF] tr 3565 506 2 176 148 -3 7329 4728
+15:21:35.991  [LF] tr 3587 506 2 165 161 -3 7348 4707
+15:21:35.999  [LF] tr 3609 506 2 174 148 -3 7368 4686
+15:21:36.002  [LF] tr 3631 506 2 162 177 -3 7386 4663
+15:21:36.005  [LF] tr 3653 505 2 162 142 -3 7425 4620
+15:21:36.008  [LF] tr 3675 505 2 143 176 -3 7444 4598
+15:21:36.011  [LF] tr 3697 505 2 172 171 -3 7463 4577
+15:21:36.015  [TEL] car/telemetry/heartbeat 010706b8b500004300
+15:21:36.064  [IMU] hump pitch=20 half-deg
+15:21:36.064  [TEL] car/telemetry/hump 010405feb500000a
+15:21:36.089  [LF] tr 3719 505 2 166 149 -3 7481 4555
+15:21:36.091  [LF] tr 3741 505 2 154 149 -3 7501 4533
+15:21:36.096  [LF] tr 3763 505 2 177 142 -3 7519 4513
+15:21:36.098  [LF] tr 3785 505 2 154 144 -3 7538 4493
+15:21:36.100  [LF] tr 3807 505 2 178 165 -3 7556 4475
+15:21:36.100  [LF] tr 3829 505 2 182 179 -3 7574 4457
+15:21:36.100  [LF] tr 3851 505 2 162 161 -3 7592 4443
+15:21:36.100  [LF] tr 3873 505 2 179 166 -3 7624 4408
+15:21:36.165  [IMU] hump pitch=16 half-deg
+15:21:36.177  [IMU] lift peak 1s: v=160/100 mm/s acc=143 mg cos=960/866 [disarmed]
+15:21:36.177  [TEL] car/telemetry/hump 01040562b6000008
+15:21:36.188  [LF] tr 3895 505 2 161 155 -3 7639 4394
+15:21:36.191  [LF] tr 3917 505 2 168 169 -3 7655 4379
+15:21:36.191  [LF] tr 3939 505 2 162 152 -3 7670 4365
+15:21:36.191  [LF] tr 3961 505 2 177 153 -3 7686 4352
+15:21:36.200  [LF] tr 3983 505 2 180 148 -3 7702 4338
+15:21:36.203  [LF] tr 4005 505 2 171 140 -3 7718 4325
+15:21:36.203  [LF] tr 4027 505 2 172 180 -3 7734 4313
+15:21:36.207  [LF] tr 4049 506 2 175 148 -3 7751 4299
+15:21:36.231  [IMU] hump pitch=-17 half-deg
+15:21:36.231  [TEL] car/telemetry/hump 0104059eb6008077
+15:21:36.287  [LF] tr 4071 506 2 163 152 -3 7768 4287
+15:21:36.291  [LF] tr 4093 506 2 179 137 -3 7802 4262
+15:21:36.295  [LF] tr 4115 506 2 177 141 -3 7820 4251
+15:21:36.295  [LF] tr 4137 507 2 152 149 -3 7836 4240
+15:21:36.298  [LF] tr 4159 507 2 160 172 -3 7852 4227
+15:21:36.303  [LF] tr 4181 507 2 169 159 -3 7869 4215
+15:21:36.303  [LF] tr 4203 507 2 156 148 -3 7884 4203
+15:21:36.303  [LF] tr 4225 507 2 156 170 -3 7900 4191
+15:21:36.388  [LF] tr 4247 508 2 173 169 -3 7916 4179
+15:21:36.391  [LF] tr 4269 508 2 173 175 -3 7932 4167
+15:21:36.393  [LF] tr 4291 508 2 170 138 -3 7949 4155
+15:21:36.398  [LF] tr 4313 508 2 155 166 -3 7980 4129
+15:21:36.402  [LF] tr 4335 508 2 156 158 -3 7996 4116
+15:21:36.404  [LF] tr 4357 508 2 176 180 -3 8012 4103
+15:21:36.406  [LF] tr 4379 509 2 158 159 -3 8028 4090
+15:21:36.406  [LF] tr 4401 509 2 157 141 -3 8044 4076
+15:21:36.477  [TEL] car/telemetry/motion 01010f98b70000b00194ce00005489000000
+15:21:36.487  [LF] tr 4423 509 2 145 176 -3 8060 4063
+15:21:36.489  [LF] tr 4445 509 2 154 171 -3 8077 4047
+15:21:36.491  [LF] tr 4467 509 2 153 181 -3 8093 4032
+15:21:36.498  [LF] tr 4489 509 2 177 141 -3 8110 4017
+15:21:36.500  [LF] tr 4511 509 2 177 176 -3 8127 3999
+15:21:36.500  [LF] tr 4533 509 2 180 180 -3 8160 3964
+15:21:36.500  [LF] tr 4555 509 2 150 184 -3 8177 3947
+15:21:36.500  [LF] tr 4577 509 2 170 203 -3 8193 3931
+15:21:36.597  [LF] tr 4599 509 2 178 1736 -3 8210 3913
+15:21:36.597  [LF] tr 4621 509 2 154 1952 -3 8221 3904
+15:21:36.606  [LF] tr 4643 509 2 147 1933 -3 8226 3903
+15:21:36.606  [LF] tr 4665 509 2 178 1944 -3 8225 3904
+15:21:36.612  [LF] tr 4687 509 2 146 1951 -3 8223 3904
+15:21:36.613  [LF] tr 4709 509 2 163 1909 -3 8223 3904
+15:21:36.613  [LF] tr 4731 509 2 142 1909 -3 8223 3904
+15:21:36.613  [LF] tr 4753 509 2 154 1934 32 8223 3904
+15:21:36.701  [LF] tr 4775 510 2 161 1947 32 8230 3917
+15:21:36.703  [LF] tr 4797 512 2 162 1987 32 8248 3945
+15:21:36.708  [LF] tr 4819 514 2 154 1927 32 8273 3975
+15:21:36.708  [LF] tr 4841 517 2 181 1777 32 8305 4006
+15:21:36.708  [LF] tr 4863 520 2 159 1480 32 8343 4040
+15:21:36.715  [LF] tr 4885 523 2 182 1915 32 8387 4079
+15:21:36.715  [LF] tr 4907 527 2 160 2061 32 8437 4121
+15:21:36.715  [LF] tr 4929 531 2 177 275 32 8489 4167
+15:21:36.796  [LF] tr 4951 535 2 154 276 32 8542 4213
+15:21:36.801  [LF] tr 4973 544 2 181 1752 32 8656 4311
+15:21:36.802  [LF] tr 4995 549 2 161 2220 32 8714 4360
+15:21:36.802  [LF] tr 5017 553 2 166 2204 32 8773 4409
+15:21:36.808  [LF] tr 5039 558 2 163 2012 32 8832 4458
+15:21:36.808  [LF] tr 5061 562 2 157 1320 32 8891 4507
+15:21:36.813  [LF] tr 5083 567 2 177 243 32 8951 4556
+15:21:36.817  [LF] tr 5105 571 2 167 224 32 9013 4604
+15:21:36.885  [IMU] hump pitch=14 half-deg
+15:21:36.895  [LF] tr 5127 576 2 154 181 32 9074 4654
+15:21:36.898  [LF] tr 5149 581 2 157 163 32 9134 4700
+15:21:36.903  [LF] tr 5171 585 2 162 164 32 9196 4747
+15:21:36.903  [LF] tr 5193 594 2 199 148 32 9320 4844
+15:21:36.903  [LF] tr 5215 599 2 216 157 32 9382 4892
+15:21:36.910  [LF] tr 5237 604 2 252 136 32 9442 4939
+15:21:36.910  [LF] tr 5259 608 2 1713 163 -32 9504 4985
+15:21:36.915  [LF] tr 5281 613 1 2162 137 14 9562 5038
+15:21:36.915  [TEL] car/telemetry/hump 01040532b9000007
+15:21:36.994  [LF] tr 5303 617 1 2147 178 14 9617 5091
+15:21:37.000  [LF] tr 5325 622 1 2145 147 14 9671 5142
+15:21:37.000  [LF] tr 5347 626 1 2161 160 14 9725 5193
+15:21:37.004  [LF] tr 5369 631 1 2129 160 14 9780 5245
+15:21:37.007  [LF] tr 5391 635 1 2012 148 14 9835 5294
+15:21:37.010  [LF] tr 5413 644 1 1867 173 14 9946 5394
+15:21:37.016  [LF] tr 5435 648 1 1573 150 -3 10000 5444
+15:21:37.016  [LF] tr 5457 653 1 966 158 -17 10052 5495
+15:21:37.096  [LF] tr 5479 657 1 307 178 -34 10104 5548
+15:21:37.096  [LF] tr 5501 661 1 387 179 -38 10154 5603
+15:21:37.096  [LF] tr 5523 666 1 1033 173 -42 10198 5661
+15:21:37.107  [LF] tr 5545 670 1 1687 150 -15 10240 5721
+15:21:37.107  [LF] tr 5567 674 1 1957 178 -1 10284 5782
+15:21:37.107  [LF] tr 5589 679 1 2055 181 4 10329 5840
+15:21:37.107  [LF] tr 5611 683 1 2020 136 4 10374 5896
+15:21:37.125  [LF] tr 5633 691 1 2011 168 4 10471 6003
+15:21:37.173  [IMU] lift peak 1s: v=144/100 mm/s acc=81 mg cos=881/866 [disarmed]
+15:21:37.175  [IMU] hump pitch=-11 half-deg
+15:21:37.187  [TEL] car/telemetry/hump 0104055eba00807a
+15:21:37.295  [LF] tr turn end: ring dropped 0 lines
+15:21:37.299  [TEST] S3-U14 PASS  (t1) cross detected, one JUNCTION 110-135 mm later
+15:21:37.315  [TEST] S3-U14 PASS  (t2) the VC took the command and turned at the junction
+15:21:37.315  [TEST] S3-U14 PASS  (t3) the turn is in its window by the encoders
+15:21:37.324  [TEST] S3-U14 PASS  (t4) line found after the turn, no TRACK_LOST
+15:21:37.326  [TEST] S3-U14 PASS  (t5) followed the branch 300 mm, CENTRE on the line >= 90%
+15:21:37.326  [LF] U-turn: turn run 2 of 3
+15:21:37.331  [LF] >>> turn: CENTRE on the right half of the line, RIGHT on white, 30 cm before the cross
+15:21:37.331  [LF] >>> put the car against the tape, hands off: it starts when CENTRE is steady on black
+15:21:37.331  [LF] place: CENTRE 31 pm, RIGHT 48 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:37.473  [TEL] car/telemetry/motion 01010f80bb0000b00194ce00005489000000
+15:21:37.732  [IMU] hump pitch=11 half-deg
+15:21:37.732  [TEL] car/telemetry/hump 01040584bc008005
+15:21:37.803  [LF] place: CENTRE 955 pm, RIGHT 10 pm: OK, keep still
+15:21:38.144  [IMU] lift detection re-armed (car level and still)
+15:21:38.177  [IMU] lift peak 1s: v=20/100 mm/s acc=136 mg cos=653/866
+15:21:38.298  [LF] place: CENTRE 975 pm, RIGHT 0 pm: OK, keep still
+15:21:38.474  [TEL] car/telemetry/motion 01010f68bf0000b00180ce00005089000000
+15:21:38.804  [LF] place: CENTRE 1000 pm, RIGHT 4 pm: OK, keep still
+15:21:39.300  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:39.365  [DBG] alive: SDK timer 53029 ms, kernel time 49893 ms, difference 3136 ms
+15:21:39.473  [TEL] car/telemetry/motion 01010f50c30000b00180ce00005089000000
+15:21:39.806  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:40.301  [LF] >>> HANDS OFF: the car DRIVES in 3 s (catch and lift it to stop)
+15:21:40.309  [LF] fault latched: test sends RESET (car must be still)
+15:21:40.317  [LF] place: CENTRE 1000 pm, RIGHT 2 pm: OK, keep still
+15:21:40.325  [TEL] car/telemetry/heartbeat 01070698c600000100
+15:21:40.477  [TEL] car/telemetry/motion 01010f38c70000b00180ce00005089000000
+15:21:40.485  [TEL] car/telemetry/heartbeat 01070638c700000100
+15:21:40.807  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:41.313  [LF] place: CENTRE 1000 pm, RIGHT 10 pm: OK, keep still
+15:21:41.477  [TEL] car/telemetry/motion 01010f20cb0000b00180ce00005089000000
+15:21:41.807  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:42.313  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:42.480  [TEL] car/telemetry/motion 01010f08cf0000b00180ce00005089000000
+15:21:42.809  [LF] place: CENTRE 1000 pm, RIGHT 8 pm: OK, keep still
+15:21:43.315  [LF] place: CENTRE 1000 pm, RIGHT 5 pm: OK, keep still
+15:21:43.320  [LF] IDLE -> ON_LINE  c=2069 r=154 dc=1000 dr=0 vc=4
+15:21:43.323  [TEL] car/telemetry/heartbeat 01070650d200000400
+15:21:43.391  [IMU] hump pitch=20 half-deg
+15:21:43.405  [TEL] car/telemetry/hump 010405a0d200000a
+15:21:43.424  [LF] d t=110 mm=11 st=1 vc=4 c=2304 r=161 dc=1000 dr=4 s=4
+15:21:43.479  [TEL] car/telemetry/motion 01010ff0d200bdbc019cd20000608d000000
+15:21:43.534  [LF] d t=220 mm=30 st=1 vc=4 c=2094 r=157 dc=1000 dr=2 s=4
+15:21:43.556  [IMU] hump pitch=13 half-deg
+15:21:43.556  [TEL] car/telemetry/hump 01040540d3008006
+15:21:43.643  [LF] d t=330 mm=57 st=1 vc=4 c=1763 r=137 dc=868 dr=0 s=0
+15:21:43.755  [LF] d t=440 mm=79 st=1 vc=4 c=1626 r=171 dc=794 dr=9 s=-4
+15:21:43.865  [LF] d t=550 mm=106 st=1 vc=4 c=1281 r=172 dc=608 dr=10 s=-13
+15:21:43.972  [LF] d t=660 mm=128 st=1 vc=4 c=1498 r=142 dc=725 dr=0 s=-8
+15:21:44.081  [LF] d t=770 mm=153 st=1 vc=4 c=1592 r=169 dc=776 dr=8 s=-6
+15:21:44.172  [IMU] lift peak 1s: v=16/100 mm/s acc=28 mg cos=964/866
+15:21:44.195  [LF] d t=880 mm=175 st=1 vc=4 c=1722 r=145 dc=846 dr=0 s=-2
+15:21:44.305  [LF] d t=990 mm=201 st=1 vc=4 c=1708 r=147 dc=839 dr=0 s=-2
+15:21:44.416  [LF] d t=1100 mm=222 st=1 vc=4 c=1636 r=175 dc=800 dr=11 s=-5
+15:21:44.480  [TEL] car/telemetry/motion 01010fd8d600d21002ecfa0000e8b5000000
+15:21:44.525  [LF] d t=1210 mm=247 st=1 vc=4 c=614 r=176 dc=248 dr=12 s=-35
+15:21:44.637  [LF] d t=1320 mm=269 st=1 vc=4 c=1832 r=164 dc=906 dr=5 s=-5
+15:21:44.747  [LF] d t=1430 mm=294 st=1 vc=4 c=1520 r=165 dc=737 dr=6 s=-7
+15:21:44.856  [LF] d t=1540 mm=316 st=1 vc=4 c=2013 r=158 dc=1000 dr=2 s=4
+15:21:44.965  [LF] d t=1650 mm=340 st=1 vc=4 c=1817 r=145 dc=898 dr=0 s=0
+15:21:45.075  [LF] d t=1760 mm=361 st=1 vc=4 c=1786 r=149 dc=881 dr=0 s=0
+15:21:45.186  [LF] d t=1870 mm=386 st=1 vc=4 c=1652 r=161 dc=808 dr=4 s=-4
+15:21:45.263  [LF] ON_LINE -> JUNCTION  c=2222 r=1608 dc=1000 dr=785 vc=4
+15:21:45.295  [LF] d t=1980 mm=407 st=2 vc=4 c=2104 r=235 dc=1000 dr=44 s=0
+15:21:45.406  [LF] d t=2090 mm=432 st=2 vc=4 c=1317 r=148 dc=628 dr=0 s=-12
+15:21:45.485  [TEL] car/telemetry/motion 01010fc0da00c56402ac21010008dd000000
+15:21:45.496  [TEL] car/telemetry/heartbeat 010706c0da00000400
+15:21:45.513  [LF] d t=2200 mm=452 st=2 vc=4 c=1455 r=150 dc=702 dr=0 s=-11
+15:21:45.626  [LF] d t=2310 mm=477 st=2 vc=4 c=1506 r=172 dc=730 dr=10 s=-7
+15:21:45.735  [LF] d t=2420 mm=498 st=2 vc=4 c=1283 r=143 dc=609 dr=0 s=-14
+15:21:45.845  [LF] d t=2530 mm=522 st=2 vc=4 c=1402 r=158 dc=674 dr=2 s=-10
+15:21:45.856  [TEL] car/telemetry/heartbeat 0107063cdc00000800
+15:21:45.930  [IMU] hump pitch=-21 half-deg
+15:21:45.930  [TEL] car/telemetry/hump 0104058cdc008075
+15:21:45.946  [LF] d t=2640 mm=535 st=2 vc=8 c=223 r=165 dc=37 dr=6 s=-11
+15:21:46.065  [LF] d t=2750 mm=536 st=2 vc=8 c=149 r=148 dc=0 dr=0 s=-11
+15:21:46.177  [LF] d t=2860 mm=534 st=2 vc=8 c=163 r=152 dc=5 dr=0 s=-11
+15:21:46.285  [LF] d t=2970 mm=532 st=2 vc=8 c=138 r=175 dc=0 dr=11 s=-11
+15:21:46.396  [LF] d t=3080 mm=530 st=2 vc=8 c=174 r=171 dc=11 dr=9 s=-11
+15:21:46.461  [TEL] car/telemetry/motion 01010fa8de00f0a302903c0100f8df000000
+15:21:46.506  [LF] d t=3190 mm=528 st=2 vc=8 c=149 r=147 dc=0 dr=0 s=-11
+15:21:46.619  [LF] d t=3300 mm=526 st=2 vc=8 c=158 r=170 dc=2 dr=9 s=-11
+15:21:46.727  [LF] d t=3410 mm=524 st=2 vc=8 c=156 r=450 dc=1 dr=160 s=-11
+15:21:46.836  [LF] d t=3520 mm=523 st=2 vc=8 c=216 r=173 dc=33 dr=10 s=-11
+15:21:46.945  [LF] d t=3630 mm=521 st=2 vc=8 c=161 r=155 dc=4 dr=1 s=-11
+15:21:47.056  [LF] d t=3740 mm=520 st=2 vc=8 c=143 r=177 dc=0 dr=12 s=-11
+15:21:47.167  [LF] d t=3850 mm=519 st=2 vc=8 c=178 r=142 dc=13 dr=0 s=-11
+15:21:47.277  [LF] d t=3960 mm=517 st=2 vc=8 c=177 r=172 dc=12 dr=10 s=-11
+15:21:47.387  [LF] d t=4070 mm=516 st=2 vc=8 c=158 r=139 dc=2 dr=0 s=-11
+15:21:47.474  [TEL] car/telemetry/motion 01010f90e200f4cb02c04c0100a4ca000000
+15:21:47.496  [LF] d t=4180 mm=514 st=2 vc=8 c=144 r=173 dc=0 dr=10 s=-11
+15:21:47.606  [LF] d t=4290 mm=514 st=2 vc=8 c=172 r=1548 dc=10 dr=752 s=-11
+15:21:47.712  [LF] d t=4400 mm=513 st=2 vc=8 c=171 r=172 dc=9 dr=10 s=-11
+15:21:47.738  [TEL] car/telemetry/heartbeat 01070694e300000400
+15:21:47.827  [LF] d t=4510 mm=519 st=2 vc=4 c=177 r=168 dc=12 dr=8 s=32
+15:21:47.831  [IMU] hump pitch=18 half-deg
+15:21:47.838  [TEL] car/telemetry/hump 010405eee3000009
+15:21:47.938  [LF] d t=4620 mm=536 st=2 vc=4 c=1393 r=173 dc=669 dr=10 s=-32
+15:21:48.047  [LF] d t=4730 mm=563 st=2 vc=4 c=160 r=138 dc=3 dr=0 s=-32
+15:21:48.156  [LF] d t=4840 mm=585 st=2 vc=4 c=180 r=2019 dc=14 dr=1000 s=32
+15:21:48.267  [LF] d t=4950 mm=612 st=2 vc=4 c=168 r=1062 dc=8 dr=490 s=32
+15:21:48.375  [LF] d t=5060 mm=634 st=2 vc=4 c=161 r=165 dc=4 dr=6 s=32
+15:21:48.455  [LF] JUNCTION -> ON_LINE  c=1972 r=148 dc=981 dr=0 vc=4
+15:21:48.475  [TEL] car/telemetry/motion 01010f78e600de0c03ac6b0100d0e1000000
+15:21:48.486  [LF] d t=5170 mm=660 st=1 vc=4 c=2128 r=139 dc=1000 dr=0 s=14
+15:21:48.598  [LF] d t=5280 mm=682 st=1 vc=4 c=1829 r=147 dc=904 dr=0 s=14
+15:21:48.705  [LF] d t=5390 mm=708 st=1 vc=4 c=1003 r=172 dc=458 dr=10 s=-23
+15:21:48.817  [LF] d t=5500 mm=729 st=1 vc=4 c=1794 r=152 dc=885 dr=0 s=-1
+15:21:48.927  [LF] d t=5610 mm=755 st=1 vc=4 c=1668 r=172 dc=817 dr=10 s=-2
+15:21:49.036  [LF] d t=5720 mm=776 st=1 vc=4 c=1330 r=145 dc=635 dr=0 s=-14
+15:21:49.147  [LF] d t=5830 mm=801 st=1 vc=4 c=2148 r=170 dc=1000 dr=9 s=4
+15:21:49.256  [LF] d t=5940 mm=822 st=1 vc=4 c=1865 r=176 dc=923 dr=12 s=1
+15:21:49.369  [LF] d t=6050 mm=847 st=1 vc=4 c=1528 r=134 dc=742 dr=0 s=-9
+15:21:49.376  [DBG] alive: SDK timer 63030 ms, kernel time 59894 ms, difference 3136 ms
+15:21:49.376  [STACK] init: 228 of 1152 B used, 924 never used
+15:21:49.392  [STACK] dbg_drain: 668 of 1664 B used, 996 never used
+15:21:49.392  [STACK] tel: 432 of 4736 B used, 4304 never used
+15:21:49.392  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:21:49.392  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:21:49.407  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:21:49.407  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:21:49.407  [STACK] imu: 580 of 2176 B used, 1596 never used
+15:21:49.407  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:21:49.407  [STACK] obs_avoid: 336 of 1664 B used, 1328 never used
+15:21:49.407  [STACK] app_test: 700 of 1664 B used, 964 never used
+15:21:49.407  [STACK] stack top check: 0 mismatches
+15:21:49.423  [MBF] nav_in: 64 B buffer, 64 B free
+15:21:49.423  [MBF] motion_cmd: 32 B buffer, 24 B free
+15:21:49.423  [MBF] obstacle: 24 B buffer, 24 B free
+15:21:49.423  [MBF] telemetry: 384 B buffer, 384 B free
+15:21:49.479  [LF] d t=6164 mm=868 st=1 vc=4 c=1124 r=146 dc=524 dr=0 s=-18
+15:21:49.479  [TEL] car/telemetry/motion 01010f60ea00cd600384920100040a010000
+15:21:49.487  [TEL] CONNECTED tx=105 txf=0 off=1 ev=35 bad=0 qd=0 od=0 cmd=0/0
+15:21:49.591  [LF] d t=6274 mm=893 st=1 vc=4 c=756 r=131 dc=325 dr=0 s=-27
+15:21:49.684  [IMU] hump pitch=11 half-deg
+15:21:49.700  [LF] d t=6384 mm=914 st=1 vc=4 c=1921 r=173 dc=954 dr=10 s=2
+15:21:49.704  [TEL] car/telemetry/hump 01040532eb008005
+15:21:49.810  [LF] d t=6494 mm=938 st=1 vc=4 c=2070 r=162 dc=1000 dr=4 s=4
+15:21:49.910  [LF] ON_LINE -> IDLE  c=1795 r=149 dc=886 dr=0 vc=1
+15:21:49.920  [TEL] car/telemetry/heartbeat 01070618ec00000100
+15:21:49.998  [IMU] hump pitch=-21 half-deg
+15:21:50.003  [TEL] car/telemetry/hump 01040568ec008075
+15:21:50.406  [LF] turn: end along the branch at 6593 ms, 958 mm; then 12 mm, still 1, vc=1
+15:21:50.415  [LF] turn: speed 142 mm/s (cruise 200), first steer 4, ON_LINE at 11 ms
+15:21:50.421  [LF] turn: settle 18 mm, band 294/586 after, 212/504 2nd half
+15:21:50.429  [LF] turn: |steer| max 35, flips 15, LINE_LOST 0, LINE_FOUND 1
+15:21:50.433  [LF] turn: jct 1, track_lost 0, ev fail 0, dropped 0
+15:21:50.433  [LF] turn 2: START with CENTRE at 1000 pm, launch LINE_LOST 0
+15:21:50.433  [LF] turn: detected 403 mm at 1958 ms, JUNCTION 526 mm at 2552 ms, delay 123 mm
+15:21:50.433  [LF] turn: command sent 1, VC turned 1, ended 1 at 4433 ms
+15:21:50.449  [LF] turn: wheels L 2015 R -2325 counts = 183 degrees by the encoders
+15:21:50.449  [LF] turn: back ON_LINE 715 ms after the turn, LINE_LOST on the way 0
+15:21:50.449  [LF] turn: branch 302 mm, CENTRE on 88/88 polls past 100 mm
+15:21:50.449  [LF] tr turn: t mm st c r s L R (256 rows, 20 ms)
+15:21:50.449  [LF] tr 22 0 1 2059 150 4 0 0
+15:21:50.449  [LF] tr 44 0 1 2133 161 4 9 11
+15:21:50.465  [LF] tr 66 2 1 2282 156 4 31 39
+15:21:50.465  [LF] tr 88 8 1 2322 161 4 93 100
+15:21:50.465  [LF] tr 110 11 1 2304 161 4 132 137
+15:21:50.465  [LF] tr 132 14 1 2182 173 4 173 176
+15:21:50.465  [LF] tr 154 18 1 1884 158 4 216 216
+15:21:50.465  [LF] tr 176 21 1 1846 163 0 263 260
+15:21:50.484  [TEL] car/telemetry/motion 01010f48ee0000840314a501000c1c010000
+15:21:50.485  [TEL] car/telemetry/heartbeat 01070648ee00000100
+15:21:50.497  [LF] tr 198 26 1 2010 143 2 317 312
+15:21:50.497  [LF] tr 220 30 1 2094 157 4 372 366
+15:21:50.511  [LF] tr 242 35 1 1861 161 1 424 415
+15:21:50.514  [LF] tr 264 39 1 1797 169 0 475 464
+15:21:50.514  [LF] tr 286 43 1 1801 168 0 528 514
+15:21:50.514  [LF] tr 308 52 1 1830 172 0 637 616
+15:21:50.514  [LF] tr 330 57 1 1763 137 0 691 668
+15:21:50.514  [LF] tr 352 61 1 1747 169 -2 745 719
+15:21:50.595  [LF] tr 374 65 1 1740 155 -1 800 771
+15:21:50.595  [LF] tr 396 70 1 1756 150 -1 855 823
+15:21:50.611  [LF] tr 418 74 1 1673 132 -2 909 876
+15:21:50.611  [LF] tr 440 79 1 1626 171 -4 962 928
+15:21:50.611  [LF] tr 462 83 1 1618 148 -5 1015 980
+15:21:50.611  [LF] tr 484 88 1 1565 171 -6 1067 1032
+15:21:50.626  [LF] tr 506 92 1 1521 153 -7 1120 1085
+15:21:50.628  [LF] tr 528 101 1 1398 170 -10 1228 1193
+15:21:50.716  [LF] tr 550 106 1 1281 172 -13 1281 1248
+15:21:50.721  [LF] tr 572 110 1 1304 171 -14 1333 1302
+15:21:50.722  [LF] tr 594 115 1 1417 149 -11 1384 1355
+15:21:50.728  [LF] tr 616 119 1 1353 170 -11 1433 1409
+15:21:50.728  [LF] tr 638 123 1 1497 150 -9 1484 1462
+15:21:50.731  [LF] tr 660 128 1 1498 142 -8 1535 1516
+15:21:50.731  [LF] tr 682 132 1 1485 171 -8 1584 1568
+15:21:50.737  [LF] tr 704 136 1 1570 172 -6 1633 1622
+15:21:50.814  [LF] tr 726 140 1 1539 147 -7 1682 1674
+15:21:50.819  [LF] tr 748 149 1 1540 169 -7 1782 1778
+15:21:50.821  [LF] tr 770 153 1 1592 169 -6 1831 1829
+15:21:50.821  [LF] tr 792 157 1 1557 152 -6 1881 1880
+15:21:50.821  [LF] tr 814 162 1 1585 157 -6 1931 1933
+15:21:50.833  [LF] tr 836 166 1 1681 178 -4 1982 1985
+15:21:50.835  [LF] tr 858 170 1 1723 148 -3 2032 2036
+15:21:50.837  [LF] tr 880 175 1 1722 145 -2 2083 2088
+15:21:50.914  [LF] tr 902 179 1 1758 171 -1 2134 2140
+15:21:50.920  [LF] tr 924 183 1 1771 131 -1 2186 2192
+15:21:50.923  [LF] tr 946 188 1 1771 141 -1 2237 2244
+15:21:50.926  [LF] tr 968 196 1 1768 141 -1 2340 2346
+15:21:50.929  [LF] tr 990 201 1 1708 147 -2 2391 2397
+15:21:50.929  [LF] tr 1012 205 1 1633 132 -4 2441 2449
+15:21:50.929  [LF] tr 1034 209 1 1672 162 -3 2493 2499
+15:21:50.929  [LF] tr 1056 213 1 1602 171 -5 2544 2550
+15:21:51.013  [LF] tr 1078 218 1 1622 148 -5 2594 2601
+15:21:51.019  [LF] tr 1100 222 1 1636 175 -5 2644 2651
+15:21:51.023  [LF] tr 1122 226 1 1693 171 -3 2694 2701
+15:21:51.026  [LF] tr 1144 230 1 1758 160 -1 2743 2752
+15:21:51.028  [LF] tr 1166 235 1 1722 170 -2 2793 2803
+15:21:51.032  [LF] tr 1188 243 1 776 148 -18 2893 2906
+15:21:51.034  [LF] tr 1210 247 1 614 176 -35 2943 2958
+15:21:51.037  [LF] tr 1232 252 1 1597 149 -16 2990 3012
+15:21:51.111  [LF] tr 1254 256 1 1804 147 0 3038 3067
+15:21:51.117  [LF] tr 1276 260 1 1349 169 -4 3087 3122
+15:21:51.120  [LF] tr 1298 265 1 1563 176 -13 3136 3176
+15:21:51.120  [LF] tr 1320 269 1 1832 164 -5 3185 3228
+15:21:51.125  [LF] tr 1342 273 1 2016 144 4 3234 3281
+15:21:51.129  [LF] tr 1364 277 1 1993 154 4 3284 3333
+15:21:51.129  [LF] tr 1386 282 1 1866 154 1 3334 3384
+15:21:51.129  [LF] tr 1408 290 1 1643 137 -3 3438 3485
+15:21:51.211  [LF] tr 1430 294 1 1520 165 -7 3488 3535
+15:21:51.218  [LF] tr 1452 299 1 1568 176 -7 3538 3585
+15:21:51.218  [LF] tr 1474 303 1 1756 138 -4 3587 3636
+15:21:51.218  [LF] tr 1496 307 1 1842 149 0 3637 3686
+15:21:51.229  [LF] tr 1518 311 1 1990 147 2 3687 3737
+15:21:51.232  [LF] tr 1540 316 1 2013 158 4 3738 3789
+15:21:51.235  [LF] tr 1562 320 1 1887 148 1 3787 3838
+15:21:51.235  [LF] tr 1584 324 1 1876 155 1 3836 3886
+15:21:51.313  [LF] tr 1606 328 1 1933 147 2 3886 3935
+15:21:51.317  [LF] tr 1628 336 1 1873 176 2 3986 4032
+15:21:51.317  [LF] tr 1650 340 1 1817 145 0 4037 4080
+15:21:51.317  [LF] tr 1672 345 1 1828 177 0 4087 4130
+15:21:51.317  [LF] tr 1694 349 1 1823 146 0 4137 4179
+15:21:51.330  [LF] tr 1716 353 1 1812 147 0 4186 4226
+15:21:51.332  [LF] tr 1738 357 1 1777 171 -1 4235 4276
+15:21:51.334  [LF] tr 1760 361 1 1786 149 0 4286 4325
+15:21:51.412  [LF] tr 1782 365 1 1729 173 -2 4337 4374
+15:21:51.414  [LF] tr 1804 369 1 1667 147 -3 4387 4422
+15:21:51.414  [LF] tr 1826 374 1 1626 154 -5 4436 4472
+15:21:51.414  [LF] tr 1848 382 1 1595 149 -5 4537 4573
+15:21:51.424  [LF] tr 1870 386 1 1652 161 -4 4587 4622
+15:21:51.424  [LF] tr 1892 390 1 1777 188 -3 4636 4672
+15:21:51.424  [LF] tr 1914 395 1 2048 210 1 4685 4722
+15:21:51.424  [LF] tr 1936 399 1 2176 1230 4 4734 4771
+15:21:51.480  [TEL] car/telemetry/motion 01010f30f20000840314a501000c1c010000
+15:21:51.512  [LF] tr 1958 403 2 2222 1576 0 4783 4821
+15:21:51.512  [LF] tr 1980 407 2 2104 235 0 4834 4869
+15:21:51.512  [LF] tr 2002 411 2 1744 187 -2 4884 4917
+15:21:51.526  [LF] tr 2024 415 2 1494 163 -8 4935 4965
+15:21:51.529  [LF] tr 2046 419 2 1401 153 -10 4985 5013
+15:21:51.529  [LF] tr 2068 428 2 1336 156 -12 5085 5110
+15:21:51.537  [LF] tr 2090 432 2 1317 148 -12 5133 5159
+15:21:51.538  [LF] tr 2112 436 2 1339 173 -14 5181 5208
+15:21:51.625  [LF] tr 2134 440 2 1355 155 -12 5229 5259
+15:21:51.629  [LF] tr 2156 444 2 1384 163 -11 5277 5309
+15:21:51.633  [LF] tr 2178 448 2 1372 166 -11 5323 5358
+15:21:51.636  [LF] tr 2200 452 2 1455 150 -11 5370 5409
+15:21:51.636  [LF] tr 2222 456 2 1531 165 -7 5418 5459
+15:21:51.636  [LF] tr 2244 460 2 1553 161 -6 5465 5510
+15:21:51.636  [LF] tr 2266 465 2 1581 141 -6 5513 5560
+15:21:51.636  [LF] tr 2288 473 2 1571 178 -6 5611 5660
+15:21:51.712  [IMU] hump pitch=11 half-deg
+15:21:51.718  [TEL] car/telemetry/hump 01040520f3008005
+15:21:51.725  [LF] tr 2310 477 2 1506 172 -7 5659 5708
+15:21:51.728  [LF] tr 2332 481 2 1485 178 -8 5709 5757
+15:21:51.728  [LF] tr 2354 485 2 1402 178 -9 5759 5806
+15:21:51.728  [LF] tr 2376 489 2 1273 167 -12 5807 5854
+15:21:51.728  [LF] tr 2398 493 2 1267 172 -15 5855 5904
+15:21:51.728  [LF] tr 2420 498 2 1283 143 -14 5905 5953
+15:21:51.728  [LF] tr 2442 502 2 1293 169 -13 5953 6003
+15:21:51.747  [LF] tr 2464 506 2 1337 174 -12 6001 6053
+15:21:51.825  [LF] tr 2486 510 2 1369 155 -11 6049 6102
+15:21:51.829  [LF] tr 2508 518 2 1385 155 -11 6144 6201
+15:21:51.829  [LF] tr 2530 522 2 1402 158 -10 6191 6250
+15:21:51.835  [LF] tr 2552 526 2 1396 152 -11 6239 6300
+15:21:51.837  [LF] tr 2574 530 2 1348 148 -11 6286 6350
+15:21:51.839  [LF] tr 2596 533 2 1012 155 -11 6329 6373
+15:21:51.842  [LF] tr 2618 534 2 669 157 -11 6367 6364
+15:21:51.842  [LF] tr 2640 535 2 223 165 -11 6404 6352
+15:21:51.925  [LF] tr 2662 536 2 162 173 -11 6438 6342
+15:21:51.925  [LF] tr 2684 537 2 141 134 -11 6466 6323
+15:21:51.930  [LF] tr 2706 537 2 146 171 -11 6493 6294
+15:21:51.936  [LF] tr 2728 536 2 154 169 -11 6545 6240
+15:21:51.939  [LF] tr 2750 536 2 149 148 -11 6570 6207
+15:21:51.939  [LF] tr 2772 536 2 164 166 -11 6594 6174
+15:21:51.939  [LF] tr 2794 535 2 154 141 -11 6619 6141
+15:21:51.939  [LF] tr 2816 535 2 152 173 -11 6642 6107
+15:21:51.939  [IMU] hump pitch=-16 half-deg
+15:21:51.939  [TEL] car/telemetry/hump 010405f2f3000078
+15:21:52.025  [LF] tr 2838 535 2 168 165 -11 6666 6073
+15:21:52.025  [LF] tr 2860 534 2 163 152 -11 6690 6040
+15:21:52.032  [LF] tr 2882 534 2 157 162 -11 6713 6006
+15:21:52.032  [LF] tr 2904 533 2 159 149 -11 6736 5972
+15:21:52.038  [LF] tr 2926 533 2 164 181 -11 6759 5940
+15:21:52.040  [LF] tr 2948 532 2 155 171 -11 6803 5875
+15:21:52.040  [LF] tr 2970 532 2 138 175 -11 6826 5843
+15:21:52.047  [LF] tr 2992 531 2 172 146 -11 6849 5813
+15:21:52.070  [IMU] hump pitch=16 half-deg
+15:21:52.079  [TEL] car/telemetry/hump 0104057ef4000008
+15:21:52.103  [IMU] hump pitch=-30 half-deg
+15:21:52.113  [TEL] car/telemetry/hump 010405a6f4000071
+15:21:52.118  [LF] tr 3014 531 2 141 152 -11 6871 5782
+15:21:52.129  [LF] tr 3036 531 2 164 163 -11 6893 5751
+15:21:52.129  [LF] tr 3058 530 2 173 145 -11 6915 5721
+15:21:52.129  [LF] tr 3080 530 2 174 171 -11 6937 5691
+15:21:52.129  [LF] tr 3102 530 2 154 169 -11 6959 5661
+15:21:52.129  [LF] tr 3124 529 2 163 164 -11 6980 5633
+15:21:52.129  [LF] tr 3146 529 2 153 162 -11 7002 5604
+15:21:52.142  [LF] tr 3168 528 2 148 183 -11 7044 5546
+15:21:52.181  [IMU] lift peak 1s: v=88/100 mm/s acc=96 mg cos=917/866
+15:21:52.224  [LF] tr 3190 528 2 149 147 -11 7063 5519
+15:21:52.226  [LF] tr 3212 528 2 154 157 -11 7084 5490
+15:21:52.226  [LF] tr 3234 527 2 156 170 -11 7102 5464
+15:21:52.226  [LF] tr 3256 527 2 176 150 -11 7121 5436
+15:21:52.226  [LF] tr 3278 526 2 174 137 -11 7139 5408
+15:21:52.241  [LF] tr 3300 526 2 158 170 -11 7158 5381
+15:21:52.241  [LF] tr 3322 526 2 148 165 -11 7177 5352
+15:21:52.244  [LF] tr 3344 525 2 140 173 -11 7195 5324
+15:21:52.325  [LF] tr 3366 525 2 171 153 -11 7215 5296
+15:21:52.329  [LF] tr 3388 524 2 163 172 -11 7254 5241
+15:21:52.331  [LF] tr 3410 524 2 156 450 -11 7273 5213
+15:21:52.336  [LF] tr 3432 524 2 166 1336 -11 7293 5186
+15:21:52.337  [LF] tr 3454 523 2 152 1163 -11 7312 5160
+15:21:52.337  [LF] tr 3476 523 2 146 195 -11 7331 5133
+15:21:52.342  [LF] tr 3498 523 2 163 158 -11 7350 5109
+15:21:52.342  [LF] tr 3520 523 2 216 173 -11 7369 5084
+15:21:52.351  [IMU] hump pitch=-12 half-deg
+15:21:52.357  [TEL] car/telemetry/hump 01040596f500007a
+15:21:52.423  [LF] tr 3542 522 2 1434 149 -11 7389 5058
+15:21:52.428  [LF] tr 3564 522 2 1315 171 -11 7408 5033
+15:21:52.431  [LF] tr 3586 522 2 261 152 -11 7428 5008
+15:21:52.431  [LF] tr 3608 521 2 190 145 -11 7468 4957
+15:21:52.435  [LF] tr 3630 521 2 161 155 -11 7488 4932
+15:21:52.435  [LF] tr 3652 521 2 171 169 -11 7508 4908
+15:21:52.442  [LF] tr 3674 521 2 169 166 -11 7528 4880
+15:21:52.447  [LF] tr 3696 521 2 177 148 -11 7550 4854
+15:21:52.480  [TEL] car/telemetry/motion 01010f18f60000840314a50100201c010000
+15:21:52.519  [LF] tr 3718 520 2 158 150 -11 7572 4828
+15:21:52.519  [LF] tr 3740 520 2 143 177 -11 7593 4800
+15:21:52.527  [LF] tr 3762 520 2 175 152 -11 7615 4773
+15:21:52.527  [LF] tr 3784 520 2 158 138 -11 7637 4746
+15:21:52.527  [LF] tr 3806 519 2 173 166 -11 7658 4717
+15:21:52.527  [LF] tr 3828 519 2 172 150 -11 7704 4661
+15:21:52.539  [LF] tr 3850 519 2 178 142 -11 7727 4633
+15:21:52.539  [LF] tr 3872 518 2 160 139 -11 7749 4604
+15:21:52.634  [LF] tr 3894 518 2 165 179 -11 7771 4574
+15:21:52.638  [LF] tr 3916 518 2 156 176 -11 7793 4546
+15:21:52.641  [LF] tr 3938 518 2 164 154 -11 7816 4518
+15:21:52.643  [LF] tr 3960 517 2 177 172 -11 7837 4489
+15:21:52.648  [LF] tr 3982 517 2 140 169 -11 7860 4460
+15:21:52.648  [LF] tr 4004 517 2 181 164 -11 7881 4434
+15:21:52.651  [LF] tr 4026 516 2 177 152 -11 7903 4405
+15:21:52.656  [LF] tr 4048 516 2 141 140 -11 7947 4349
+15:21:52.720  [LF] tr 4070 516 2 158 139 -11 7969 4321
+15:21:52.735  [LF] tr 4092 515 2 176 156 -11 7991 4294
+15:21:52.735  [LF] tr 4114 515 2 180 149 -11 8013 4266
+15:21:52.735  [LF] tr 4136 515 2 149 148 -11 8035 4238
+15:21:52.735  [LF] tr 4158 515 2 174 174 -11 8057 4210
+15:21:52.735  [LF] tr 4180 514 2 144 173 -11 8080 4181
+15:21:52.735  [LF] tr 4202 514 2 157 154 -11 8103 4154
+15:21:52.735  [LF] tr 4224 514 2 150 181 -11 8125 4128
+15:21:52.833  [LF] tr 4246 514 2 179 190 -11 8147 4101
+15:21:52.838  [LF] tr 4268 514 2 180 1715 -11 8190 4052
+15:21:52.840  [LF] tr 4290 514 2 172 1548 -11 8211 4027
+15:21:52.846  [LF] tr 4312 513 2 169 289 -11 8233 4004
+15:21:52.848  [LF] tr 4334 513 2 184 188 -11 8247 3987
+15:21:52.853  [LF] tr 4356 513 2 161 157 -11 8253 3978
+15:21:52.853  [LF] tr 4378 513 2 185 186 -11 8254 3975
+15:21:52.853  [LF] tr 4400 513 2 171 172 -11 8254 3975
+15:21:52.933  [LF] tr 4422 513 2 179 196 -11 8254 3975
+15:21:52.938  [LF] tr 4444 513 2 171 172 32 8254 3975
+15:21:52.938  [LF] tr 4466 513 2 155 166 32 8254 3975
+15:21:52.945  [LF] tr 4488 516 2 163 184 32 8291 4017
+15:21:52.947  [LF] tr 4510 519 2 177 168 32 8323 4048
+15:21:52.947  [LF] tr 4532 522 2 188 147 32 8359 4077
+15:21:52.953  [LF] tr 4554 525 2 202 138 32 8403 4106
+15:21:52.956  [LF] tr 4576 528 2 324 172 32 8450 4139
+15:21:52.959  [IMU] hump pitch=-17 half-deg
+15:21:52.959  [TEL] car/telemetry/hump 010405e4f7008077
+15:21:53.034  [LF] tr 4598 532 2 1477 166 -32 8501 4175
+15:21:53.036  [LF] tr 4620 536 2 1393 173 -32 8555 4222
+15:21:53.041  [LF] tr 4642 540 2 1129 146 -32 8604 4274
+15:21:53.045  [LF] tr 4664 545 2 808 177 -32 8651 4329
+15:21:53.045  [LF] tr 4686 549 2 254 138 -32 8696 4386
+15:21:53.045  [LF] tr 4708 558 2 186 145 -32 8788 4510
+15:21:53.054  [LF] tr 4730 563 2 160 138 -32 8832 4574
+15:21:53.054  [LF] tr 4752 567 2 173 167 -32 8877 4637
+15:21:53.133  [LF] tr 4774 572 2 177 218 -32 8921 4701
+15:21:53.142  [LF] tr 4796 576 2 173 258 -32 8965 4764
+15:21:53.153  [LF] tr 4818 581 2 144 1908 32 9009 4828
+15:21:53.159  [LF] tr 4840 585 2 180 2019 32 9058 4886
+15:21:53.161  [LF] tr 4862 590 2 163 2039 32 9108 4941
+15:21:53.164  [LF] tr 4884 594 2 155 2122 32 9163 4993
+15:21:53.167  [LF] tr 4906 599 2 175 2037 32 9220 5043
+15:21:53.167  [LF] tr 4928 607 2 156 1700 32 9337 5134
+15:21:53.167  [IMU] lift peak 1s: v=0/100 mm/s acc=59 mg cos=936/866
+15:21:53.198  [IMU] hump pitch=27 half-deg
+15:21:53.217  [TEL] car/telemetry/hump 010405f2f800800d
+15:21:53.230  [LF] tr 4950 612 2 168 1062 32 9396 5177
+15:21:53.230  [LF] tr 4972 616 2 166 233 32 9458 5222
+15:21:53.230  [LF] tr 4994 621 2 150 221 32 9519 5267
+15:21:53.230  [LF] tr 5016 625 2 173 165 32 9580 5310
+15:21:53.230  [LF] tr 5038 629 2 147 149 32 9640 5354
+15:21:53.230  [LF] tr 5060 634 2 161 165 32 9700 5398
+15:21:53.246  [LF] tr 5082 638 2 186 158 32 9761 5441
+15:21:53.246  [LF] tr 5104 642 2 194 172 32 9821 5484
+15:21:53.333  [LF] tr 5126 647 2 389 137 32 9881 5528
+15:21:53.337  [LF] tr 5148 655 1 1972 148 14 10002 5614
+15:21:53.337  [LF] tr 5170 660 1 2128 139 14 10059 5664
+15:21:53.343  [LF] tr 5192 664 1 2073 142 14 10115 5711
+15:21:53.349  [LF] tr 5214 669 1 2041 168 14 10171 5760
+15:21:53.349  [LF] tr 5236 673 1 1995 154 14 10226 5811
+15:21:53.349  [LF] tr 5258 678 1 1940 169 14 10283 5860
+15:21:53.357  [LF] tr 5280 682 1 1829 147 14 10338 5909
+15:21:53.434  [LF] tr 5302 686 1 1663 165 -4 10393 5957
+15:21:53.437  [LF] tr 5324 691 1 1396 148 -11 10447 6006
+15:21:53.439  [LF] tr 5346 695 1 1039 169 -20 10499 6057
+15:21:53.439  [LF] tr 5368 704 1 842 166 -25 10599 6162
+15:21:53.439  [LF] tr 5390 708 1 1003 172 -23 10647 6217
+15:21:53.439  [LF] tr 5412 712 1 1275 162 -17 10693 6274
+15:21:53.453  [LF] tr 5434 716 1 1549 137 -10 10739 6330
+15:21:53.455  [LF] tr 5456 721 1 1695 149 -4 10786 6386
+15:21:53.479  [TEL] car/telemetry/motion 01010f00fa00008403b8a40100c81b010000
+15:21:53.533  [LF] tr 5478 725 1 1768 172 -1 10832 6442
+15:21:53.538  [LF] tr 5500 729 1 1794 152 -1 10879 6497
+15:21:53.538  [LF] tr 5522 734 1 1845 165 0 10928 6550
+15:21:53.541  [LF] tr 5544 738 1 1792 180 0 10979 6602
+15:21:53.544  [LF] tr 5566 742 1 1800 169 0 11028 6654
+15:21:53.549  [LF] tr 5588 751 1 1760 149 -1 11128 6756
+15:21:53.549  [LF] tr 5610 755 1 1668 172 -2 11178 6807
+15:21:53.553  [LF] tr 5632 759 1 1535 168 -5 11228 6858
+15:21:53.743  [LF] tr turn end: ring dropped 0 lines
+15:21:53.747  [TEST] S3-U14 PASS  (t1) cross detected, one JUNCTION 110-135 mm later
+15:21:53.750  [TEST] S3-U14 PASS  (t2) the VC took the command and turned at the junction
+15:21:53.753  [TEST] S3-U14 PASS  (t3) the turn is in its window by the encoders
+15:21:53.755  [TEST] S3-U14 PASS  (t4) line found after the turn, no TRACK_LOST
+15:21:53.757  [TEST] S3-U14 PASS  (t5) followed the branch 300 mm, CENTRE on the line >= 90%
+15:21:53.759  [LF] U-turn: turn run 3 of 3
+15:21:53.762  [LF] >>> turn: CENTRE on the right half of the line, RIGHT on white, 30 cm before the cross
+15:21:53.764  [LF] >>> put the car against the tape, hands off: it starts when CENTRE is steady on black
+15:21:53.766  [LF] place: CENTRE 0 pm, RIGHT 7 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:54.173  [IMU] lift peak 1s: v=7/100 mm/s acc=53 mg cos=962/866
+15:21:54.230  [LF] place: CENTRE 24 pm, RIGHT 0 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:54.470  [IMU] hump pitch=11 half-deg
+15:21:54.482  [TEL] car/telemetry/hump 010405defd008005
+15:21:54.486  [TEL] car/telemetry/motion 01010fe8fd0000840378a40100c81b010000
+15:21:54.746  [LF] place: CENTRE 62 pm, RIGHT 0 pm: NOT READY: CENTRE on black, RIGHT on white
+15:21:55.240  [LF] place: CENTRE 1000 pm, RIGHT 1 pm: OK, keep still
+15:21:55.480  [TEL] car/telemetry/motion 01010fd00101008403bca40100c81b010000
+15:21:55.487  [TEL] car/telemetry/heartbeat 010706d00101000100
+15:21:55.738  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:56.241  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:56.474  [TEL] car/telemetry/motion 01010fb80501008403bca40100c81b010000
+15:21:56.748  [LF] place: CENTRE 1000 pm, RIGHT 6 pm: OK, keep still
+15:21:57.242  [LF] place: CENTRE 1000 pm, RIGHT 1 pm: OK, keep still
+15:21:57.474  [TEL] car/telemetry/motion 01010fa00901008403bca40100c81b010000
+15:21:57.750  [LF] >>> HANDS OFF: the car DRIVES in 3 s (catch and lift it to stop)
+15:21:57.761  [LF] place: CENTRE 1000 pm, RIGHT 11 pm: OK, keep still
+15:21:58.244  [LF] place: CENTRE 1000 pm, RIGHT 10 pm: OK, keep still
+15:21:58.476  [TEL] car/telemetry/motion 01010f880d01008403bca40100c81b010000
+15:21:58.749  [LF] place: CENTRE 1000 pm, RIGHT 9 pm: OK, keep still
+15:21:59.255  [LF] place: CENTRE 1000 pm, RIGHT 0 pm: OK, keep still
+15:21:59.376  [DBG] alive: SDK timer 73041 ms, kernel time 69905 ms, difference 3136 ms
+15:21:59.477  [TEL] car/telemetry/motion 01010f701101008403bca40100c81b010000
+15:21:59.755  [LF] place: CENTRE 1000 pm, RIGHT 3 pm: OK, keep still
+15:22:00.257  [LF] place: CENTRE 1000 pm, RIGHT 10 pm: OK, keep still
+15:22:00.477  [TEL] car/telemetry/motion 01010f581501008403bca40100c81b010000
+15:22:00.481  [TEL] car/telemetry/heartbeat 010706581501000100
+15:22:00.753  [LF] place: CENTRE 1000 pm, RIGHT 12 pm: OK, keep still
+15:22:00.757  [LF] IDLE -> ON_LINE  c=2053 r=164 dc=1000 dr=5 vc=4
+15:22:00.764  [TEL] car/telemetry/heartbeat 010706701601000400
+15:22:00.840  [IMU] hump pitch=24 half-deg
+15:22:00.843  [TEL] car/telemetry/hump 010405c01601000c
+15:22:00.865  [LF] d t=110 mm=11 st=1 vc=4 c=2140 r=163 dc=1000 dr=5 s=4
+15:22:00.974  [LF] d t=220 mm=31 st=1 vc=4 c=395 r=161 dc=130 dr=4 s=-34
+15:22:00.979  [IMU] hump pitch=14 half-deg
+15:22:00.982  [TEL] car/telemetry/hump 0104054c17010007
+15:22:01.074  [LF] ON_LINE -> LINE_LOST  c=169 r=150 dc=8 dr=0 vc=4
+15:22:01.083  [LF] d t=330 mm=58 st=3 vc=4 c=164 r=157 dc=5 dr=2 s=-50
+15:22:01.184  [IMU] lift peak 1s: v=12/100 mm/s acc=22 mg cos=965/866
+15:22:01.192  [LF] LINE_LOST -> REACQUIRING  c=142 r=874 dc=0 dr=389 vc=4
+15:22:01.197  [LF] d t=440 mm=80 st=4 vc=4 c=142 r=874 dc=0 dr=389 s=64
+15:22:01.226  [IMU] hump pitch=-19 half-deg
+15:22:01.232  [TEL] car/telemetry/hump 0104054618018076
+15:22:01.294  [IMU] hump pitch=15 half-deg
+15:22:01.303  [TEL] car/telemetry/hump 0104058c18018007
+15:22:01.306  [LF] d t=551 mm=99 st=4 vc=4 c=163 r=1942 dc=5 dr=965 s=64
+15:22:01.390  [IMU] hump pitch=10 half-deg
+15:22:01.397  [TEL] car/telemetry/hump 010405f018010005
+15:22:01.414  [LF] d t=661 mm=121 st=4 vc=4 c=176 r=165 dc=12 dr=6 s=64
+15:22:01.459  [LF] REACQUIRING -> ON_LINE  c=2029 r=155 dc=1000 dr=1 vc=4
+15:22:01.483  [TEL] car/telemetry/motion 01010f401901e2b803e0bf01007c34010000
+15:22:01.525  [LF] d t=771 mm=148 st=1 vc=4 c=1776 r=130 dc=875 dr=0 s=-1
+15:22:01.636  [LF] d t=881 mm=170 st=1 vc=4 c=1500 r=136 dc=726 dr=0 s=-8
+15:22:01.746  [LF] d t=991 mm=196 st=1 vc=4 c=1766 r=170 dc=870 dr=9 s=0
+15:22:01.855  [LF] d t=1101 mm=218 st=1 vc=4 c=1743 r=163 dc=858 dr=5 s=-2
+15:22:01.965  [LF] d t=1211 mm=243 st=1 vc=4 c=885 r=145 dc=395 dr=0 s=-6
+15:22:02.077  [LF] d t=1321 mm=265 st=1 vc=4 c=1677 r=173 dc=822 dr=10 s=-3
+15:22:02.186  [LF] d t=1431 mm=290 st=1 vc=4 c=1673 r=145 dc=820 dr=0 s=0
+15:22:02.295  [LF] d t=1541 mm=311 st=1 vc=4 c=1954 r=149 dc=971 dr=0 s=3
+15:22:02.406  [LF] d t=1651 mm=336 st=1 vc=4 c=1868 r=152 dc=925 dr=0 s=2
+15:22:02.484  [TEL] car/telemetry/motion 01010f281d01d20c04a0e601007c5d010000
+15:22:02.514  [LF] d t=1761 mm=357 st=1 vc=4 c=1739 r=160 dc=855 dr=3 s=-2
+15:22:02.625  [LF] d t=1871 mm=383 st=1 vc=4 c=1512 r=153 dc=733 dr=0 s=-6
+15:22:02.725  [LF] ON_LINE -> JUNCTION  c=2228 r=1797 dc=1000 dr=887 vc=4
+15:22:02.731  [LF] d t=1981 mm=403 st=2 vc=4 c=2218 r=1770 dc=1000 dr=872 s=0
+15:22:02.846  [LF] d t=2091 mm=428 st=2 vc=4 c=1898 r=147 dc=941 dr=0 s=2
+15:22:02.956  [LF] d t=2201 mm=449 st=2 vc=4 c=1741 r=163 dc=856 dr=5 s=-2
+15:22:03.065  [LF] d t=2311 mm=473 st=2 vc=4 c=500 r=217 dc=187 dr=34 s=-41
+15:22:03.175  [LF] d t=2421 mm=494 st=2 vc=4 c=1598 r=249 dc=779 dr=51 s=-5
+15:22:03.179  [IMU] hump pitch=14 half-deg
+15:22:03.179  [TEL] car/telemetry/hump 010405e41f010007
+15:22:03.286  [LF] d t=2531 mm=518 st=2 vc=4 c=2349 r=1473 dc=1000 dr=712 s=0
+15:22:03.319  [TEL] car/telemetry/heartbeat 010706702001000800
+15:22:03.395  [LF] d t=2641 mm=533 st=2 vc=8 c=2593 r=2146 dc=1000 dr=1000 s=0
+15:22:03.474  [TEL] car/telemetry/motion 01010f102101db5f04f00b02007c7a010000
+15:22:03.502  [LF] d t=2751 mm=531 st=2 vc=8 c=1282 r=853 dc=609 dr=377 s=0
+15:22:03.616  [LF] d t=2861 mm=527 st=2 vc=8 c=207 r=210 dc=29 dr=30 s=0
+15:22:03.727  [LF] d t=2971 mm=523 st=2 vc=8 c=150 r=161 dc=0 dr=4 s=0
+15:22:03.834  [LF] d t=3081 mm=521 st=2 vc=8 c=176 r=789 dc=12 dr=343 s=0
+15:22:03.947  [LF] d t=3191 mm=518 st=2 vc=8 c=178 r=147 dc=13 dr=0 s=0
+15:22:04.055  [LF] d t=3301 mm=516 st=2 vc=8 c=149 r=172 dc=0 dr=10 s=0
+15:22:04.166  [LF] d t=3411 mm=515 st=2 vc=8 c=149 r=138 dc=0 dr=0 s=0
+15:22:04.177  [IMU] lift peak 1s: v=0/100 mm/s acc=8 mg cos=861/866
+15:22:04.277  [LF] d t=3521 mm=515 st=2 vc=8 c=150 r=145 dc=0 dr=0 s=0
+15:22:04.386  [LF] d t=3631 mm=515 st=2 vc=8 c=149 r=176 dc=0 dr=12 s=0
+15:22:04.474  [TEL] car/telemetry/motion 01010ff82401f09704b0210200205e010000
+15:22:04.499  [LF] d t=3741 mm=514 st=2 vc=8 c=172 r=153 dc=10 dr=0 s=0
+15:22:04.607  [LF] d t=3851 mm=511 st=2 vc=8 c=139 r=155 dc=0 dr=1 s=0
+15:22:04.717  [LF] d t=3961 mm=510 st=2 vc=8 c=145 r=147 dc=0 dr=0 s=0
+15:22:04.827  [LF] d t=4071 mm=511 st=2 vc=8 c=148 r=165 dc=0 dr=6 s=0
+15:22:04.882  [TEL] car/telemetry/heartbeat 010706882601000400
+15:22:04.933  [LF] d t=4181 mm=512 st=2 vc=4 c=166 r=142 dc=7 dr=0 s=32
+15:22:04.997  [IMU] hump pitch=19 half-deg
+15:22:05.024  [TEL] car/telemetry/hump 0104050a27018009
+15:22:05.046  [LF] d t=4291 mm=534 st=2 vc=4 c=162 r=155 dc=4 dr=1 s=32
+15:22:05.158  [LF] d t=4401 mm=556 st=2 vc=4 c=173 r=140 dc=10 dr=0 s=32
+15:22:05.267  [LF] d t=4511 mm=586 st=2 vc=4 c=146 r=177 dc=0 dr=12 s=32
+15:22:05.376  [LF] d t=4621 mm=610 st=2 vc=4 c=163 r=163 dc=5 dr=5 s=32
+15:22:05.476  [TEL] car/telemetry/motion 01010fe02801e7d0048c420200906b010000
+15:22:05.480  [TEL] car/telemetry/heartbeat 010706e02801000400
+15:22:05.487  [LF] d t=4731 mm=638 st=2 vc=4 c=177 r=174 dc=12 dr=11 s=32
+15:22:05.597  [LF] d t=4841 mm=660 st=2 vc=4 c=178 r=173 dc=13 dr=10 s=32
+15:22:05.707  [LF] d t=4951 mm=687 st=2 vc=4 c=152 r=154 dc=0 dr=0 s=32
+15:22:05.817  [LF] d t=5061 mm=708 st=2 vc=4 c=167 r=152 dc=7 dr=0 s=32
+15:22:05.872  [LF] JUNCTION -> LINE_LOST  c=144 r=169 dc=0 dr=8 vc=4
+15:22:05.927  [LF] d t=5171 mm=734 st=3 vc=4 c=152 r=153 dc=0 dr=0 s=32
+15:22:05.993  [LF] LINE_LOST -> REACQUIRING  c=166 r=161 dc=7 dr=4 vc=4
+15:22:06.037  [LF] d t=5281 mm=751 st=4 vc=4 c=164 r=161 dc=5 dr=4 s=64
+15:22:06.039  [IMU] hump pitch=-23 half-deg
+15:22:06.039  [TEL] car/telemetry/hump 010405102b018074
+15:22:06.103  [IMU] hump pitch=16 half-deg
+15:22:06.112  [TEL] car/telemetry/hump 010405562b010008
+15:22:06.136  [LF] d t=5391 mm=773 st=4 vc=4 c=149 r=172 dc=0 dr=10 s=64
+15:22:06.257  [LF] d t=5501 mm=795 st=4 vc=4 c=172 r=213 dc=10 dr=32 s=64
+15:22:06.311  [LF] REACQUIRING -> ON_LINE  c=1839 r=166 dc=909 dr=7 vc=4
+15:22:06.366  [LF] d t=5611 mm=821 st=1 vc=4 c=243 r=156 dc=48 dr=1 s=-33
+15:22:06.454  [LF] ON_LINE -> LINE_LOST  c=164 r=145 dc=5 dr=0 vc=4
+15:22:06.472  [LF] d t=5721 mm=843 st=3 vc=4 c=155 r=164 dc=1 dr=5 s=-53
+15:22:06.480  [TEL] car/telemetry/motion 01010fc82c01d62005146f0200f08c010000
+15:22:06.575  [LF] LINE_LOST -> REACQUIRING  c=237 r=143 dc=45 dr=0 vc=4
+15:22:06.587  [LF] d t=5831 mm=868 st=4 vc=4 c=230 r=165 dc=41 dr=6 s=-64
+15:22:06.642  [IMU] hump pitch=-17 half-deg
+15:22:06.642  [TEL] car/telemetry/hump 010405682d018077
+15:22:06.648  [LF] REACQUIRING -> ON_LINE  c=1877 r=187 dc=930 dr=18 vc=4
+15:22:06.696  [LF] d t=5941 mm=884 st=1 vc=4 c=2309 r=174 dc=1000 dr=11 s=4
+15:22:06.718  [IMU] hump pitch=16 half-deg
+15:22:06.718  [TEL] car/telemetry/hump 010405b82d010008
+15:22:06.807  [LF] d t=6051 mm=907 st=1 vc=4 c=1854 r=150 dc=917 dr=0 s=3
+15:22:06.916  [LF] d t=6161 mm=928 st=1 vc=4 c=293 r=145 dc=75 dr=0 s=-34
+15:22:07.016  [LF] ON_LINE -> LINE_LOST  c=228 r=171 dc=40 dr=9 vc=4
+15:22:07.027  [LF] d t=6271 mm=954 st=3 vc=4 c=214 r=173 dc=32 dr=10 s=-50
+15:22:07.113  [LF] LINE_LOST -> ON_LINE  c=1683 r=159 dc=825 dr=3 vc=4
+15:22:07.129  [LF] d t=6381 mm=975 st=1 vc=4 c=1651 r=165 dc=808 dr=6 s=-4
+15:22:07.180  [IMU] hump pitch=-20 half-deg
+15:22:07.184  [TEL] car/telemetry/hump 010405842f010076
+15:22:07.246  [LF] d t=6491 mm=995 st=1 vc=4 c=838 r=182 dc=369 dr=15 s=-20
+15:22:07.288  [IMU] hump pitch=14 half-deg
+15:22:07.288  [TEL] car/telemetry/hump 010405f22f010007
+15:22:07.355  [LF] d t=6601 mm=1015 st=1 vc=4 c=986 r=229 dc=449 dr=41 s=-21
+15:22:07.467  [LF] d t=6711 mm=1041 st=1 vc=4 c=1436 r=277 dc=692 dr=66 s=-11
+15:22:07.478  [TEL] car/telemetry/motion 01010fb03001d66c052c90020058b5010000
+15:22:07.576  [LF] d t=6821 mm=1062 st=1 vc=4 c=2068 r=1260 dc=1000 dr=597 s=-1
+15:22:07.609  [LF] ON_LINE -> JUNCTION  c=2320 r=1652 dc=1000 dr=808 vc=4
+15:22:07.686  [LF] d t=6931 mm=1087 st=2 vc=4 c=2658 r=2261 dc=1000 dr=1000 s=0
+15:22:07.797  [LF] d t=7041 mm=1107 st=2 vc=4 c=3136 r=2820 dc=1000 dr=1000 s=0
+15:22:07.829  [SAFETY] BRAKE: lifted or overturned
+15:22:07.835  [IMU] LIFTED (tilted): cos_tilt=843/1000 up_accel=-94 mg v=-131 mm/s
+15:22:07.839  [LF] JUNCTION -> IDLE  c=3232 r=2914 dc=1000 dr=1000 vc=3
+15:22:07.841  [TEL] car/telemetry/fault 0106050e32010400
+15:22:07.845  [TEL] car/telemetry/heartbeat 010706183201004300
+15:22:08.182  [IMU] lift peak 1s: v=0/100 mm/s acc=4 mg cos=812/866 [disarmed]
+15:22:08.336  [LF] turn: end along the branch at 7074 ms, 1115 mm; then 6 mm, still 0, vc=3
+15:22:08.340  [LF] turn: speed 155 mm/s (cruise 200), first steer 4, ON_LINE at 11 ms
+15:22:08.347  [LF] turn: settle 14 mm, band 188/631 after, 148/547 2nd half
+15:22:08.360  [LF] turn: |steer| max 64, flips 12, LINE_LOST 1, LINE_FOUND 1
+15:22:08.363  [LF] turn: jct 1, track_lost 0, ev fail 0, dropped 0
+15:22:08.367  [LF] turn 3: START with CENTRE at 1000 pm, launch LINE_LOST 1
+15:22:08.369  [LF] turn: detected 403 mm at 1970 ms, JUNCTION 526 mm at 2564 ms, delay 123 mm
+15:22:08.371  [LF] turn: command sent 1, VC turned 1, ended 1 at 4126 ms
+15:22:08.373  [LF] turn: wheels L 2055 R -2412 counts = 188 degrees by the encoders
+15:22:08.377  [LF] turn: back ON_LINE 1441 ms after the turn, LINE_LOST on the way 1
+15:22:08.377  [LF] turn: branch 302 mm, CENTRE on 50/91 polls past 100 mm
+15:22:08.381  [LF] tr turn: t mm st c r s L R (256 rows, 20 ms)
+15:22:08.382  [LF] tr 22 0 1 2085 174 4 0 0
+15:22:08.382  [LF] tr 44 2 1 2166 177 4 37 30
+15:22:08.382  [LF] tr 66 5 1 2227 153 4 64 59
+15:22:08.382  [LF] tr 88 8 1 2241 163 4 96 96
+15:22:08.391  [LF] tr 110 11 1 2140 163 4 133 134
+15:22:08.391  [LF] tr 132 14 1 2006 176 4 172 176
+15:22:08.391  [LF] tr 154 18 1 1660 134 0 217 222
+15:22:08.391  [LF] tr 176 22 1 1411 162 -6 267 274
+15:22:08.437  [LF] tr 198 27 1 1149 169 -12 320 329
+15:22:08.441  [LF] tr 220 31 1 395 161 -34 371 384
+15:22:08.441  [LF] tr 242 36 1 243 155 -38 420 439
+15:22:08.441  [LF] tr 264 45 1 178 164 -42 516 558
+15:22:08.451  [LF] tr 286 49 1 171 160 -46 562 620
+15:22:08.453  [LF] tr 308 54 1 158 161 -50 606 683
+15:22:08.456  [LF] tr 330 58 3 164 157 -50 647 746
+15:22:08.457  [LF] tr 352 63 3 161 248 -50 690 811
+15:22:08.469  [TEL] car/telemetry/motion 01010f98340100880554a00200a0c1010000
+15:22:08.537  [LF] tr 374 67 3 148 1843 -50 732 876
+15:22:08.541  [LF] tr 396 71 3 165 1925 -50 773 942
+15:22:08.541  [LF] tr 418 76 3 176 1976 -50 814 1009
+15:22:08.549  [LF] tr 440 80 4 142 874 64 849 1064
+15:22:08.549  [LF] tr 462 82 4 165 223 64 872 1101
+15:22:08.555  [LF] tr 484 89 4 168 228 64 958 1172
+15:22:08.555  [LF] tr 507 92 4 154 1320 64 1005 1208
+15:22:08.555  [LF] tr 529 96 4 144 2076 64 1060 1235
+15:22:08.583  [IMU] hump pitch=-19 half-deg
+15:22:08.587  [TEL] car/telemetry/hump 0104050635018076
+15:22:08.639  [LF] tr 551 99 4 163 1942 64 1118 1262
+15:22:08.641  [LF] tr 573 103 4 176 1862 64 1180 1291
+15:22:08.644  [LF] tr 595 108 4 140 1734 64 1250 1325
+15:22:08.646  [LF] tr 617 112 4 157 227 64 1321 1361
+15:22:08.647  [LF] tr 639 116 4 161 160 64 1390 1394
+15:22:08.649  [LF] tr 661 121 4 176 165 64 1460 1427
+15:22:08.652  [LF] tr 683 125 4 298 168 64 1532 1460
+15:22:08.653  [LF] tr 705 134 1 2029 155 4 1675 1534
+15:22:08.736  [LF] tr 727 139 1 1945 149 3 1737 1581
+15:22:08.740  [LF] tr 749 143 1 1872 171 2 1793 1629
+15:22:08.744  [LF] tr 771 148 1 1776 130 -1 1851 1679
+15:22:08.747  [LF] tr 793 152 1 1798 140 0 1908 1731
+15:22:08.748  [LF] tr 815 157 1 1610 169 -2 1962 1786
+15:22:08.750  [LF] tr 837 161 1 1528 172 -6 2013 1839
+15:22:08.753  [LF] tr 859 166 1 1458 150 -9 2064 1892
+15:22:08.756  [LF] tr 881 170 1 1500 136 -8 2114 1947
+15:22:08.834  [LF] tr 903 174 1 1578 150 -6 2165 2002
+15:22:08.834  [LF] tr 925 183 1 1633 147 -5 2262 2112
+15:22:08.842  [LF] tr 947 188 1 1643 170 -4 2311 2167
+15:22:08.842  [LF] tr 969 192 1 1785 147 -2 2361 2222
+15:22:08.842  [LF] tr 991 196 1 1766 170 0 2410 2276
+15:22:08.850  [LF] tr 1013 201 1 1752 153 0 2459 2330
+15:22:08.851  [LF] tr 1035 205 1 1733 152 -2 2510 2383
+15:22:08.851  [LF] tr 1057 209 1 1734 168 -2 2559 2436
+15:22:08.929  [LF] tr 1079 214 1 1755 170 -1 2609 2490
+15:22:08.937  [LF] tr 1101 218 1 1743 163 -2 2659 2541
+15:22:08.942  [LF] tr 1123 222 1 1748 166 -1 2707 2593
+15:22:08.945  [LF] tr 1145 231 1 1756 154 -1 2804 2696
+15:22:08.945  [LF] tr 1167 235 1 1791 166 0 2853 2748
+15:22:08.945  [LF] tr 1189 239 1 1765 156 0 2902 2800
+15:22:08.945  [LF] tr 1211 243 1 885 145 -6 2951 2853
+15:22:08.945  [LF] tr 1233 248 1 365 150 -34 3000 2906
+15:22:09.034  [LF] tr 1255 252 1 1492 149 -38 3046 2960
+15:22:09.038  [LF] tr 1277 256 1 1870 147 -3 3091 3018
+15:22:09.042  [LF] tr 1299 260 1 1458 167 -9 3137 3074
+15:22:09.045  [LF] tr 1321 265 1 1677 173 -3 3183 3130
+15:22:09.045  [LF] tr 1343 269 1 1841 176 0 3230 3184
+15:22:09.049  [LF] tr 1365 277 1 2033 149 4 3326 3289
+15:22:09.049  [LF] tr 1387 282 1 2036 161 4 3375 3341
+15:22:09.057  [LF] tr 1409 286 1 1915 172 4 3424 3392
+15:22:09.057  [IMU] lift detection re-armed (car level and still)
+15:22:09.142  [LF] tr 1431 290 1 1673 145 0 3474 3442
+15:22:09.149  [LF] tr 1453 294 1 1497 148 -5 3524 3493
+15:22:09.149  [LF] tr 1475 298 1 1531 172 -8 3573 3544
+15:22:09.155  [LF] tr 1497 303 1 1635 170 -6 3622 3596
+15:22:09.157  [LF] tr 1519 307 1 1822 169 0 3671 3649
+15:22:09.162  [LF] tr 1541 311 1 1954 149 3 3719 3700
+15:22:09.162  [LF] tr 1563 315 1 1960 171 3 3767 3753
+15:22:09.166  [LF] tr 1585 324 1 1937 165 2 3866 3854
+15:22:09.178  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=849/866
+15:22:09.242  [LF] tr 1607 328 1 1902 141 2 3916 3904
+15:22:09.248  [LF] tr 1629 332 1 1888 173 1 3966 3955
+15:22:09.248  [LF] tr 1651 336 1 1868 152 2 4017 4005
+15:22:09.254  [LF] tr 1673 341 1 1811 150 0 4067 4054
+15:22:09.254  [LF] tr 1695 345 1 1718 152 0 4116 4104
+15:22:09.254  [LF] tr 1717 349 1 1764 155 -2 4167 4154
+15:22:09.263  [LF] tr 1739 353 1 1785 145 0 4217 4205
+15:22:09.266  [LF] tr 1761 357 1 1739 160 -2 4266 4254
+15:22:09.344  [LF] tr 1783 361 1 1717 157 -2 4315 4304
+15:22:09.349  [LF] tr 1805 370 1 1745 178 -2 4414 4406
+15:22:09.353  [LF] tr 1827 374 1 1645 176 -3 4463 4454
+15:22:09.356  [LF] tr 1849 378 1 1584 165 -5 4513 4505
+15:22:09.356  [LF] tr 1871 383 1 1512 153 -6 4563 4556
+15:22:09.360  [LF] tr 1893 387 1 1499 156 -8 4613 4606
+15:22:09.363  [LF] tr 1915 391 1 1556 177 -8 4663 4657
+15:22:09.367  [LF] tr 1937 395 1 1917 226 -5 4712 4708
+15:22:09.376  [DBG] alive: SDK timer 83052 ms, kernel time 79916 ms, difference 3136 ms
+15:22:09.443  [LF] tr 1959 399 1 2240 1590 4 4761 4758
+15:22:09.447  [LF] tr 1981 403 2 2218 1770 0 4809 4808
+15:22:09.449  [LF] tr 2003 408 2 2210 265 4 4860 4855
+15:22:09.453  [LF] tr 2025 416 2 1988 170 4 4961 4951
+15:22:09.457  [LF] tr 2047 420 2 1888 153 2 5013 4997
+15:22:09.461  [LF] tr 2069 424 2 1916 152 2 5064 5043
+15:22:09.463  [LF] tr 2091 428 2 1898 147 2 5117 5090
+15:22:09.467  [LF] tr 2113 432 2 1922 163 2 5168 5136
+15:22:09.475  [TEL] car/telemetry/motion 01010f80380100880584a00200a8c1010000
+15:22:09.543  [LF] tr 2135 437 2 1924 171 2 5221 5183
+15:22:09.543  [LF] tr 2157 441 2 1902 178 2 5273 5229
+15:22:09.551  [LF] tr 2179 445 2 1829 177 0 5327 5275
+15:22:09.551  [LF] tr 2201 449 2 1741 163 -2 5381 5321
+15:22:09.551  [LF] tr 2223 453 2 1473 176 -9 5434 5367
+15:22:09.551  [LF] tr 2245 461 2 938 157 -20 5538 5456
+15:22:09.551  [LF] tr 2267 465 2 442 197 -33 5589 5503
+15:22:09.569  [LF] tr 2289 469 2 362 179 -37 5637 5552
+15:22:09.643  [LF] tr 2311 473 2 500 217 -41 5683 5602
+15:22:09.646  [LF] tr 2333 478 2 661 229 -45 5728 5655
+15:22:09.646  [LF] tr 2355 482 2 1028 228 -25 5771 5709
+15:22:09.646  [LF] tr 2377 486 2 1285 240 -18 5815 5762
+15:22:09.646  [LF] tr 2399 490 2 1473 262 -9 5861 5815
+15:22:09.646  [LF] tr 2421 494 2 1598 249 -5 5906 5866
+15:22:09.646  [LF] tr 2443 498 2 1723 296 -2 5954 5914
+15:22:09.662  [LF] tr 2465 506 2 1896 477 0 6054 6007
+15:22:09.743  [LF] tr 2487 510 2 2012 836 0 6105 6051
+15:22:09.744  [LF] tr 2509 514 2 2210 1209 0 6158 6093
+15:22:09.748  [LF] tr 2531 518 2 2349 1473 0 6211 6135
+15:22:09.748  [LF] tr 2553 522 2 2476 1728 0 6264 6176
+15:22:09.748  [LF] tr 2575 526 2 2609 2000 0 6317 6216
+15:22:09.748  [LF] tr 2597 530 2 2742 2193 0 6371 6255
+15:22:09.759  [LF] tr 2619 532 2 2731 2274 0 6419 6269
+15:22:09.759  [LF] tr 2641 533 2 2593 2146 0 6459 6251
+15:22:09.843  [LF] tr 2663 534 2 2401 1988 0 6491 6225
+15:22:09.847  [LF] tr 2685 533 2 2170 1769 0 6550 6151
+15:22:09.847  [LF] tr 2707 532 2 1965 1544 0 6578 6106
+15:22:09.851  [LF] tr 2729 532 2 1629 1212 0 6605 6061
+15:22:09.857  [LF] tr 2751 531 2 1282 853 0 6631 6016
+15:22:09.858  [LF] tr 2773 530 2 850 509 0 6658 5970
+15:22:09.858  [LF] tr 2795 530 2 308 298 0 6685 5940
+15:22:09.858  [LF] tr 2817 529 2 247 244 0 6710 5893
+15:22:09.936  [LF] tr 2839 528 2 209 237 0 6736 5845
+15:22:09.943  [LF] tr 2861 527 2 207 210 0 6763 5798
+15:22:09.947  [LF] tr 2883 526 2 198 188 0 6791 5750
+15:22:09.950  [LF] tr 2905 525 2 168 194 0 6850 5656
+15:22:09.950  [LF] tr 2927 524 2 185 185 0 6883 5608
+15:22:09.955  [LF] tr 2949 524 2 170 177 0 6916 5561
+15:22:09.957  [LF] tr 2971 523 2 150 161 0 6949 5515
+15:22:09.957  [LF] tr 2993 523 2 177 142 0 6984 5471
+15:22:10.002  [IMU] hump pitch=17 half-deg
+15:22:10.014  [TEL] car/telemetry/hump 010405923a018008
+15:22:10.048  [LF] tr 3015 522 2 152 176 0 7019 5429
+15:22:10.058  [LF] tr 3037 522 2 139 178 0 7051 5389
+15:22:10.058  [LF] tr 3059 522 2 154 209 0 7080 5348
+15:22:10.066  [LF] tr 3081 521 2 176 789 0 7110 5308
+15:22:10.069  [LF] tr 3103 521 2 177 975 0 7141 5267
+15:22:10.069  [LF] tr 3125 520 2 177 160 0 7200 5183
+15:22:10.074  [LF] tr 3147 519 2 578 174 0 7230 5142
+15:22:10.078  [LF] tr 3169 519 2 1098 172 0 7260 5101
+15:22:10.153  [LF] tr 3191 518 2 178 147 0 7290 5060
+15:22:10.156  [LF] tr 3213 518 2 160 172 0 7320 5020
+15:22:10.160  [LF] tr 3235 517 2 172 166 0 7350 4980
+15:22:10.163  [LF] tr 3257 517 2 161 179 0 7380 4939
+15:22:10.166  [LF] tr 3279 516 2 158 142 0 7410 4899
+15:22:10.168  [LF] tr 3301 516 2 149 172 0 7440 4861
+15:22:10.168  [LF] tr 3323 516 2 155 142 0 7469 4826
+15:22:10.175  [LF] tr 3345 516 2 164 154 0 7526 4762
+15:22:10.175  [IMU] lift peak 1s: v=0/100 mm/s acc=6 mg cos=931/866
+15:22:10.253  [LF] tr 3367 515 2 176 146 0 7554 4731
+15:22:10.257  [LF] tr 3389 515 2 164 154 0 7581 4702
+15:22:10.257  [LF] tr 3411 515 2 149 138 0 7607 4674
+15:22:10.257  [LF] tr 3433 515 2 181 174 0 7633 4646
+15:22:10.257  [LF] tr 3455 515 2 158 164 0 7658 4619
+15:22:10.269  [LF] tr 3477 515 2 179 174 0 7684 4593
+15:22:10.269  [LF] tr 3499 515 2 155 149 0 7710 4568
+15:22:10.274  [LF] tr 3521 515 2 150 145 0 7735 4545
+15:22:10.353  [LF] tr 3543 515 2 156 153 0 7758 4522
+15:22:10.355  [LF] tr 3565 515 2 141 165 0 7808 4475
+15:22:10.355  [LF] tr 3587 515 2 172 143 0 7833 4450
+15:22:10.360  [LF] tr 3609 515 2 156 160 0 7858 4424
+15:22:10.364  [LF] tr 3631 515 2 149 176 0 7882 4396
+15:22:10.366  [LF] tr 3653 515 2 178 171 0 7906 4368
+15:22:10.368  [LF] tr 3675 515 2 145 152 0 7928 4339
+15:22:10.368  [LF] tr 3697 514 2 165 155 0 7951 4309
+15:22:10.432  [SAFETY] BRAKE: lifted or overturned
+15:22:10.445  [IMU] LIFTED (tilted): cos_tilt=861/1000 up_accel=11 mg v=-34 mm/s
+15:22:10.445  [TEL] car/telemetry/fault 010605403c010400
+15:22:10.445  [LF] tr 3719 514 2 158 163 0 7974 4278
+15:22:10.445  [LF] tr 3741 514 2 172 153 0 7997 4246
+15:22:10.445  [LF] tr 3763 513 2 155 168 0 8021 4212
+15:22:10.445  [LF] tr 3785 513 2 138 164 0 8070 4145
+15:22:10.461  [LF] tr 3807 512 2 178 141 0 8097 4110
+15:22:10.463  [LF] tr 3829 512 2 175 153 0 8123 4075
+15:22:10.467  [LF] tr 3851 511 2 139 155 0 8150 4039
+15:22:10.467  [LF] tr 3873 511 2 155 154 0 8179 4002
+15:22:10.467  [TEL] car/telemetry/motion 01010f683c01008805809f0200a8c1010000
+15:22:10.475  [TEL] car/telemetry/heartbeat 010706683c01004300
+15:22:10.546  [LF] tr 3895 511 2 138 170 0 8209 3966
+15:22:10.555  [LF] tr 3917 511 2 149 169 0 8238 3931
+15:22:10.555  [LF] tr 3939 510 2 168 147 0 8268 3896
+15:22:10.558  [LF] tr 3961 510 2 145 147 0 8299 3862
+15:22:10.562  [LF] tr 3983 510 2 176 170 0 8324 3833
+15:22:10.562  [LF] tr 4005 510 2 136 175 0 8354 3806
+15:22:10.567  [LF] tr 4027 511 2 161 154 0 8364 3802
+15:22:10.571  [LF] tr 4049 511 2 140 139 0 8369 3803
+15:22:10.653  [LF] tr 4071 511 2 148 165 0 8372 3804
+15:22:10.657  [LF] tr 4093 511 2 155 137 0 8372 3804
+15:22:10.659  [LF] tr 4115 511 2 150 176 0 8372 3804
+15:22:10.662  [LF] tr 4137 511 2 154 152 32 8372 3804
+15:22:10.665  [LF] tr 4159 511 2 169 153 32 8372 3804
+15:22:10.668  [LF] tr 4181 512 2 166 142 32 8385 3813
+15:22:10.670  [LF] tr 4203 514 2 149 188 32 8413 3840
+15:22:10.672  [LF] tr 4225 521 2 186 160 32 8495 3921
+15:22:10.753  [LF] tr 4247 525 2 185 180 32 8546 3967
+15:22:10.761  [LF] tr 4269 529 2 157 165 32 8599 4015
+15:22:10.767  [LF] tr 4291 534 2 162 155 32 8655 4064
+15:22:10.770  [LF] tr 4313 538 2 149 153 32 8714 4106
+15:22:10.770  [LF] tr 4335 543 2 155 153 32 8778 4150
+15:22:10.774  [LF] tr 4357 547 2 180 146 32 8841 4195
+15:22:10.777  [LF] tr 4379 552 2 140 155 32 8906 4240
+15:22:10.777  [LF] tr 4401 556 2 173 140 32 8971 4286
+15:22:10.851  [IMU] hump pitch=-12 half-deg
+15:22:10.853  [LF] tr 4423 561 2 158 162 32 9036 4334
+15:22:10.859  [LF] tr 4445 571 2 142 145 32 9170 4435
+15:22:10.860  [LF] tr 4467 576 2 148 165 32 9237 4486
+15:22:10.860  [LF] tr 4489 581 2 164 160 32 9304 4538
+15:22:10.860  [LF] tr 4511 586 2 146 177 32 9372 4590
+15:22:10.860  [LF] tr 4533 591 2 147 175 32 9441 4639
+15:22:10.860  [LF] tr 4555 596 2 145 168 32 9508 4688
+15:22:10.874  [LF] tr 4577 601 2 173 140 32 9576 4736
+15:22:10.875  [TEL] car/telemetry/hump 010405da3d01007a
+15:22:10.953  [LF] tr 4599 605 2 153 178 32 9644 4783
+15:22:10.957  [LF] tr 4621 610 2 163 163 32 9710 4830
+15:22:10.957  [LF] tr 4643 615 2 168 154 32 9776 4876
+15:22:10.957  [LF] tr 4665 624 2 179 141 32 9907 4968
+15:22:10.964  [LF] tr 4687 629 2 177 169 32 9972 5013
+15:22:10.971  [LF] tr 4709 634 2 155 152 32 10036 5059
+15:22:10.973  [LF] tr 4731 638 2 177 174 32 10100 5106
+15:22:10.975  [LF] tr 4753 643 2 166 174 32 10162 5151
+15:22:11.063  [LF] tr 4775 647 2 152 174 32 10225 5196
+15:22:11.066  [LF] tr 4797 652 2 175 148 32 10285 5240
+15:22:11.069  [LF] tr 4819 656 2 163 132 32 10343 5284
+15:22:11.075  [LF] tr 4841 660 2 178 173 32 10403 5331
+15:22:11.077  [LF] tr 4863 665 2 158 173 32 10464 5376
+15:22:11.079  [LF] tr 4885 674 2 171 141 32 10582 5466
+15:22:11.084  [LF] tr 4907 678 2 145 136 32 10641 5511
+15:22:11.086  [LF] tr 4929 682 2 148 165 32 10700 5558
+15:22:11.088  [IMU] hump pitch=12 half-deg
+15:22:11.088  [TEL] car/telemetry/hump 010405b63e010006
+15:22:11.162  [LF] tr 4951 687 2 152 154 32 10759 5603
+15:22:11.172  [LF] tr 4973 691 2 149 138 32 10817 5648
+15:22:11.176  [LF] tr 4995 695 2 147 177 32 10874 5693
+15:22:11.178  [LF] tr 5017 700 2 151 171 32 10933 5739
+15:22:11.181  [LF] tr 5039 704 2 149 172 32 10991 5784
+15:22:11.185  [LF] tr 5061 708 2 167 152 32 11048 5830
+15:22:11.187  [LF] tr 5083 713 2 153 148 32 11104 5876
+15:22:11.190  [LF] tr 5105 721 2 142 133 32 11217 5966
+15:22:11.190  [IMU] lift peak 1s: v=14/100 mm/s acc=73 mg cos=847/866 [disarmed]
+15:22:11.258  [LF] tr 5127 726 3 172 136 32 11274 6012
+15:22:11.258  [LF] tr 5149 730 3 130 171 32 11331 6059
+15:22:11.258  [LF] tr 5171 734 3 152 153 32 11387 6104
+15:22:11.258  [LF] tr 5193 739 3 173 169 32 11444 6150
+15:22:11.274  [LF] tr 5215 743 3 157 166 32 11502 6197
+15:22:11.274  [LF] tr 5237 746 3 152 168 32 11548 6234
+15:22:11.274  [LF] tr 5259 749 4 147 161 64 11581 6258
+15:22:11.274  [LF] tr 5281 751 4 164 161 64 11621 6282
+15:22:11.361  [LF] tr 5303 755 4 159 150 64 11674 6315
+15:22:11.367  [LF] tr 5325 762 4 155 179 64 11779 6383
+15:22:11.370  [LF] tr 5347 766 4 150 171 64 11835 6408
+15:22:11.372  [LF] tr 5369 769 4 162 153 64 11893 6436
+15:22:11.372  [LF] tr 5391 773 4 149 172 64 11958 6467
+15:22:11.377  [LF] tr 5413 778 4 146 187 64 12023 6502
+15:22:11.377  [LF] tr 5435 782 4 148 544 64 12089 6540
+15:22:11.377  [LF] tr 5457 786 4 178 2161 64 12155 6578
+15:22:11.463  [LF] tr 5479 791 4 176 2107 64 12222 6615
+15:22:11.468  [LF] tr 5501 795 4 172 213 64 12289 6650
+15:22:11.471  [LF] tr 5523 799 4 190 178 64 12356 6686
+15:22:11.473  [LF] tr 5545 808 4 1499 136 64 12490 6758
+15:22:11.475  [LF] tr 5567 812 1 1739 152 0 12556 6796
+15:22:11.480  [LF] tr 5589 817 1 1440 163 -6 12619 6839
+15:22:11.481  [LF] tr 5611 821 1 243 156 -33 12678 6884
+15:22:11.481  [LF] tr 5633 826 1 179 149 -37 12732 6936
+15:22:11.481  [TEL] car/telemetry/motion 01010f504001008805849f0200a8c1010000
+15:22:11.564  [IMU] hump pitch=-10 half-deg
+15:22:11.577  [TEL] car/telemetry/hump 010405b44001007b
+15:22:11.661  [LF] tr turn end: ring dropped 0 lines
+15:22:11.661  [TEST] S3-U14 PASS  (t1) cross detected, one JUNCTION 110-135 mm later
+15:22:11.661  [TEST] S3-U14 PASS  (t2) the VC took the command and turned at the junction
+15:22:11.661  [TEST] S3-U14 PASS  (t3) the turn is in its window by the encoders
+15:22:11.673  [TEST] S3-U14 PASS  (t4) line found after the turn, no TRACK_LOST
+15:22:11.673  [TEST] S3-U14 FAIL  (t5) followed the branch 300 mm, CENTRE on the line >= 90%   (lf_run_test.c:
+15:22:11.673  [LF] totals: 16373 samples, 0 missed, 0 dropped posts, 0 failed events
+15:22:11.673  [TEST] S3-U14 PASS  (h) run: no missed period, dropped post, failed event
+15:22:11.673  [LF] S3-U14 done: the car stays stopped
+15:22:11.673  [TEST] subsystem3 SUMMARY 19 passed, 2 failed
+15:22:12.181  [IMU] lift peak 1s: v=219/100 mm/s acc=95 mg cos=893/866 [disarmed]
+15:22:12.312  [IMU] hump pitch=-14 half-deg
+15:22:12.318  [TEL] car/telemetry/hump 0104058e43010079
+15:22:12.478  [TEL] car/telemetry/motion 01010f384401008805849f0200a8c1010000
+15:22:13.183  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=930/866 [disarmed]
+15:22:13.479  [TEL] car/telemetry/motion 01010f204801008805849f0200a8c1010000
+15:22:13.984  [IMU] lift detection re-armed (car level and still)
+15:22:14.172  [IMU] lift peak 1s: v=15/100 mm/s acc=77 mg cos=925/866
+15:22:14.480  [TEL] car/telemetry/motion 01010f084c01008805849f020098c1010000
+15:22:14.717  [IMU] hump pitch=12 half-deg
+15:22:14.725  [TEL] car/telemetry/hump 010405f84c010006
+15:22:15.174  [IMU] lift peak 1s: v=69/100 mm/s acc=64 mg cos=949/866
+15:22:15.481  [TEL] car/telemetry/motion 01010ff04f01008805849f020098c1010000
+15:22:15.486  [TEL] car/telemetry/heartbeat 010706f04f01004300
+15:22:16.176  [IMU] lift peak 1s: v=24/100 mm/s acc=24 mg cos=934/866
+15:22:16.483  [TEL] car/telemetry/motion 01010fd85301008805849f020098c1010000
+15:22:17.176  [IMU] lift peak 1s: v=24/100 mm/s acc=40 mg cos=916/866
+15:22:17.473  [TEL] car/telemetry/motion 01010fc05701008805849f020098c1010000
+15:22:18.144  [IMU] hump pitch=-16 half-deg
+15:22:18.154  [TEL] car/telemetry/hump 0104055e5a010078
+15:22:18.177  [IMU] lift peak 1s: v=0/100 mm/s acc=30 mg cos=859/866
+15:22:18.209  [SAFETY] BRAKE: lifted or overturned
+15:22:18.212  [IMU] LIFTED (tilted): cos_tilt=842/1000 up_accel=-75 mg v=-123 mm/s
+15:22:18.220  [TEL] car/telemetry/fault 0106059a5a018400
+15:22:18.475  [TEL] car/telemetry/motion 01010fa85b01008805849f020098c1010000
+15:22:19.179  [IMU] lift peak 1s: v=0/100 mm/s acc=2 mg cos=817/866 [disarmed]
+15:22:19.398  [DBG] alive: SDK timer 93061 ms, kernel time 89925 ms, difference 3136 ms
+15:22:19.475  [TEL] car/telemetry/motion 01010f905f01008805849f020098c1010000
+15:22:20.168  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=695/866 [disarmed]
+15:22:20.470  [TEL] car/telemetry/motion 01010f786301008805849f020098c1010000
+15:22:20.481  [TEL] car/telemetry/heartbeat 010706786301004308
+15:22:20.553  [IMU] hump pitch=14 half-deg
+15:22:20.557  [TEL] car/telemetry/hump 010405c863010007
+15:22:21.180  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=738/866 [disarmed]
+15:22:21.478  [TEL] car/telemetry/motion 01010f606701008805849f020098c1010000
+15:22:22.183  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=820/866 [disarmed]
+15:22:22.479  [TEL] car/telemetry/motion 01010f486b01008805849f020098c1010000
+15:22:23.181  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=853/866 [disarmed]
+15:22:23.480  [TEL] car/telemetry/motion 01010f306f01008805849f020098c1010000
+15:22:24.172  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=848/866 [disarmed]
+15:22:24.481  [TEL] car/telemetry/motion 01010f187301008805849f020098c1010000
+15:22:25.120  [IMU] hump pitch=-14 half-deg
+15:22:25.123  [TEL] car/telemetry/hump 0104059875010079
+15:22:25.170  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=844/866 [disarmed]
+15:22:25.474  [TEL] car/telemetry/motion 01010f007701008805849f020098c1010000
+15:22:25.492  [TEL] car/telemetry/heartbeat 010706007701004308
+15:22:26.174  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=841/866 [disarmed]
+15:22:26.318  [IMU] hump pitch=12 half-deg
+15:22:26.323  [TEL] car/telemetry/hump 010405487a010006
+15:22:26.484  [TEL] car/telemetry/motion 01010fe87a01008805849f020098c1010000
+15:22:27.143  [IMU] lift detection re-armed (car level and still)
+15:22:27.174  [IMU] lift peak 1s: v=5/100 mm/s acc=25 mg cos=898/866
+15:22:27.474  [TEL] car/telemetry/motion 01010fd07e01008805849f020098c1010000
+15:22:28.170  [IMU] lift peak 1s: v=59/100 mm/s acc=39 mg cos=984/866
+15:22:28.463  [IMU] hump pitch=-12 half-deg
+15:22:28.473  [TEL] car/telemetry/hump 010405ae8201007a
+15:22:28.481  [TEL] car/telemetry/motion 01010fb88201008805849f020098c1010000
+15:22:29.398  [DBG] alive: SDK timer 103061 ms, kernel time 99925 ms, difference 3136 ms
+15:22:29.476  [TEL] car/telemetry/motion 01010fa08601008805849f020098c1010000
+15:22:30.476  [TEL] car/telemetry/motion 01010f888a01008805849f020098c1010000
+15:22:30.481  [TEL] car/telemetry/heartbeat 010706888a01004300
+15:22:30.553  [IMU] hump pitch=11 half-deg
+15:22:30.559  [TEL] car/telemetry/hump 010405ce8a018005
+15:22:31.178  [IMU] lift peak 1s: v=0/100 mm/s acc=8 mg cos=964/866
+15:22:31.473  [TEL] car/telemetry/motion 01010f708e01008805849f020098c1010000
+15:22:32.179  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=953/866
+15:22:32.478  [TEL] car/telemetry/motion 01010f589201008805849f020098c1010000
+15:22:32.975  [SAFETY] BRAKE: lifted or overturned
+15:22:32.987  [IMU] LIFTED (tilted): cos_tilt=843/1000 up_accel=-144 mg v=-272 mm/s
+15:22:32.987  [TEL] car/telemetry/fault 0106055694010400
+15:22:33.178  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=823/866 [disarmed]
+15:22:33.479  [TEL] car/telemetry/motion 01010f409601008805849f020098c1010000
+15:22:34.184  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=737/866 [disarmed]
+15:22:34.474  [TEL] car/telemetry/motion 01010f289a01008805849f020098c1010000
+15:22:35.173  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=714/866 [disarmed]
+15:22:35.480  [TEL] car/telemetry/motion 01010f109e01008805849f020098c1010000
+15:22:35.484  [TEL] car/telemetry/heartbeat 010706109e01004300
+15:22:36.171  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=765/866 [disarmed]
+15:22:36.482  [TEL] car/telemetry/motion 01010ff8a101008805849f020098c1010000
+15:22:37.176  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=904/866 [disarmed]
+15:22:37.484  [TEL] car/telemetry/motion 01010fe0a501008805849f020098c1010000
+15:22:38.172  [IMU] lift peak 1s: v=12/100 mm/s acc=42 mg cos=912/866 [disarmed]
+15:22:38.463  [TEL] car/telemetry/motion 01010fc8a901008805849f020098c1010000
+15:22:39.023  [IMU] lift detection re-armed (car level and still)
+15:22:39.177  [IMU] lift peak 1s: v=66/100 mm/s acc=69 mg cos=948/866
+15:22:39.407  [DBG] alive: SDK timer 113071 ms, kernel time 109935 ms, difference 3136 ms
+15:22:39.473  [TEL] car/telemetry/motion 01010fb0ad01008805849f020098c1010000
+15:22:40.175  [IMU] lift peak 1s: v=40/100 mm/s acc=62 mg cos=881/866
+15:22:40.476  [TEL] car/telemetry/motion 01010f98b101008805849f020098c1010000
+15:22:40.481  [TEL] car/telemetry/heartbeat 01070698b101004300
+15:22:41.178  [IMU] lift peak 1s: v=0/100 mm/s acc=1 mg cos=892/866
+15:22:41.474  [TEL] car/telemetry/motion 01010f80b501008805849f020098c1010000
+15:22:42.179  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=897/866
+15:22:42.475  [TEL] car/telemetry/motion 01010f68b901008805849f020098c1010000
+15:22:43.181  [IMU] lift peak 1s: v=11/100 mm/s acc=72 mg cos=896/866
+15:22:43.472  [TEL] car/telemetry/motion 01010f50bd01008805849f020098c1010000
+15:22:44.179  [IMU] lift peak 1s: v=11/100 mm/s acc=9 mg cos=873/866
+15:22:44.468  [TEL] car/telemetry/motion 01010f38c101008805849f020098c1010000
+15:22:44.764  [SAFETY] BRAKE: lifted or overturned
+15:22:44.769  [IMU] LIFTED (tilted): cos_tilt=841/1000 up_accel=-83 mg v=-193 mm/s
+15:22:44.770  [TEL] car/telemetry/fault 0106055ac2018400
+15:22:45.179  [IMU] lift peak 1s: v=0/100 mm/s acc=16 mg cos=841/866 [disarmed]
+15:22:45.480  [TEL] car/telemetry/motion 01010f20c501008805a49e020098c1010000
+15:22:45.487  [TEL] car/telemetry/heartbeat 01070620c501004308
+15:22:46.173  [IMU] lift peak 1s: v=0/100 mm/s acc=34 mg cos=857/866 [disarmed]
+15:22:46.480  [TEL] car/telemetry/motion 01010f08c901008805909e020098c1010000
+15:22:46.657  [IMU] hump pitch=11 half-deg
+15:22:46.661  [TEL] car/telemetry/hump 010405bcc9018005
+15:22:47.174  [IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=804/866 [disarmed]
+15:22:47.482  [TEL] car/telemetry/motion 01010ff0cc01008805909e020098c1010000
+15:22:48.171  [IMU] lift peak 1s: v=27/100 mm/s acc=110 mg cos=888/866 [disarmed]
+15:22:48.472  [TEL] car/telemetry/motion 01010fd8d0010088056c9e020098c1010000
+15:22:49.177  [IMU] lift peak 1s: v=3/100 mm/s acc=41 mg cos=906/866 [disarmed]
+15:22:49.342  [IMU] hump pitch=12 half-deg
+15:22:49.345  [TEL] car/telemetry/hump 01040534d4010006
+15:22:49.418  [DBG] alive: SDK timer 123082 ms, kernel time 119946 ms, difference 3136 ms
+15:22:49.418  [STACK] init: 228 of 1152 B used, 924 never used
+15:22:49.429  [STACK] dbg_drain: 772 of 1664 B used, 892 never used
+15:22:49.432  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:22:49.432  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:22:49.432  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:22:49.432  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:22:49.448  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:22:49.453  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:22:49.454  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:22:49.459  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:22:49.464  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:22:49.466  [STACK] stack top check: 0 mismatches
+15:22:49.466  [MBF] nav_in: 64 B buffer, 64 B free
+15:22:49.473  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:22:49.476  [MBF] obstacle: 24 B buffer, 24 B free
+15:22:49.483  [MBF] telemetry: 384 B buffer, 384 B free
+15:22:49.487  [TEL] car/telemetry/motion 01010fc0d4010088056c9e020098c1010000
+15:22:49.487  [TEL] CONNECTED tx=225 txf=0 off=1 ev=83 bad=0 qd=0 od=0 cmd=0/0
+15:22:50.180  [IMU] lift peak 1s: v=120/100 mm/s acc=113 mg cos=895/866 [disarmed]
+15:22:50.478  [TEL] car/telemetry/motion 01010fa8d8010088056c9e020098c1010000
+15:22:50.482  [TEL] car/telemetry/heartbeat 010706a8d801004308
+15:22:51.182  [IMU] lift peak 1s: v=84/100 mm/s acc=104 mg cos=908/866 [disarmed]
+15:22:51.379  [IMU] lift detection re-armed (car level and still)
+15:22:51.478  [TEL] car/telemetry/motion 01010f90dc010088056c9e020090c1010000
+15:22:51.587  [SAFETY] BRAKE: lifted or overturned
+15:22:51.591  [IMU] LIFTED (raised): cos_tilt=999/1000 up_accel=104 mg v=134 mm/s
+15:22:51.599  [TEL] car/telemetry/fault 010605fedc010400
+15:22:52.080  [IMU] lift detection re-armed (car level and still)
+15:22:52.183  [IMU] lift peak 1s: v=151/100 mm/s acc=115 mg cos=973/866
+15:22:52.225  [IMU] hump pitch=13 half-deg
+15:22:52.236  [TEL] car/telemetry/hump 0104057edf018006
+15:22:52.475  [TEL] car/telemetry/motion 01010f78e0010088056c9e020090c1010000
+15:22:52.899  [IMU] hump pitch=-12 half-deg
+15:22:52.903  [TEL] car/telemetry/hump 0104051ce201007a
+15:22:53.172  [IMU] lift peak 1s: v=46/100 mm/s acc=43 mg cos=963/866
+15:22:53.479  [TEL] car/telemetry/motion 01010f60e4010088056c9e020088c1010000
+15:22:53.495  [IMU] hump pitch=-14 half-deg
+15:22:53.507  [TEL] car/telemetry/hump 01040574e4010079
+15:22:54.141  [IMU] hump pitch=11 half-deg
+15:22:54.162  [TEL] car/telemetry/hump 010405fee6018005
+15:22:54.172  [IMU] lift peak 1s: v=27/100 mm/s acc=27 mg cos=949/866
+15:22:54.475  [TEL] car/telemetry/motion 01010f48e8010088056c9e020088c1010000
+15:22:54.713  [IMU] hump pitch=-11 half-deg
+15:22:54.715  [TEL] car/telemetry/hump 0104052ee901807a
+15:22:54.854  [IMU] hump pitch=-20 half-deg
+15:22:54.876  [TEL] car/telemetry/hump 010405cee9010076
+15:22:55.141  [IMU] hump pitch=-11 half-deg
+15:22:55.153  [TEL] car/telemetry/hump 010405e6ea01807a
+15:22:55.172  [IMU] lift peak 1s: v=0/100 mm/s acc=122 mg cos=880/866
+15:22:55.472  [TEL] car/telemetry/motion 01010f30ec010088056c9e020088c1010000
+15:22:55.474  [TEL] car/telemetry/heartbeat 01070630ec01004300
+15:22:55.634  [IMU] hump pitch=-10 half-deg
+15:22:55.634  [TEL] car/telemetry/hump 010405d0ec01007b
+15:22:56.468  [TEL] car/telemetry/motion 01010f18f001008805709e020084c1010000
+15:22:57.475  [TEL] car/telemetry/motion 01010f00f401008805709e020084c1010000
+15:22:58.476  [TEL] car/telemetry/motion 01010fe8f701008805709e020084c1010000
+15:22:59.414  [DBG] alive: SDK timer 133086 ms, kernel time 129950 ms, difference 3136 ms
+15:22:59.474  [TEL] car/telemetry/motion 01010fd0fb01008805709e020084c1010000
+15:23:00.478  [TEL] car/telemetry/motion 01010fb8ff01008805709e020084c1010000
+15:23:00.479  [TEL] car/telemetry/heartbeat 010706b8ff01004300
+15:23:01.471  [TEL] car/telemetry/motion 01010fa00302008805709e020084c1010000
+15:23:02.476  [TEL] car/telemetry/motion 01010f880702008805709e020084c1010000
+15:23:03.475  [TEL] car/telemetry/motion 01010f700b02008805709e020084c1010000
+15:23:04.483  [TEL] car/telemetry/motion 01010f580f02008805709e020084c1010000
+15:23:05.475  [TEL] car/telemetry/motion 01010f401302008805709e020084c1010000
+15:23:05.477  [TEL] car/telemetry/heartbeat 010706401302004300
+15:23:06.475  [TEL] car/telemetry/motion 01010f281702008805709e020084c1010000
+15:23:07.476  [TEL] car/telemetry/motion 01010f101b02008805709e020084c1010000
+15:23:08.477  [TEL] car/telemetry/motion 01010ff81e02008805709e020084c1010000
+15:23:09.423  [DBG] alive: SDK timer 143086 ms, kernel time 139950 ms, difference 3136 ms
+15:23:09.478  [TEL] car/telemetry/motion 01010fe02202008805709e020084c1010000
+15:23:10.468  [TEL] car/telemetry/motion 01010fc82602008805709e020084c1010000
+15:23:10.484  [TEL] car/telemetry/heartbeat 010706c82602004300
+15:23:11.479  [TEL] car/telemetry/motion 01010fb02a02008805709e020084c1010000
+15:23:12.481  [TEL] car/telemetry/motion 01010f982e02008805709e020084c1010000
+15:23:13.482  [TEL] car/telemetry/motion 01010f803202008805709e020084c1010000
+15:23:14.484  [TEL] car/telemetry/motion 01010f683602008805709e020084c1010000
+15:23:15.475  [TEL] car/telemetry/motion 01010f503a02008805709e020084c1010000
+15:23:15.480  [TEL] car/telemetry/heartbeat 010706503a02004300
+15:23:16.482  [TEL] car/telemetry/motion 01010f383e02008805709e020084c1010000
+15:23:17.476  [TEL] car/telemetry/motion 01010f204202008805709e020084c1010000
+15:23:18.477  [TEL] car/telemetry/motion 01010f084602008805709e020084c1010000
+15:23:19.435  [DBG] alive: SDK timer 153097 ms, kernel time 149961 ms, difference 3136 ms
+15:23:19.478  [TEL] car/telemetry/motion 01010ff04902008805709e020084c1010000
+15:23:20.479  [TEL] car/telemetry/motion 01010fd84d02008805709e020084c1010000
+15:23:20.483  [TEL] car/telemetry/heartbeat 010706d84d02004300
+15:23:21.480  [TEL] car/telemetry/motion 01010fc05102008805709e020084c1010000
+15:23:22.482  [TEL] car/telemetry/motion 01010fa85502008805709e020084c1010000
+15:23:23.480  [TEL] car/telemetry/motion 01010f905902008805709e020084c1010000
+15:23:24.482  [TEL] car/telemetry/motion 01010f785d02008805709e020084c1010000
+15:23:25.473  [TEL] car/telemetry/motion 01010f606102008805709e020084c1010000
+15:23:25.473  [TEL] car/telemetry/heartbeat 010706606102004300
+15:23:26.476  [TEL] car/telemetry/motion 01010f486502008805709e020084c1010000
+15:23:27.476  [TEL] car/telemetry/motion 01010f306902008805709e020084c1010000
+15:23:28.477  [TEL] car/telemetry/motion 01010f186d02008805709e020084c1010000
+15:23:29.447  [DBG] alive: SDK timer 163108 ms, kernel time 159972 ms, difference 3136 ms
+15:23:29.464  [TEL] car/telemetry/motion 01010f007102008805709e020084c1010000
+15:23:30.480  [TEL] car/telemetry/motion 01010fe87402008805709e020084c1010000
+15:23:30.490  [TEL] car/telemetry/heartbeat 010706e87402004300
+15:23:31.480  [TEL] car/telemetry/motion 01010fd07802008805709e020084c1010000
+15:23:32.482  [TEL] car/telemetry/motion 01010fb87c02008805709e020084c1010000
+15:23:33.481  [TEL] car/telemetry/motion 01010fa08002008805709e020084c1010000
+15:23:34.471  [TEL] car/telemetry/motion 01010f888402008805709e020084c1010000
+15:23:35.473  [TEL] car/telemetry/motion 01010f708802008805709e020084c1010000
+15:23:35.473  [TEL] car/telemetry/heartbeat 010706708802004300
+15:23:36.476  [TEL] car/telemetry/motion 01010f588c02008805709e020084c1010000
+15:23:37.477  [TEL] car/telemetry/motion 01010f409002008805709e020084c1010000
+15:23:38.479  [TEL] car/telemetry/motion 01010f289402008805709e020084c1010000
+15:23:39.456  [DBG] alive: SDK timer 173119 ms, kernel time 169983 ms, difference 3136 ms
+15:23:39.479  [TEL] car/telemetry/motion 01010f109802008805709e020084c1010000
+15:23:40.479  [TEL] car/telemetry/motion 01010ff89b02008805709e020084c1010000
+15:23:40.481  [TEL] car/telemetry/heartbeat 010706f89b02004300
+15:23:41.486  [TEL] car/telemetry/motion 01010fe09f02008805709e020084c1010000
+15:23:42.480  [TEL] car/telemetry/motion 01010fc8a302008805709e020084c1010000
+15:23:43.472  [TEL] car/telemetry/motion 01010fb0a702008805709e020084c1010000
+15:23:44.483  [TEL] car/telemetry/motion 01010f98ab02008805709e020084c1010000
+15:23:45.475  [TEL] car/telemetry/motion 01010f80af02008805709e020084c1010000
+15:23:45.481  [TEL] car/telemetry/heartbeat 01070680af02004300
+15:23:46.476  [TEL] car/telemetry/motion 01010f68b302008805709e020084c1010000
+15:23:47.476  [TEL] car/telemetry/motion 01010f50b702008805709e020084c1010000
+15:23:48.476  [TEL] car/telemetry/motion 01010f38bb02008805709e020084c1010000
+15:23:49.457  [DBG] alive: SDK timer 183119 ms, kernel time 179983 ms, difference 3136 ms
+15:23:49.462  [STACK] init: 228 of 1152 B used, 924 never used
+15:23:49.465  [STACK] dbg_drain: 876 of 1664 B used, 788 never used
+15:23:49.468  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:23:49.471  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:23:49.473  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:23:49.473  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:23:49.477  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:23:49.481  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:23:49.483  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:23:49.486  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:23:49.488  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:23:49.490  [STACK] stack top check: 0 mismatches
+15:23:49.490  [MBF] nav_in: 64 B buffer, 64 B free
+15:23:49.494  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:23:49.497  [MBF] obstacle: 24 B buffer, 24 B free
+15:23:49.499  [MBF] telemetry: 384 B buffer, 384 B free
+15:23:49.499  [TEL] car/telemetry/motion 01010f20bf02008805709e020084c1010000
+15:23:49.506  [TEL] CONNECTED tx=306 txf=0 off=1 ev=92 bad=0 qd=0 od=0 cmd=0/0
+15:23:50.481  [TEL] car/telemetry/motion 01010f08c302008805709e020084c1010000
+15:23:50.486  [TEL] car/telemetry/heartbeat 01070608c302004300
+15:23:51.480  [TEL] car/telemetry/motion 01010ff0c602008805709e020084c1010000
+15:23:52.466  [TEL] car/telemetry/motion 01010fd8ca02008805709e020084c1010000
+15:23:53.474  [TEL] car/telemetry/motion 01010fc0ce02008805709e020084c1010000
+15:23:54.475  [TEL] car/telemetry/motion 01010fa8d202008805709e020084c1010000
+15:23:55.477  [TEL] car/telemetry/motion 01010f90d602008805709e020084c1010000
+15:23:55.483  [TEL] car/telemetry/heartbeat 01070690d602004300
+15:23:56.478  [TEL] car/telemetry/motion 01010f78da02008805709e020084c1010000
+15:23:57.478  [TEL] car/telemetry/motion 01010f60de02008805709e020084c1010000
+15:23:58.481  [TEL] car/telemetry/motion 01010f48e202008805709e020084c1010000
+15:23:59.458  [DBG] alive: SDK timer 193121 ms, kernel time 189985 ms, difference 3136 ms
+15:23:59.482  [TEL] car/telemetry/motion 01010f30e602008805709e020084c1010000
+15:24:00.480  [TEL] car/telemetry/motion 01010f18ea02008805709e020084c1010000
+15:24:00.486  [TEL] car/telemetry/heartbeat 01070618ea02004300
+15:24:01.478  [TEL] car/telemetry/motion 01010f00ee02008805709e020084c1010000
+15:24:02.484  [TEL] car/telemetry/motion 01010fe8f102008805709e020084c1010000
+15:24:03.476  [TEL] car/telemetry/motion 01010fd0f502008805709e020084c1010000
+15:24:04.476  [TEL] car/telemetry/motion 01010fb8f902008805709e020084c1010000
+15:24:05.474  [TEL] car/telemetry/motion 01010fa0fd02008805709e020084c1010000
+15:24:05.474  [TEL] car/telemetry/heartbeat 010706a0fd02004300
+15:24:06.469  [TEL] car/telemetry/motion 01010f880103008805709e020084c1010000
+15:24:07.477  [TEL] car/telemetry/motion 01010f700503008805709e020084c1010000
+15:24:08.480  [TEL] car/telemetry/motion 01010f580903008805709e020084c1010000
+15:24:09.465  [DBG] alive: SDK timer 203131 ms, kernel time 199995 ms, difference 3136 ms
+15:24:09.480  [TEL] car/telemetry/motion 01010f400d03008805709e020084c1010000
+15:24:10.481  [TEL] car/telemetry/motion 01010f281103008805709e020084c1010000
+15:24:10.485  [TEL] car/telemetry/heartbeat 010706281103004300
+15:24:11.481  [TEL] car/telemetry/motion 01010f101503008805709e020084c1010000
+15:24:12.482  [TEL] car/telemetry/motion 01010ff81803008805709e020084c1010000
+15:24:13.485  [TEL] car/telemetry/motion 01010fe01c03008805709e020084c1010000
+15:24:14.474  [TEL] car/telemetry/motion 01010fc82003008805709e020084c1010000
+15:24:15.470  [TEL] car/telemetry/motion 01010fb02403008805709e020084c1010000
+15:24:15.470  [TEL] car/telemetry/heartbeat 010706b02403004300
+15:24:16.475  [TEL] car/telemetry/motion 01010f982803008805709e020084c1010000
+15:24:17.474  [TEL] car/telemetry/motion 01010f802c03008805709e020084c1010000
+15:24:18.478  [TEL] car/telemetry/motion 01010f683003008805709e020084c1010000
+15:24:19.480  [TEL] car/telemetry/motion 01010f503403008805709e020084c1010000
+15:24:19.485  [DBG] alive: SDK timer 213141 ms, kernel time 210005 ms, difference 3136 ms
+15:24:20.479  [TEL] car/telemetry/motion 01010f383803008805709e020084c1010000
+15:24:20.479  [TEL] car/telemetry/heartbeat 010706383803004300
+15:24:21.477  [TEL] car/telemetry/motion 01010f203c03008805709e020084c1010000
+15:24:22.480  [TEL] car/telemetry/motion 01010f084003008805709e020084c1010000
+15:24:23.482  [TEL] car/telemetry/motion 01010ff04303008805709e020084c1010000
+15:24:24.485  [TEL] car/telemetry/motion 01010fd84703008805709e020084c1010000
+15:24:25.477  [TEL] car/telemetry/motion 01010fc04b03008805709e020084c1010000
+15:24:25.483  [TEL] car/telemetry/heartbeat 010706c04b03004300
+15:24:26.472  [TEL] car/telemetry/motion 01010fa84f03008805709e020084c1010000
+15:24:27.477  [TEL] car/telemetry/motion 01010f905303008805709e020084c1010000
+15:24:28.481  [TEL] car/telemetry/motion 01010f785703008805709e020084c1010000
+15:24:29.480  [TEL] car/telemetry/motion 01010f605b03008805709e020084c1010000
+15:24:29.497  [DBG] alive: SDK timer 223152 ms, kernel time 220016 ms, difference 3136 ms
+15:24:30.479  [TEL] car/telemetry/motion 01010f485f03008805709e020084c1010000
+15:24:30.495  [TEL] car/telemetry/heartbeat 010706485f03004300
+15:24:31.481  [TEL] car/telemetry/motion 01010f306303008805709e020084c1010000
+15:24:32.483  [TEL] car/telemetry/motion 01010f186703008805709e020084c1010000
+15:24:33.474  [TEL] car/telemetry/motion 01010f006b03008805709e020084c1010000
+15:24:34.484  [TEL] car/telemetry/motion 01010fe86e03008805709e020084c1010000
+15:24:35.477  [TEL] car/telemetry/motion 01010fd07203008805709e020084c1010000
+15:24:35.492  [TEL] car/telemetry/heartbeat 010706d07203004300
+15:24:36.476  [TEL] car/telemetry/motion 01010fb87603008805709e020084c1010000
+15:24:37.477  [TEL] car/telemetry/motion 01010fa07a03008805709e020084c1010000
+15:24:38.473  [TEL] car/telemetry/motion 01010f887e03008805709e020084c1010000
+15:24:39.477  [TEL] car/telemetry/motion 01010f708203008805709e020084c1010000
+15:24:39.501  [DBG] alive: SDK timer 233163 ms, kernel time 230027 ms, difference 3136 ms
+15:24:40.480  [TEL] car/telemetry/motion 01010f588603008805709e020084c1010000
+15:24:40.489  [TEL] car/telemetry/heartbeat 010706588603004300
+15:24:41.481  [TEL] car/telemetry/motion 01010f408a03008805709e020084c1010000
+15:24:42.483  [TEL] car/telemetry/motion 01010f288e03008805709e020084c1010000
+15:24:43.473  [TEL] car/telemetry/motion 01010f109203008805709e020084c1010000
+15:24:44.485  [TEL] car/telemetry/motion 01010ff89503008805709e020084c1010000
+15:24:45.474  [TEL] car/telemetry/motion 01010fe09903008805709e020084c1010000
+15:24:45.477  [TEL] car/telemetry/heartbeat 010706e09903004300
+15:24:46.476  [TEL] car/telemetry/motion 01010fc89d03008805709e020084c1010000
+15:24:47.476  [TEL] car/telemetry/motion 01010fb0a103008805709e020084c1010000
+15:24:48.479  [TEL] car/telemetry/motion 01010f98a503008805709e020084c1010000
+15:24:49.479  [TEL] car/telemetry/motion 01010f80a903008805709e020084c1010000
+15:24:49.482  [TEL] CONNECTED tx=378 txf=0 off=1 ev=92 bad=0 qd=0 od=0 cmd=0/0
+15:24:49.509  [DBG] alive: SDK timer 243174 ms, kernel time 240038 ms, difference 3136 ms
+15:24:49.513  [STACK] init: 228 of 1152 B used, 924 never used
+15:24:49.513  [STACK] dbg_drain: 876 of 1664 B used, 788 never used
+15:24:49.513  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:24:49.526  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:24:49.528  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:24:49.528  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:24:49.528  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:24:49.528  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:24:49.537  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:24:49.541  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:24:49.543  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:24:49.543  [STACK] stack top check: 0 mismatches
+15:24:49.543  [MBF] nav_in: 64 B buffer, 64 B free
+15:24:49.543  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:24:49.543  [MBF] obstacle: 24 B buffer, 24 B free
+15:24:49.543  [MBF] telemetry: 384 B buffer, 384 B free
+15:24:50.483  [TEL] car/telemetry/motion 01010f68ad03008805709e020084c1010000
+15:24:50.488  [TEL] car/telemetry/heartbeat 01070668ad03004300
+15:24:51.484  [TEL] car/telemetry/motion 01010f50b103008805709e020084c1010000
+15:24:52.468  [TEL] car/telemetry/motion 01010f38b503008805709e020084c1010000
+15:24:53.475  [TEL] car/telemetry/motion 01010f20b903008805709e020084c1010000
+15:24:54.476  [TEL] car/telemetry/motion 01010f08bd03008805709e020084c1010000
+15:24:55.478  [TEL] car/telemetry/motion 01010ff0c003008805709e020084c1010000
+15:24:55.486  [TEL] car/telemetry/heartbeat 010706f0c003004300
+15:24:56.480  [TEL] car/telemetry/motion 01010fd8c403008805709e020084c1010000
+15:24:57.485  [TEL] car/telemetry/motion 01010fc0c803008805709e020084c1010000
+15:24:58.481  [TEL] car/telemetry/motion 01010fa8cc03008805709e020084c1010000
+15:24:59.483  [TEL] car/telemetry/motion 01010f90d003008805709e020084c1010000
+15:24:59.515  [DBG] alive: SDK timer 253176 ms, kernel time 250040 ms, difference 3136 ms
+15:25:00.481  [TEL] car/telemetry/motion 01010f78d403008805709e020084c1010000
+15:25:00.487  [TEL] car/telemetry/heartbeat 01070678d403004300
+15:25:01.484  [TEL] car/telemetry/motion 01010f60d803008805709e020084c1010000
+15:25:02.485  [TEL] car/telemetry/motion 01010f48dc03008805709e020084c1010000
+15:25:03.476  [TEL] car/telemetry/motion 01010f30e003008805709e020084c1010000
+15:25:04.474  [TEL] car/telemetry/motion 01010f18e403008805709e020084c1010000
+15:25:05.462  [TEL] car/telemetry/motion 01010f00e803008805709e020084c1010000
+15:25:05.477  [TEL] car/telemetry/heartbeat 01070600e803004300
+15:25:06.477  [TEL] car/telemetry/motion 01010fe8eb03008805709e020084c1010000
+15:25:07.478  [TEL] car/telemetry/motion 01010fd0ef03008805709e020084c1010000
+15:25:08.479  [TEL] car/telemetry/motion 01010fb8f303008805709e020084c1010000
+15:25:09.481  [TEL] car/telemetry/motion 01010fa0f703008805709e020084c1010000
+15:25:09.524  [DBG] alive: SDK timer 263186 ms, kernel time 260050 ms, difference 3136 ms
+15:25:10.481  [TEL] car/telemetry/motion 01010f88fb03008805709e020084c1010000
+15:25:10.485  [TEL] car/telemetry/heartbeat 01070688fb03004300
+15:25:11.483  [TEL] car/telemetry/motion 01010f70ff03008805709e020084c1010000
+15:25:12.483  [TEL] car/telemetry/motion 01010f580304008805709e020084c1010000
+15:25:13.483  [TEL] car/telemetry/motion 01010f400704008805709e020084c1010000
+15:25:14.466  [TEL] car/telemetry/motion 01010f280b04008805709e020084c1010000
+15:25:15.473  [TEL] car/telemetry/motion 01010f100f04008805709e020084c1010000
+15:25:15.487  [TEL] car/telemetry/heartbeat 010706100f04004300
+15:25:16.477  [TEL] car/telemetry/motion 01010ff81204008805709e020084c1010000
+15:25:17.478  [TEL] car/telemetry/motion 01010fe01604008805709e020084c1010000
+15:25:18.479  [TEL] car/telemetry/motion 01010fc81a04008805709e020084c1010000
+15:25:19.479  [TEL] car/telemetry/motion 01010fb01e04008805709e020084c1010000
+15:25:19.536  [DBG] alive: SDK timer 273196 ms, kernel time 270060 ms, difference 3136 ms
+15:25:20.482  [TEL] car/telemetry/motion 01010f982204008805709e020084c1010000
+15:25:20.482  [TEL] car/telemetry/heartbeat 010706982204004300
+15:25:21.482  [TEL] car/telemetry/motion 01010f802604008805709e020084c1010000
+15:25:22.481  [TEL] car/telemetry/motion 01010f682a04008805709e020084c1010000
+15:25:23.483  [TEL] car/telemetry/motion 01010f502e04008805709e020084c1010000
+15:25:24.475  [TEL] car/telemetry/motion 01010f383204008805709e020084c1010000
+15:25:25.476  [TEL] car/telemetry/motion 01010f203604008805709e020084c1010000
+15:25:25.485  [TEL] car/telemetry/heartbeat 010706203604004300
+15:25:26.477  [TEL] car/telemetry/motion 01010f083a04008805709e020084c1010000
+15:25:27.478  [TEL] car/telemetry/motion 01010ff03d04008805709e020084c1010000
+15:25:28.478  [TEL] car/telemetry/motion 01010fd84104008805709e020084c1010000
+15:25:29.479  [TEL] car/telemetry/motion 01010fc04504008805709e020084c1010000
+15:25:29.546  [DBG] alive: SDK timer 283207 ms, kernel time 280071 ms, difference 3136 ms
+15:25:30.470  [TEL] car/telemetry/motion 01010fa84904008805709e020084c1010000
+15:25:30.470  [TEL] car/telemetry/heartbeat 010706a84904004300
+15:25:31.478  [TEL] car/telemetry/motion 01010f904d04008805709e020084c1010000
+15:25:32.482  [TEL] car/telemetry/motion 01010f785104008805709e020084c1010000
+15:25:33.483  [TEL] car/telemetry/motion 01010f605504008805709e020084c1010000
+15:25:34.481  [TEL] car/telemetry/motion 01010f485904008805709e020084c1010000
+15:25:35.476  [TEL] car/telemetry/motion 01010f305d04008805709e020084c1010000
+15:25:35.483  [TEL] car/telemetry/heartbeat 010706305d04004300
+15:25:36.476  [TEL] car/telemetry/motion 01010f186104008805709e020084c1010000
+15:25:37.478  [TEL] car/telemetry/motion 01010f006504008805709e020084c1010000
+15:25:38.479  [TEL] car/telemetry/motion 01010fe86804008805709e020084c1010000
+15:25:39.469  [TEL] car/telemetry/motion 01010fd06c04008805709e020084c1010000
+15:25:39.545  [DBG] alive: SDK timer 293207 ms, kernel time 290071 ms, difference 3136 ms
+15:25:40.483  [TEL] car/telemetry/motion 01010fb87004008805709e020084c1010000
+15:25:40.488  [TEL] car/telemetry/heartbeat 010706b87004004300
+15:25:41.481  [TEL] car/telemetry/motion 01010fa07404008805709e020084c1010000
+15:25:42.483  [TEL] car/telemetry/motion 01010f887804008805709e020084c1010000
+15:25:43.484  [TEL] car/telemetry/motion 01010f707c04008805709e020084c1010000
+15:25:44.486  [TEL] car/telemetry/motion 01010f588004008805709e020084c1010000
+15:25:45.476  [TEL] car/telemetry/motion 01010f408404008805709e020084c1010000
+15:25:45.481  [TEL] car/telemetry/heartbeat 010706408404004300
+15:25:46.475  [TEL] car/telemetry/motion 01010f288804008805709e020084c1010000
+15:25:47.476  [TEL] car/telemetry/motion 01010f108c04008805709e020084c1010000
+15:25:48.468  [TEL] car/telemetry/motion 01010ff88f04008805709e020084c1010000
+15:25:49.480  [TEL] car/telemetry/motion 01010fe09304008805709e020084c1010000
+15:25:49.485  [TEL] CONNECTED tx=450 txf=0 off=1 ev=92 bad=0 qd=0 od=0 cmd=0/0
+15:25:49.543  [DBG] alive: SDK timer 303207 ms, kernel time 300071 ms, difference 3136 ms
+15:25:49.549  [STACK] init: 228 of 1152 B used, 924 never used
+15:25:49.552  [STACK] dbg_drain: 876 of 1664 B used, 788 never used
+15:25:49.552  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:25:49.560  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:25:49.560  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:25:49.560  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:25:49.560  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:25:49.571  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:25:49.575  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:25:49.575  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:25:49.575  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:25:49.575  [STACK] stack top check: 0 mismatches
+15:25:49.575  [MBF] nav_in: 64 B buffer, 64 B free
+15:25:49.575  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:25:49.575  [MBF] obstacle: 24 B buffer, 24 B free
+15:25:49.591  [MBF] telemetry: 384 B buffer, 384 B free
+15:25:50.475  [TEL] car/telemetry/motion 01010fc89704008805709e020084c1010000
+15:25:50.481  [TEL] car/telemetry/heartbeat 010706c89704004300
+15:25:51.471  [TEL] car/telemetry/motion 01010fb09b04008805709e020084c1010000
+15:25:52.478  [TEL] car/telemetry/motion 01010f989f04008805709e020084c1010000
+15:25:53.473  [TEL] car/telemetry/motion 01010f80a304008805709e020084c1010000
+15:25:54.480  [TEL] car/telemetry/motion 01010f68a704008805709e020084c1010000
+15:25:55.481  [TEL] car/telemetry/motion 01010f50ab04008805709e020084c1010000
+15:25:55.485  [TEL] car/telemetry/heartbeat 01070650ab04004300
+15:25:56.480  [TEL] car/telemetry/motion 01010f38af04008805709e020084c1010000
+15:25:57.483  [TEL] car/telemetry/motion 01010f20b304008805709e020084c1010000
+15:25:58.484  [TEL] car/telemetry/motion 01010f08b704008805709e020084c1010000
+15:25:59.486  [TEL] car/telemetry/motion 01010ff0ba04008805709e020084c1010000
+15:25:59.543  [DBG] alive: SDK timer 313212 ms, kernel time 310076 ms, difference 3136 ms
+15:26:00.469  [TEL] car/telemetry/motion 01010fd8be04008805709e020084c1010000
+15:26:00.480  [TEL] car/telemetry/heartbeat 010706d8be04004300
+15:26:01.477  [TEL] car/telemetry/motion 01010fc0c204008805709e020084c1010000
+15:26:02.479  [TEL] car/telemetry/motion 01010fa8c604008805709e020084c1010000
+15:26:03.478  [TEL] car/telemetry/motion 01010f90ca04008805709e020084c1010000
+15:26:04.478  [TEL] car/telemetry/motion 01010f78ce04008805709e020084c1010000
+15:26:05.476  [TEL] car/telemetry/motion 01010f60d204008805709e020084c1010000
+15:26:05.483  [TEL] car/telemetry/heartbeat 01070660d204004300
+15:26:06.479  [TEL] car/telemetry/motion 01010f48d604008805709e020084c1010000
+15:26:07.481  [TEL] car/telemetry/motion 01010f30da04008805709e020084c1010000
+15:26:08.488  [TEL] car/telemetry/motion 01010f18de04008805709e020084c1010000
+15:26:09.481  [TEL] car/telemetry/motion 01010f00e204008805709e020084c1010000
+15:26:09.548  [DBG] alive: SDK timer 323212 ms, kernel time 320076 ms, difference 3136 ms
+15:26:10.475  [TEL] car/telemetry/motion 01010fe8e504008805709e020084c1010000
+15:26:10.486  [TEL] car/telemetry/heartbeat 010706e8e504004300
+15:26:11.476  [TEL] car/telemetry/motion 01010fd0e904008805709e020084c1010000
+15:26:12.463  [TEL] car/telemetry/motion 01010fb8ed04008805709e020084c1010000
+15:26:13.479  [TEL] car/telemetry/motion 01010fa0f104008805709e020084c1010000
+15:26:14.480  [TEL] car/telemetry/motion 01010f88f504008805709e020084c1010000
+15:26:15.481  [TEL] car/telemetry/motion 01010f70f904008805709e020084c1010000
+15:26:15.487  [TEL] car/telemetry/heartbeat 01070670f904004300
+15:26:16.479  [TEL] car/telemetry/motion 01010f58fd04008805709e020084c1010000
+15:26:17.482  [TEL] car/telemetry/motion 01010f400105008805709e020084c1010000
+15:26:18.484  [TEL] car/telemetry/motion 01010f280505008805709e020084c1010000
+15:26:19.485  [TEL] car/telemetry/motion 01010f100905008805709e020084c1010000
+15:26:19.548  [DBG] alive: SDK timer 333212 ms, kernel time 330076 ms, difference 3136 ms
+15:26:20.462  [TEL] car/telemetry/motion 01010ff80c05008805709e020084c1010000
+15:26:20.478  [TEL] car/telemetry/heartbeat 010706f80c05004300
+15:26:21.477  [TEL] car/telemetry/motion 01010fe01005008805709e020084c1010000
+15:26:22.477  [TEL] car/telemetry/motion 01010fc81405008805709e020084c1010000
+15:26:23.478  [TEL] car/telemetry/motion 01010fb01805008805709e020084c1010000
+15:26:24.480  [TEL] car/telemetry/motion 01010f981c05008805709e020084c1010000
+15:26:25.480  [TEL] car/telemetry/motion 01010f802005008805709e020084c1010000
+15:26:25.495  [TEL] car/telemetry/heartbeat 010706802005004300
+15:26:26.482  [TEL] car/telemetry/motion 01010f682405008805709e020084c1010000
+15:26:27.482  [TEL] car/telemetry/motion 01010f502805008805709e020084c1010000
+15:26:28.483  [TEL] car/telemetry/motion 01010f382c05008805709e020084c1010000
+15:26:29.486  [TEL] car/telemetry/motion 01010f203005008805709e020084c1010000
+15:26:29.564  [DBG] alive: SDK timer 343223 ms, kernel time 340087 ms, difference 3136 ms
+15:26:30.477  [TEL] car/telemetry/motion 01010f083405008805709e020084c1010000
+15:26:30.484  [TEL] car/telemetry/heartbeat 010706083405004300
+15:26:31.478  [TEL] car/telemetry/motion 01010ff03705008805709e020084c1010000
+15:26:32.475  [TEL] car/telemetry/motion 01010fd83b05008805709e020084c1010000
+15:26:33.479  [TEL] car/telemetry/motion 01010fc03f05008805709e020084c1010000
+15:26:34.480  [TEL] car/telemetry/motion 01010fa84305008805709e020084c1010000
+15:26:35.481  [TEL] car/telemetry/motion 01010f904705008805709e020084c1010000
+15:26:35.485  [TEL] car/telemetry/heartbeat 010706904705004300
+15:26:36.483  [TEL] car/telemetry/motion 01010f784b05008805709e020084c1010000
+15:26:37.483  [TEL] car/telemetry/motion 01010f604f05008805709e020084c1010000
+15:26:38.483  [TEL] car/telemetry/motion 01010f485305008805709e020084c1010000
+15:26:39.486  [TEL] car/telemetry/motion 01010f305705008805709e020084c1010000
+15:26:39.573  [DBG] alive: SDK timer 353234 ms, kernel time 350098 ms, difference 3136 ms
+15:26:40.477  [TEL] car/telemetry/motion 01010f185b05008805709e020084c1010000
+15:26:40.485  [TEL] car/telemetry/heartbeat 010706185b05004300
+15:26:41.479  [TEL] car/telemetry/motion 01010f005f05008805709e020084c1010000
+15:26:42.478  [TEL] car/telemetry/motion 01010fe86205008805709e020084c1010000
+15:26:43.482  [TEL] car/telemetry/motion 01010fd06605008805709e020084c1010000
+15:26:44.481  [TEL] car/telemetry/motion 01010fb86a05008805709e020084c1010000
+15:26:45.481  [TEL] car/telemetry/motion 01010fa06e05008805709e020084c1010000
+15:26:45.481  [TEL] car/telemetry/heartbeat 010706a06e05004300
+15:26:46.483  [TEL] car/telemetry/motion 01010f887205008805709e020084c1010000
+15:26:47.482  [TEL] car/telemetry/motion 01010f707605008805709e020084c1010000
+15:26:48.484  [TEL] car/telemetry/motion 01010f587a05008805709e020084c1010000
+15:26:49.486  [TEL] car/telemetry/motion 01010f407e05008805709e020084c1010000
+15:26:49.490  [TEL] CONNECTED tx=522 txf=0 off=1 ev=92 bad=0 qd=0 od=0 cmd=0/0
+15:26:49.585  [DBG] alive: SDK timer 363245 ms, kernel time 360109 ms, difference 3136 ms
+15:26:49.589  [STACK] init: 228 of 1152 B used, 924 never used
+15:26:49.589  [STACK] dbg_drain: 924 of 1664 B used, 740 never used
+15:26:49.589  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:26:49.589  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:26:49.606  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:26:49.608  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:26:49.608  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:26:49.608  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:26:49.608  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:26:49.621  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:26:49.622  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:26:49.622  [STACK] stack top check: 0 mismatches
+15:26:49.622  [MBF] nav_in: 64 B buffer, 64 B free
+15:26:49.622  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:26:49.622  [MBF] obstacle: 24 B buffer, 24 B free
+15:26:49.622  [MBF] telemetry: 384 B buffer, 384 B free
+15:26:50.471  [TEL] car/telemetry/motion 01010f288205008805709e020084c1010000
+15:26:50.484  [TEL] car/telemetry/heartbeat 010706288205004300
+15:26:51.479  [TEL] car/telemetry/motion 01010f108605008805709e020084c1010000
+15:26:52.466  [TEL] car/telemetry/motion 01010ff88905008805709e020084c1010000
+15:26:53.481  [TEL] car/telemetry/motion 01010fe08d05008805709e020084c1010000
+15:26:54.482  [TEL] car/telemetry/motion 01010fc89105008805709e020084c1010000
+15:26:55.474  [TEL] car/telemetry/motion 01010fb09505008805709e020084c1010000
+15:26:55.474  [TEL] car/telemetry/heartbeat 010706b09505004300
+15:26:56.484  [TEL] car/telemetry/motion 01010f989905008805709e020084c1010000
+15:26:57.482  [TEL] car/telemetry/motion 01010f809d05008805709e020084c1010000
+15:26:58.476  [TEL] car/telemetry/motion 01010f68a105008805709e020084c1010000
+15:26:59.473  [TEL] car/telemetry/motion 01010f50a505008805709e020084c1010000
+15:26:59.585  [DBG] alive: SDK timer 373247 ms, kernel time 370111 ms, difference 3136 ms
+15:27:00.476  [TEL] car/telemetry/motion 01010f38a905008805709e020084c1010000
+15:27:00.482  [TEL] car/telemetry/heartbeat 01070638a905004300
+15:27:01.467  [TEL] car/telemetry/motion 01010f20ad05008805709e020084c1010000
+15:27:02.465  [TEL] car/telemetry/motion 01010f08b105008805709e020084c1010000
+15:27:03.472  [TEL] car/telemetry/motion 01010ff0b405008805709e020084c1010000
+15:27:04.481  [TEL] car/telemetry/motion 01010fd8b805008805709e020084c1010000
+15:27:05.476  [TEL] car/telemetry/motion 01010fc0bc05008805709e020084c1010000
+15:27:05.476  [TEL] car/telemetry/heartbeat 010706c0bc05004300
+15:27:06.482  [TEL] car/telemetry/motion 01010fa8c005008805709e020084c1010000
+15:27:07.485  [TEL] car/telemetry/motion 01010f90c405008805709e020084c1010000
+15:27:08.475  [TEL] car/telemetry/motion 01010f78c805008805709e020084c1010000
+15:27:09.476  [TEL] car/telemetry/motion 01010f60cc05008805709e020084c1010000
+15:27:09.598  [DBG] alive: SDK timer 383257 ms, kernel time 380121 ms, difference 3136 ms
+15:27:10.476  [TEL] car/telemetry/motion 01010f48d005008805709e020084c1010000
+15:27:10.479  [TEL] car/telemetry/heartbeat 01070648d005004300
+15:27:11.477  [TEL] car/telemetry/motion 01010f30d405008805709e020084c1010000
+15:27:12.479  [TEL] car/telemetry/motion 01010f18d805008805709e020084c1010000
+15:27:13.477  [TEL] car/telemetry/motion 01010f00dc05008805709e020084c1010000
+15:27:14.480  [TEL] car/telemetry/motion 01010fe8df05008805709e020084c1010000
+15:27:15.482  [TEL] car/telemetry/motion 01010fd0e305008805709e020084c1010000
+15:27:15.482  [TEL] car/telemetry/heartbeat 010706d0e305004300
+15:27:16.482  [TEL] car/telemetry/motion 01010fb8e705008805709e020084c1010000
+15:27:17.481  [TEL] car/telemetry/motion 01010fa0eb05008805709e020084c1010000
+15:27:18.483  [TEL] car/telemetry/motion 01010f88ef05008805709e020084c1010000
+15:27:19.486  [TEL] car/telemetry/motion 01010f70f305008805709e020084c1010000
+15:27:19.607  [DBG] alive: SDK timer 393267 ms, kernel time 390131 ms, difference 3136 ms
+15:27:20.465  [TEL] car/telemetry/motion 01010f58f705008805709e020084c1010000
+15:27:20.479  [TEL] car/telemetry/heartbeat 01070658f705004300
+15:27:21.479  [TEL] car/telemetry/motion 01010f40fb05008805709e020084c1010000
+15:27:22.478  [TEL] car/telemetry/motion 01010f28ff05008805709e020084c1010000
+15:27:23.479  [TEL] car/telemetry/motion 01010f100306008805709e020084c1010000
+15:27:24.482  [TEL] car/telemetry/motion 01010ff80606008805709e020084c1010000
+15:27:25.480  [TEL] car/telemetry/motion 01010fe00a06008805709e020084c1010000
+15:27:25.486  [TEL] car/telemetry/heartbeat 010706e00a06004300
+15:27:26.484  [TEL] car/telemetry/motion 01010fc80e06008805709e020084c1010000
+15:27:27.479  [TEL] car/telemetry/motion 01010fb01206008805709e020084c1010000
+15:27:28.485  [TEL] car/telemetry/motion 01010f981606008805709e020084c1010000
+15:27:29.486  [TEL] car/telemetry/motion 01010f801a06008805709e020084c1010000
+15:27:29.608  [DBG] alive: SDK timer 403267 ms, kernel time 400131 ms, difference 3136 ms
+15:27:30.477  [TEL] car/telemetry/motion 01010f681e06008805709e020084c1010000
+15:27:30.488  [TEL] car/telemetry/heartbeat 010706681e06004300
+15:27:31.477  [TEL] car/telemetry/motion 01010f502206008805709e020084c1010000
+15:27:32.480  [TEL] car/telemetry/motion 01010f382606008805709e020084c1010000
+15:27:33.479  [TEL] car/telemetry/motion 01010f202a06008805709e020084c1010000
+15:27:34.474  [TEL] car/telemetry/motion 01010f082e06008805709e020084c1010000
+15:27:35.481  [TEL] car/telemetry/motion 01010ff03106008805709e020084c1010000
+15:27:35.485  [TEL] car/telemetry/heartbeat 010706f03106004300
+15:27:36.483  [TEL] car/telemetry/motion 01010fd83506008805709e020084c1010000
+15:27:37.482  [TEL] car/telemetry/motion 01010fc03906008805709e020084c1010000
+15:27:38.485  [TEL] car/telemetry/motion 01010fa83d06008805709e020084c1010000
+15:27:39.485  [TEL] car/telemetry/motion 01010f904106008805709e020084c1010000
+15:27:39.605  [DBG] alive: SDK timer 413267 ms, kernel time 410131 ms, difference 3136 ms
+15:27:40.476  [TEL] car/telemetry/motion 01010f784506008805709e020084c1010000
+15:27:40.481  [TEL] car/telemetry/heartbeat 010706784506004300
+15:27:41.469  [TEL] car/telemetry/motion 01010f604906008805709e020084c1010000
+15:27:42.478  [TEL] car/telemetry/motion 01010f484d06008805709e020084c1010000
+15:27:43.481  [TEL] car/telemetry/motion 01010f305106008805709e020084c1010000
+15:27:44.481  [TEL] car/telemetry/motion 01010f185506008805709e020084c1010000
+15:27:45.474  [TEL] car/telemetry/motion 01010f005906008805709e020084c1010000
+15:27:45.474  [TEL] car/telemetry/heartbeat 010706005906004300
+15:27:46.477  [TEL] car/telemetry/motion 01010fe85c06008805709e020084c1010000
+15:27:47.480  [TEL] car/telemetry/motion 01010fd06006008805709e020084c1010000
+15:27:48.483  [TEL] car/telemetry/motion 01010fb86406008805709e020084c1010000
+15:27:49.485  [TEL] car/telemetry/motion 01010fa06806008805709e020084c1010000
+15:27:49.491  [TEL] CONNECTED tx=594 txf=0 off=1 ev=92 bad=0 qd=0 od=0 cmd=0/0
+15:27:49.617  [DBG] alive: SDK timer 423278 ms, kernel time 420142 ms, difference 3136 ms
+15:27:49.621  [STACK] init: 228 of 1152 B used, 924 never used
+15:27:49.623  [STACK] dbg_drain: 924 of 1664 B used, 740 never used
+15:27:49.628  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:27:49.631  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:27:49.634  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:27:49.635  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:27:49.637  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:27:49.639  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:27:49.642  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:27:49.642  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:27:49.648  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:27:49.648  [STACK] stack top check: 0 mismatches
+15:27:49.653  [MBF] nav_in: 64 B buffer, 64 B free
+15:27:49.655  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:27:49.655  [MBF] obstacle: 24 B buffer, 24 B free
+15:27:49.655  [MBF] telemetry: 384 B buffer, 384 B free
+15:27:50.473  [TEL] car/telemetry/motion 01010f886c06008805709e020084c1010000
+15:27:50.481  [TEL] car/telemetry/heartbeat 010706886c06004300
+15:27:51.479  [TEL] car/telemetry/motion 01010f707006008805709e020084c1010000
+15:27:52.477  [TEL] car/telemetry/motion 01010f587406008805709e020084c1010000
+15:27:53.483  [TEL] car/telemetry/motion 01010f407806008805709e020084c1010000
+15:27:54.482  [TEL] car/telemetry/motion 01010f287c06008805709e020084c1010000
+15:27:55.483  [TEL] car/telemetry/motion 01010f108006008805709e020084c1010000
+15:27:55.489  [TEL] car/telemetry/heartbeat 010706108006004300
+15:27:56.483  [TEL] car/telemetry/motion 01010ff88306008805709e020084c1010000
+15:27:57.486  [TEL] car/telemetry/motion 01010fe08706008805709e020084c1010000
+15:27:58.477  [TEL] car/telemetry/motion 01010fc88b06008805709e020084c1010000
+15:27:59.477  [TEL] car/telemetry/motion 01010fb08f06008805709e020084c1010000
+15:27:59.622  [DBG] alive: SDK timer 433280 ms, kernel time 430144 ms, difference 3136 ms
+15:28:00.477  [TEL] car/telemetry/motion 01010f989306008805709e020084c1010000
+15:28:00.483  [TEL] car/telemetry/heartbeat 010706989306004300
+15:28:01.477  [TEL] car/telemetry/motion 01010f809706008805709e020084c1010000
+15:28:02.480  [TEL] car/telemetry/motion 01010f689b06008805709e020084c1010000
+15:28:03.481  [TEL] car/telemetry/motion 01010f509f06008805709e020084c1010000
+15:28:04.481  [TEL] car/telemetry/motion 01010f38a306008805709e020084c1010000
+15:28:05.484  [TEL] car/telemetry/motion 01010f20a706008805709e020084c1010000
+15:28:05.489  [TEL] car/telemetry/heartbeat 01070620a706004300
+15:28:06.484  [TEL] car/telemetry/motion 01010f08ab06008805709e020084c1010000
+15:28:07.479  [TEL] car/telemetry/motion 01010ff0ae06008805709e020084c1010000
+15:28:08.484  [TEL] car/telemetry/motion 01010fd8b206008805709e020084c1010000
+15:28:09.477  [TEL] car/telemetry/motion 01010fc0b606008805709e020084c1010000
+15:28:09.631  [DBG] alive: SDK timer 443290 ms, kernel time 440154 ms, difference 3136 ms
+15:28:10.476  [TEL] car/telemetry/motion 01010fa8ba06008805709e020084c1010000
+15:28:10.482  [TEL] car/telemetry/heartbeat 010706a8ba06004300
+15:28:11.478  [TEL] car/telemetry/motion 01010f90be06008805709e020084c1010000
+15:28:12.480  [TEL] car/telemetry/motion 01010f78c206008805709e020084c1010000
+15:28:13.479  [TEL] car/telemetry/motion 01010f60c606008805709e020084c1010000
+15:28:14.482  [TEL] car/telemetry/motion 01010f48ca06008805709e020084c1010000
+15:28:15.481  [TEL] car/telemetry/motion 01010f30ce06008805709e020084c1010000
+15:28:15.487  [TEL] car/telemetry/heartbeat 01070630ce06004300
+15:28:16.484  [TEL] car/telemetry/motion 01010f18d206008805709e020084c1010000
+15:28:17.485  [TEL] car/telemetry/motion 01010f00d606008805709e020084c1010000
+15:28:18.482  [TEL] car/telemetry/motion 01010fe8d906008805709e020084c1010000
+15:28:19.486  [TEL] car/telemetry/motion 01010fd0dd06008805709e020084c1010000
+15:28:19.630  [DBG] alive: SDK timer 453300 ms, kernel time 450164 ms, difference 3136 ms
+15:28:20.477  [TEL] car/telemetry/motion 01010fb8e106008805709e020084c1010000
+15:28:20.481  [TEL] car/telemetry/heartbeat 010706b8e106004300
+15:28:21.477  [TEL] car/telemetry/motion 01010fa0e506008805709e020084c1010000
+15:28:22.480  [TEL] car/telemetry/motion 01010f88e906008805709e020084c1010000
+15:28:23.485  [TEL] car/telemetry/motion 01010f70ed06008805709e020084c1010000
+15:28:24.481  [TEL] car/telemetry/motion 01010f58f106008805709e020084c1010000
+15:28:25.483  [TEL] car/telemetry/motion 01010f40f506008805709e020084c1010000
+15:28:25.488  [TEL] car/telemetry/heartbeat 01070640f506004300
+15:28:26.481  [TEL] car/telemetry/motion 01010f28f906008805709e020084c1010000
+15:28:27.473  [TEL] car/telemetry/motion 01010f10fd06008805709e020084c1010000
+15:28:28.474  [TEL] car/telemetry/motion 01010ff80007008805709e020084c1010000
+15:28:29.487  [TEL] car/telemetry/motion 01010fe00407008805709e020084c1010000
+15:28:29.640  [DBG] alive: SDK timer 463300 ms, kernel time 460164 ms, difference 3136 ms
+15:28:30.477  [TEL] car/telemetry/motion 01010fc80807008805709e020084c1010000
+15:28:30.479  [TEL] car/telemetry/heartbeat 010706c80807004300
+15:28:31.469  [TEL] car/telemetry/motion 01010fb00c07008805709e020084c1010000
+15:28:32.479  [TEL] car/telemetry/motion 01010f981007008805709e020084c1010000
+15:28:33.479  [TEL] car/telemetry/motion 01010f801407008805709e020084c1010000
+15:28:34.481  [TEL] car/telemetry/motion 01010f681807008805709e020084c1010000
+15:28:35.481  [TEL] car/telemetry/motion 01010f501c07008805709e020084c1010000
+15:28:35.481  [TEL] car/telemetry/heartbeat 010706501c07004300
+15:28:36.483  [TEL] car/telemetry/motion 01010f382007008805709e020084c1010000
+15:28:37.484  [TEL] car/telemetry/motion 01010f202407008805709e020084c1010000
+15:28:38.484  [TEL] car/telemetry/motion 01010f082807008805709e020084c1010000
+15:28:39.485  [TEL] car/telemetry/motion 01010ff02b07008805709e020084c1010000
+15:28:39.641  [DBG] alive: SDK timer 473300 ms, kernel time 470164 ms, difference 3136 ms
+15:28:40.478  [TEL] car/telemetry/motion 01010fd82f07008805709e020084c1010000
+15:28:40.482  [TEL] car/telemetry/heartbeat 010706d82f07004300
+15:28:41.470  [TEL] car/telemetry/motion 01010fc03307008805709e020084c1010000
+15:28:42.478  [TEL] car/telemetry/motion 01010fa83707008805709e020084c1010000
+15:28:43.481  [TEL] car/telemetry/motion 01010f903b07008805709e020084c1010000
+15:28:44.481  [TEL] car/telemetry/motion 01010f783f07008805709e020084c1010000
+15:28:45.482  [TEL] car/telemetry/motion 01010f604307008805709e020084c1010000
+15:28:45.482  [TEL] car/telemetry/heartbeat 010706604307004300
+15:28:46.483  [TEL] car/telemetry/motion 01010f484707008805709e020084c1010000
+15:28:47.484  [TEL] car/telemetry/motion 01010f304b07008805709e020084c1010000
+15:28:48.486  [TEL] car/telemetry/motion 01010f184f07008805709e020084c1010000
+15:28:49.488  [TEL] car/telemetry/motion 01010f005307008805709e020084c1010000
+15:28:49.490  [TEL] CONNECTED tx=666 txf=0 off=1 ev=92 bad=0 qd=0 od=0 cmd=0/0
+15:28:49.651  [DBG] alive: SDK timer 483311 ms, kernel time 480175 ms, difference 3136 ms
+15:28:49.651  [STACK] init: 228 of 1152 B used, 924 never used
+15:28:49.651  [STACK] dbg_drain: 924 of 1664 B used, 740 never used
+15:28:49.663  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:28:49.663  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:28:49.669  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:28:49.674  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:28:49.674  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:28:49.674  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:28:49.679  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:28:49.679  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:28:49.679  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:28:49.695  [STACK] stack top check: 0 mismatches
+15:28:49.695  [MBF] nav_in: 64 B buffer, 64 B free
+15:28:49.695  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:28:49.695  [MBF] obstacle: 24 B buffer, 24 B free
+15:28:49.695  [MBF] telemetry: 384 B buffer, 384 B free
+15:28:50.479  [TEL] car/telemetry/motion 01010fe85607008805709e020084c1010000
+15:28:50.485  [TEL] car/telemetry/heartbeat 010706e85607004300
+15:28:51.480  [TEL] car/telemetry/motion 01010fd05a07008805709e020084c1010000
+15:28:52.483  [TEL] car/telemetry/motion 01010fb85e07008805709e020084c1010000
+15:28:53.483  [TEL] car/telemetry/motion 01010fa06207008805709e020084c1010000
+15:28:54.484  [TEL] car/telemetry/motion 01010f886607008805709e020084c1010000
+15:28:55.485  [TEL] car/telemetry/motion 01010f706a07008805709e020084c1010000
+15:28:55.487  [TEL] car/telemetry/heartbeat 010706706a07004300
+15:28:56.486  [TEL] car/telemetry/motion 01010f586e07008805709e020084c1010000
+15:28:57.486  [TEL] car/telemetry/motion 01010f407207008805709e020084c1010000
+15:28:58.477  [TEL] car/telemetry/motion 01010f287607008805709e020084c1010000
+15:28:59.477  [TEL] car/telemetry/motion 01010f107a07008805709e020084c1010000
+15:28:59.654  [DBG] alive: SDK timer 493313 ms, kernel time 490177 ms, difference 3136 ms
+15:29:00.479  [TEL] car/telemetry/motion 01010ff87d07008805709e020084c1010000
+15:29:00.485  [TEL] car/telemetry/heartbeat 010706f87d07004300
+15:29:01.477  [TEL] car/telemetry/motion 01010fe08107008805709e020084c1010000
+15:29:02.481  [TEL] car/telemetry/motion 01010fc88507008805709e020084c1010000
+15:29:03.483  [TEL] car/telemetry/motion 01010fb08907008805709e020084c1010000
+15:29:04.482  [TEL] car/telemetry/motion 01010f988d07008805709e020084c1010000
+15:29:05.481  [TEL] car/telemetry/motion 01010f809107008805709e020084c1010000
+15:29:05.481  [TEL] car/telemetry/heartbeat 010706809107004300
+15:29:06.484  [TEL] car/telemetry/motion 01010f689507008805709e020084c1010000
+15:29:07.481  [TEL] car/telemetry/motion 01010f509907008805709e020084c1010000
+15:29:08.480  [TEL] car/telemetry/motion 01010f389d07008805709e020084c1010000
+15:29:09.477  [TEL] car/telemetry/motion 01010f20a107008805709e020084c1010000
+15:29:09.664  [DBG] alive: SDK timer 503323 ms, kernel time 500187 ms, difference 3136 ms
+15:29:10.478  [TEL] car/telemetry/motion 01010f08a507008805709e020084c1010000
+15:29:10.478  [TEL] car/telemetry/heartbeat 01070608a507004300
+15:29:11.479  [TEL] car/telemetry/motion 01010ff0a807008805709e020084c1010000
+15:29:12.475  [TEL] car/telemetry/motion 01010fd8ac07008805709e020084c1010000
+15:29:13.481  [TEL] car/telemetry/motion 01010fc0b007008805709e020084c1010000
+15:29:14.481  [TEL] car/telemetry/motion 01010fa8b407008805709e020084c1010000
+15:29:15.484  [TEL] car/telemetry/motion 01010f90b807008805709e020084c1010000
+15:29:15.488  [TEL] car/telemetry/heartbeat 01070690b807004300
+15:29:16.483  [TEL] car/telemetry/motion 01010f78bc07008805709e020084c1010000
+15:29:17.486  [TEL] car/telemetry/motion 01010f60c007008805709e020084c1010000
+15:29:18.485  [TEL] car/telemetry/motion 01010f48c407008805709e020084c1010000
+15:29:19.487  [TEL] car/telemetry/motion 01010f30c807008805709e020084c1010000
+15:29:19.673  [DBG] alive: SDK timer 513333 ms, kernel time 510197 ms, difference 3136 ms
+15:29:20.481  [TEL] car/telemetry/motion 01010f18cc07008805709e020084c1010000
+15:29:20.493  [TEL] car/telemetry/heartbeat 01070618cc07004300
+15:29:21.478  [TEL] car/telemetry/motion 01010f00d007008805709e020084c1010000
+15:29:22.477  [TEL] car/telemetry/motion 01010fe8d307008805709e020084c1010000
+15:29:23.480  [TEL] car/telemetry/motion 01010fd0d707008805709e020084c1010000
+15:29:24.466  [TEL] car/telemetry/motion 01010fb8db07008805709e020084c1010000
+15:29:25.481  [TEL] car/telemetry/motion 01010fa0df07008805709e020084c1010000
+15:29:25.487  [TEL] car/telemetry/heartbeat 010706a0df07004300
+15:29:26.484  [TEL] car/telemetry/motion 01010f88e307008805709e020084c1010000
+15:29:27.486  [TEL] car/telemetry/motion 01010f70e707008805709e020084c1010000
+15:29:28.483  [TEL] car/telemetry/motion 01010f58eb07008805709e020084c1010000
+15:29:29.477  [TEL] car/telemetry/motion 01010f40ef07008805709e020084c1010000
+15:29:29.684  [DBG] alive: SDK timer 523344 ms, kernel time 520208 ms, difference 3136 ms
+15:29:30.478  [TEL] car/telemetry/motion 01010f28f307008805709e020084c1010000
+15:29:30.481  [TEL] car/telemetry/heartbeat 01070628f307004300
+15:29:31.479  [TEL] car/telemetry/motion 01010f10f707008805709e020084c1010000
+15:29:32.481  [TEL] car/telemetry/motion 01010ff8fa07008805709e020084c1010000
+15:29:33.480  [TEL] car/telemetry/motion 01010fe0fe07008805709e020084c1010000
+15:29:34.481  [TEL] car/telemetry/motion 01010fc80208008805709e020084c1010000
+15:29:35.484  [TEL] car/telemetry/motion 01010fb00608008805709e020084c1010000
+15:29:35.487  [TEL] car/telemetry/heartbeat 010706b00608004300
+15:29:36.484  [TEL] car/telemetry/motion 01010f980a08008805709e020084c1010000
+15:29:37.485  [TEL] car/telemetry/motion 01010f800e08008805709e020084c1010000
+15:29:38.485  [TEL] car/telemetry/motion 01010f681208008805709e020084c1010000
+15:29:39.486  [TEL] car/telemetry/motion 01010f501608008805709e020084c1010000
+15:29:39.683  [DBG] alive: SDK timer 533344 ms, kernel time 530208 ms, difference 3136 ms
+15:29:40.478  [TEL] car/telemetry/motion 01010f381a08008805709e020084c1010000
+15:29:40.485  [TEL] car/telemetry/heartbeat 010706381a08004300
+15:29:41.477  [TEL] car/telemetry/motion 01010f201e08008805709e020084c1010000
+15:29:42.481  [TEL] car/telemetry/motion 01010f082208008805709e020084c1010000
+15:29:43.479  [TEL] car/telemetry/motion 01010ff02508008805709e020084c1010000
+15:29:44.471  [TEL] car/telemetry/motion 01010fd82908008805709e020084c1010000
+15:29:45.481  [TEL] car/telemetry/motion 01010fc02d08008805709e020084c1010000
+15:29:45.488  [TEL] car/telemetry/heartbeat 010706c02d08004300
+15:29:46.484  [TEL] car/telemetry/motion 01010fa83108008805709e020084c1010000
+15:29:47.486  [TEL] car/telemetry/motion 01010f903508008805709e020084c1010000
+15:29:48.485  [TEL] car/telemetry/motion 01010f783908008805709e020084c1010000
+15:29:49.488  [TEL] car/telemetry/motion 01010f603d08008805709e020084c1010000
+15:29:49.492  [TEL] CONNECTED tx=738 txf=0 off=1 ev=92 bad=0 qd=0 od=0 cmd=0/0
+15:29:49.687  [DBG] alive: SDK timer 543344 ms, kernel time 540208 ms, difference 3136 ms
+15:29:49.699  [STACK] init: 228 of 1152 B used, 924 never used
+15:29:49.706  [STACK] dbg_drain: 924 of 1664 B used, 740 never used
+15:29:49.713  [STACK] tel: 620 of 4736 B used, 4116 never used
+15:29:49.721  [STACK] vc: 428 of 1664 B used, 1236 never used
+15:29:49.731  [STACK] motion: 340 of 1664 B used, 1324 never used
+15:29:49.736  [STACK] lf: 588 of 1664 B used, 1076 never used
+15:29:49.742  [STACK] safety: 296 of 1664 B used, 1368 never used
+15:29:49.747  [STACK] imu: 608 of 2176 B used, 1568 never used
+15:29:49.750  [STACK] obs_scan: 492 of 1664 B used, 1172 never used
+15:29:49.752  [STACK] obs_avoid: 412 of 1664 B used, 1252 never used
+15:29:49.756  [STACK] app_test: 780 of 1664 B used, 884 never used
+15:29:49.760  [STACK] stack top check: 0 mismatches
+15:29:49.762  [MBF] nav_in: 64 B buffer, 64 B free
+15:29:49.765  [MBF] motion_cmd: 32 B buffer, 32 B free
+15:29:49.767  [MBF] obstacle: 24 B buffer, 24 B free
+15:29:49.771  [MBF] telemetry: 384 B buffer, 384 B free
+15:29:50.477  [TEL] car/telemetry/motion 01010f484108008805709e020084c1010000
+15:29:50.485  [TEL] car/telemetry/heartbeat 010706484108004300
+15:29:51.482  [TEL] car/telemetry/motion 01010f304508008805709e020084c1010000
+15:29:52.485  [TEL] car/telemetry/motion 01010f184908008805709e020084c1010000
+15:29:53.476  [TEL] car/telemetry/motion 01010f004d08008805709e020084c1010000
+15:29:54.484  [TEL] car/telemetry/motion 01010fe85008008805709e020084c1010000
+15:29:55.486  [TEL] car/telemetry/motion 01010fd05408008805709e020084c1010000
+15:29:55.494  [TEL] car/telemetry/heartbeat 010706d05408004300
+15:29:56.489  [TEL] car/telemetry/motion 01010fb85808008805709e020084c1010000
+15:29:57.477  [TEL] car/telemetry/motion 01010fa05c08008805709e020084c1010000
+15:29:58.475  [TEL] car/telemetry/motion 01010f886008008805709e020084c1010000
+15:29:59.479  [TEL] car/telemetry/motion 01010f706408008805709e020084c1010000
+15:29:59.692  [DBG] alive: SDK timer 553347 ms, kernel time 550211 ms, difference 3136 ms
+15:30:00.481  [TEL] car/telemetry/motion 01010f586808008805709e020084c1010000
+15:30:00.483  [TEL] car/telemetry/heartbeat 010706586808004300
+15:30:01.481  [TEL] car/telemetry/motion 01010f406c08008805709e020084c1010000
+15:30:02.475  [TEL] car/telemetry/motion 01010f287008008805709e020084c1010000
+15:30:03.482  [TEL] car/telemetry/motion 01010f107408008805709e020084c1010000
+15:30:04.486  [TEL] car/telemetry/motion 01010ff87708008805709e020084c1010000
+15:30:05.486  [TEL] car/telemetry/motion 01010fe07b08008805709e020084c1010000
+15:30:05.492  [TEL] car/telemetry/heartbeat 010706e07b08004300
+15:30:06.486  [TEL] car/telemetry/motion 01010fc87f08008805709e020084c1010000
+15:30:07.488  [TEL] car/telemetry/motion 01010fb08308008805709e020084c1010000
+15:30:08.478  [TEL] car/telemetry/motion 01010f988708008805709e020084c1010000
+15:30:09.478  [TEL] car/telemetry/motion 01010f808b08008805709e020084c1010000
+15:30:09.699  [DBG] alive: SDK timer 563357 ms, kernel time 560221 ms, difference 3136 ms
+15:30:10.471  [TEL] car/telemetry/motion 01010f688f08008805709e020084c1010000
+15:30:10.485  [TEL] car/telemetry/heartbeat 010706688f08004300
+15:30:11.481  [TEL] car/telemetry/motion 01010f509308008805709e020084c1010000
+15:30:12.481  [TEL] car/telemetry/motion 01010f389708008805709e020084c1010000
+15:30:13.482  [TEL] car/telemetry/motion 01010f209b08008805709e020084c1010000
+15:30:14.484  [TEL] car/telemetry/motion 01010f089f08008805709e020084c1010000
+15:30:15.486  [TEL] car/telemetry/motion 01010ff0a208008805709e020084c1010000
+15:30:15.491  [TEL] car/telemetry/heartbeat 010706f0a208004300
+15:30:16.483  [TEL] car/telemetry/motion 01010fd8a608008805709e020084c1010000
+15:30:17.486  [TEL] car/telemetry/motion 01010fc0aa08008805709e020084c1010000
+15:30:18.482  [TEL] car/telemetry/motion 01010fa8ae08008805709e020084c1010000
+15:30:19.473  [TEL] car/telemetry/motion 01010f90b208008805709e020084c1010000
+15:30:19.707  [DBG] alive: SDK timer 573367 ms, kernel time 570231 ms, difference 3136 ms
+15:30:20.475  [TEL] car/telemetry/motion 01010f78b608008805709e020084c1010000
+15:30:20.475  [TEL] car/telemetry/heartbeat 01070678b608004300
+15:30:21.478  [TEL] car/telemetry/motion 01010f60ba08008805709e020084c1010000
+15:30:22.481  [TEL] car/telemetry/motion 01010f48be08008805709e020084c1010000
+15:30:23.481  [TEL] car/telemetry/motion 01010f30c208008805709e020084c1010000
+15:30:24.482  [TEL] car/telemetry/motion 01010f18c608008805709e020084c1010000
+15:30:25.483  [TEL] car/telemetry/motion 01010f00ca08008805709e020084c1010000
+15:30:25.488  [TEL] car/telemetry/heartbeat 01070600ca08004300
+15:30:26.488  [TEL] car/telemetry/motion 01010fe8cd08008805709e020084c1010000
+15:30:27.485  [TEL] car/telemetry/motion 01010fd0d108008805709e020084c1010000
+15:30:28.479  [TEL] car/telemetry/motion 01010fb8d508008805709e020084c1010000
+15:30:29.486  [TEL] car/telemetry/motion 01010fa0d908008805709e020084c1010000
+15:30:29.717  [DBG] alive: SDK timer 583377 ms, kernel time 580241 ms, difference 3136 ms
+15:30:30.478  [TEL] car/telemetry/motion 01010f88dd08008805709e020084c1010000
+15:30:30.484  [TEL] car/telemetry/heartbeat 01070688dd08004300
+15:30:31.480  [TEL] car/telemetry/motion 01010f70e108008805709e020084c1010000
+15:30:32.482  [TEL] car/telemetry/motion 01010f58e508008805709e020084c1010000
+15:30:33.481  [TEL] car/telemetry/motion 01010f40e908008805709e020084c1010000
+15:30:34.483  [TEL] car/telemetry/motion 01010f28ed08008805709e020084c1010000
+15:30:35.485  [TEL] car/telemetry/motion 01010f10f108008805709e020084c1010000
+15:30:35.485  [TEL] car/telemetry/heartbeat 01070610f108004300
+15:30:36.484  [TEL] car/telemetry/motion 01010ff8f408008805709e020084c1010000
+15:30:37.485  [TEL] car/telemetry/motion 01010fe0f808008805709e020084c1010000
+15:30:38.486  [TEL] car/telemetry/motion 01010fc8fc08008805709e020084c1010000
+15:30:39.488  [TEL] car/telemetry/motion 01010fb00009008805709e020084c1010000
+15:30:39.730  [DBG] alive: SDK timer 593388 ms, kernel time 590252 ms, difference 3136 ms
+15:30:40.468  [TEL] car/telemetry/motion 01010f980409008805709e020084c1010000
+15:30:40.468  [TEL] car/telemetry/heartbeat 010706980409004300
+15:30:41.479  [TEL] car/telemetry/motion 01010f800809008805709e020084c1010000
+15:30:42.479  [TEL] car/telemetry/motion 01010f680c09008805709e020084c1010000
+15:30:43.471  [TEL] car/telemetry/motion 01010f501009008805709e020084c1010000
+15:30:44.485  [TEL] car/telemetry/motion 01010f381409008805709e020084c1010000
+15:30:45.484  [TEL] car/telemetry/motion 01010f201809008805709e020084c1010000
+15:30:45.492  [TEL] car/telemetry/heartbeat 010706201809004300
+15:30:46.483  [TEL] car/telemetry/motion 01010f081c09008805709e020084c1010000
+15:30:46.707  [capture] done

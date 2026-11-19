@@ -1,0 +1,318 @@
+S3 LF-3.2 S3-U12 run 1 (battery-off version), 2026-11-03 23:16-23:31, tester Jin Yong (2503319). INVALID SETUP: USB-only power, car on the desk with an 8 x 25 cm paper strip; USB powers the Robo Pico motors, so the car drove.
+Firmware build/robocar-s3-lf32-wip-126af05.uf2 (LF-3.2 working tree on 126af05, identical to commit 3a5d76a), APP_TEST, Debug, USB console.
+EXCERPT ONLY. The original capture build/s3-lf32-run.txt was overwritten by run 2 (2026-11-04 00:28). These lines are the console output as printed during the diagnosis session on 2026-11-04, recovered from the session transcript:
+  Part 1: capture lines 1-228 (line-number prefix "N:"), without the periodic [TEL] motion/sensor/heartbeat lines and [DBG] alive lines, each line cut at 220 characters.
+  Part 2: capture lines 228-613 (no line numbers), without [TEL] motion/sensor/heartbeat, [DBG] alive, S1-U0x and "cmd rejected" lines, cut at 220 characters, first 120 such lines only.
+  Part 3: the 1st-4th and 10th-40th [TEL] car/telemetry/motion lines of the capture (prefix = capture line number), cut at 120 characters.
+Lines not shown here are lost.
+
+=== Part 1
+1:23:16:50.482  [capture] COM5 for 900 s -> build\s3-lf32-run.txt
+2:23:16:50.512  pre-kernel ok
+3:23:16:50.512  
+4:23:16:50.514  
+5:23:16:50.514  microT-Kernel Version 3.00
+6:23:16:50.514  
+7:23:16:50.514  [IPC] kernel spec version 3.00 OK
+8:23:16:50.514  [IPC] 8 objects created, MBF depth self-check OK
+9:23:16:50.514  [S3] IR_R (GP26/ADC0) ADC sanity OK
+10:23:16:50.514  [S3] IR_C (GP28/ADC2) ADC sanity OK
+11:23:16:50.514  [S4] IMU init OK
+12:23:16:50.514  [S4] tasks started
+13:23:16:50.514  [SAFETY] task started
+14:23:16:50.522  [IMU] task started
+15:23:16:50.522  [IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+16:23:16:50.522  [IMU] chip LSM303D, accel+mag at 0x1D
+17:23:16:50.522  [TEL] backend: console ([TEL] <topic> <hex>)
+18:23:16:50.657  [TEL] link DISCONNECTED -> CONNECTING
+19:23:16:50.683  [TEL] link CONNECTING -> CONNECTED
+20:23:16:50.683  [TEST] S1-U01 PASS  Telemetry task running, link CONNECTED
+21:23:16:50.704  [TEL] car/telemetry/barcode 0103042a000002
+22:23:16:50.788  [TEST] S1-U02 PASS  event -> frame -> sent within 100 ms
+23:23:16:50.804  [LF] boot calibration OK: C avg 1343 (1310..1368), R avg 148 (126..165)
+24:23:16:50.804  [LF] cal white 148 black 1343 (both sensors)
+25:23:16:50.877  [TEST] S1-U03 PASS  invalid tel_evt_t counted, never framed
+26:23:16:50.989  [TEST] S1-U04 64 posts in 187 us, 32 queued, 32 dropped
+27:23:16:50.989  [TEST] S1-U04 PASS  64 posts never block; full queue = counted drop
+28:23:16:50.989  [TEL] cmd car/cmd/stop -> VC
+29:23:16:50.989  [TEST] S1-U05 PASS  car/cmd/stop accepted -> MBF_NAV_IN
+30:23:16:50.989  [TEL] cmd rejected: BAD_VERSION (3 B)
+31:23:16:50.989  [TEL] cmd rejected: BAD_LENGTH (4 B)
+32:23:16:50.996  [TEL] cmd rejected: UNKNOWN_TYPE (3 B)
+33:23:16:50.996  [TEL] cmd rejected: TOPIC_MISMATCH (3 B)
+34:23:16:50.996  [TEL] cmd rejected: NOT_COMMAND (9 B)
+35:23:16:50.996  [TEST] S1-U06 PASS  5 malformed commands rejected, none posted
+36:23:16:50.996  [TEST] S1-U07 PASS  sensor snapshot clamps to wire fields
+37:23:16:51.004  [TEL] car/telemetry/obstacle 0105086801001e8c828a0c
+38:23:16:51.088  [TEST] S1-U08 PASS  obstacle profile framed once
+39:23:16:51.088  [TEST] S1-U09 PASS  FAULT_WIFI_LOSS clear while connected
+40:23:16:51.337  [IMU] level reference: board at 10 half-deg when flat (0 tries)
+43:23:16:52.093  [TEST] S1-U10 50 wakes in 1 s, 0 overruns
+44:23:16:52.094  [TEST] S1-U10 PASS  20 ms wake grid held, no overruns
+45:23:16:52.095  [TEST] subsystem1 SUMMARY 10 passed, 0 failed
+46:23:16:52.148  [TEST] S2-U01 PASS  Motor PWM slices 4 and 5 configured at 20 kHz +-1%
+47:23:16:52.150  [TEST] S2-U02 PASS  Motor duty capped at MOTOR_DUTY_MAX_PCT
+48:23:16:52.163  [TEST] S2-U06 PASS  motion_emergency_brake drives all four channels LOW without Motion task
+49:23:16:52.163  [TEST] S2-U09 PASS  enc_get_count is non-blocking (< 10 us avg over 1000 calls)
+73:23:17:02.181  [TEST] S2-U12 PASS  Motion period: 500 +- 1 releases in 10 s, 0 missed
+74:23:17:02.203  [MOT] invalid motion_cmd_t rejected
+75:23:17:02.204  [TEST] S2-U13 PASS  Motion rejects invalid motion_cmd_t and keeps setpoint
+76:23:17:02.301  [IMU] hump pitch=19 half-deg
+77:23:17:02.303  [TEL] car/telemetry/hump 0104058c2d008009
+78:23:17:02.324  [TEST] S2-U14 PASS  Motion holds setpoint for MOTION_T_HOLD_MS then stops
+79:23:17:02.368  [MOT] invalid motion_cmd_t rejected
+80:23:17:02.389  [TEST] S2-U15 PASS  Motion caps speed at MOTION_SPEED_MAX_CMPS (50 cm/s)
+81:23:17:02.423  [IMU] hump pitch=24 half-deg
+82:23:17:02.427  [TEL] car/telemetry/hump 010405042e00000c
+83:23:17:02.521  [MOT] S2-U16 dt=100 ms dist=2->5 cm encL=326->657 encR=343->676
+84:23:17:02.522  [TEST] S2-U16 PASS  motion_state_t published under MTX_MOTION advances over 100 ms
+85:23:17:02.523  [VC] invalid nav_input_t rejected
+86:23:17:02.525  [TEST] S2-U22 PASS  VC rejects invalid nav_input_t and sends no motion_cmd_t
+88:23:17:02.546  [TEST] S2-U23 PASS  VC precedence: AVOID overrides LINE while authority is AVOID
+90:23:17:02.567  [TEST] S2-U24 PASS  VC commands stop/brake when EVF_SAFETY_FAULT_LATCHED is set
+91:23:17:02.599  [IMU] hump pitch=-23 half-deg
+92:23:17:02.609  [TEL] car/telemetry/hump 010405ae2e008074
+96:23:17:03.153  [TEST] S2-U25 FAIL  VC clears FAULT_LATCHED only after SAFETY_T_STILL_MS stationary   (subsystem
+98:23:17:03.171  [TEST] S2-U26 PASS  System FSM transitions INITIALISING -> READY -> NAV_LINE_TRACKING
+100:23:17:03.183  [TEST] S2-U27 PASS  System FSM returns to READY and stops on TRACK_LOST and STOP
+101:23:17:03.304  [TEST] S2-U28 PASS  Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_c
+102:23:17:03.307  [TEST] subsystem2 SUMMARY 15 passed, 1 failed
+103:23:17:03.309  [LF] S3-U12 LF task, battery OFF: follow the [LF] >>> prompts
+104:23:17:03.310  [LF] guide: .agents/tasks/s3-lf32-test.md
+107:23:17:04.305  [LF] 1 s: 200 samples, 0 missed so far
+108:23:17:04.306  [TEST] S3-U12 PASS  (a) task samples every 5 ms (195-205 per s), none missed
+109:23:17:04.307  [LF] boot cal: status 0, C avg 1343, R avg 148 -> white 148 black 1343
+110:23:17:04.308  [TEST] S3-U12 PASS  (b) boot calibration accepted (start pose, contrast >= 400)
+113:23:17:05.305  [TEST] S3-U12 PASS  (c) VC READY: no steering, no events, IDLE, LINE_FOUND clear
+114:23:17:05.308  [LF] >>> START POSE: CENTRE over the strip, RIGHT over white
+115:23:17:05.312  [LF] >>> keep still: START comes next (battery OFF: wheels still) (10 s)
+127:23:17:10.311  [LF] ... 5 s left
+140:23:17:15.315  [LF] IDLE -> ON_LINE  c=1069 r=133 dc=770 dr=0 vc=4
+142:23:17:15.392  [IMU] hump pitch=18 half-deg
+143:23:17:15.404  [TEL] car/telemetry/hump 010405ae60000009
+144:23:17:15.414  [LF] started: st=1 vc=4 c=257 r=154 dc=91 steer=-127 slot=5 entry=0
+148:23:17:15.689  [LF] ON_LINE -> LINE_LOST  c=169 r=157 dc=17 dr=7 vc=4
+149:23:17:15.800  [LF] LINE_LOST -> REACQUIRING  c=194 r=190 dc=38 dr=35 vc=4
+150:23:17:15.844  [IMU] hump pitch=-22 half-deg
+151:23:17:15.846  [TEL] car/telemetry/hump 0104057062000075
+152:23:17:16.109  [LF] REACQUIRING -> ON_LINE  c=1619 r=1043 dc=1000 dr=748 vc=4
+153:23:17:16.121  [LF] ON_LINE -> JUNCTION  c=2228 r=1619 dc=1000 dr=1000 vc=4
+154:23:17:16.174  [IMU] hump pitch=22 half-deg
+155:23:17:16.185  [TEL] car/telemetry/hump 010405ba6300000b
+160:23:17:17.419  [LF] after 2 s: st=2 vc=4 c=3592 r=3240 dc=1000 steer=0 slot=100 entry=3
+161:23:17:17.421  [LF] 2 s: 95 slot posts, 3 entry posts since START, 0 dropped
+162:23:17:17.423  [TEST] S3-U12 FAIL  (d1) START: VC NAV_LINE_TRACKING, LF ON_LINE, for 2 s   (lf_run_test.c:185)
+163:23:17:17.424  [TEST] S3-U12 FAIL  (d2) one steering post per 20 ms, in Motion's slot (99-101 in 2 s), none dro
+164:23:17:17.426  [TEST] S3-U12 FAIL  (d3) CENTRE on the line body: steer right (>= +32), LINE_FOUND set   (lf_run
+165:23:17:17.428  [LF] >>> NOW slide the strip SLOWLY to the car's LEFT (~1 cm/s)
+166:23:17:17.430  [LF] >>> until BOTH sensors are over white, then keep still
+167:23:17:17.433  [LF] slide: st=2 vc=4 c=3592 r=3240 dc=1000 steer=0 slot=100 entry=3
+168:23:17:17.639  [LF] slide: st=2 vc=4 c=3557 r=3189 dc=1000 steer=0 slot=111 entry=3
+171:23:17:17.859  [LF] slide: st=2 vc=4 c=3369 r=2926 dc=1000 steer=0 slot=122 entry=3
+172:23:17:18.078  [LF] slide: st=2 vc=4 c=3113 r=2780 dc=1000 steer=0 slot=133 entry=3
+173:23:17:18.300  [LF] slide: st=2 vc=4 c=3196 r=2886 dc=1000 steer=0 slot=144 entry=3
+174:23:17:18.464  [SAFETY] BRAKE: collision
+175:23:17:18.466  [IMU] COLLISION mag=3105 mg
+176:23:17:18.467  [TEL] car/telemetry/fault 010605ac6c000400
+177:23:17:18.486  [LF] JUNCTION -> IDLE  c=3746 r=3558 dc=1000 dr=1000 vc=3
+179:23:17:18.519  [LF] slide: st=0 vc=3 c=3787 r=3582 dc=1000 steer=0 slot=153 entry=3
+182:23:17:18.738  [LF] slide: st=0 vc=3 c=3773 r=3562 dc=1000 steer=0 slot=153 entry=3
+183:23:17:18.959  [LF] slide: st=0 vc=3 c=3768 r=3583 dc=1000 steer=0 slot=153 entry=3
+184:23:17:19.179  [LF] slide: st=0 vc=3 c=3818 r=3610 dc=1000 steer=0 slot=153 entry=3
+185:23:17:19.399  [LF] slide: st=0 vc=3 c=3824 r=3632 dc=1000 steer=0 slot=153 entry=3
+186:23:17:19.618  [LF] slide: st=0 vc=3 c=3795 r=3587 dc=1000 steer=0 slot=153 entry=3
+189:23:17:19.840  [LF] slide: st=0 vc=3 c=3799 r=3629 dc=1000 steer=0 slot=153 entry=3
+190:23:17:20.059  [LF] slide: st=0 vc=3 c=3834 r=3621 dc=1000 steer=0 slot=153 entry=3
+191:23:17:20.279  [LF] slide: st=0 vc=3 c=3841 r=3625 dc=1000 steer=0 slot=153 entry=3
+192:23:17:20.499  [LF] slide: st=0 vc=3 c=3832 r=3636 dc=1000 steer=0 slot=153 entry=3
+197:23:17:20.719  [LF] slide: st=0 vc=3 c=3901 r=3680 dc=1000 steer=0 slot=153 entry=3
+198:23:17:20.756  [capture] port lost (MethodInvocationException); waiting for it to come back
+199:23:19:25.689  [capture] reconnected to COM5
+200:23:19:25.691  pre-kernel ok
+201:23:19:25.697  
+202:23:19:25.699  
+203:23:19:25.700  microT-Kernel Version 3.00
+204:23:19:25.701  
+205:23:19:25.703  [IPC] kernel spec version 3.00 OK
+206:23:19:25.704  [IPC] 8 objects created, MBF depth self-check OK
+207:23:19:25.705  [S3] IR_R (GP26/ADC0) ADC sanity OK
+208:23:19:25.707  [S3] IR_C (GP28/ADC2) ADC sanity OK
+209:23:19:25.708  [S4] IMU init OK
+210:23:19:25.710  [S4] tasks started
+211:23:19:25.711  [SAFETY] task started
+212:23:19:25.713  [IMU] task started
+213:23:19:25.713  [IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+214:23:19:25.716  [IMU] chip LSM303D, accel+mag at 0x1D
+215:23:19:25.717  [TEL] backend: console ([TEL] <topic> <hex>)
+216:23:19:25.847  [TEL] link DISCONNECTED -> CONNECTING
+217:23:19:25.867  [TEL] link CONNECTING -> CONNECTED
+218:23:19:25.872  [TEST] S1-U01 PASS  Telemetry task running, link CONNECTED
+219:23:19:25.890  [TEL] car/telemetry/barcode 0103042a000002
+220:23:19:25.979  [TEST] S1-U02 PASS  event -> frame -> sent within 100 ms
+221:23:19:25.989  [LF] boot calibration OK: C avg 1317 (1283..1346), R avg 149 (132..166)
+222:23:19:25.991  [LF] cal white 149 black 1317 (both sensors)
+223:23:19:26.076  [TEST] S1-U03 PASS  invalid tel_evt_t counted, never framed
+224:23:19:26.211  [TEST] S1-U04 64 posts in 187 us, 32 queued, 32 dropped
+225:23:19:26.214  [TEST] S1-U04 PASS  64 posts never block; full queue = counted drop
+226:23:19:26.216  [TEL] cmd car/cmd/stop -> VC
+227:23:19:26.218  [TEST] S1-U05 PASS  car/cmd/stop accepted -> MBF_NAV_IN
+228:23:19:26.220  [TEL] cmd rejected: BAD_VERSION (3 B)
+
+=== Part 2
+23:19:26.231  [TEL] car/telemetry/obstacle 0105086801001e8c828a0c
+23:19:26.528  [IMU] level reference: board at 10 half-deg when flat (0 tries)
+23:19:27.275  [TEST] S1-U10 50 wakes in 1 s, 0 overruns
+23:19:27.276  [TEST] S1-U10 PASS  20 ms wake grid held, no overruns
+23:19:27.277  [TEST] subsystem1 SUMMARY 10 passed, 0 failed
+23:19:27.331  [TEST] S2-U01 PASS  Motor PWM slices 4 and 5 configured at 20 kHz +-1%
+23:19:27.333  [TEST] S2-U02 PASS  Motor duty capped at MOTOR_DUTY_MAX_PCT
+23:19:27.353  [TEST] S2-U06 PASS  motion_emergency_brake drives all four channels LOW without Motion task
+23:19:27.354  [TEST] S2-U09 PASS  enc_get_count is non-blocking (< 10 us avg over 1000 calls)
+23:19:37.374  [TEST] S2-U12 PASS  Motion period: 500 +- 1 releases in 10 s, 0 missed
+23:19:37.385  [MOT] invalid motion_cmd_t rejected
+23:19:37.387  [TEST] S2-U13 PASS  Motion rejects invalid motion_cmd_t and keeps setpoint
+23:19:37.485  [IMU] hump pitch=17 half-deg
+23:19:37.487  [TEL] car/telemetry/hump 010405822d008008
+23:19:37.507  [TEST] S2-U14 PASS  Motion holds setpoint for MOTION_T_HOLD_MS then stops
+23:19:37.549  [MOT] invalid motion_cmd_t rejected
+23:19:37.572  [TEST] S2-U15 PASS  Motion caps speed at MOTION_SPEED_MAX_CMPS (50 cm/s)
+23:19:37.605  [IMU] hump pitch=27 half-deg
+23:19:37.607  [TEL] car/telemetry/hump 010405042e00800d
+23:19:37.716  [MOT] S2-U16 dt=100 ms dist=2->5 cm encL=366->713 encR=364->703
+23:19:37.721  [TEST] S2-U16 PASS  motion_state_t published under MTX_MOTION advances over 100 ms
+23:19:37.722  [VC] invalid nav_input_t rejected
+23:19:37.722  [TEST] S2-U22 PASS  VC rejects invalid nav_input_t and sends no motion_cmd_t
+23:19:37.725  [IMU] hump pitch=10 half-deg
+23:19:37.727  [TEL] car/telemetry/hump 0104057c2e000005
+23:19:37.728  [TEST] S2-U23 PASS  VC precedence: AVOID overrides LINE while authority is AVOID
+23:19:37.751  [TEST] S2-U24 PASS  VC commands stop/brake when EVF_SAFETY_FAULT_LATCHED is set
+23:19:37.780  [IMU] hump pitch=-24 half-deg
+23:19:37.792  [TEL] car/telemetry/hump 010405ae2e000074
+23:19:38.333  [TEST] S2-U25 FAIL  VC clears FAULT_LATCHED only after SAFETY_T_STILL_MS stationary   (subsystem
+23:19:38.355  [TEST] S2-U26 PASS  System FSM transitions INITIALISING -> READY -> NAV_LINE_TRACKING
+23:19:38.374  [TEST] S2-U27 PASS  System FSM returns to READY and stops on TRACK_LOST and STOP
+23:19:38.496  [TEST] S2-U28 PASS  Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_c
+23:19:38.497  [TEST] subsystem2 SUMMARY 15 passed, 1 failed
+23:19:38.498  [LF] S3-U12 LF task, battery OFF: follow the [LF] >>> prompts
+23:19:38.500  [LF] guide: .agents/tasks/s3-lf32-test.md
+23:19:39.498  [LF] 1 s: 200 samples, 0 missed so far
+23:19:39.501  [TEST] S3-U12 PASS  (a) task samples every 5 ms (195-205 per s), none missed
+23:19:39.502  [LF] boot cal: status 0, C avg 1317, R avg 149 -> white 149 black 1317
+23:19:39.502  [TEST] S3-U12 PASS  (b) boot calibration accepted (start pose, contrast >= 400)
+23:19:40.499  [TEST] S3-U12 PASS  (c) VC READY: no steering, no events, IDLE, LINE_FOUND clear
+23:19:40.501  [LF] >>> START POSE: CENTRE over the strip, RIGHT over white
+23:19:40.504  [LF] >>> keep still: START comes next (battery OFF: wheels still) (10 s)
+23:19:45.504  [LF] ... 5 s left
+23:19:50.509  [LF] IDLE -> ON_LINE  c=1379 r=155 dc=1000 dr=5 vc=4
+23:19:50.575  [IMU] hump pitch=19 half-deg
+23:19:50.586  [TEL] car/telemetry/hump 010405ae60008009
+23:19:50.612  [LF] started: st=1 vc=4 c=188 r=171 dc=33 steer=-127 slot=5 entry=0
+23:19:50.718  [IMU] hump pitch=10 half-deg
+23:19:50.729  [TEL] car/telemetry/hump 0104053a61000005
+23:19:51.036  [LF] ON_LINE -> LINE_LOST  c=172 r=170 dc=19 dr=17 vc=4
+23:19:51.158  [LF] LINE_LOST -> REACQUIRING  c=139 r=140 dc=0 dr=0 vc=4
+23:19:51.202  [IMU] hump pitch=-26 half-deg
+23:19:51.213  [TEL] car/telemetry/hump 0104051a63000073
+23:19:51.268  [IMU] hump pitch=21 half-deg
+23:19:51.270  [TEL] car/telemetry/hump 010405606300800a
+23:19:51.499  [LF] REACQUIRING -> ON_LINE  c=4022 r=3808 dc=1000 dr=1000 vc=4
+23:19:51.500  [LF] ON_LINE -> JUNCTION  c=4042 r=3844 dc=1000 dr=1000 vc=4
+23:19:51.531  [SAFETY] BRAKE: collision
+23:19:51.534  [IMU] COLLISION mag=3094 mg
+23:19:51.535  [TEL] car/telemetry/fault 0106056464000400
+23:19:51.553  [LF] JUNCTION -> IDLE  c=1253 r=283 dc=945 dr=114 vc=3
+23:19:51.609  [IMU] hump pitch=-38 half-deg
+23:19:51.611  [TEL] car/telemetry/hump 010405b46400006d
+23:19:52.192  [S5] coarse hit 242 mm @ 120 deg, fine scan
+23:19:52.610  [LF] after 2 s: st=0 vc=3 c=4003 r=3820 dc=1000 steer=49 slot=47 entry=3
+23:19:52.614  [LF] 2 s: 42 slot posts, 3 entry posts since START, 0 dropped
+23:19:52.617  [TEST] S3-U12 FAIL  (d1) START: VC NAV_LINE_TRACKING, LF ON_LINE, for 2 s   (lf_run_test.c:185)
+23:19:52.619  [TEST] S3-U12 FAIL  (d2) one steering post per 20 ms, in Motion's slot (99-101 in 2 s), none dro
+23:19:52.620  [TEST] S3-U12 FAIL  (d3) CENTRE on the line body: steer right (>= +32), LINE_FOUND set   (lf_run
+23:19:52.621  [LF] >>> NOW slide the strip SLOWLY to the car's LEFT (~1 cm/s)
+23:19:52.622  [LF] >>> until BOTH sensors are over white, then keep still
+23:19:52.624  [LF] slide: st=0 vc=3 c=4003 r=3820 dc=1000 steer=49 slot=47 entry=3
+23:19:52.625  [S5] obstacle 238 mm @ 120 deg w=228 clrL=635 clrR=635
+23:19:52.626  [S5] avoid -> SLOW (3000 ms)
+23:19:52.627  [S5] avoid ABORT in SLOW: bypass budget exhausted
+23:19:52.628  [S5] avoid -> IDLE (reacquired=0)
+23:19:52.833  [LF] slide: st=0 vc=3 c=4040 r=3850 dc=1000 steer=49 slot=47 entry=3
+23:19:53.052  [LF] slide: st=0 vc=3 c=4008 r=3824 dc=1000 steer=49 slot=47 entry=3
+23:19:53.271  [LF] slide: st=0 vc=3 c=4020 r=3844 dc=1000 steer=49 slot=47 entry=3
+23:19:53.491  [LF] slide: st=0 vc=3 c=4046 r=3856 dc=1000 steer=49 slot=47 entry=3
+23:19:53.712  [LF] slide: st=0 vc=3 c=4043 r=3850 dc=1000 steer=49 slot=47 entry=3
+23:19:53.821  [S5] coarse hit 238 mm @ 120 deg, fine scan
+23:19:53.932  [LF] slide: st=0 vc=3 c=4032 r=3849 dc=1000 steer=49 slot=47 entry=3
+23:19:54.152  [LF] slide: st=0 vc=3 c=4011 r=3835 dc=1000 steer=49 slot=47 entry=3
+23:19:54.361  [S5] obstacle 242 mm @ 120 deg w=232 clrL=635 clrR=635
+23:19:54.363  [S5] avoid -> SLOW (3000 ms)
+23:19:54.363  [S5] avoid ABORT in SLOW: bypass budget exhausted
+23:19:54.364  [S5] avoid -> IDLE (reacquired=0)
+23:19:54.370  [LF] slide: st=0 vc=3 c=4005 r=3827 dc=1000 steer=49 slot=47 entry=3
+23:19:54.592  [LF] slide: st=0 vc=3 c=4018 r=3838 dc=1000 steer=49 slot=47 entry=3
+23:19:54.812  [LF] slide: st=0 vc=3 c=4006 r=3852 dc=1000 steer=49 slot=47 entry=3
+23:19:55.032  [LF] slide: st=0 vc=3 c=4008 r=3819 dc=1000 steer=49 slot=47 entry=3
+23:19:55.252  [LF] slide: st=0 vc=3 c=4025 r=3813 dc=1000 steer=49 slot=47 entry=3
+23:19:55.439  [S5] coarse hit 242 mm @ 120 deg, fine scan
+23:19:55.472  [LF] slide: st=0 vc=3 c=4000 r=3828 dc=1000 steer=49 slot=47 entry=3
+23:19:55.692  [LF] slide: st=0 vc=3 c=4050 r=3853 dc=1000 steer=49 slot=47 entry=3
+23:19:55.856  [S5] obstacle 238 mm @ 120 deg w=228 clrL=635 clrR=635
+23:19:55.858  [S5] avoid -> SLOW (3000 ms)
+23:19:55.861  [S5] avoid ABORT in SLOW: bypass budget exhausted
+23:19:55.862  [S5] avoid -> IDLE (reacquired=0)
+23:19:55.911  [LF] slide: st=0 vc=3 c=4006 r=3819 dc=1000 steer=49 slot=47 entry=3
+23:19:56.131  [LF] slide: st=0 vc=3 c=4048 r=3837 dc=1000 steer=49 slot=47 entry=3
+23:19:56.353  [LF] slide: st=0 vc=3 c=239 r=221 dc=77 steer=49 slot=47 entry=3
+23:19:56.572  [LF] slide: st=0 vc=3 c=332 r=260 dc=156 steer=49 slot=47 entry=3
+23:19:56.792  [LF] slide: st=0 vc=3 c=240 r=220 dc=77 steer=49 slot=47 entry=3
+23:19:56.826  [IMU] hump pitch=-17 half-deg
+23:19:56.828  [TEL] car/telemetry/hump 0104051879008077
+23:19:57.013  [LF] slide: st=0 vc=3 c=296 r=421 dc=125 steer=49 slot=47 entry=3
+23:19:57.057  [S5] coarse hit 238 mm @ 110 deg, fine scan
+23:19:57.232  [LF] slide: st=0 vc=3 c=240 r=241 dc=77 steer=49 slot=47 entry=3
+23:19:57.452  [LF] slide: st=0 vc=3 c=236 r=241 dc=74 steer=49 slot=47 entry=3
+23:19:57.540  [SAFETY] BRAKE: collision
+23:19:57.542  [IMU] COLLISION mag=2608 mg
+23:19:57.544  [TEL] car/telemetry/fault 010605d47b000400
+23:19:57.551  [IMU] hump pitch=17 half-deg
+23:19:57.552  [TEL] car/telemetry/hump 010405e87b008008
+23:19:57.672  [LF] slide: st=0 vc=3 c=315 r=324 dc=142 steer=49 slot=47 entry=3
+23:19:57.893  [LF] slide: st=0 vc=3 c=216 r=230 dc=57 steer=49 slot=47 entry=3
+23:19:58.112  [LF] slide: st=0 vc=3 c=222 r=221 dc=62 steer=49 slot=47 entry=3
+
+=== Part 3
+41:23:16:51.638  [TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+50:23:16:52.630  [TEL] car/telemetry/motion 01010fd00700000000000000000000000000
+52:23:16:53.638  [TEL] car/telemetry/motion 01010fb80b00000000000000000000000000
+54:23:16:54.644  [TEL] car/telemetry/motion 01010fa00f00000000000000000000000000
+68:23:17:00.634  [TEL] car/telemetry/motion 01010f102700000000000000000000000000
+71:23:17:01.635  [TEL] car/telemetry/motion 01010ff82a00000000000000000000000000
+93:23:17:02.643  [TEL] car/telemetry/motion 01010fe02e00001400f80e0000480e000000
+105:23:17:03.644  [TEL] car/telemetry/motion 01010fc83200001400a80f0000080f000000
+111:23:17:04.646  [TEL] car/telemetry/motion 01010fb03600001400a80f0000080f000000
+116:23:17:05.647  [TEL] car/telemetry/motion 01010f983a00001400a80f0000080f000000
+119:23:17:06.646  [TEL] car/telemetry/motion 01010f803e00001400a80f0000080f000000
+121:23:17:07.649  [TEL] car/telemetry/motion 01010f684200001400a80f0000080f000000
+123:23:17:08.650  [TEL] car/telemetry/motion 01010f504600001400a80f0000080f000000
+125:23:17:09.650  [TEL] car/telemetry/motion 01010f384a00001400a80f0000080f000000
+129:23:17:10.641  [TEL] car/telemetry/motion 01010f204e00001400a80f0000080f000000
+132:23:17:11.642  [TEL] car/telemetry/motion 01010f085200001400a80f0000080f000000
+134:23:17:12.643  [TEL] car/telemetry/motion 01010ff05500001400a80f0000080f000000
+136:23:17:13.644  [TEL] car/telemetry/motion 01010fd85900001400a80f0000080f000000
+138:23:17:14.645  [TEL] car/telemetry/motion 01010fc05d00001400a80f0000080f000000
+145:23:17:15.646  [TEL] car/telemetry/motion 01010fa86100de3000581a0000601a000000
+158:23:17:16.648  [TEL] car/telemetry/motion 01010f906500697400543900006c40000000
+169:23:17:17.649  [TEL] car/telemetry/motion 01010f7869005c9c004c5a00004843000000
+180:23:17:18.641  [TEL] car/telemetry/motion 01010f606d0000c80024790000f44f000000
+187:23:17:19.641  [TEL] car/telemetry/motion 01010f48710000c80024790000ec4f000000
+194:23:17:20.642  [TEL] car/telemetry/motion 01010f30750000c80024790000dc4f000000
+239:23:19:26.825  [TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+248:23:19:27.826  [TEL] car/telemetry/motion 01010fd00700000000000000000000000000
+250:23:19:28.824  [TEL] car/telemetry/motion 01010fb80b00000000000000000000000000
+252:23:19:29.825  [TEL] car/telemetry/motion 01010fa00f00000000000000000000000000
+254:23:19:30.830  [TEL] car/telemetry/motion 01010f881300000000000000000000000000
+257:23:19:31.831  [TEL] car/telemetry/motion 01010f701700000000000000000000000000
+259:23:19:32.832  [TEL] car/telemetry/motion 01010f581b00000000000000000000000000
+261:23:19:33.832  [TEL] car/telemetry/motion 01010f401f00000000000000000000000000
+263:23:19:34.834  [TEL] car/telemetry/motion 01010f282300000000000000000000000000
+266:23:19:35.835  [TEL] car/telemetry/motion 01010f102700000000000000000000000000

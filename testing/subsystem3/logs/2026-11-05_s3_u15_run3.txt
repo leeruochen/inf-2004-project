@@ -1,0 +1,1611 @@
+01:30:57.113  [capture] COM5 for 360 s -> build\s3-u15-run-20261105-0130.txt
+01:30:57.134  pre-kernel ok
+01:30:57.145  
+01:30:57.145  
+01:30:57.145  microT-Kernel Version 3.00
+01:30:57.145  
+01:30:57.145  [IPC] kernel spec version 3.00 OK
+01:30:57.145  [IPC] 8 objects created, MBF depth self-check OK
+01:30:57.145  [S3] IR_R (GP26/ADC0) ADC sanity OK
+01:30:57.145  [S3] IR_C (GP28/ADC2) ADC sanity OK
+01:30:57.145  [S4] IMU init OK
+01:30:57.145  [S4] tasks started
+01:30:57.145  [SAFETY] task started
+01:30:57.145  [IMU] task started
+01:30:57.145  [IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+01:30:57.160  [IMU] chip LSM303D, accel+mag at 0x1D
+01:30:57.160  [TEL] backend: console ([TEL] <topic> <hex>)
+01:30:57.297  [TEL] link DISCONNECTED -> CONNECTING
+01:30:57.318  [TEL] link CONNECTING -> CONNECTED
+01:30:57.319  [TEST] S1-U01 PASS  Telemetry task running, link CONNECTED
+01:30:57.334  [TEL] car/telemetry/barcode 0103042a000002
+01:30:57.430  [TEST] S1-U02 PASS  event -> frame -> sent within 100 ms
+01:30:57.433  [LF] boot calibration OK: C avg 1819 (1790..1845), R avg 146 (124..168)
+01:30:57.433  [LF] cal white 146 black 1819 (both sensors)
+01:30:57.523  [TEST] S1-U03 PASS  invalid tel_evt_t counted, never framed
+01:30:57.626  [TEST] S1-U04 64 posts in 184 us, 32 queued, 32 dropped
+01:30:57.630  [TEST] S1-U04 PASS  64 posts never block; full queue = counted drop
+01:30:57.630  [TEL] cmd car/cmd/stop -> VC
+01:30:57.630  [TEST] S1-U05 PASS  car/cmd/stop accepted -> MBF_NAV_IN
+01:30:57.634  [TEL] cmd rejected: BAD_VERSION (3 B)
+01:30:57.634  [TEL] cmd rejected: BAD_LENGTH (4 B)
+01:30:57.634  [TEL] cmd rejected: UNKNOWN_TYPE (3 B)
+01:30:57.634  [TEL] cmd rejected: TOPIC_MISMATCH (3 B)
+01:30:57.634  [TEL] cmd rejected: NOT_COMMAND (9 B)
+01:30:57.634  [TEST] S1-U06 PASS  5 malformed commands rejected, none posted
+01:30:57.639  [TEST] S1-U07 PASS  sensor snapshot clamps to wire fields
+01:30:57.639  [TEL] car/telemetry/obstacle 0105086801001e8c828a0c
+01:30:57.717  [TEST] S1-U08 PASS  obstacle profile framed once
+01:30:57.730  [TEST] S1-U09 PASS  FAULT_WIFI_LOSS clear while connected
+01:30:57.970  [IMU] level reference: board at 10 half-deg when flat (0 tries)
+01:30:58.274  [TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+01:30:58.274  [TEL] car/telemetry/sensor 01020ae80300ffbf07904d4b00
+01:30:58.725  [TEST] S1-U10 50 wakes in 1 s, 0 overruns
+01:30:58.725  [TEST] S1-U10 PASS  20 ms wake grid held, no overruns
+01:30:58.725  [TEST] subsystem1 SUMMARY 10 passed, 0 failed
+01:30:58.725  [S5] coarse hit 127 mm @ 60 deg, fine scan
+01:30:58.783  [TEST] S2-U01 PASS  Motor PWM slices 4 and 5 configured at 20 kHz +-1%
+01:30:58.783  [TEST] S2-U02 PASS  Motor duty capped at MOTOR_DUTY_MAX_PCT
+01:30:58.803  [TEST] S2-U06 PASS  motion_emergency_brake drives all four channels LOW without Motion task
+01:30:58.803  [TEST] S2-U09 PASS  enc_get_count is non-blocking (< 10 us avg over 1000 calls)
+01:30:59.273  [TEL] car/telemetry/motion 01010fd00700000000000000000400000000
+01:30:59.273  [TEL] car/telemetry/sensor 01020ad00700ffbf07904d4b00
+01:31:00.273  [TEL] car/telemetry/motion 01010fb80b00000000000000000400000000
+01:31:00.281  [TEL] car/telemetry/sensor 01020ab80b00ffbf07904d4b00
+01:31:01.273  [TEL] car/telemetry/motion 01010fa00f00000000000000000400000000
+01:31:01.285  [TEL] car/telemetry/sensor 01020aa00f00ffbf07904d4b00
+01:31:02.282  [TEL] car/telemetry/motion 01010f881300000000000000000400000000
+01:31:02.284  [TEL] car/telemetry/sensor 01020a881300ffbf07904d4b00
+01:31:02.284  [TEL] car/telemetry/heartbeat 010706881300000100
+01:31:03.278  [TEL] car/telemetry/motion 01010f701700000000000000000400000000
+01:31:03.278  [TEL] car/telemetry/sensor 01020a701700ffbf07904d4b00
+01:31:04.281  [TEL] car/telemetry/motion 01010f581b00000000000000000400000000
+01:31:04.285  [TEL] car/telemetry/sensor 01020a581b00ffbf07904d4b00
+01:31:05.284  [TEL] car/telemetry/motion 01010f401f00000000000000000400000000
+01:31:05.284  [TEL] car/telemetry/sensor 01020a401f00ffbf07904d4b00
+01:31:06.281  [TEL] car/telemetry/motion 01010f282300000000000000000400000000
+01:31:06.281  [TEL] car/telemetry/sensor 01020a282300ffbf07904d4b00
+01:31:07.156  [DBG] alive: SDK timer 10945 ms, kernel time 9879 ms, difference 1066 ms
+01:31:07.212  [S5] coarse hit 108 mm @ 90 deg, fine scan
+01:31:07.272  [TEL] car/telemetry/motion 01010f102700000000000000000400000000
+01:31:07.272  [TEL] car/telemetry/sensor 01020a102700ffbf07904d4b00
+01:31:07.272  [TEL] car/telemetry/heartbeat 010706102700000100
+01:31:07.676  [S5] obstacle 105 mm @ 90 deg w=127 clrL=635 clrR=635
+01:31:07.687  [S5] avoid -> SLOW (3000 ms)
+01:31:07.690  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:31:07.690  [S5] avoid -> IDLE (reacquired=0)
+01:31:08.265  [TEL] car/telemetry/motion 01010ff82a00000000000000000400000000
+01:31:08.265  [TEL] car/telemetry/sensor 01020af82a00ffbf07904d4b00
+01:31:08.815  [TEST] S2-U12 PASS  Motion period: 500 +- 1 releases in 10 s, 0 missed
+01:31:08.829  [MOT] invalid motion_cmd_t rejected
+01:31:08.840  [TEST] S2-U13 PASS  Motion rejects invalid motion_cmd_t and keeps setpoint
+01:31:08.955  [TEST] S2-U14 PASS  Motion holds setpoint for MOTION_T_HOLD_MS then stops
+01:31:09.003  [MOT] invalid motion_cmd_t rejected
+01:31:09.024  [TEST] S2-U15 PASS  Motion caps speed at MOTION_SPEED_MAX_CMPS (50 cm/s)
+01:31:09.051  [S5] coarse hit 109 mm @ 90 deg, fine scan
+01:31:09.147  [MOT] S2-U16 dt=100 ms dist=3->6 cm encL=429->832 encR=463->874
+01:31:09.159  [TEST] S2-U16 PASS  motion_state_t published under MTX_MOTION advances over 100 ms
+01:31:09.169  [VC] invalid nav_input_t rejected
+01:31:09.172  [TEST] S2-U22 PASS  VC rejects invalid nav_input_t and sends no motion_cmd_t
+01:31:09.179  [TEL] car/telemetry/heartbeat 0107067c2e00000100
+01:31:09.179  [TEST] S2-U23 PASS  VC precedence: AVOID overrides LINE while authority is AVOID
+01:31:09.195  [TEL] car/telemetry/heartbeat 010706902e00000300
+01:31:09.195  [TEST] S2-U24 PASS  VC commands stop/brake when EVF_SAFETY_FAULT_LATCHED is set
+01:31:09.278  [TEL] car/telemetry/motion 01010fe02e00001800301200002812000000
+01:31:09.278  [TEL] car/telemetry/sensor 01020ae02e00ffbf07904d4b00
+01:31:09.682  [S5] obstacle 117 mm @ 80 deg w=76 clrL=635 clrR=635
+01:31:09.682  [S5] avoid -> SLOW (3000 ms)
+01:31:09.688  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:31:09.691  [S5] avoid -> IDLE (reacquired=0)
+01:31:09.786  [TEL] car/telemetry/heartbeat 010706d43000000100
+01:31:09.789  [TEST] S2-U25 FAIL  VC clears FAULT_LATCHED only after SAFETY_T_STILL_MS stationary   (subsystem
+01:31:09.793  [TEL] car/telemetry/heartbeat 010706e83000000400
+01:31:09.800  [TEST] S2-U26 PASS  System FSM transitions INITIALISING -> READY -> NAV_LINE_TRACKING
+01:31:09.816  [TEL] car/telemetry/heartbeat 010706fc3000000100
+01:31:09.816  [TEST] S2-U27 PASS  System FSM returns to READY and stops on TRACK_LOST and STOP
+01:31:09.928  [TEST] S2-U28 PASS  Public API (moveForward/Backward, turnLeft/Right, stop) posts valid motion_c
+01:31:09.941  [TEST] subsystem2 SUMMARY 15 passed, 1 failed
+01:31:09.941  [LF] S3-U15 on the track, motors LIVE, cruise 200 mm/s
+01:31:09.941  [LF] guide: .agents/tasks/s3-u15-test.md; follow the [LF] >>> prompts
+01:31:10.281  [TEL] car/telemetry/motion 01010fc83200001c00701200001c13000000
+01:31:10.283  [TEL] car/telemetry/sensor 01020ac83200ffbf07904d4b00
+01:31:10.938  [LF] 1 s: 200 samples, 0 missed so far
+01:31:10.942  [TEST] S3-U15 PASS  (a) samples every 5 ms (195-205/s), none missed
+01:31:10.942  [LF] boot cal: status 0, C avg 1819, R avg 146 -> white 146 black 1819
+01:31:10.942  [TEST] S3-U15 PASS  (b) boot calibration accepted
+01:31:11.065  [S5] coarse hit 106 mm @ 70 deg, fine scan
+01:31:11.280  [TEL] car/telemetry/motion 01010fb03600001c00701200001c13000000
+01:31:11.280  [TEL] car/telemetry/sensor 01020ab03600ffbf07904d4b00
+01:31:11.519  [S5] obstacle 90 mm @ 70 deg w=93 clrL=635 clrR=635
+01:31:11.526  [S5] avoid -> SLOW (3000 ms)
+01:31:11.526  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:31:11.526  [S5] avoid -> IDLE (reacquired=0)
+01:31:11.931  [TEST] S3-U15 PASS  (c) VC READY: no posts, no events, IDLE, flag clear
+01:31:11.945  [LF] >>> pose A: put the car down in the START POSE, hands off
+01:31:12.268  [TEL] car/telemetry/motion 01010f983a00001c00701200001c13000000
+01:31:12.284  [TEL] car/telemetry/sensor 01020a983a00ffbf07904d4b00
+01:31:12.286  [TEL] car/telemetry/heartbeat 010706983a00000100
+01:31:12.826  [S5] coarse hit 97 mm @ 70 deg, fine scan
+01:31:13.282  [TEL] car/telemetry/motion 01010f803e00001c00701200001c13000000
+01:31:13.282  [TEL] car/telemetry/sensor 01020a803e00ffbf07904d4b00
+01:31:14.283  [TEL] car/telemetry/motion 01010f684200001c00701200001c13000000
+01:31:14.283  [TEL] car/telemetry/sensor 01020a684200ffbf07904d4b00
+01:31:15.282  [TEL] car/telemetry/motion 01010f504600001c00641200001c13000000
+01:31:15.282  [TEL] car/telemetry/sensor 01020a504600ffbf07904d4b00
+01:31:16.275  [TEL] car/telemetry/motion 01010f384a00001c00641200001813000000
+01:31:16.289  [TEL] car/telemetry/sensor 01020a384a00ffbf07904d4b00
+01:31:16.947  [LF] ... 5
+01:31:17.161  [DBG] alive: SDK timer 20956 ms, kernel time 19890 ms, difference 1066 ms
+01:31:17.274  [TEL] car/telemetry/motion 01010f204e00001c00641200001813000000
+01:31:17.274  [TEL] car/telemetry/sensor 01020a204e00ffbf07904d4b00
+01:31:17.274  [TEL] car/telemetry/heartbeat 010706204e00000100
+01:31:18.273  [TEL] car/telemetry/motion 01010f085200001c00641200001813000000
+01:31:18.279  [TEL] car/telemetry/sensor 01020a085200ffbf07904d4b00
+01:31:18.946  [LF] ... 3
+01:31:19.278  [TEL] car/telemetry/motion 01010ff05500001c00641200001813000000
+01:31:19.282  [TEL] car/telemetry/sensor 01020af05500ffbf07904d4b00
+01:31:19.942  [LF] ... 2
+01:31:20.277  [TEL] car/telemetry/motion 01010fd85900001c00641200001813000000
+01:31:20.277  [TEL] car/telemetry/sensor 01020ad85900ffbf07904d4b00
+01:31:20.948  [LF] ... 1
+01:31:21.280  [TEL] car/telemetry/motion 01010fc05d00001c00641200001813000000
+01:31:21.284  [TEL] car/telemetry/sensor 01020ac05d00ffbf07904d4b00
+01:31:22.281  [TEL] car/telemetry/motion 01010fa86100001c00641200001813000000
+01:31:22.281  [TEL] car/telemetry/sensor 01020aa86100ffbf07904d4b00
+01:31:22.281  [TEL] car/telemetry/heartbeat 010706a86100000100
+01:31:23.282  [TEL] car/telemetry/motion 01010f906500001c00641200001813000000
+01:31:23.282  [TEL] car/telemetry/sensor 01020a906500ffbf07904d4b00
+01:31:24.283  [TEL] car/telemetry/motion 01010f786900001c00641200001813000000
+01:31:24.283  [TEL] car/telemetry/sensor 01020a786900ffbf07904d4b00
+01:31:25.247  [LF] static pose A: C raw 1937..2001 avg 1967 = 1000 pm
+01:31:25.247  [LF] static pose A: R raw 125..170 avg 150 = 2 pm
+01:31:25.255  [TEST] S3-U15 PASS  (g2) pose A: CENTRE >= 950 pm, the boot calibration holds
+01:31:25.255  [LF] >>> pose B: RIGHT over the line middle, CENTRE on white, hands off
+01:31:25.282  [TEL] car/telemetry/motion 01010f606d00001c00641200001813000000
+01:31:25.282  [TEL] car/telemetry/sensor 01020a606d00ffbf07904d4b00
+01:31:26.273  [TEL] car/telemetry/motion 01010f487100001c00641200001813000000
+01:31:26.287  [TEL] car/telemetry/sensor 01020a487100ffbf07904d4b00
+01:31:27.165  [DBG] alive: SDK timer 30956 ms, kernel time 29890 ms, difference 1066 ms
+01:31:27.272  [TEL] car/telemetry/motion 01010f307500001c00641200001813000000
+01:31:27.272  [TEL] car/telemetry/sensor 01020a307500ffbf07904d4b00
+01:31:27.280  [TEL] car/telemetry/heartbeat 010706307500000100
+01:31:28.278  [TEL] car/telemetry/motion 01010f187900001c00641200001813000000
+01:31:28.278  [TEL] car/telemetry/sensor 01020a187900ffbf07904d4b00
+01:31:29.271  [TEL] car/telemetry/motion 01010f007d00001c00681200001813000000
+01:31:29.271  [TEL] car/telemetry/sensor 01020a007d00ffbf07904d4b00
+01:31:30.256  [LF] ... 5
+01:31:30.272  [TEL] car/telemetry/motion 01010fe88000001c00681200001813000000
+01:31:30.272  [TEL] car/telemetry/sensor 01020ae88000ffbf07904d4b00
+01:31:31.280  [TEL] car/telemetry/motion 01010fd08400001c00681200001813000000
+01:31:31.283  [TEL] car/telemetry/sensor 01020ad08400ffbf07904d4b00
+01:31:32.260  [LF] ... 3
+01:31:32.281  [TEL] car/telemetry/motion 01010fb88800001c00681200001813000000
+01:31:32.284  [TEL] car/telemetry/sensor 01020ab88800ffbf07904d4b00
+01:31:32.284  [TEL] car/telemetry/heartbeat 010706b88800000100
+01:31:33.260  [LF] ... 2
+01:31:33.277  [TEL] car/telemetry/motion 01010fa08c00001c00681200001813000000
+01:31:33.277  [TEL] car/telemetry/sensor 01020aa08c00ffbf07904d4b00
+01:31:34.250  [LF] ... 1
+01:31:34.282  [TEL] car/telemetry/motion 01010f889000001c00681200001813000000
+01:31:34.286  [TEL] car/telemetry/sensor 01020a889000ffbf07904d4b00
+01:31:35.282  [TEL] car/telemetry/motion 01010f709400001c00681200001813000000
+01:31:35.287  [TEL] car/telemetry/sensor 01020a709400ffbf07904d4b00
+01:31:36.276  [TEL] car/telemetry/motion 01010f589800001c00681200001813000000
+01:31:36.276  [TEL] car/telemetry/sensor 01020a589800ffbf07904d4b00
+01:31:37.176  [DBG] alive: SDK timer 40967 ms, kernel time 39901 ms, difference 1066 ms
+01:31:37.277  [TEL] car/telemetry/motion 01010f409c00001c00681200001813000000
+01:31:37.277  [TEL] car/telemetry/sensor 01020a409c00ffbf07904d4b00
+01:31:37.281  [TEL] car/telemetry/heartbeat 010706409c00000100
+01:31:38.266  [TEL] car/telemetry/motion 01010f28a000001c00681200001813000000
+01:31:38.279  [TEL] car/telemetry/sensor 01020a28a000ffbf07904d4b00
+01:31:38.552  [LF] static pose B: C raw 120..180 avg 151 = 2 pm
+01:31:38.566  [LF] static pose B: R raw 1869..1930 avg 1899 = 1000 pm
+01:31:38.568  [TEST] S3-U15 PASS  (g) static: RIGHT on black is DARK (> 750 pm)
+01:31:38.568  [LF] jmat run 1 of 3
+01:31:38.568  [LF] >>> jmat: START POSE on the junction mat, CENTRE 250 mm before the cross
+01:31:38.568  [LF] >>> hands off at 0: the car DRIVES (catch and lift it to stop)
+01:31:39.279  [TEL] car/telemetry/motion 01010f10a400001c00681200001813000000
+01:31:39.279  [TEL] car/telemetry/sensor 01020a10a400ffbf07904d4b00
+01:31:39.492  [IMU] hump pitch=-17 half-deg
+01:31:39.502  [TEL] car/telemetry/hump 010405eca4008077
+01:31:39.939  [IMU] hump pitch=12 half-deg
+01:31:39.939  [TEL] car/telemetry/hump 010405a4a6000006
+01:31:40.269  [TEL] car/telemetry/motion 01010ff8a700001c00681200001813000000
+01:31:40.283  [TEL] car/telemetry/sensor 01020af8a700ffbf07904d4b00
+01:31:41.282  [TEL] car/telemetry/motion 01010fe0ab00001c00681200001813000000
+01:31:41.284  [TEL] car/telemetry/sensor 01020ae0ab00ffbf07904d4b00
+01:31:41.579  [S5] coarse hit 199 mm @ 60 deg, fine scan
+01:31:42.274  [TEL] car/telemetry/motion 01010fc8af00001c00681200001813000000
+01:31:42.284  [TEL] car/telemetry/sensor 01020ac8af00ffbf07904d4b00
+01:31:42.284  [TEL] car/telemetry/heartbeat 010706c8af00000100
+01:31:43.281  [TEL] car/telemetry/motion 01010fb0b300001c00681200001813000000
+01:31:43.281  [TEL] car/telemetry/sensor 01020ab0b300ffbf07904d4b00
+01:31:43.558  [LF] ... 5
+01:31:44.282  [TEL] car/telemetry/motion 01010f98b700001c00681200001813000000
+01:31:44.286  [TEL] car/telemetry/sensor 01020a98b700ffbf07904d4b00
+01:31:45.275  [TEL] car/telemetry/motion 01010f80bb00001c00681200001813000000
+01:31:45.275  [TEL] car/telemetry/sensor 01020a80bb00ffbf07904d4b00
+01:31:45.566  [LF] ... 3
+01:31:46.274  [TEL] car/telemetry/motion 01010f68bf00001c00681200001813000000
+01:31:46.274  [TEL] car/telemetry/sensor 01020a68bf00ffbf07904d4b00
+01:31:46.574  [LF] ... 2
+01:31:47.169  [DBG] alive: SDK timer 50969 ms, kernel time 49903 ms, difference 1066 ms
+01:31:47.266  [TEL] car/telemetry/motion 01010f50c300001c00681200001813000000
+01:31:47.279  [TEL] car/telemetry/sensor 01020a50c300ffbf07904d4b00
+01:31:47.279  [TEL] car/telemetry/heartbeat 01070650c300000100
+01:31:47.574  [LF] ... 1
+01:31:48.264  [TEL] car/telemetry/motion 01010f38c700001c00681200001813000000
+01:31:48.280  [TEL] car/telemetry/sensor 01020a38c700ffbf07904d4b00
+01:31:48.576  [LF] IDLE -> ON_LINE  c=1963 r=145 dc=1000 dr=0 vc=4
+01:31:48.576  [TEL] car/telemetry/heartbeat 01070664c800000400
+01:31:48.658  [IMU] hump pitch=20 half-deg
+01:31:48.658  [TEL] car/telemetry/hump 010405b4c800000a
+01:31:48.679  [LF] d t=110 mm=11 st=1 vc=4 c=234 r=143 dc=52 dr=0 s=-32
+01:31:48.770  [LF] ON_LINE -> LINE_LOST  c=170 r=166 dc=14 dr=11 vc=4
+01:31:48.784  [LF] d t=220 mm=32 st=3 vc=4 c=136 r=226 dc=0 dr=47 s=-32
+01:31:48.895  [LF] LINE_LOST -> REACQUIRING  c=132 r=1811 dc=0 dr=995 vc=4
+01:31:48.895  [LF] d t=330 mm=55 st=4 vc=4 c=138 r=1673 dc=0 dr=912 s=64
+01:31:48.931  [IMU] hump pitch=-15 half-deg
+01:31:48.931  [TEL] car/telemetry/hump 010405ccc9008078
+01:31:49.007  [LF] d t=440 mm=72 st=4 vc=4 c=164 r=1865 dc=10 dr=1000 s=64
+01:31:49.119  [LF] d t=550 mm=97 st=4 vc=4 c=190 r=165 dc=26 dr=11 s=64
+01:31:49.170  [LF] REACQUIRING -> ON_LINE  c=1984 r=164 dc=1000 dr=10 vc=4
+01:31:49.236  [LF] d t=660 mm=119 st=1 vc=4 c=1827 r=129 dc=1000 dr=0 s=2
+01:31:49.278  [TEL] car/telemetry/motion 01010f20cb00da5000142c0000042b000000
+01:31:49.278  [TEL] car/telemetry/sensor 01020a20cb00ffbf07904d4b00
+01:31:49.346  [LF] d t=770 mm=146 st=1 vc=4 c=1465 r=140 dc=788 dr=0 s=-7
+01:31:49.454  [LF] d t=880 mm=168 st=1 vc=4 c=1513 r=147 dc=817 dr=0 s=-7
+01:31:49.559  [LF] d t=990 mm=193 st=1 vc=4 c=162 r=168 dc=9 dr=13 s=-32
+01:31:49.607  [LF] ON_LINE -> LINE_LOST  c=176 r=144 dc=17 dr=0 vc=4
+01:31:49.607  [LF] LINE_LOST -> IDLE  c=128 r=181 dc=0 dr=20 vc=1
+01:31:49.622  [TEL] car/telemetry/heartbeat 01070674cc00000108
+01:31:49.685  [IMU] hump pitch=-25 half-deg
+01:31:49.685  [TEL] car/telemetry/hump 010405bacc008073
+01:31:50.117  [LF] jmat: end LINE_LOST at 1045 ms, 202 mm; then 13 mm, still 1, vc=1
+01:31:50.117  [LF] jmat: speed 217 mm/s (cruise 200), first steer 4, ON_LINE at 11 ms
+01:31:50.117  [LF] jmat: settle 2 mm, band 33/90 after, 0/0 2nd half
+01:31:50.122  [LF] jmat: |steer| max 64, flips 5, LINE_LOST 1, LINE_FOUND 1
+01:31:50.122  [LF] jmat: jct 0, track_lost 0, ev fail 0, dropped 0
+01:31:50.122  [LF] jmat: detected 0 mm at 0 ms, JUNCTION 0 mm at 0 ms, delay 0 mm 0 ms
+01:31:50.122  [LF] jmat: past the cross 0/0 polls CENTRE on, RIGHT dark 0, state 3, vc 4
+01:31:50.122  [LF] RULER run 1: wheel travel START to standstill 215 mm, after JUNCTION 215 mm
+01:31:50.122  [LF] tr jmat: t mm st c r s L R (47 rows, 20 ms)
+01:31:50.122  [LF] tr 22 0 1 1943 154 4 0 0
+01:31:50.122  [LF] tr 44 0 1 1948 132 4 7 12
+01:31:50.122  [LF] tr 66 2 1 1691 145 1 30 39
+01:31:50.122  [LF] tr 88 8 1 750 178 -15 86 111
+01:31:50.122  [LF] tr 110 11 1 234 143 -32 120 155
+01:31:50.122  [LF] tr 132 15 1 184 174 -32 154 204
+01:31:50.122  [LF] tr 154 18 1 184 137 -32 191 258
+01:31:50.133  [LF] tr 176 23 1 145 170 -32 233 320
+01:31:50.225  [LF] tr 198 27 3 170 166 -32 278 382
+01:31:50.231  [LF] tr 220 32 3 136 226 -32 319 443
+01:31:50.231  [LF] tr 242 36 3 138 1290 -32 361 506
+01:31:50.233  [LF] tr 264 40 3 172 1894 -32 405 570
+01:31:50.233  [LF] tr 286 45 3 169 1940 -32 449 633
+01:31:50.233  [LF] tr 308 53 3 177 1882 -32 529 747
+01:31:50.233  [LF] tr 330 55 4 138 1673 64 554 777
+01:31:50.233  [LF] tr 352 58 4 137 1158 64 587 807
+01:31:50.276  [TEL] car/telemetry/motion 01010f08cf00006800e8390000e03b000000
+01:31:50.276  [TEL] car/telemetry/sensor 01020a08cf00ffbf07904d4b00
+01:31:50.325  [LF] tr 374 62 4 185 1075 64 639 842
+01:31:50.329  [LF] tr 396 65 4 148 2141 64 686 880
+01:31:50.331  [LF] tr 418 69 4 152 2132 64 739 915
+01:31:50.331  [LF] tr 440 72 4 164 1865 64 794 941
+01:31:50.333  [LF] tr 462 76 4 168 1604 64 852 969
+01:31:50.333  [LF] tr 484 80 4 140 274 64 915 1002
+01:31:50.333  [LF] tr 506 84 4 166 173 64 980 1039
+01:31:50.335  [LF] tr 528 93 4 141 137 64 1111 1110
+01:31:50.422  [LF] tr 550 97 4 190 165 64 1177 1144
+01:31:50.428  [LF] tr 572 101 4 240 168 64 1246 1181
+01:31:50.428  [LF] tr 594 106 4 1931 166 -64 1315 1219
+01:31:50.428  [LF] tr 616 110 1 1961 169 4 1376 1265
+01:31:50.428  [LF] tr 638 115 1 1750 147 4 1430 1315
+01:31:50.428  [LF] tr 660 119 1 1827 129 2 1486 1366
+01:31:50.428  [LF] tr 682 124 1 1840 162 4 1539 1422
+01:31:50.428  [LF] tr 704 128 1 1811 158 4 1592 1477
+01:31:50.525  [LF] tr 726 133 1 1741 155 2 1643 1531
+01:31:50.528  [LF] tr 748 142 1 1537 158 -2 1743 1641
+01:31:50.528  [LF] tr 770 146 1 1465 140 -7 1793 1695
+01:31:50.531  [LF] tr 792 150 1 1733 133 0 1841 1752
+01:31:50.531  [LF] tr 814 155 1 1489 142 0 1889 1807
+01:31:50.531  [LF] tr 836 159 1 1098 144 -12 1936 1862
+01:31:50.531  [LF] tr 858 163 1 1247 147 -15 1984 1919
+01:31:50.531  [LF] tr 880 168 1 1513 147 -7 2032 1977
+01:31:50.626  [LF] tr 902 172 1 1244 128 -11 2078 2034
+01:31:50.629  [LF] tr 924 176 1 772 163 -25 2123 2089
+01:31:50.629  [LF] tr 946 181 1 314 145 -32 2169 2144
+01:31:50.629  [LF] tr 968 189 1 191 125 -32 2257 2259
+01:31:50.629  [LF] tr 990 193 1 162 168 -32 2300 2317
+01:31:50.629  [LF] tr 1012 198 1 172 152 -32 2342 2378
+01:31:50.629  [LF] tr 1034 202 1 147 159 -32 2384 2439
+01:31:50.738  [LF] tr jmat end: ring dropped 0 lines
+01:31:50.739  [TEST] S3-U15 FAIL  (j0) on the line up to the cross, never LINE_LOST   (lf_run_test.c:898)
+01:31:50.741  [TEST] S3-U15 FAIL  (j1) cross detected at 230-320 mm, one JUNCTION   (lf_run_test.c:900)
+01:31:50.741  [TEST] S3-U15 FAIL  (j2) JUNCTION 110-135 mm after detection, by the odometer   (lf_run_test.c:9
+01:31:50.741  [TEST] S3-U15 FAIL  (j3) straight through: back ON_LINE, on the line past the cross   (lf_run_te
+01:31:50.741  [TEST] S3-U15 FAIL  (j4) stopped right after JUNCTION, wheels still   (lf_run_test.c:914)
+01:31:50.741  [LF] >>> MEASURE NOW, leave the car where it stopped: 45 s
+01:31:50.741  [LF] ... measure 45
+01:31:51.268  [TEL] car/telemetry/motion 01010ff0d200006800e8390000e03b000000
+01:31:51.268  [TEL] car/telemetry/sensor 01020af0d200ffbf07904d4b00
+01:31:52.273  [TEL] car/telemetry/motion 01010fd8d600006800e8390000e03b000000
+01:31:52.273  [TEL] car/telemetry/sensor 01020ad8d600ffbf07904d4b00
+01:31:52.273  [TEL] car/telemetry/heartbeat 010706d8d600000100
+01:31:53.277  [TEL] car/telemetry/motion 01010fc0da00006800e8390000e03b000000
+01:31:53.277  [TEL] car/telemetry/sensor 01020ac0da00ffbf07904d4b00
+01:31:54.275  [TEL] car/telemetry/motion 01010fa8de00006800e8390000e03b000000
+01:31:54.281  [TEL] car/telemetry/sensor 01020aa8de00ffbf07904d4b00
+01:31:55.204  [S5] coarse hit 98 mm @ 30 deg, fine scan
+01:31:55.280  [TEL] car/telemetry/motion 01010f90e200006800e8390000e03b000000
+01:31:55.282  [TEL] car/telemetry/sensor 01020a90e200ffbf07904d4b00
+01:31:55.684  [S5] obstacle 70 mm @ 10 deg w=41 clrL=635 clrR=635
+01:31:55.689  [S5] avoid -> SLOW (3000 ms)
+01:31:55.692  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:31:55.692  [S5] avoid -> IDLE (reacquired=0)
+01:31:56.279  [TEL] car/telemetry/motion 01010f78e600006800e8390000e03b000000
+01:31:56.279  [TEL] car/telemetry/sensor 01020a78e600ffbf07904d4b00
+01:31:57.049  [S5] coarse hit 96 mm @ 30 deg, fine scan
+01:31:57.180  [DBG] alive: SDK timer 60974 ms, kernel time 59908 ms, difference 1066 ms
+01:31:57.180  [STACK] init: 360 of 1152 B used, 792 never used
+01:31:57.180  [STACK] dbg_drain: 632 of 1664 B used, 1032 never used
+01:31:57.180  [STACK] tel: 520 of 4736 B used, 4216 never used
+01:31:57.180  [STACK] vc: 412 of 1664 B used, 1252 never used
+01:31:57.180  [STACK] motion: 224 of 1664 B used, 1440 never used
+01:31:57.180  [STACK] lf: 580 of 1664 B used, 1084 never used
+01:31:57.192  [STACK] safety: 148 of 1664 B used, 1516 never used
+01:31:57.192  [STACK] imu: 556 of 2176 B used, 1620 never used
+01:31:57.192  [STACK] obs_scan: 564 of 1664 B used, 1100 never used
+01:31:57.192  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+01:31:57.192  [STACK] app_test: 828 of 1664 B used, 836 never used
+01:31:57.192  [STACK] stack top check: 0 mismatches
+01:31:57.192  [MBF] nav_in: 64 B buffer, 64 B free
+01:31:57.192  [MBF] motion_cmd: 32 B buffer, 32 B free
+01:31:57.192  [MBF] obstacle: 24 B buffer, 24 B free
+01:31:57.192  [MBF] telemetry: 384 B buffer, 384 B free
+01:31:57.271  [TEL] car/telemetry/motion 01010f60ea00006800e8390000e03b000000
+01:31:57.287  [TEL] car/telemetry/sensor 01020a60ea00ffbf07904d4b00
+01:31:57.290  [TEL] car/telemetry/heartbeat 01070660ea00000100
+01:31:57.290  [TEL] CONNECTED tx=146 txf=0 off=1 ev=52 bad=33 qd=32 od=0 cmd=1/5
+01:31:57.549  [S5] obstacle 90 mm @ 30 deg w=54 clrL=635 clrR=635
+01:31:57.551  [S5] avoid -> SLOW (3000 ms)
+01:31:57.551  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:31:57.552  [S5] avoid -> IDLE (reacquired=0)
+01:31:58.180  [IMU] hump pitch=-12 half-deg
+01:31:58.194  [TEL] car/telemetry/hump 010405eeed00007a
+01:31:58.270  [TEL] car/telemetry/motion 01010f48ee00006800a03a0000e03b000000
+01:31:58.270  [TEL] car/telemetry/sensor 01020a48ee00ffbf07904d4b00
+01:31:58.775  [S5] coarse hit 106 mm @ 40 deg, fine scan
+01:31:59.233  [S5] obstacle 74 mm @ 20 deg w=19 clrL=124 clrR=635
+01:31:59.234  [S5] avoid -> SLOW (3000 ms)
+01:31:59.237  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:31:59.237  [S5] avoid -> IDLE (reacquired=0)
+01:31:59.273  [TEL] car/telemetry/motion 01010f30f200006800a03a0000e03b000000
+01:31:59.273  [TEL] car/telemetry/sensor 01020a30f200ffbf07904d4b00
+01:32:00.243  [IMU] hump pitch=-15 half-deg
+01:32:00.243  [TEL] car/telemetry/hump 010405f0f5008078
+01:32:00.266  [TEL] car/telemetry/motion 01010f18f600006800a03a0000e03b000000
+01:32:00.266  [TEL] car/telemetry/sensor 01020a18f600ffbf07904d4b00
+01:32:01.134  [S5] coarse hit 86 mm @ 30 deg, fine scan
+01:32:01.278  [TEL] car/telemetry/motion 01010f00fa00006800a03a0000e03b000000
+01:32:01.280  [TEL] car/telemetry/sensor 01020a00fa00ffbf07904d4b00
+01:32:01.677  [S5] obstacle 86 mm @ 30 deg w=82 clrL=635 clrR=635
+01:32:01.689  [S5] avoid -> SLOW (3000 ms)
+01:32:01.689  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:32:01.689  [S5] avoid -> IDLE (reacquired=0)
+01:32:02.274  [TEL] car/telemetry/motion 01010fe8fd000068006c3a0000dc3b000000
+01:32:02.282  [TEL] car/telemetry/sensor 01020ae8fd00ffbf07904d4b00
+01:32:02.282  [TEL] car/telemetry/heartbeat 010706e8fd00000100
+01:32:03.061  [S5] coarse hit 82 mm @ 40 deg, fine scan
+01:32:03.270  [TEL] car/telemetry/motion 01010fd00101006800583a0000e03b000000
+01:32:03.270  [TEL] car/telemetry/sensor 01020ad00101ffbf07904d4b00
+01:32:03.568  [S5] obstacle 101 mm @ 10 deg w=8 clrL=22 clrR=635
+01:32:03.568  [S5] avoid -> SLOW (3000 ms)
+01:32:03.573  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:32:03.573  [S5] avoid -> IDLE (reacquired=0)
+01:32:04.273  [TEL] car/telemetry/motion 01010fb80501006800583a0000e03b000000
+01:32:04.284  [TEL] car/telemetry/sensor 01020ab80501ffbf07904d4b00
+01:32:04.866  [S5] coarse hit 101 mm @ 40 deg, fine scan
+01:32:05.282  [TEL] car/telemetry/motion 01010fa00901006800583a0000e03b000000
+01:32:05.286  [TEL] car/telemetry/sensor 01020aa00901ffbf07904d4b00
+01:32:05.731  [LF] ... measure 30
+01:32:06.284  [TEL] car/telemetry/motion 01010f880d01006800583a0000e03b000000
+01:32:06.286  [TEL] car/telemetry/sensor 01020a880d01ffbf07904d4b00
+01:32:07.183  [DBG] alive: SDK timer 70976 ms, kernel time 69910 ms, difference 1066 ms
+01:32:07.280  [TEL] car/telemetry/motion 01010f701101006800583a0000e03b000000
+01:32:07.280  [TEL] car/telemetry/sensor 01020a701101ffbf07904d4b00
+01:32:07.280  [TEL] car/telemetry/heartbeat 010706701101000100
+01:32:08.285  [TEL] car/telemetry/motion 01010f581501006800583a0000e03b000000
+01:32:08.285  [TEL] car/telemetry/sensor 01020a581501ffbf07904d4b00
+01:32:09.273  [TEL] car/telemetry/motion 01010f401901006800583a0000e03b000000
+01:32:09.278  [TEL] car/telemetry/sensor 01020a401901ffbf07904d4b00
+01:32:10.279  [TEL] car/telemetry/motion 01010f281d01006800583a0000e03b000000
+01:32:10.281  [TEL] car/telemetry/sensor 01020a281d01ffbf07904d4b00
+01:32:11.275  [TEL] car/telemetry/motion 01010f102101006800583a0000e03b000000
+01:32:11.275  [TEL] car/telemetry/sensor 01020a102101ffbf07904d4b00
+01:32:12.273  [TEL] car/telemetry/motion 01010ff82401006800583a0000e03b000000
+01:32:12.273  [TEL] car/telemetry/sensor 01020af82401ffbf07904d4b00
+01:32:12.285  [TEL] car/telemetry/heartbeat 010706f82401000100
+01:32:13.280  [TEL] car/telemetry/motion 01010fe02801006800583a0000e03b000000
+01:32:13.283  [TEL] car/telemetry/sensor 01020ae02801ffbf07904d4b00
+01:32:14.279  [TEL] car/telemetry/motion 01010fc82c01006800583a0000e03b000000
+01:32:14.279  [TEL] car/telemetry/sensor 01020ac82c01ffbf07904d4b00
+01:32:15.280  [TEL] car/telemetry/motion 01010fb03001006800583a0000e03b000000
+01:32:15.288  [TEL] car/telemetry/sensor 01020ab03001ffbf07904d4b00
+01:32:16.270  [TEL] car/telemetry/motion 01010f983401006800583a0000e03b000000
+01:32:16.286  [TEL] car/telemetry/sensor 01020a983401ffbf07904d4b00
+01:32:17.185  [DBG] alive: SDK timer 80987 ms, kernel time 79921 ms, difference 1066 ms
+01:32:17.281  [TEL] car/telemetry/motion 01010f803801006800583a0000e03b000000
+01:32:17.281  [TEL] car/telemetry/sensor 01020a803801ffbf07904d4b00
+01:32:17.281  [TEL] car/telemetry/heartbeat 010706803801000100
+01:32:18.274  [TEL] car/telemetry/motion 01010f683c01006800583a0000e03b000000
+01:32:18.274  [TEL] car/telemetry/sensor 01020a683c01ffbf07904d4b00
+01:32:19.269  [TEL] car/telemetry/motion 01010f504001006800583a0000e03b000000
+01:32:19.269  [TEL] car/telemetry/sensor 01020a504001ffbf07904d4b00
+01:32:20.265  [TEL] car/telemetry/motion 01010f384401006800583a0000e03b000000
+01:32:20.265  [TEL] car/telemetry/sensor 01020a384401ffbf07904d4b00
+01:32:20.761  [LF] ... measure 15
+01:32:21.273  [TEL] car/telemetry/motion 01010f204801006800583a0000e03b000000
+01:32:21.279  [TEL] car/telemetry/sensor 01020a204801ffbf07904d4b00
+01:32:22.268  [TEL] car/telemetry/motion 01010f084c01006800583a0000e03b000000
+01:32:22.268  [TEL] car/telemetry/sensor 01020a084c01ffbf07904d4b00
+01:32:22.268  [TEL] car/telemetry/heartbeat 010706084c01000100
+01:32:23.277  [TEL] car/telemetry/motion 01010ff04f01006800583a0000e03b000000
+01:32:23.277  [TEL] car/telemetry/sensor 01020af04f01ffbf07904d4b00
+01:32:24.279  [TEL] car/telemetry/motion 01010fd85301006800583a0000e03b000000
+01:32:24.279  [TEL] car/telemetry/sensor 01020ad85301ffbf07904d4b00
+01:32:25.279  [TEL] car/telemetry/motion 01010fc05701006800583a0000e03b000000
+01:32:25.286  [TEL] car/telemetry/sensor 01020ac05701ffbf07904d4b00
+01:32:26.274  [TEL] car/telemetry/motion 01010fa85b01006800583a0000e03b000000
+01:32:26.274  [TEL] car/telemetry/sensor 01020aa85b01ffbf07904d4b00
+01:32:27.204  [DBG] alive: SDK timer 90997 ms, kernel time 89931 ms, difference 1066 ms
+01:32:27.280  [TEL] car/telemetry/motion 01010f905f01006800583a0000e03b000000
+01:32:27.280  [TEL] car/telemetry/sensor 01020a905f01ffbf07904d4b00
+01:32:27.280  [TEL] car/telemetry/heartbeat 010706905f01000100
+01:32:28.285  [TEL] car/telemetry/motion 01010f786301006800583a0000e03b000000
+01:32:28.289  [TEL] car/telemetry/sensor 01020a786301ffbf07904d4b00
+01:32:29.285  [TEL] car/telemetry/motion 01010f606701006800583a0000e03b000000
+01:32:29.288  [TEL] car/telemetry/sensor 01020a606701ffbf07904d4b00
+01:32:30.273  [TEL] car/telemetry/motion 01010f486b01006800583a0000e03b000000
+01:32:30.273  [TEL] car/telemetry/sensor 01020a486b01ffbf07904d4b00
+01:32:31.277  [TEL] car/telemetry/motion 01010f306f01006800583a0000e03b000000
+01:32:31.277  [TEL] car/telemetry/sensor 01020a306f01ffbf07904d4b00
+01:32:32.278  [TEL] car/telemetry/motion 01010f187301006800583a0000e03b000000
+01:32:32.281  [TEL] car/telemetry/sensor 01020a187301ffbf07904d4b00
+01:32:32.281  [TEL] car/telemetry/heartbeat 010706187301000100
+01:32:33.275  [TEL] car/telemetry/motion 01010f007701006800583a0000e03b000000
+01:32:33.275  [TEL] car/telemetry/sensor 01020a007701ffbf07904d4b00
+01:32:34.269  [TEL] car/telemetry/motion 01010fe87a01006800583a0000e03b000000
+01:32:34.269  [TEL] car/telemetry/sensor 01020ae87a01ffbf07904d4b00
+01:32:35.279  [TEL] car/telemetry/motion 01010fd07e01006800583a0000e03b000000
+01:32:35.279  [TEL] car/telemetry/sensor 01020ad07e01ffbf07904d4b00
+01:32:35.765  [LF] jmat run 2 of 3
+01:32:35.781  [LF] >>> jmat: START POSE on the junction mat, CENTRE 250 mm before the cross
+01:32:35.781  [LF] >>> hands off at 0: the car DRIVES (catch and lift it to stop)
+01:32:36.278  [TEL] car/telemetry/motion 01010fb88201006800583a0000e03b000000
+01:32:36.278  [TEL] car/telemetry/sensor 01020ab88201ffbf07904d4b00
+01:32:37.201  [DBG] alive: SDK timer 100997 ms, kernel time 99931 ms, difference 1066 ms
+01:32:37.272  [TEL] car/telemetry/motion 01010fa08601006800583a0000e03b000000
+01:32:37.272  [TEL] car/telemetry/sensor 01020aa08601ffbf07904d4b00
+01:32:37.272  [TEL] car/telemetry/heartbeat 010706a08601000100
+01:32:38.284  [TEL] car/telemetry/motion 01010f888a01006800583a0000e03b000000
+01:32:38.284  [TEL] car/telemetry/sensor 01020a888a01ffbf07904d4b00
+01:32:39.280  [TEL] car/telemetry/motion 01010f708e01006800583a0000e03b000000
+01:32:39.280  [TEL] car/telemetry/sensor 01020a708e01ffbf07904d4b00
+01:32:40.275  [TEL] car/telemetry/motion 01010f589201006800583a0000e03b000000
+01:32:40.275  [TEL] car/telemetry/sensor 01020a589201ffbf07904d4b00
+01:32:40.776  [LF] ... 5
+01:32:41.272  [TEL] car/telemetry/motion 01010f409601006800583a0000e03b000000
+01:32:41.272  [TEL] car/telemetry/sensor 01020a409601ffbf07904d4b00
+01:32:42.272  [TEL] car/telemetry/motion 01010f289a01006800583a0000e03b000000
+01:32:42.279  [TEL] car/telemetry/sensor 01020a289a01ffbf07904d4b00
+01:32:42.279  [TEL] car/telemetry/heartbeat 010706289a01000100
+01:32:42.771  [LF] ... 3
+01:32:43.276  [TEL] car/telemetry/motion 01010f109e01006800583a0000e03b000000
+01:32:43.281  [TEL] car/telemetry/sensor 01020a109e01ffbf07904d4b00
+01:32:43.784  [LF] ... 2
+01:32:44.271  [TEL] car/telemetry/motion 01010ff8a101006800583a0000e03b000000
+01:32:44.271  [TEL] car/telemetry/sensor 01020af8a101ffbf07904d4b00
+01:32:44.788  [LF] ... 1
+01:32:45.274  [TEL] car/telemetry/motion 01010fe0a501006800583a0000e03b000000
+01:32:45.274  [TEL] car/telemetry/sensor 01020ae0a501ffbf07904d4b00
+01:32:45.787  [LF] IDLE -> ON_LINE  c=1926 r=149 dc=1000 dr=1 vc=4
+01:32:45.787  [TEL] car/telemetry/heartbeat 010706e8a701000400
+01:32:45.868  [IMU] hump pitch=17 half-deg
+01:32:45.887  [TEL] car/telemetry/hump 0104052ea8018008
+01:32:45.895  [LF] d t=110 mm=8 st=1 vc=4 c=2048 r=172 dc=1000 dr=15 s=4
+01:32:45.997  [IMU] hump pitch=11 half-deg
+01:32:45.997  [TEL] car/telemetry/hump 010405b0a8018005
+01:32:46.007  [LF] d t=220 mm=31 st=1 vc=4 c=154 r=156 dc=4 dr=5 s=-32
+01:32:46.037  [LF] ON_LINE -> LINE_LOST  c=140 r=193 dc=0 dr=28 vc=4
+01:32:46.116  [LF] d t=330 mm=53 st=3 vc=4 c=138 r=1821 dc=0 dr=1000 s=-32
+01:32:46.148  [LF] LINE_LOST -> REACQUIRING  c=148 r=1692 dc=1 dr=924 vc=4
+01:32:46.196  [IMU] hump pitch=-18 half-deg
+01:32:46.212  [TEL] car/telemetry/hump 01040582a9010077
+01:32:46.227  [LF] d t=440 mm=75 st=4 vc=4 c=173 r=289 dc=16 dr=85 s=64
+01:32:46.275  [TEL] car/telemetry/motion 01010fc8a901ac8c00e8480000404d000000
+01:32:46.275  [TEL] car/telemetry/sensor 01020ac8a901ffbf07904d4b00
+01:32:46.293  [IMU] hump pitch=18 half-deg
+01:32:46.293  [TEL] car/telemetry/hump 010405d2a9010009
+01:32:46.325  [LF] d t=550 mm=93 st=4 vc=4 c=179 r=1619 dc=19 dr=880 s=64
+01:32:46.434  [LF] d t=660 mm=118 st=4 vc=4 c=200 r=147 dc=32 dr=0 s=64
+01:32:46.469  [LF] REACQUIRING -> ON_LINE  c=1693 r=141 dc=924 dr=0 vc=4
+01:32:46.546  [LF] d t=770 mm=140 st=1 vc=4 c=1112 r=135 dc=577 dr=0 s=-6
+01:32:46.657  [LF] d t=880 mm=166 st=1 vc=4 c=1618 r=129 dc=879 dr=0 s=-1
+01:32:46.770  [LF] d t=990 mm=188 st=1 vc=4 c=1561 r=129 dc=845 dr=0 s=1
+01:32:46.888  [LF] d t=1100 mm=213 st=1 vc=4 c=188 r=157 dc=25 dr=6 s=-32
+01:32:46.932  [LF] ON_LINE -> LINE_LOST  c=180 r=140 dc=20 dr=0 vc=4
+01:32:46.932  [LF] LINE_LOST -> IDLE  c=164 r=163 dc=10 dr=10 vc=1
+01:32:46.944  [TEL] car/telemetry/heartbeat 0107065cac01000100
+01:32:46.991  [IMU] hump pitch=-13 half-deg
+01:32:46.991  [TEL] car/telemetry/hump 01040598ac018079
+01:32:47.214  [DBG] alive: SDK timer 111008 ms, kernel time 109942 ms, difference 1066 ms
+01:32:47.282  [TEL] car/telemetry/motion 01010fb0ad0100c0006c6500004868000000
+01:32:47.285  [TEL] car/telemetry/sensor 01020ab0ad01ffbf07904d4b00
+01:32:47.285  [TEL] car/telemetry/heartbeat 010706b0ad01000100
+01:32:47.438  [LF] jmat: end LINE_LOST at 1155 ms, 221 mm; then 13 mm, still 1, vc=1
+01:32:47.442  [LF] jmat: speed 209 mm/s (cruise 200), first steer 4, ON_LINE at 11 ms
+01:32:47.442  [LF] jmat: settle 11 mm, band 35/94 after, 0/4 2nd half
+01:32:47.442  [LF] jmat: |steer| max 64, flips 4, LINE_LOST 1, LINE_FOUND 1
+01:32:47.442  [LF] jmat: jct 0, track_lost 0, ev fail 0, dropped 0
+01:32:47.442  [LF] jmat: detected 0 mm at 0 ms, JUNCTION 0 mm at 0 ms, delay 0 mm 0 ms
+01:32:47.442  [LF] jmat: past the cross 0/0 polls CENTRE on, RIGHT dark 0, state 3, vc 4
+01:32:47.442  [LF] RULER run 2: wheel travel START to standstill 234 mm, after JUNCTION 234 mm
+01:32:47.442  [LF] tr jmat: t mm st c r s L R (52 rows, 20 ms)
+01:32:47.442  [LF] tr 22 0 1 1926 139 4 0 0
+01:32:47.442  [LF] tr 44 0 1 1963 130 4 7 13
+01:32:47.442  [LF] tr 66 2 1 2221 148 4 23 45
+01:32:47.442  [LF] tr 88 5 1 2225 145 4 50 77
+01:32:47.442  [LF] tr 110 8 1 2048 172 4 79 116
+01:32:47.442  [LF] tr 132 11 1 1536 138 -3 112 158
+01:32:47.442  [LF] tr 154 14 1 794 125 -24 149 204
+01:32:47.452  [LF] tr 176 23 1 219 141 -32 238 311
+01:32:47.547  [LF] tr 198 27 1 204 157 -32 282 368
+01:32:47.547  [LF] tr 220 31 1 154 156 -32 323 426
+01:32:47.547  [LF] tr 242 35 1 146 165 -32 367 489
+01:32:47.547  [LF] tr 264 40 3 140 193 -32 412 551
+01:32:47.547  [LF] tr 286 44 3 173 204 -32 456 615
+01:32:47.547  [LF] tr 308 49 3 150 1368 -32 499 678
+01:32:47.547  [LF] tr 330 53 3 138 1821 -32 543 741
+01:32:47.547  [LF] tr 352 58 3 173 1871 -32 587 806
+01:32:47.647  [LF] tr 374 63 3 166 1832 -32 631 869
+01:32:47.647  [LF] tr 396 69 4 174 1162 64 695 951
+01:32:47.647  [LF] tr 418 71 4 152 335 64 728 981
+01:32:47.647  [LF] tr 440 75 4 173 289 64 779 1017
+01:32:47.647  [LF] tr 462 78 4 184 1916 64 824 1053
+01:32:47.647  [LF] tr 484 82 4 148 2148 64 878 1083
+01:32:47.647  [LF] tr 506 85 4 180 1953 64 932 1112
+01:32:47.647  [LF] tr 528 89 4 156 1800 64 989 1142
+01:32:47.737  [LF] tr 550 93 4 179 1619 64 1049 1175
+01:32:47.748  [LF] tr 572 97 4 163 251 64 1114 1211
+01:32:47.748  [LF] tr 594 101 4 142 201 64 1178 1248
+01:32:47.748  [LF] tr 616 110 4 176 175 64 1308 1317
+01:32:47.748  [LF] tr 638 114 4 179 163 64 1374 1354
+01:32:47.748  [LF] tr 660 118 4 200 147 64 1440 1392
+01:32:47.748  [LF] tr 682 123 4 1470 140 64 1506 1427
+01:32:47.753  [LF] tr 704 127 1 1565 158 1 1571 1464
+01:32:47.831  [LF] tr 726 131 1 1710 144 -3 1634 1506
+01:32:47.847  [LF] tr 748 136 1 1505 129 0 1691 1552
+01:32:47.847  [LF] tr 770 140 1 1112 135 -6 1744 1602
+01:32:47.847  [LF] tr 792 145 1 969 138 -19 1796 1656
+01:32:47.847  [LF] tr 814 149 1 1373 142 -8 1845 1714
+01:32:47.847  [LF] tr 836 158 1 1371 162 -6 1937 1826
+01:32:47.847  [LF] tr 858 162 1 1413 126 -7 1982 1886
+01:32:47.847  [LF] tr 880 166 1 1618 129 -1 2027 1945
+01:32:47.946  [LF] tr 902 171 1 1657 145 0 2071 2001
+01:32:47.946  [LF] tr 924 175 1 1722 139 0 2116 2057
+01:32:47.946  [LF] tr 946 179 1 1728 126 2 2162 2113
+01:32:47.946  [LF] tr 968 183 1 1715 146 3 2208 2169
+01:32:47.946  [LF] tr 990 188 1 1561 129 1 2253 2224
+01:32:47.946  [LF] tr 1012 192 1 1293 164 -10 2299 2278
+01:32:47.946  [LF] tr 1034 196 1 760 147 -25 2346 2333
+01:32:47.955  [LF] tr 1056 204 1 253 149 -32 2437 2442
+01:32:48.045  [LF] tr 1078 209 1 219 169 -32 2480 2500
+01:32:48.045  [LF] tr 1100 213 1 188 157 -32 2523 2558
+01:32:48.045  [LF] tr 1122 217 1 161 171 -32 2565 2617
+01:32:48.045  [LF] tr 1144 221 1 180 144 -32 2607 2675
+01:32:48.153  [LF] tr jmat end: ring dropped 0 lines
+01:32:48.153  [TEST] S3-U15 FAIL  (j0) on the line up to the cross, never LINE_LOST   (lf_run_test.c:898)
+01:32:48.153  [TEST] S3-U15 FAIL  (j1) cross detected at 230-320 mm, one JUNCTION   (lf_run_test.c:900)
+01:32:48.153  [TEST] S3-U15 FAIL  (j2) JUNCTION 110-135 mm after detection, by the odometer   (lf_run_test.c:9
+01:32:48.153  [TEST] S3-U15 FAIL  (j3) straight through: back ON_LINE, on the line past the cross   (lf_run_te
+01:32:48.153  [TEST] S3-U15 FAIL  (j4) stopped right after JUNCTION, wheels still   (lf_run_test.c:914)
+01:32:48.153  [LF] >>> MEASURE NOW, leave the car where it stopped: 45 s
+01:32:48.153  [LF] ... measure 45
+01:32:48.269  [TEL] car/telemetry/motion 01010f98b10100c0006c6500004868000000
+01:32:48.278  [TEL] car/telemetry/sensor 01020a98b101ffbf07904d4b00
+01:32:49.266  [TEL] car/telemetry/motion 01010f80b50100c0006c6500004868000000
+01:32:49.280  [TEL] car/telemetry/sensor 01020a80b501ffbf07904d4b00
+01:32:50.273  [TEL] car/telemetry/motion 01010f68b90100c0006c6500004868000000
+01:32:50.273  [TEL] car/telemetry/sensor 01020a68b901ffbf07904d4b00
+01:32:51.274  [TEL] car/telemetry/motion 01010f50bd0100c0006c6500004868000000
+01:32:51.282  [TEL] car/telemetry/sensor 01020a50bd01ffbf07904d4b00
+01:32:52.268  [TEL] car/telemetry/motion 01010f38c10100c0006c6500004868000000
+01:32:52.283  [TEL] car/telemetry/sensor 01020a38c101ffbf07904d4b00
+01:32:52.283  [TEL] car/telemetry/heartbeat 01070638c101000100
+01:32:53.280  [TEL] car/telemetry/motion 01010f20c50100c0006c6500004868000000
+01:32:53.280  [TEL] car/telemetry/sensor 01020a20c501ffbf07904d4b00
+01:32:54.271  [TEL] car/telemetry/motion 01010f08c90100c0006c6500004868000000
+01:32:54.271  [TEL] car/telemetry/sensor 01020a08c901ffbf07904d4b00
+01:32:55.270  [TEL] car/telemetry/motion 01010ff0cc0100c0006c6500004868000000
+01:32:55.288  [TEL] car/telemetry/sensor 01020af0cc01ffbf07904d4b00
+01:32:56.283  [TEL] car/telemetry/motion 01010fd8d00100c0006c6500004868000000
+01:32:56.283  [TEL] car/telemetry/sensor 01020ad8d001ffbf07904d4b00
+01:32:57.215  [DBG] alive: SDK timer 121010 ms, kernel time 119944 ms, difference 1066 ms
+01:32:57.215  [STACK] init: 360 of 1152 B used, 792 never used
+01:32:57.215  [STACK] dbg_drain: 884 of 1664 B used, 780 never used
+01:32:57.215  [STACK] tel: 620 of 4736 B used, 4116 never used
+01:32:57.227  [STACK] vc: 420 of 1664 B used, 1244 never used
+01:32:57.229  [STACK] motion: 224 of 1664 B used, 1440 never used
+01:32:57.229  [STACK] lf: 580 of 1664 B used, 1084 never used
+01:32:57.229  [STACK] safety: 200 of 1664 B used, 1464 never used
+01:32:57.229  [STACK] imu: 556 of 2176 B used, 1620 never used
+01:32:57.229  [STACK] obs_scan: 564 of 1664 B used, 1100 never used
+01:32:57.229  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+01:32:57.229  [STACK] app_test: 828 of 1664 B used, 836 never used
+01:32:57.229  [STACK] stack top check: 0 mismatches
+01:32:57.229  [MBF] nav_in: 64 B buffer, 64 B free
+01:32:57.229  [MBF] motion_cmd: 32 B buffer, 32 B free
+01:32:57.229  [MBF] obstacle: 24 B buffer, 24 B free
+01:32:57.229  [MBF] telemetry: 384 B buffer, 384 B free
+01:32:57.276  [TEL] car/telemetry/motion 01010fc0d40100c0006c6500004868000000
+01:32:57.276  [TEL] car/telemetry/sensor 01020ac0d401ffbf07904d4b00
+01:32:57.276  [TEL] car/telemetry/heartbeat 010706c0d401000100
+01:32:57.276  [TEL] CONNECTED tx=287 txf=0 off=1 ev=61 bad=33 qd=32 od=0 cmd=1/5
+01:32:58.272  [TEL] car/telemetry/motion 01010fa8d80100c0006c6500004868000000
+01:32:58.281  [TEL] car/telemetry/sensor 01020aa8d801ffbf07904d4b00
+01:32:59.272  [TEL] car/telemetry/motion 01010f90dc0100c0006c6500004868000000
+01:32:59.272  [TEL] car/telemetry/sensor 01020a90dc01ffbf07904d4b00
+01:33:00.273  [TEL] car/telemetry/motion 01010f78e00100c0006c6500004868000000
+01:33:00.273  [TEL] car/telemetry/sensor 01020a78e001ffbf07904d4b00
+01:33:01.273  [TEL] car/telemetry/motion 01010f60e40100c0006c6500004868000000
+01:33:01.284  [TEL] car/telemetry/sensor 01020a60e401ffbf07904d4b00
+01:33:02.274  [TEL] car/telemetry/motion 01010f48e80100c0006c6500004868000000
+01:33:02.285  [TEL] car/telemetry/sensor 01020a48e801ffbf07904d4b00
+01:33:02.285  [TEL] car/telemetry/heartbeat 01070648e801000100
+01:33:03.163  [LF] ... measure 30
+01:33:03.283  [TEL] car/telemetry/motion 01010f30ec0100c0006c6500004868000000
+01:33:03.283  [TEL] car/telemetry/sensor 01020a30ec01ffbf07904d4b00
+01:33:03.427  [S5] coarse hit 45 mm @ 30 deg, fine scan
+01:33:03.882  [IMU] hump pitch=-11 half-deg
+01:33:03.897  [TEL] car/telemetry/hump 01040592ee01807a
+01:33:03.897  [S5] obstacle 44 mm @ 30 deg w=42 clrL=28 clrR=635
+01:33:03.897  [S5] avoid -> SLOW (3000 ms)
+01:33:03.897  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:33:03.897  [S5] avoid -> IDLE (reacquired=0)
+01:33:04.287  [TEL] car/telemetry/motion 01010f18f00100c000686500004468000000
+01:33:04.287  [TEL] car/telemetry/sensor 01020a18f001ffbf07904d4b00
+01:33:05.099  [S5] coarse hit 39 mm @ 40 deg, fine scan
+01:33:05.275  [TEL] car/telemetry/motion 01010f00f40100c000686500004c68000000
+01:33:05.289  [TEL] car/telemetry/sensor 01020a00f401ffbf07904d4b00
+01:33:05.529  [S5] obstacle 44 mm @ 40 deg w=42 clrL=30 clrR=635
+01:33:05.529  [S5] avoid -> SLOW (3000 ms)
+01:33:05.529  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:33:05.529  [S5] avoid -> IDLE (reacquired=0)
+01:33:06.264  [TEL] car/telemetry/motion 01010fe8f70100c000686500004c68000000
+01:33:06.264  [TEL] car/telemetry/sensor 01020ae8f701ffbf07904d4b00
+01:33:06.881  [S5] coarse hit 69 mm @ 40 deg, fine scan
+01:33:07.213  [DBG] alive: SDK timer 131013 ms, kernel time 129947 ms, difference 1066 ms
+01:33:07.276  [TEL] car/telemetry/motion 01010fd0fb0100c000686500004868000000
+01:33:07.279  [TEL] car/telemetry/sensor 01020ad0fb01ffbf07904d4b00
+01:33:07.279  [TEL] car/telemetry/heartbeat 010706d0fb01000100
+01:33:08.265  [TEL] car/telemetry/motion 01010fb8ff0100c000686500004868000000
+01:33:08.281  [TEL] car/telemetry/sensor 01020ab8ff01ffbf07904d4b00
+01:33:09.280  [TEL] car/telemetry/motion 01010fa0030200c000686500004868000000
+01:33:09.280  [TEL] car/telemetry/sensor 01020aa00302ffbf07904d4b00
+01:33:10.271  [TEL] car/telemetry/motion 01010f88070200c000686500004868000000
+01:33:10.271  [TEL] car/telemetry/sensor 01020a880702ffbf07904d4b00
+01:33:11.269  [TEL] car/telemetry/motion 01010f700b0200c000686500004868000000
+01:33:11.285  [TEL] car/telemetry/sensor 01020a700b02ffbf07904d4b00
+01:33:12.276  [TEL] car/telemetry/motion 01010f580f0200c000686500004868000000
+01:33:12.285  [TEL] car/telemetry/sensor 01020a580f02ffbf07904d4b00
+01:33:12.285  [TEL] car/telemetry/heartbeat 010706580f02000100
+01:33:13.277  [TEL] car/telemetry/motion 01010f40130200c000686500004868000000
+01:33:13.277  [TEL] car/telemetry/sensor 01020a401302ffbf07904d4b00
+01:33:14.270  [TEL] car/telemetry/motion 01010f28170200c000686500004868000000
+01:33:14.286  [TEL] car/telemetry/sensor 01020a281702ffbf07904d4b00
+01:33:15.281  [TEL] car/telemetry/motion 01010f101b0200c000686500004868000000
+01:33:15.281  [TEL] car/telemetry/sensor 01020a101b02ffbf07904d4b00
+01:33:16.274  [TEL] car/telemetry/motion 01010ff81e0200c000686500004868000000
+01:33:16.274  [TEL] car/telemetry/sensor 01020af81e02ffbf07904d4b00
+01:33:17.234  [DBG] alive: SDK timer 141023 ms, kernel time 139957 ms, difference 1066 ms
+01:33:17.277  [TEL] car/telemetry/motion 01010fe0220200c000686500004868000000
+01:33:17.278  [TEL] car/telemetry/sensor 01020ae02202ffbf07904d4b00
+01:33:17.278  [TEL] car/telemetry/heartbeat 010706e02202000100
+01:33:18.178  [LF] ... measure 15
+01:33:18.267  [TEL] car/telemetry/motion 01010fc8260200c000686500004868000000
+01:33:18.279  [TEL] car/telemetry/sensor 01020ac82602ffbf07904d4b00
+01:33:19.281  [TEL] car/telemetry/motion 01010fb02a0200c000686500004868000000
+01:33:19.281  [TEL] car/telemetry/sensor 01020ab02a02ffbf07904d4b00
+01:33:20.280  [TEL] car/telemetry/motion 01010f982e0200c000686500004868000000
+01:33:20.280  [TEL] car/telemetry/sensor 01020a982e02ffbf07904d4b00
+01:33:21.267  [TEL] car/telemetry/motion 01010f80320200c000686500004868000000
+01:33:21.283  [TEL] car/telemetry/sensor 01020a803202ffbf07904d4b00
+01:33:22.282  [TEL] car/telemetry/motion 01010f68360200c000686500004868000000
+01:33:22.282  [TEL] car/telemetry/sensor 01020a683602ffbf07904d4b00
+01:33:22.282  [TEL] car/telemetry/heartbeat 010706683602000100
+01:33:23.280  [TEL] car/telemetry/motion 01010f503a0200c000686500004868000000
+01:33:23.280  [TEL] car/telemetry/sensor 01020a503a02ffbf07904d4b00
+01:33:24.283  [TEL] car/telemetry/motion 01010f383e0200c000686500004868000000
+01:33:24.285  [TEL] car/telemetry/sensor 01020a383e02ffbf07904d4b00
+01:33:25.287  [TEL] car/telemetry/motion 01010f20420200c000686500004868000000
+01:33:25.287  [TEL] car/telemetry/sensor 01020a204202ffbf07904d4b00
+01:33:26.282  [TEL] car/telemetry/motion 01010f08460200c000686500004868000000
+01:33:26.288  [TEL] car/telemetry/sensor 01020a084602ffbf07904d4b00
+01:33:27.241  [DBG] alive: SDK timer 151033 ms, kernel time 149967 ms, difference 1066 ms
+01:33:27.272  [TEL] car/telemetry/motion 01010ff0490200c000686500004868000000
+01:33:27.279  [TEL] car/telemetry/sensor 01020af04902ffbf07904d4b00
+01:33:27.279  [TEL] car/telemetry/heartbeat 010706f04902000100
+01:33:28.277  [TEL] car/telemetry/motion 01010fd84d0200c000686500004868000000
+01:33:28.277  [TEL] car/telemetry/sensor 01020ad84d02ffbf07904d4b00
+01:33:29.278  [TEL] car/telemetry/motion 01010fc0510200c000686500004868000000
+01:33:29.278  [TEL] car/telemetry/sensor 01020ac05102ffbf07904d4b00
+01:33:30.279  [TEL] car/telemetry/motion 01010fa8550200c000686500004868000000
+01:33:30.279  [TEL] car/telemetry/sensor 01020aa85502ffbf07904d4b00
+01:33:31.281  [TEL] car/telemetry/motion 01010f90590200c000686500004868000000
+01:33:31.284  [TEL] car/telemetry/sensor 01020a905902ffbf07904d4b00
+01:33:32.281  [TEL] car/telemetry/motion 01010f785d0200c000686500004868000000
+01:33:32.281  [TEL] car/telemetry/sensor 01020a785d02ffbf07904d4b00
+01:33:32.281  [TEL] car/telemetry/heartbeat 010706785d02000100
+01:33:33.196  [LF] jmat run 3 of 3
+01:33:33.198  [LF] >>> jmat: START POSE on the junction mat, CENTRE 250 mm before the cross
+01:33:33.198  [LF] >>> hands off at 0: the car DRIVES (catch and lift it to stop)
+01:33:33.277  [TEL] car/telemetry/motion 01010f60610200c000686500004868000000
+01:33:33.277  [TEL] car/telemetry/sensor 01020a606102ffbf07904d4b00
+01:33:34.278  [TEL] car/telemetry/motion 01010f48650200c000686500004868000000
+01:33:34.278  [TEL] car/telemetry/sensor 01020a486502ffbf07904d4b00
+01:33:35.271  [TEL] car/telemetry/motion 01010f30690200c000686500004868000000
+01:33:35.289  [TEL] car/telemetry/sensor 01020a306902ffbf07904d4b00
+01:33:36.282  [TEL] car/telemetry/motion 01010f186d0200c000686500004868000000
+01:33:36.288  [TEL] car/telemetry/sensor 01020a186d02ffbf07904d4b00
+01:33:37.243  [DBG] alive: SDK timer 161033 ms, kernel time 159967 ms, difference 1066 ms
+01:33:37.276  [TEL] car/telemetry/motion 01010f00710200c000686500004868000000
+01:33:37.276  [TEL] car/telemetry/sensor 01020a007102ffbf07904d4b00
+01:33:37.276  [TEL] car/telemetry/heartbeat 010706007102000100
+01:33:38.190  [LF] ... 5
+01:33:38.271  [TEL] car/telemetry/motion 01010fe8740200c000686500004868000000
+01:33:38.271  [TEL] car/telemetry/sensor 01020ae87402ffbf07904d4b00
+01:33:39.279  [TEL] car/telemetry/motion 01010fd0780200c000686500004868000000
+01:33:39.279  [TEL] car/telemetry/sensor 01020ad07802ffbf07904d4b00
+01:33:40.195  [LF] ... 3
+01:33:40.275  [TEL] car/telemetry/motion 01010fb87c0200c000686500004868000000
+01:33:40.283  [TEL] car/telemetry/sensor 01020ab87c02ffbf07904d4b00
+01:33:41.206  [LF] ... 2
+01:33:41.274  [TEL] car/telemetry/motion 01010fa0800200c000686500004868000000
+01:33:41.274  [TEL] car/telemetry/sensor 01020aa08002ffbf07904d4b00
+01:33:42.205  [LF] ... 1
+01:33:42.283  [TEL] car/telemetry/motion 01010f88840200c000686500004868000000
+01:33:42.285  [TEL] car/telemetry/sensor 01020a888402ffbf07904d4b00
+01:33:42.285  [TEL] car/telemetry/heartbeat 010706888402000100
+01:33:43.208  [LF] IDLE -> ON_LINE  c=1756 r=168 dc=962 dr=13 vc=4
+01:33:43.217  [TEL] car/telemetry/heartbeat 010706348802000400
+01:33:43.281  [TEL] car/telemetry/motion 01010f70880279c400386600006069000000
+01:33:43.281  [TEL] car/telemetry/sensor 01020a708802ffbf07904d4b00
+01:33:43.281  [IMU] hump pitch=19 half-deg
+01:33:43.298  [TEL] car/telemetry/hump 0104057a88028009
+01:33:43.314  [LF] d t=110 mm=7 st=1 vc=4 c=1774 r=169 dc=973 dr=13 s=4
+01:33:43.425  [LF] d t=220 mm=31 st=1 vc=4 c=148 r=147 dc=1 dr=0 s=-32
+01:33:43.441  [LF] ON_LINE -> LINE_LOST  c=134 r=157 dc=0 dr=6 vc=4
+01:33:43.537  [LF] d t=330 mm=54 st=3 vc=4 c=152 r=1938 dc=3 dr=1000 s=-32
+01:33:43.569  [LF] LINE_LOST -> REACQUIRING  c=172 r=708 dc=15 dr=335 vc=4
+01:33:43.610  [IMU] hump pitch=-19 half-deg
+01:33:43.624  [TEL] car/telemetry/hump 010405ba89028076
+01:33:43.632  [LF] d t=440 mm=75 st=4 vc=4 c=157 r=520 dc=6 dr=223 s=64
+01:33:43.683  [IMU] hump pitch=17 half-deg
+01:33:43.696  [TEL] car/telemetry/hump 0104050a8a028008
+01:33:43.746  [LF] d t=550 mm=94 st=4 vc=4 c=172 r=1115 dc=15 dr=579 s=64
+01:33:43.866  [LF] d t=660 mm=120 st=4 vc=4 c=1325 r=171 dc=704 dr=14 s=64
+01:33:43.871  [LF] REACQUIRING -> ON_LINE  c=1838 r=166 dc=1000 dr=11 vc=4
+01:33:43.966  [LF] d t=770 mm=143 st=1 vc=4 c=1266 r=134 dc=669 dr=0 s=-10
+01:33:44.074  [LF] d t=880 mm=170 st=1 vc=4 c=1500 r=138 dc=809 dr=0 s=-6
+01:33:44.184  [LF] d t=990 mm=192 st=1 vc=4 c=1712 r=150 dc=936 dr=2 s=2
+01:33:44.281  [TEL] car/telemetry/motion 01010f588c02da1401b08d0000b48f000000
+01:33:44.281  [TEL] car/telemetry/sensor 01020a588c02ffbf07904d4b00
+01:33:44.294  [LF] d t=1100 mm=218 st=1 vc=4 c=1890 r=138 dc=1000 dr=0 s=4
+01:33:44.415  [LF] d t=1210 mm=239 st=1 vc=4 c=1915 r=165 dc=1000 dr=11 s=4
+01:33:44.522  [LF] d t=1320 mm=265 st=1 vc=4 c=2016 r=143 dc=1000 dr=0 s=4
+01:33:44.630  [LF] ON_LINE -> JUNCTION  c=2364 r=1769 dc=1000 dr=970 vc=4
+01:33:44.630  [LF] d t=1430 mm=287 st=2 vc=4 c=2364 r=1769 dc=1000 dr=970 s=0
+01:33:44.740  [LF] d t=1540 mm=312 st=2 vc=4 c=1967 r=141 dc=1000 dr=0 s=4
+01:33:44.854  [LF] d t=1650 mm=333 st=2 vc=4 c=1867 r=165 dc=1000 dr=11 s=4
+01:33:44.966  [LF] d t=1760 mm=357 st=2 vc=4 c=1490 r=132 dc=803 dr=0 s=-3
+01:33:45.064  [LF] d t=1870 mm=378 st=2 vc=4 c=766 r=137 dc=370 dr=0 s=-30
+01:33:45.178  [LF] d t=1980 mm=402 st=2 vc=4 c=716 r=170 dc=340 dr=14 s=-24
+01:33:45.218  [TEL] car/telemetry/heartbeat 010706049002000700
+01:33:45.239  [TEL] car/telemetry/heartbeat 010706189002000400
+01:33:45.271  [LF] JUNCTION -> IDLE  c=209 r=172 dc=37 dr=15 vc=1
+01:33:45.271  [TEL] car/telemetry/motion 01010f40900200680170b4000040b6000000
+01:33:45.286  [TEL] car/telemetry/sensor 01020a409002ffbf07904d4b00
+01:33:45.286  [TEL] car/telemetry/heartbeat 010706409002000100
+01:33:45.351  [IMU] hump pitch=-24 half-deg
+01:33:45.351  [TEL] car/telemetry/hump 0104058690020074
+01:33:45.781  [LF] jmat: end after JUNCTION at 2068 ms, 418 mm; then 11 mm, still 1, vc=1
+01:33:45.781  [LF] jmat: speed 212 mm/s (cruise 200), first steer 2, ON_LINE at 11 ms
+01:33:45.781  [LF] jmat: settle 11 mm, band 70/178 after, 30/89 2nd half
+01:33:45.781  [LF] jmat: |steer| max 64, flips 5, LINE_LOST 1, LINE_FOUND 1
+01:33:45.781  [LF] jmat: jct 1, track_lost 0, ev fail 0, dropped 0
+01:33:45.781  [LF] jmat: detected 287 mm at 1430 ms, JUNCTION 410 mm at 2024 ms, delay 123 mm 594 ms
+01:33:45.781  [LF] jmat: past the cross 24/27 polls CENTRE on, RIGHT dark 0, state 2, vc 4
+01:33:45.781  [LF] RULER run 3: wheel travel START to standstill 429 mm, after JUNCTION 19 mm
+01:33:45.781  [LF] tr jmat: t mm st c r s L R (94 rows, 20 ms)
+01:33:45.781  [LF] tr 22 0 1 1796 139 4 0 0
+01:33:45.781  [LF] tr 44 0 1 1856 159 4 8 12
+01:33:45.781  [LF] tr 66 2 1 2089 173 4 26 37
+01:33:45.781  [LF] tr 88 5 1 2058 177 4 52 70
+01:33:45.781  [LF] tr 110 7 1 1774 169 4 81 109
+01:33:45.781  [LF] tr 132 11 1 647 131 -28 115 153
+01:33:45.781  [LF] tr 154 14 1 253 134 -32 156 201
+01:33:45.797  [LF] tr 176 19 1 173 164 -32 200 255
+01:33:45.883  [LF] tr 198 27 1 162 155 -32 285 372
+01:33:45.883  [LF] tr 220 31 1 148 147 -32 327 434
+01:33:45.883  [LF] tr 242 36 3 134 157 -32 371 498
+01:33:45.883  [LF] tr 264 41 3 149 237 -32 415 563
+01:33:45.883  [LF] tr 286 45 3 160 1593 -32 458 627
+01:33:45.883  [LF] tr 308 50 3 145 1952 -32 500 692
+01:33:45.883  [LF] tr 330 54 3 152 1938 -32 545 756
+01:33:45.892  [LF] tr 352 59 3 152 1544 -32 588 821
+01:33:45.972  [LF] tr 374 62 4 137 250 64 624 871
+01:33:45.983  [LF] tr 396 65 4 153 208 64 649 904
+01:33:45.983  [LF] tr 418 71 4 134 187 64 733 971
+01:33:45.983  [LF] tr 440 75 4 157 520 64 780 1007
+01:33:45.983  [LF] tr 462 78 4 156 2049 64 836 1036
+01:33:45.983  [LF] tr 484 82 4 153 2081 64 893 1064
+01:33:45.983  [LF] tr 506 85 4 133 1834 64 952 1093
+01:33:45.988  [LF] tr 528 89 4 172 1728 64 1016 1126
+01:33:46.067  [LF] tr 550 94 4 172 1115 64 1084 1164
+01:33:46.082  [LF] tr 572 98 4 180 173 64 1150 1203
+01:33:46.083  [LF] tr 594 103 4 140 176 64 1217 1241
+01:33:46.083  [LF] tr 616 107 4 172 142 64 1284 1276
+01:33:46.083  [LF] tr 638 116 4 189 145 64 1420 1351
+01:33:46.083  [LF] tr 660 120 4 1325 171 64 1489 1389
+01:33:46.083  [LF] tr 682 125 1 1794 148 4 1557 1427
+01:33:46.083  [LF] tr 704 129 1 1502 132 0 1622 1468
+01:33:46.179  [LF] tr 726 134 1 1369 139 -6 1683 1515
+01:33:46.179  [LF] tr 748 138 1 1283 142 -8 1740 1566
+01:33:46.179  [LF] tr 770 143 1 1266 134 -10 1794 1620
+01:33:46.179  [LF] tr 792 147 1 988 141 -19 1845 1676
+01:33:46.179  [LF] tr 814 152 1 907 154 -21 1896 1733
+01:33:46.179  [LF] tr 836 156 1 1432 138 -6 1945 1792
+01:33:46.179  [LF] tr 858 165 1 1361 138 -6 2038 1911
+01:33:46.179  [LF] tr 880 170 1 1500 138 -6 2086 1970
+01:33:46.275  [LF] tr 902 174 1 1640 144 -2 2134 2029
+01:33:46.275  [LF] tr 924 179 1 1669 165 0 2182 2087
+01:33:46.275  [LF] tr 946 183 1 1697 140 2 2231 2143
+01:33:46.275  [LF] tr 968 188 1 1734 166 1 2280 2200
+01:33:46.275  [LF] tr 990 192 1 1712 150 2 2329 2255
+01:33:46.275  [LF] tr 1012 196 1 1705 159 1 2378 2308
+01:33:46.286  [LF] tr 1034 201 1 1811 172 4 2427 2362
+01:33:46.286  [LF] tr 1056 205 1 1906 160 4 2477 2416
+01:33:46.286  [TEL] car/telemetry/motion 01010f28940200680184b60000ecb6000000
+01:33:46.286  [TEL] car/telemetry/sensor 01020a289402ffbf07904d4b00
+01:33:46.378  [LF] tr 1078 214 1 1881 156 4 2578 2523
+01:33:46.378  [LF] tr 1100 218 1 1890 138 4 2629 2575
+01:33:46.378  [LF] tr 1122 222 1 1929 154 4 2680 2626
+01:33:46.378  [LF] tr 1144 227 1 1974 139 4 2731 2677
+01:33:46.378  [LF] tr 1166 231 1 1948 144 4 2782 2728
+01:33:46.378  [LF] tr 1188 235 1 1906 154 4 2833 2778
+01:33:46.386  [LF] tr 1210 239 1 1915 165 4 2884 2828
+01:33:46.386  [LF] tr 1232 244 1 1998 137 4 2936 2880
+01:33:46.466  [LF] tr 1254 248 1 1977 139 4 2986 2930
+01:33:46.481  [LF] tr 1276 252 1 1929 169 4 3036 2981
+01:33:46.481  [LF] tr 1298 261 1 1981 139 4 3140 3083
+01:33:46.481  [LF] tr 1320 265 1 2016 143 4 3190 3134
+01:33:46.481  [LF] tr 1342 269 1 2050 168 4 3241 3185
+01:33:46.481  [LF] tr 1364 274 1 2056 158 4 3293 3237
+01:33:46.486  [LF] tr 1386 278 1 2148 154 4 3344 3288
+01:33:46.486  [LF] tr 1408 282 1 2276 248 4 3395 3339
+01:33:46.577  [LF] tr 1430 287 2 2364 1769 0 3445 3389
+01:33:46.577  [LF] tr 1452 291 2 2302 1513 0 3495 3438
+01:33:46.593  [LF] tr 1474 295 2 2170 176 4 3544 3488
+01:33:46.593  [LF] tr 1496 299 2 2085 145 4 3595 3539
+01:33:46.593  [LF] tr 1518 308 2 2026 134 4 3695 3639
+01:33:46.593  [LF] tr 1540 312 2 1967 141 4 3746 3689
+01:33:46.593  [LF] tr 1562 316 2 1977 148 4 3797 3739
+01:33:46.593  [LF] tr 1584 320 2 1945 157 4 3847 3789
+01:33:46.688  [LF] tr 1606 324 2 1948 125 4 3898 3839
+01:33:46.688  [LF] tr 1628 329 2 1936 160 4 3948 3889
+01:33:46.688  [LF] tr 1650 333 2 1867 165 4 3994 3939
+01:33:46.688  [LF] tr 1672 337 2 1835 131 4 4043 3985
+01:33:46.688  [LF] tr 1694 341 2 1790 163 3 4094 4032
+01:33:46.688  [LF] tr 1716 345 2 1701 125 1 4144 4079
+01:33:46.688  [LF] tr 1738 353 2 1622 165 0 4246 4172
+01:33:46.688  [LF] tr 1760 357 2 1490 132 -3 4298 4220
+01:33:46.784  [LF] tr 1782 361 2 1261 165 -6 4348 4267
+01:33:46.784  [LF] tr 1804 365 2 1044 130 -15 4395 4315
+01:33:46.784  [LF] tr 1826 369 2 820 133 -21 4444 4362
+01:33:46.784  [LF] tr 1848 374 2 632 129 -28 4492 4413
+01:33:46.784  [LF] tr 1870 378 2 766 137 -30 4538 4463
+01:33:46.784  [LF] tr 1892 382 2 1080 136 -16 4584 4515
+01:33:46.784  [LF] tr 1914 386 2 1176 128 -13 4629 4567
+01:33:46.784  [LF] tr 1936 390 2 1244 145 -11 4675 4618
+01:33:46.878  [LF] tr 1958 398 2 1069 169 -14 4770 4715
+01:33:46.878  [LF] tr 1980 402 2 716 170 -24 4818 4762
+01:33:46.878  [LF] tr 2002 406 2 305 134 -32 4867 4809
+01:33:46.878  [LF] tr 2024 410 2 241 163 -32 4914 4856
+01:33:46.878  [LF] tr 2046 414 2 261 168 0 4960 4904
+01:33:46.878  [LF] tr 2068 418 2 217 164 0 5009 4948
+01:33:46.987  [LF] tr jmat end: ring dropped 0 lines
+01:33:46.990  [TEST] S3-U15 FAIL  (j0) on the line up to the cross, never LINE_LOST   (lf_run_test.c:898)
+01:33:46.990  [TEST] S3-U15 PASS  (j1) cross detected at 230-320 mm, one JUNCTION
+01:33:46.990  [TEST] S3-U15 PASS  (j2) JUNCTION 110-135 mm after detection, by the odometer
+01:33:46.990  [TEST] S3-U15 FAIL  (j3) straight through: back ON_LINE, on the line past the cross   (lf_run_te
+01:33:46.990  [TEST] S3-U15 PASS  (j4) stopped right after JUNCTION, wheels still
+01:33:46.990  [LF] >>> MEASURE NOW, leave the car where it stopped: 45 s
+01:33:46.990  [LF] ... measure 45
+01:33:47.249  [DBG] alive: SDK timer 171041 ms, kernel time 169975 ms, difference 1066 ms
+01:33:47.284  [TEL] car/telemetry/motion 01010f10980200680184b60000ecb6000000
+01:33:47.286  [TEL] car/telemetry/sensor 01020a109802ffbf07904d4b00
+01:33:48.280  [TEL] car/telemetry/motion 01010ff89b0200680184b60000ecb6000000
+01:33:48.280  [TEL] car/telemetry/sensor 01020af89b02ffbf07904d4b00
+01:33:48.280  [TEL] car/telemetry/heartbeat 010706f89b02000100
+01:33:49.275  [TEL] car/telemetry/motion 01010fe09f0200680184b60000ecb6000000
+01:33:49.275  [TEL] car/telemetry/sensor 01020ae09f02ffbf07904d4b00
+01:33:50.269  [TEL] car/telemetry/motion 01010fc8a30200680184b60000ecb6000000
+01:33:50.269  [TEL] car/telemetry/sensor 01020ac8a302ffbf07904d4b00
+01:33:51.268  [TEL] car/telemetry/motion 01010fb0a70200680184b60000ecb6000000
+01:33:51.268  [TEL] car/telemetry/sensor 01020ab0a702ffbf07904d4b00
+01:33:51.846  [S5] coarse hit 120 mm @ 120 deg, fine scan
+01:33:52.278  [TEL] car/telemetry/motion 01010f98ab0200680184b60000ecb6000000
+01:33:52.280  [TEL] car/telemetry/sensor 01020a98ab02ffbf07904d4b00
+01:33:53.273  [TEL] car/telemetry/motion 01010f80af0200680184b60000ecb6000000
+01:33:53.273  [TEL] car/telemetry/sensor 01020a80af02ffbf07904d4b00
+01:33:53.273  [TEL] car/telemetry/heartbeat 01070680af02000100
+01:33:54.281  [TEL] car/telemetry/motion 01010f68b30200680184b60000ecb6000000
+01:33:54.283  [TEL] car/telemetry/sensor 01020a68b302ffbf07904d4b00
+01:33:55.280  [TEL] car/telemetry/motion 01010f50b70200680184b60000ecb6000000
+01:33:55.280  [TEL] car/telemetry/sensor 01020a50b702ffbf07904d4b00
+01:33:56.275  [TEL] car/telemetry/motion 01010f38bb0200680184b60000dcb6000000
+01:33:56.287  [TEL] car/telemetry/sensor 01020a38bb02ffbf07904d4b00
+01:33:57.257  [DBG] alive: SDK timer 181051 ms, kernel time 179985 ms, difference 1066 ms
+01:33:57.257  [STACK] init: 360 of 1152 B used, 792 never used
+01:33:57.257  [STACK] dbg_drain: 884 of 1664 B used, 780 never used
+01:33:57.257  [STACK] tel: 620 of 4736 B used, 4116 never used
+01:33:57.268  [STACK] vc: 420 of 1664 B used, 1244 never used
+01:33:57.268  [STACK] motion: 224 of 1664 B used, 1440 never used
+01:33:57.268  [STACK] lf: 580 of 1664 B used, 1084 never used
+01:33:57.268  [STACK] safety: 200 of 1664 B used, 1464 never used
+01:33:57.268  [STACK] imu: 556 of 2176 B used, 1620 never used
+01:33:57.268  [STACK] obs_scan: 564 of 1664 B used, 1100 never used
+01:33:57.268  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+01:33:57.268  [STACK] app_test: 828 of 1664 B used, 836 never used
+01:33:57.268  [STACK] stack top check: 0 mismatches
+01:33:57.268  [MBF] nav_in: 64 B buffer, 64 B free
+01:33:57.275  [MBF] motion_cmd: 32 B buffer, 32 B free
+01:33:57.275  [MBF] obstacle: 24 B buffer, 24 B free
+01:33:57.275  [MBF] telemetry: 384 B buffer, 384 B free
+01:33:57.286  [TEL] car/telemetry/motion 01010f20bf0200680180b60000d4b6000000
+01:33:57.286  [TEL] car/telemetry/sensor 01020a20bf02ffbf07904d4b00
+01:33:57.286  [TEL] CONNECTED tx=427 txf=0 off=1 ev=70 bad=33 qd=32 od=0 cmd=1/5
+01:33:57.418  [IMU] hump pitch=12 half-deg
+01:33:57.418  [TEL] car/telemetry/hump 010405acbf020006
+01:33:58.273  [TEL] car/telemetry/motion 01010f08c302006801b0b50000d4b6000000
+01:33:58.273  [TEL] car/telemetry/sensor 01020a08c302ffbf07904d4b00
+01:33:58.273  [TEL] car/telemetry/heartbeat 01070608c302000100
+01:33:59.156  [S5] coarse hit 86 mm @ 90 deg, fine scan
+01:33:59.273  [TEL] car/telemetry/motion 01010ff0c602006801b0b50000d4b6000000
+01:33:59.280  [TEL] car/telemetry/sensor 01020af0c602ffbf07904d4b00
+01:33:59.751  [S5] obstacle 86 mm @ 60 deg w=22 clrL=22 clrR=635
+01:33:59.751  [S5] avoid -> SLOW (3000 ms)
+01:33:59.767  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:33:59.767  [S5] avoid -> IDLE (reacquired=0)
+01:33:59.943  [IMU] hump pitch=-10 half-deg
+01:33:59.959  [TEL] car/telemetry/hump 0104058ec902007b
+01:34:00.279  [TEL] car/telemetry/motion 01010fd8ca02006801b0b50000d4b6000000
+01:34:00.281  [TEL] car/telemetry/sensor 01020ad8ca02ffbf07904d4b00
+01:34:01.067  [S5] coarse hit 97 mm @ 60 deg, fine scan
+01:34:01.274  [TEL] car/telemetry/motion 01010fc0ce02006801b8b50000d4b6000000
+01:34:01.274  [TEL] car/telemetry/sensor 01020ac0ce02ffbf07904d4b00
+01:34:01.744  [S5] obstacle 90 mm @ 30 deg w=22 clrL=68 clrR=635
+01:34:01.745  [S5] avoid -> SLOW (3000 ms)
+01:34:01.745  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:01.745  [S5] avoid -> IDLE (reacquired=0)
+01:34:02.001  [LF] ... measure 30
+01:34:02.280  [TEL] car/telemetry/motion 01010fa8d202006801b8b50000d4b6000000
+01:34:02.280  [TEL] car/telemetry/sensor 01020aa8d202ffbf07904d4b00
+01:34:02.906  [IMU] hump pitch=-10 half-deg
+01:34:02.920  [TEL] car/telemetry/hump 0104051ed502007b
+01:34:03.257  [S5] coarse hit 90 mm @ 40 deg, fine scan
+01:34:03.273  [TEL] car/telemetry/motion 01010f90d602006801b8b50000d4b6000000
+01:34:03.273  [TEL] car/telemetry/sensor 01020a90d602ffbf07904d4b00
+01:34:03.273  [TEL] car/telemetry/heartbeat 01070690d602000100
+01:34:03.515  [IMU] hump pitch=11 half-deg
+01:34:03.529  [TEL] car/telemetry/hump 01040580d7028005
+01:34:03.965  [S5] obstacle 96 mm @ 70 deg w=25 clrL=50 clrR=36
+01:34:03.965  [S5] avoid -> SLOW (3000 ms)
+01:34:03.967  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:03.967  [S5] avoid -> IDLE (reacquired=0)
+01:34:04.282  [IMU] hump pitch=12 half-deg
+01:34:04.282  [TEL] car/telemetry/hump 01040578da020006
+01:34:04.282  [TEL] car/telemetry/motion 01010f78da02006801b8b50000d0b6000000
+01:34:04.282  [TEL] car/telemetry/sensor 01020a78da02ffbf07904d4b00
+01:34:04.864  [IMU] hump pitch=-10 half-deg
+01:34:04.869  [TEL] car/telemetry/hump 010405c6dc02007b
+01:34:04.992  [IMU] hump pitch=12 half-deg
+01:34:04.992  [TEL] car/telemetry/hump 01040548dd020006
+01:34:05.278  [TEL] car/telemetry/motion 01010f60de02006801b8b50000d4b6000000
+01:34:05.278  [TEL] car/telemetry/sensor 01020a60de02ffbf07904d4b00
+01:34:05.410  [S5] coarse hit 96 mm @ 70 deg, fine scan
+01:34:05.800  [SAFETY] BRAKE: collision
+01:34:05.803  [IMU] COLLISION mag=4163 mg
+01:34:05.803  [TEL] car/telemetry/fault 01060568e0020400
+01:34:05.816  [IMU] hump pitch=12 half-deg
+01:34:05.825  [TEL] car/telemetry/hump 0104057ce0020006
+01:34:05.825  [TEL] car/telemetry/heartbeat 0107067ce002004300
+01:34:06.283  [TEL] car/telemetry/motion 01010f48e202006801b8b5000028b6000000
+01:34:06.283  [TEL] car/telemetry/sensor 01020a48e202ffbf07904d4b00
+01:34:06.361  [IMU] hump pitch=10 half-deg
+01:34:06.383  [TEL] car/telemetry/hump 010405a2e2020005
+01:34:07.262  [DBG] alive: SDK timer 191054 ms, kernel time 189988 ms, difference 1066 ms
+01:34:07.279  [TEL] car/telemetry/motion 01010f30e602006801b8b5000024b6000000
+01:34:07.279  [TEL] car/telemetry/sensor 01020a30e602ffbf07904d4b00
+01:34:08.025  [IMU] hump pitch=14 half-deg
+01:34:08.038  [TEL] car/telemetry/hump 0104051ee9020007
+01:34:08.277  [TEL] car/telemetry/motion 01010f18ea020068012cb5000028b6000000
+01:34:08.277  [TEL] car/telemetry/sensor 01020a18ea02ffbf07904d4b00
+01:34:08.281  [TEL] car/telemetry/heartbeat 01070618ea02004300
+01:34:09.273  [TEL] car/telemetry/motion 01010f00ee020068012cb5000028b6000000
+01:34:09.273  [TEL] car/telemetry/sensor 01020a00ee02ffbf07904d4b00
+01:34:10.268  [TEL] car/telemetry/motion 01010fe8f1020068012cb5000028b6000000
+01:34:10.268  [TEL] car/telemetry/sensor 01020ae8f102ffbf07904d4b00
+01:34:10.395  [S5] coarse hit 128 mm @ 150 deg, fine scan
+01:34:10.984  [S5] obstacle 127 mm @ 150 deg w=121 clrL=635 clrR=635
+01:34:10.984  [S5] avoid -> SLOW (3000 ms)
+01:34:10.984  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:10.984  [S5] avoid -> IDLE (reacquired=0)
+01:34:11.280  [TEL] car/telemetry/motion 01010fd0f5020068012cb5000028b6000000
+01:34:11.280  [TEL] car/telemetry/sensor 01020ad0f502ffbf07904d4b00
+01:34:12.242  [S5] coarse hit 119 mm @ 130 deg, fine scan
+01:34:12.274  [TEL] car/telemetry/motion 01010fb8f9020068012cb5000028b6000000
+01:34:12.274  [TEL] car/telemetry/sensor 01020ab8f902ffbf07904d4b00
+01:34:12.710  [S5] obstacle 116 mm @ 130 deg w=91 clrL=635 clrR=635
+01:34:12.713  [S5] avoid -> SLOW (3000 ms)
+01:34:12.713  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:12.713  [S5] avoid -> IDLE (reacquired=0)
+01:34:13.283  [TEL] car/telemetry/motion 01010fa0fd020068012cb5000028b6000000
+01:34:13.283  [TEL] car/telemetry/sensor 01020aa0fd02ffbf07904d4b00
+01:34:13.283  [TEL] car/telemetry/heartbeat 010706a0fd02004300
+01:34:13.919  [S5] coarse hit 110 mm @ 130 deg, fine scan
+01:34:14.282  [TEL] car/telemetry/motion 01010f8801030068012cb5000028b6000000
+01:34:14.286  [TEL] car/telemetry/sensor 01020a880103ffbf07904d4b00
+01:34:14.472  [S5] obstacle 102 mm @ 160 deg w=26 clrL=635 clrR=4
+01:34:14.474  [S5] avoid -> SLOW (3000 ms)
+01:34:14.474  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:14.474  [S5] avoid -> IDLE (reacquired=0)
+01:34:15.284  [TEL] car/telemetry/motion 01010f7005030068012cb5000028b6000000
+01:34:15.284  [TEL] car/telemetry/sensor 01020a700503ffbf07904d4b00
+01:34:15.666  [S5] coarse hit 120 mm @ 120 deg, fine scan
+01:34:16.111  [S5] obstacle 123 mm @ 120 deg w=96 clrL=635 clrR=635
+01:34:16.123  [S5] avoid -> SLOW (3000 ms)
+01:34:16.123  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:16.125  [S5] avoid -> IDLE (reacquired=0)
+01:34:16.285  [TEL] car/telemetry/motion 01010f5809030068012cb5000028b6000000
+01:34:16.285  [TEL] car/telemetry/sensor 01020a580903ffbf07904d4b00
+01:34:17.022  [LF] ... measure 15
+01:34:17.265  [DBG] alive: SDK timer 201054 ms, kernel time 199988 ms, difference 1066 ms
+01:34:17.287  [TEL] car/telemetry/motion 01010f400d030068012cb5000028b6000000
+01:34:17.289  [TEL] car/telemetry/sensor 01020a400d03ffbf07904d4b00
+01:34:17.304  [S5] coarse hit 114 mm @ 120 deg, fine scan
+01:34:18.278  [TEL] car/telemetry/motion 01010f2811030068012cb5000028b6000000
+01:34:18.280  [TEL] car/telemetry/sensor 01020a281103ffbf07904d4b00
+01:34:18.280  [TEL] car/telemetry/heartbeat 010706281103004300
+01:34:19.278  [TEL] car/telemetry/motion 01010f1015030068012cb5000028b6000000
+01:34:19.278  [TEL] car/telemetry/sensor 01020a101503ffbf07904d4b00
+01:34:20.271  [TEL] car/telemetry/motion 01010ff818030068012cb5000028b6000000
+01:34:20.271  [TEL] car/telemetry/sensor 01020af81803ffbf07904d4b00
+01:34:21.270  [TEL] car/telemetry/motion 01010fe01c030068012cb5000028b6000000
+01:34:21.270  [TEL] car/telemetry/sensor 01020ae01c03ffbf07904d4b00
+01:34:22.281  [TEL] car/telemetry/motion 01010fc820030068012cb5000028b6000000
+01:34:22.284  [TEL] car/telemetry/sensor 01020ac82003ffbf07904d4b00
+01:34:23.276  [TEL] car/telemetry/motion 01010fb024030068012cb5000028b6000000
+01:34:23.276  [TEL] car/telemetry/sensor 01020ab02403ffbf07904d4b00
+01:34:23.276  [TEL] car/telemetry/heartbeat 010706b02403004300
+01:34:24.280  [TEL] car/telemetry/motion 01010f9828030068012cb5000028b6000000
+01:34:24.286  [TEL] car/telemetry/sensor 01020a982803ffbf07904d4b00
+01:34:25.286  [TEL] car/telemetry/motion 01010f802c030068012cb5000028b6000000
+01:34:25.288  [TEL] car/telemetry/sensor 01020a802c03ffbf07904d4b00
+01:34:26.286  [TEL] car/telemetry/motion 01010f6830030068012cb5000028b6000000
+01:34:26.286  [TEL] car/telemetry/sensor 01020a683003ffbf07904d4b00
+01:34:27.278  [DBG] alive: SDK timer 211065 ms, kernel time 209999 ms, difference 1066 ms
+01:34:27.278  [TEL] car/telemetry/motion 01010f5034030068012cb5000028b6000000
+01:34:27.278  [TEL] car/telemetry/sensor 01020a503403ffbf07904d4b00
+01:34:28.271  [TEL] car/telemetry/motion 01010f3838030068012cb5000028b6000000
+01:34:28.280  [TEL] car/telemetry/sensor 01020a383803ffbf07904d4b00
+01:34:28.280  [TEL] car/telemetry/heartbeat 010706383803004300
+01:34:29.280  [TEL] car/telemetry/motion 01010f203c030068012cb5000028b6000000
+01:34:29.280  [TEL] car/telemetry/sensor 01020a203c03ffbf07904d4b00
+01:34:30.277  [TEL] car/telemetry/motion 01010f0840030068012cb5000028b6000000
+01:34:30.281  [TEL] car/telemetry/sensor 01020a084003ffbf07904d4b00
+01:34:31.274  [TEL] car/telemetry/motion 01010ff043030068012cb5000028b6000000
+01:34:31.274  [TEL] car/telemetry/sensor 01020af04303ffbf07904d4b00
+01:34:31.898  [S5] coarse hit 249 mm @ 90 deg, fine scan
+01:34:32.029  [LF] totals: 42918 samples, 0 missed, 0 dropped posts, 0 failed events
+01:34:32.031  [TEST] S3-U15 PASS  (h) run: no missed period, dropped post, failed event
+01:34:32.031  [LF] S3-U15 done: the car stays stopped
+01:34:32.031  [TEST] subsystem3 SUMMARY 9 passed, 12 failed
+01:34:32.035  [TEST] S4-U01 PASS  accelerometer found and identified
+01:34:32.035  [TEST] S4-U02 PASS  magnetometer present
+01:34:32.035  [TEST] S4-U03 PASS  accel configured (imu_is_ready)
+01:34:32.138  [TEST] S4-U04 PASS  IMU task reads new samples
+01:34:32.138  [S4] z=-911 mg mag=922 mg pitch=0 half-deg (board 10 when flat)
+01:34:32.138  [TEST] S4-U05 PASS  z-axis ~1 g at rest
+01:34:32.144  [TEST] S4-U06 PASS  magnitude ~1 g at rest
+01:34:32.145  [TEST] S4-U07 PASS  pitch within 10 deg of the boot level reference
+01:34:32.145  [TEST] S4-U08 PASS  IMU task running
+01:34:32.146  [TEST] S4-U09 PASS  Safety task running
+01:34:32.146  [TEST] S4-U10 PASS  IMU period ~10 ms
+01:34:32.146  [TEST] S4-U11 PASS  no I2C errors
+01:34:32.146  [TEST] S4-U12 PASS  no IMU watchdog timeouts
+01:34:32.146  [S4] S4-U13..U16 skipped: operator-guided, build with -DS4_MANUAL_TESTS=ON
+01:34:32.146  [TEST] subsystem4 SUMMARY 12 passed, 0 failed
+01:34:32.146  [TEST] S5-U01 PASS  servo angle to pulse: endpoints, centre, clamp
+01:34:32.146  [TEST] S5-U02 PASS  servo PWM slice 7 runs at SERVO_PWM_FREQ_HZ
+01:34:32.146  [TEST] S5-U03 PASS  slice 7 channel A (GP14, another owner) stays LOW
+01:34:32.146  [TEST] S5-U04 PASS  echo width to mm: zero, over-range, 1160 us = ~199 mm
+01:34:32.146  [TEST] S5-U05 FAIL  echo handler registered and echo line idle LOW   (subsystem5_test.c:92)
+01:34:32.146  [TEST] S5-U06 PASS  cos/sin tables: 0, 90 and 180 degrees
+01:34:32.154  [TEST] S5-U07 PASS  lateral sign convention: positive is to the car's right
+01:34:32.154  [TEST] S5-U08 PASS  median of three samples ignores no-echo and rejects an outlier
+01:34:32.154  [TEST] S5-U09 PASS  an empty sweep is not an obstacle
+01:34:32.154  [TEST] S5-U10 PASS  one near bearing dead ahead: 150 mm at 90 degrees
+01:34:32.154  [TEST] S5-U11 PASS  a wide obstacle spans 60..120 degrees, centres on 90, reports >= 200 mm
+01:34:32.154  [TEST] S5-U12 PASS  with nothing beside it, both clearances saturate at 635 mm
+01:34:32.154  [TEST] S5-U13 PASS  an object 110 mm to the right cuts clear_R but not clear_L
+01:34:32.154  [TEST] S5-U14 PASS  profile round-trip: 20 cm at 90 degrees, sequence kept
+01:34:32.154  [TEST] S5-U15 PASS  a 0 degree bearing clamps to index 0 and flags OOR
+01:34:32.154  [TEST] S5-U16 PASS  an invalid result packs as distance 0 (no echo)
+01:34:32.154  [TEST] S5-U17 PASS  both sides clear, obstacle on the left: pass on the right
+01:34:32.154  [TEST] S5-U18 PASS  both sides clear, obstacle on the right: pass on the left
+01:34:32.154  [TEST] S5-U19 PASS  only the left has OBS_BYPASS_CLEAR_MIN_MM: pass on the left
+01:34:32.154  [TEST] S5-U23 PASS  both subsystem 5 tasks are running
+01:34:32.154  [DBG] dropped so far: 4 dbg_ lines, 0 kernel text bytes
+01:34:32.282  [TEL] car/telemetry/motion 01010fd847030068012cb5000028b6000000
+01:34:32.289  [TEL] car/telemetry/sensor 01020ad84703ffbf07904d4b00
+01:34:33.289  [TEL] car/telemetry/motion 01010fc04b030068012cb5000028b6000000
+01:34:33.289  [TEL] car/telemetry/sensor 01020ac04b03ffbf07904d4b00
+01:34:33.291  [TEL] car/telemetry/heartbeat 010706c04b03004300
+01:34:33.934  [S5] after 1800 ms: 332 sweeps, 3606 echoes, 1000 misses
+01:34:33.934  [TEST] S5-U25 PASS  the scanner completes a coarse sweep on the 60 ms grid
+01:34:33.938  [TEST] S5-U26 PASS  the ultrasonic sensor returned at least one echo
+01:34:33.938  [TEST] subsystem5 SUMMARY 24 passed, 2 failed
+01:34:34.266  [TEL] car/telemetry/motion 01010fa84f030068012cb5000028b6000000
+01:34:34.282  [TEL] car/telemetry/sensor 01020aa84f03ffbf07904d4b00
+01:34:35.272  [TEL] car/telemetry/motion 01010f9053030068012cb5000028b6000000
+01:34:35.281  [TEL] car/telemetry/sensor 01020a905303ffbf07904d4b00
+01:34:36.279  [TEL] car/telemetry/motion 01010f7857030068012cb5000028b6000000
+01:34:36.279  [TEL] car/telemetry/sensor 01020a785703ffbf07904d4b00
+01:34:37.281  [TEL] car/telemetry/motion 01010f605b030068012cb5000028b6000000
+01:34:37.443  [TEL] car/telemetry/sensor 01020a605b03ffbf07904d4b00
+01:34:37.458  [DBG] alive: SDK timer 221070 ms, kernel time 220004 ms, difference 1066 ms
+01:34:38.277  [TEL] car/telemetry/motion 01010f485f030068012cb5000028b6000000
+01:34:38.277  [TEL] car/telemetry/sensor 01020a485f03ffbf07904d4b00
+01:34:38.277  [TEL] car/telemetry/heartbeat 010706485f03004300
+01:34:39.269  [TEL] car/telemetry/motion 01010f3063030068012cb5000028b6000000
+01:34:39.285  [TEL] car/telemetry/sensor 01020a306303ffbf07904d4b00
+01:34:40.276  [TEL] car/telemetry/motion 01010f1867030068012cb5000028b6000000
+01:34:40.276  [TEL] car/telemetry/sensor 01020a186703ffbf07904d4b00
+01:34:41.285  [TEL] car/telemetry/motion 01010f006b030068012cb5000028b6000000
+01:34:41.287  [TEL] car/telemetry/sensor 01020a006b03ffbf07904d4b00
+01:34:42.279  [TEL] car/telemetry/motion 01010fe86e030068012cb5000028b6000000
+01:34:42.279  [TEL] car/telemetry/sensor 01020ae86e03ffbf07904d4b00
+01:34:43.279  [TEL] car/telemetry/motion 01010fd072030068012cb5000028b6000000
+01:34:43.279  [TEL] car/telemetry/sensor 01020ad07203ffbf07904d4b00
+01:34:43.290  [TEL] car/telemetry/heartbeat 010706d07203004300
+01:34:44.274  [TEL] car/telemetry/motion 01010fb876030068012cb5000028b6000000
+01:34:44.274  [TEL] car/telemetry/sensor 01020ab87603ffbf07904d4b00
+01:34:45.270  [TEL] car/telemetry/motion 01010fa07a030068012cb5000028b6000000
+01:34:45.270  [TEL] car/telemetry/sensor 01020aa07a03ffbf07904d4b00
+01:34:46.280  [TEL] car/telemetry/motion 01010f887e030068012cb5000028b6000000
+01:34:46.283  [TEL] car/telemetry/sensor 01020a887e03ffbf07904d4b00
+01:34:47.133  [S5] coarse hit 114 mm @ 120 deg, fine scan
+01:34:47.276  [TEL] car/telemetry/motion 01010f7082030068012cb5000028b6000000
+01:34:47.276  [TEL] car/telemetry/sensor 01020a708203ffbf07904d4b00
+01:34:47.276  [DBG] alive: SDK timer 231080 ms, kernel time 230014 ms, difference 1066 ms
+01:34:47.819  [S5] obstacle 112 mm @ 130 deg w=48 clrL=635 clrR=635
+01:34:47.832  [S5] avoid -> SLOW (3000 ms)
+01:34:47.832  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:47.832  [S5] avoid -> IDLE (reacquired=0)
+01:34:48.279  [TEL] car/telemetry/motion 01010f5886030068012cb5000028b6000000
+01:34:48.279  [TEL] car/telemetry/sensor 01020a588603ffbf07904d4b00
+01:34:48.279  [TEL] car/telemetry/heartbeat 010706588603004300
+01:34:48.962  [S5] coarse hit 116 mm @ 130 deg, fine scan
+01:34:49.281  [TEL] car/telemetry/motion 01010f408a030068012cb5000028b6000000
+01:34:49.281  [TEL] car/telemetry/sensor 01020a408a03ffbf07904d4b00
+01:34:49.391  [S5] obstacle 125 mm @ 130 deg w=119 clrL=635 clrR=635
+01:34:49.391  [S5] avoid -> SLOW (3000 ms)
+01:34:49.391  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:49.391  [S5] avoid -> IDLE (reacquired=0)
+01:34:50.284  [TEL] car/telemetry/motion 01010f288e030068012cb5000028b6000000
+01:34:50.287  [TEL] car/telemetry/sensor 01020a288e03ffbf07904d4b00
+01:34:50.646  [S5] coarse hit 126 mm @ 120 deg, fine scan
+01:34:51.097  [S5] obstacle 123 mm @ 120 deg w=96 clrL=635 clrR=635
+01:34:51.099  [S5] avoid -> SLOW (3000 ms)
+01:34:51.099  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:51.100  [S5] avoid -> IDLE (reacquired=0)
+01:34:51.285  [TEL] car/telemetry/motion 01010f1092030068012cb5000028b6000000
+01:34:51.287  [TEL] car/telemetry/sensor 01020a109203ffbf07904d4b00
+01:34:52.286  [TEL] car/telemetry/motion 01010ff895030068012cb5000028b6000000
+01:34:52.288  [TEL] car/telemetry/sensor 01020af89503ffbf07904d4b00
+01:34:52.297  [S5] coarse hit 126 mm @ 120 deg, fine scan
+01:34:52.924  [S5] obstacle 125 mm @ 130 deg w=76 clrL=635 clrR=635
+01:34:52.926  [S5] avoid -> SLOW (3000 ms)
+01:34:52.927  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:52.929  [S5] avoid -> IDLE (reacquired=0)
+01:34:53.288  [TEL] car/telemetry/motion 01010fe099030068012cb5000028b6000000
+01:34:53.290  [TEL] car/telemetry/sensor 01020ae09903ffbf07904d4b00
+01:34:53.292  [TEL] car/telemetry/heartbeat 010706e09903004300
+01:34:54.123  [S5] coarse hit 120 mm @ 130 deg, fine scan
+01:34:54.277  [TEL] car/telemetry/motion 01010fc89d030068012cb5000028b6000000
+01:34:54.280  [TEL] car/telemetry/sensor 01020ac89d03ffbf07904d4b00
+01:34:54.543  [S5] obstacle 120 mm @ 130 deg w=115 clrL=635 clrR=635
+01:34:54.545  [S5] avoid -> SLOW (3000 ms)
+01:34:54.546  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:54.548  [S5] avoid -> IDLE (reacquired=0)
+01:34:55.281  [TEL] car/telemetry/motion 01010fb0a1030068012cb5000028b6000000
+01:34:55.283  [TEL] car/telemetry/sensor 01020ab0a103ffbf07904d4b00
+01:34:55.743  [S5] coarse hit 125 mm @ 120 deg, fine scan
+01:34:56.259  [S5] obstacle 121 mm @ 120 deg w=95 clrL=635 clrR=635
+01:34:56.261  [S5] avoid -> SLOW (3000 ms)
+01:34:56.263  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:56.265  [S5] avoid -> IDLE (reacquired=0)
+01:34:56.281  [TEL] car/telemetry/motion 01010f98a5030068012cb5000028b6000000
+01:34:56.283  [TEL] car/telemetry/sensor 01020a98a503ffbf07904d4b00
+01:34:57.282  [TEL] car/telemetry/motion 01010f80a9030068012cb5000028b6000000
+01:34:57.285  [TEL] car/telemetry/sensor 01020a80a903ffbf07904d4b00
+01:34:57.288  [TEL] CONNECTED tx=571 txf=0 off=1 ev=82 bad=33 qd=32 od=0 cmd=1/5
+01:34:57.292  [DBG] alive: SDK timer 241082 ms, kernel time 240016 ms, difference 1066 ms
+01:34:57.296  [STACK] init: 360 of 1152 B used, 792 never used
+01:34:57.299  [STACK] dbg_drain: 884 of 1664 B used, 780 never used
+01:34:57.301  [STACK] tel: 620 of 4736 B used, 4116 never used
+01:34:57.303  [STACK] vc: 420 of 1664 B used, 1244 never used
+01:34:57.305  [STACK] motion: 224 of 1664 B used, 1440 never used
+01:34:57.307  [STACK] lf: 580 of 1664 B used, 1084 never used
+01:34:57.308  [STACK] safety: 296 of 1664 B used, 1368 never used
+01:34:57.310  [STACK] imu: 556 of 2176 B used, 1620 never used
+01:34:57.313  [STACK] obs_scan: 608 of 1664 B used, 1056 never used
+01:34:57.315  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+01:34:57.316  [STACK] app_test: 828 of 1664 B used, 836 never used
+01:34:57.318  [STACK] stack top check: 0 mismatches
+01:34:57.319  [MBF] nav_in: 64 B buffer, 64 B free
+01:34:57.321  [MBF] motion_cmd: 32 B buffer, 32 B free
+01:34:57.322  [MBF] obstacle: 24 B buffer, 24 B free
+01:34:57.324  [MBF] telemetry: 384 B buffer, 384 B free
+01:34:57.460  [S5] coarse hit 121 mm @ 120 deg, fine scan
+01:34:58.087  [S5] obstacle 119 mm @ 130 deg w=72 clrL=635 clrR=635
+01:34:58.090  [S5] avoid -> SLOW (3000 ms)
+01:34:58.093  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:58.096  [S5] avoid -> IDLE (reacquired=0)
+01:34:58.287  [TEL] car/telemetry/motion 01010f68ad030068012cb5000028b6000000
+01:34:58.288  [TEL] car/telemetry/sensor 01020a68ad03ffbf07904d4b00
+01:34:58.289  [TEL] car/telemetry/heartbeat 01070668ad03004300
+01:34:59.221  [S5] coarse hit 114 mm @ 130 deg, fine scan
+01:34:59.287  [TEL] car/telemetry/motion 01010f50b1030068012cb5000028b6000000
+01:34:59.289  [TEL] car/telemetry/sensor 01020a50b103ffbf07904d4b00
+01:34:59.671  [S5] obstacle 114 mm @ 130 deg w=89 clrL=635 clrR=635
+01:34:59.673  [S5] avoid -> SLOW (3000 ms)
+01:34:59.674  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:34:59.675  [S5] avoid -> IDLE (reacquired=0)
+01:35:00.279  [TEL] car/telemetry/motion 01010f38b5030068012cb5000028b6000000
+01:35:00.281  [TEL] car/telemetry/sensor 01020a38b503ffbf07904d4b00
+01:35:00.904  [S5] coarse hit 114 mm @ 130 deg, fine scan
+01:35:01.270  [TEL] car/telemetry/motion 01010f20b9030068012cb5000028b6000000
+01:35:01.286  [TEL] car/telemetry/sensor 01020a20b903ffbf07904d4b00
+01:35:01.317  [S5] obstacle 107 mm @ 130 deg w=102 clrL=635 clrR=635
+01:35:01.326  [S5] avoid -> SLOW (3000 ms)
+01:35:01.327  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:01.327  [S5] avoid -> IDLE (reacquired=0)
+01:35:02.281  [TEL] car/telemetry/motion 01010f08bd030068012cb5000028b6000000
+01:35:02.282  [TEL] car/telemetry/sensor 01020a08bd03ffbf07904d4b00
+01:35:02.462  [S5] coarse hit 115 mm @ 120 deg, fine scan
+01:35:02.906  [S5] obstacle 119 mm @ 120 deg w=93 clrL=635 clrR=635
+01:35:02.910  [S5] avoid -> SLOW (3000 ms)
+01:35:02.910  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:02.910  [S5] avoid -> IDLE (reacquired=0)
+01:35:03.273  [TEL] car/telemetry/motion 01010ff0c0030068012cb5000028b6000000
+01:35:03.284  [TEL] car/telemetry/sensor 01020af0c003ffbf07904d4b00
+01:35:03.284  [TEL] car/telemetry/heartbeat 010706f0c003004300
+01:35:04.096  [S5] coarse hit 110 mm @ 120 deg, fine scan
+01:35:04.281  [TEL] car/telemetry/motion 01010fd8c4030068012cb5000028b6000000
+01:35:04.284  [TEL] car/telemetry/sensor 01020ad8c403ffbf07904d4b00
+01:35:04.685  [S5] obstacle 115 mm @ 120 deg w=90 clrL=635 clrR=635
+01:35:04.685  [S5] avoid -> SLOW (3000 ms)
+01:35:04.685  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:04.685  [S5] avoid -> IDLE (reacquired=0)
+01:35:05.270  [TEL] car/telemetry/motion 01010fc0c8030068012cb5000028b6000000
+01:35:05.284  [TEL] car/telemetry/sensor 01020ac0c803ffbf07904d4b00
+01:35:05.810  [S5] coarse hit 115 mm @ 120 deg, fine scan
+01:35:06.253  [S5] obstacle 119 mm @ 120 deg w=114 clrL=635 clrR=635
+01:35:06.253  [S5] avoid -> SLOW (3000 ms)
+01:35:06.265  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:06.269  [S5] avoid -> IDLE (reacquired=0)
+01:35:06.271  [TEL] car/telemetry/motion 01010fa8cc030068012cb5000028b6000000
+01:35:06.285  [TEL] car/telemetry/sensor 01020aa8cc03ffbf07904d4b00
+01:35:07.284  [TEL] car/telemetry/motion 01010f90d0030068012cb5000028b6000000
+01:35:07.286  [TEL] car/telemetry/sensor 01020a90d003ffbf07904d4b00
+01:35:07.286  [DBG] alive: SDK timer 251085 ms, kernel time 250019 ms, difference 1066 ms
+01:35:07.481  [S5] coarse hit 114 mm @ 120 deg, fine scan
+01:35:08.037  [S5] obstacle 121 mm @ 120 deg w=95 clrL=635 clrR=635
+01:35:08.045  [S5] avoid -> SLOW (3000 ms)
+01:35:08.045  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:08.045  [S5] avoid -> IDLE (reacquired=0)
+01:35:08.284  [TEL] car/telemetry/motion 01010f78d4030068012cb5000028b6000000
+01:35:08.284  [TEL] car/telemetry/sensor 01020a78d403ffbf07904d4b00
+01:35:08.289  [TEL] car/telemetry/heartbeat 01070678d403004300
+01:35:09.173  [S5] coarse hit 114 mm @ 120 deg, fine scan
+01:35:09.284  [TEL] car/telemetry/motion 01010f60d8030068012cb5000028b6000000
+01:35:09.284  [TEL] car/telemetry/sensor 01020a60d803ffbf07904d4b00
+01:35:09.603  [S5] obstacle 104 mm @ 120 deg w=99 clrL=635 clrR=635
+01:35:09.609  [S5] avoid -> SLOW (3000 ms)
+01:35:09.609  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:09.609  [S5] avoid -> IDLE (reacquired=0)
+01:35:10.278  [TEL] car/telemetry/motion 01010f48dc030068012cb5000028b6000000
+01:35:10.280  [TEL] car/telemetry/sensor 01020a48dc03ffbf07904d4b00
+01:35:10.828  [S5] coarse hit 104 mm @ 120 deg, fine scan
+01:35:11.279  [TEL] car/telemetry/motion 01010f30e0030068012cb5000028b6000000
+01:35:11.279  [TEL] car/telemetry/sensor 01020a30e003ffbf07904d4b00
+01:35:11.339  [S5] obstacle 114 mm @ 120 deg w=109 clrL=635 clrR=635
+01:35:11.339  [S5] avoid -> SLOW (3000 ms)
+01:35:11.339  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:11.339  [S5] avoid -> IDLE (reacquired=0)
+01:35:12.279  [TEL] car/telemetry/motion 01010f18e4030068012cb5000028b6000000
+01:35:12.282  [TEL] car/telemetry/sensor 01020a18e403ffbf07904d4b00
+01:35:12.482  [S5] coarse hit 114 mm @ 120 deg, fine scan
+01:35:12.917  [S5] obstacle 118 mm @ 120 deg w=113 clrL=635 clrR=635
+01:35:12.921  [S5] avoid -> SLOW (3000 ms)
+01:35:12.921  [S5] avoid ABORT in SLOW: bypass budget exhausted
+01:35:12.921  [S5] avoid -> IDLE (reacquired=0)
+01:35:13.274  [TEL] car/telemetry/motion 01010f00e8030068012cb5000028b6000000
+01:35:13.282  [TEL] car/telemetry/sensor 01020a00e803ffbf07904d4b00
+01:35:13.282  [TEL] car/telemetry/heartbeat 01070600e803004300
+01:35:14.130  [S5] coarse hit 102 mm @ 120 deg, fine scan
+01:35:14.274  [TEL] car/telemetry/motion 01010fe8eb030068012cb5000028b6000000
+01:35:14.274  [TEL] car/telemetry/sensor 01020ae8eb03ffbf07904d4b00
+01:35:15.271  [TEL] car/telemetry/motion 01010fd0ef030068012cb5000028b6000000
+01:35:15.287  [TEL] car/telemetry/sensor 01020ad0ef03ffbf07904d4b00
+01:35:16.282  [TEL] car/telemetry/motion 01010fb8f3030068012cb5000028b6000000
+01:35:16.282  [TEL] car/telemetry/sensor 01020ab8f303ffbf07904d4b00
+01:35:17.284  [TEL] car/telemetry/motion 01010fa0f7030068012cb5000028b6000000
+01:35:17.287  [TEL] car/telemetry/sensor 01020aa0f703ffbf07904d4b00
+01:35:17.306  [DBG] alive: SDK timer 261096 ms, kernel time 260030 ms, difference 1066 ms
+01:35:18.283  [TEL] car/telemetry/motion 01010f88fb030068012cb5000028b6000000
+01:35:18.283  [TEL] car/telemetry/sensor 01020a88fb03ffbf07904d4b00
+01:35:18.283  [TEL] car/telemetry/heartbeat 01070688fb03004300
+01:35:19.286  [TEL] car/telemetry/motion 01010f70ff030068012cb5000028b6000000
+01:35:19.290  [TEL] car/telemetry/sensor 01020a70ff03ffbf07904d4b00
+01:35:20.270  [TEL] car/telemetry/motion 01010f5803040068012cb5000028b6000000
+01:35:20.270  [TEL] car/telemetry/sensor 01020a580304ffbf07904d4b00
+01:35:21.265  [TEL] car/telemetry/motion 01010f4007040068012cb5000028b6000000
+01:35:21.280  [TEL] car/telemetry/sensor 01020a400704ffbf07904d4b00
+01:35:22.274  [TEL] car/telemetry/motion 01010f280b040068012cb5000028b6000000
+01:35:22.280  [TEL] car/telemetry/sensor 01020a280b04ffbf07904d4b00
+01:35:23.274  [TEL] car/telemetry/motion 01010f100f040068012cb5000028b6000000
+01:35:23.274  [TEL] car/telemetry/sensor 01020a100f04ffbf07904d4b00
+01:35:23.274  [TEL] car/telemetry/heartbeat 010706100f04004300
+01:35:24.274  [TEL] car/telemetry/motion 01010ff812040068012cb5000028b6000000
+01:35:24.274  [TEL] car/telemetry/sensor 01020af81204ffbf07904d4b00
+01:35:25.278  [TEL] car/telemetry/motion 01010fe016040068012cb5000028b6000000
+01:35:25.285  [TEL] car/telemetry/sensor 01020ae01604ffbf07904d4b00
+01:35:26.272  [TEL] car/telemetry/motion 01010fc81a040068012cb5000028b6000000
+01:35:26.288  [TEL] car/telemetry/sensor 01020ac81a04ffbf07904d4b00
+01:35:27.274  [TEL] car/telemetry/motion 01010fb01e040068012cb5000028b6000000
+01:35:27.290  [TEL] car/telemetry/sensor 01020ab01e04ffbf07904d4b00
+01:35:27.306  [DBG] alive: SDK timer 271106 ms, kernel time 270040 ms, difference 1066 ms
+01:35:28.280  [TEL] car/telemetry/motion 01010f9822040068012cb5000028b6000000
+01:35:28.287  [TEL] car/telemetry/sensor 01020a982204ffbf07904d4b00
+01:35:28.287  [TEL] car/telemetry/heartbeat 010706982204004300
+01:35:29.286  [TEL] car/telemetry/motion 01010f8026040068012cb5000028b6000000
+01:35:29.286  [TEL] car/telemetry/sensor 01020a802604ffbf07904d4b00
+01:35:30.288  [TEL] car/telemetry/motion 01010f682a040068012cb5000028b6000000
+01:35:30.292  [TEL] car/telemetry/sensor 01020a682a04ffbf07904d4b00
+01:35:31.272  [TEL] car/telemetry/motion 01010f502e040068012cb5000028b6000000
+01:35:31.272  [TEL] car/telemetry/sensor 01020a502e04ffbf07904d4b00
+01:35:32.280  [TEL] car/telemetry/motion 01010f3832040068012cb5000028b6000000
+01:35:32.287  [TEL] car/telemetry/sensor 01020a383204ffbf07904d4b00
+01:35:33.271  [TEL] car/telemetry/motion 01010f2036040068012cb5000028b6000000
+01:35:33.282  [TEL] car/telemetry/sensor 01020a203604ffbf07904d4b00
+01:35:33.284  [TEL] car/telemetry/heartbeat 010706203604004300
+01:35:34.278  [TEL] car/telemetry/motion 01010f083a040068012cb5000028b6000000
+01:35:34.278  [TEL] car/telemetry/sensor 01020a083a04ffbf07904d4b00
+01:35:35.277  [TEL] car/telemetry/motion 01010ff03d040068012cb5000028b6000000
+01:35:35.277  [TEL] car/telemetry/sensor 01020af03d04ffbf07904d4b00
+01:35:36.280  [TEL] car/telemetry/motion 01010fd841040068012cb5000028b6000000
+01:35:36.283  [TEL] car/telemetry/sensor 01020ad84104ffbf07904d4b00
+01:35:37.280  [TEL] car/telemetry/motion 01010fc045040068012cb5000028b6000000
+01:35:37.285  [TEL] car/telemetry/sensor 01020ac04504ffbf07904d4b00
+01:35:37.319  [DBG] alive: SDK timer 281116 ms, kernel time 280050 ms, difference 1066 ms
+01:35:38.270  [TEL] car/telemetry/motion 01010fa849040068012cb5000028b6000000
+01:35:38.288  [TEL] car/telemetry/sensor 01020aa84904ffbf07904d4b00
+01:35:38.288  [TEL] car/telemetry/heartbeat 010706a84904004300
+01:35:39.283  [TEL] car/telemetry/motion 01010f904d040068012cb5000028b6000000
+01:35:39.288  [TEL] car/telemetry/sensor 01020a904d04ffbf07904d4b00
+01:35:40.281  [TEL] car/telemetry/motion 01010f7851040068012cb5000028b6000000
+01:35:40.281  [TEL] car/telemetry/sensor 01020a785104ffbf07904d4b00
+01:35:41.283  [TEL] car/telemetry/motion 01010f6055040068012cb5000028b6000000
+01:35:41.292  [TEL] car/telemetry/sensor 01020a605504ffbf07904d4b00
+01:35:42.278  [TEL] car/telemetry/motion 01010f4859040068012cb5000028b6000000
+01:35:42.282  [TEL] car/telemetry/sensor 01020a485904ffbf07904d4b00
+01:35:43.273  [TEL] car/telemetry/motion 01010f305d040068012cb5000028b6000000
+01:35:43.281  [TEL] car/telemetry/sensor 01020a305d04ffbf07904d4b00
+01:35:43.281  [TEL] car/telemetry/heartbeat 010706305d04004300
+01:35:44.279  [TEL] car/telemetry/motion 01010f1861040068012cb5000028b6000000
+01:35:44.283  [TEL] car/telemetry/sensor 01020a186104ffbf07904d4b00
+01:35:45.269  [TEL] car/telemetry/motion 01010f0065040068012cb5000028b6000000
+01:35:45.283  [TEL] car/telemetry/sensor 01020a006504ffbf07904d4b00
+01:35:46.274  [TEL] car/telemetry/motion 01010fe868040068012cb5000028b6000000
+01:35:46.286  [TEL] car/telemetry/sensor 01020ae86804ffbf07904d4b00
+01:35:47.269  [TEL] car/telemetry/motion 01010fd06c040068012cb5000028b6000000
+01:35:47.285  [TEL] car/telemetry/sensor 01020ad06c04ffbf07904d4b00
+01:35:47.319  [DBG] alive: SDK timer 291116 ms, kernel time 290050 ms, difference 1066 ms
+01:35:48.282  [TEL] car/telemetry/motion 01010fb870040068012cb5000028b6000000
+01:35:48.282  [TEL] car/telemetry/sensor 01020ab87004ffbf07904d4b00
+01:35:48.292  [TEL] car/telemetry/heartbeat 010706b87004004300
+01:35:49.281  [TEL] car/telemetry/motion 01010fa074040068012cb5000028b6000000
+01:35:49.288  [TEL] car/telemetry/sensor 01020aa07404ffbf07904d4b00
+01:35:50.272  [TEL] car/telemetry/motion 01010f8878040068012cb5000028b6000000
+01:35:50.291  [TEL] car/telemetry/sensor 01020a887804ffbf07904d4b00
+01:35:51.289  [TEL] car/telemetry/motion 01010f707c040068012cb5000028b6000000
+01:35:51.291  [TEL] car/telemetry/sensor 01020a707c04ffbf07904d4b00
+01:35:52.267  [TEL] car/telemetry/motion 01010f5880040068012cb5000028b6000000
+01:35:52.267  [TEL] car/telemetry/sensor 01020a588004ffbf07904d4b00
+01:35:53.268  [TEL] car/telemetry/motion 01010f4084040068012cb5000028b6000000
+01:35:53.282  [TEL] car/telemetry/sensor 01020a408404ffbf07904d4b00
+01:35:53.282  [TEL] car/telemetry/heartbeat 010706408404004300
+01:35:54.267  [TEL] car/telemetry/motion 01010f2888040068012cb5000028b6000000
+01:35:54.284  [TEL] car/telemetry/sensor 01020a288804ffbf07904d4b00
+01:35:55.274  [TEL] car/telemetry/motion 01010f108c040068012cb5000028b6000000
+01:35:55.286  [TEL] car/telemetry/sensor 01020a108c04ffbf07904d4b00
+01:35:56.281  [TEL] car/telemetry/motion 01010ff88f040068012cb5000028b6000000
+01:35:56.286  [TEL] car/telemetry/sensor 01020af88f04ffbf07904d4b00
+01:35:57.277  [TEL] car/telemetry/motion 01010fe093040068012cb5000028b6000000
+01:35:57.287  [TEL] car/telemetry/sensor 01020ae09304ffbf07904d4b00
+01:35:57.287  [TEL] CONNECTED tx=703 txf=0 off=1 ev=82 bad=33 qd=32 od=0 cmd=1/5
+01:35:57.327  [DBG] alive: SDK timer 301116 ms, kernel time 300050 ms, difference 1066 ms
+01:35:57.327  [STACK] init: 360 of 1152 B used, 792 never used
+01:35:57.327  [STACK] dbg_drain: 884 of 1664 B used, 780 never used
+01:35:57.327  [STACK] tel: 620 of 4736 B used, 4116 never used
+01:35:57.327  [STACK] vc: 420 of 1664 B used, 1244 never used
+01:35:57.327  [STACK] motion: 224 of 1664 B used, 1440 never used
+01:35:57.327  [STACK] lf: 580 of 1664 B used, 1084 never used
+01:35:57.341  [STACK] safety: 296 of 1664 B used, 1368 never used
+01:35:57.341  [STACK] imu: 556 of 2176 B used, 1620 never used
+01:35:57.341  [STACK] obs_scan: 632 of 1664 B used, 1032 never used
+01:35:57.341  [STACK] obs_avoid: 548 of 1664 B used, 1116 never used
+01:35:57.341  [STACK] app_test: 828 of 1664 B used, 836 never used
+01:35:57.341  [STACK] stack top check: 0 mismatches
+01:35:57.341  [MBF] nav_in: 64 B buffer, 64 B free
+01:35:57.341  [MBF] motion_cmd: 32 B buffer, 32 B free
+01:35:57.341  [MBF] obstacle: 24 B buffer, 24 B free
+01:35:57.341  [MBF] telemetry: 384 B buffer, 384 B free
+01:35:58.287  [TEL] car/telemetry/motion 01010fc897040068012cb5000028b6000000
+01:35:58.291  [TEL] car/telemetry/sensor 01020ac89704ffbf07904d4b00
+01:35:58.291  [TEL] car/telemetry/heartbeat 010706c89704004300
+01:35:59.277  [TEL] car/telemetry/motion 01010fb09b040068012cb5000028b6000000
+01:35:59.281  [TEL] car/telemetry/sensor 01020ab09b04ffbf07904d4b00
+01:36:00.272  [TEL] car/telemetry/motion 01010f989f040068012cb5000028b6000000
+01:36:00.272  [TEL] car/telemetry/sensor 01020a989f04ffbf07904d4b00
+01:36:01.280  [TEL] car/telemetry/motion 01010f80a3040068012cb5000028b6000000
+01:36:01.280  [TEL] car/telemetry/sensor 01020a80a304ffbf07904d4b00
+01:36:02.273  [TEL] car/telemetry/motion 01010f68a7040068012cb5000028b6000000
+01:36:02.286  [TEL] car/telemetry/sensor 01020a68a704ffbf07904d4b00
+01:36:03.282  [TEL] car/telemetry/motion 01010f50ab040068012cb5000028b6000000
+01:36:03.282  [TEL] car/telemetry/sensor 01020a50ab04ffbf07904d4b00
+01:36:03.288  [TEL] car/telemetry/heartbeat 01070650ab04004300
+01:36:04.280  [TEL] car/telemetry/motion 01010f38af040068012cb5000028b6000000
+01:36:04.280  [TEL] car/telemetry/sensor 01020a38af04ffbf07904d4b00
+01:36:05.279  [TEL] car/telemetry/motion 01010f20b3040068012cb5000028b6000000
+01:36:05.289  [TEL] car/telemetry/sensor 01020a20b304ffbf07904d4b00
+01:36:06.287  [TEL] car/telemetry/motion 01010f08b7040068012cb5000028b6000000
+01:36:06.290  [TEL] car/telemetry/sensor 01020a08b704ffbf07904d4b00
+01:36:07.287  [TEL] car/telemetry/motion 01010ff0ba040068012cb5000028b6000000
+01:36:07.292  [TEL] car/telemetry/sensor 01020af0ba04ffbf07904d4b00
+01:36:07.331  [DBG] alive: SDK timer 311119 ms, kernel time 310053 ms, difference 1066 ms
+01:36:08.287  [TEL] car/telemetry/motion 01010fd8be040068012cb5000028b6000000
+01:36:08.291  [TEL] car/telemetry/sensor 01020ad8be04ffbf07904d4b00
+01:36:08.291  [TEL] car/telemetry/heartbeat 010706d8be04004300
+01:36:09.266  [TEL] car/telemetry/motion 01010fc0c2040068012cb5000028b6000000
+01:36:09.266  [TEL] car/telemetry/sensor 01020ac0c204ffbf07904d4b00
+01:36:10.275  [TEL] car/telemetry/motion 01010fa8c6040068012cb5000028b6000000
+01:36:10.275  [TEL] car/telemetry/sensor 01020aa8c604ffbf07904d4b00
+01:36:11.281  [TEL] car/telemetry/motion 01010f90ca040068012cb5000028b6000000
+01:36:11.285  [TEL] car/telemetry/sensor 01020a90ca04ffbf07904d4b00
+01:36:12.281  [TEL] car/telemetry/motion 01010f78ce040068012cb5000028b6000000
+01:36:12.281  [TEL] car/telemetry/sensor 01020a78ce04ffbf07904d4b00
+01:36:13.272  [TEL] car/telemetry/motion 01010f60d2040068012cb5000028b6000000
+01:36:13.286  [TEL] car/telemetry/sensor 01020a60d204ffbf07904d4b00
+01:36:13.287  [TEL] car/telemetry/heartbeat 01070660d204004300
+01:36:14.278  [TEL] car/telemetry/motion 01010f48d6040068012cb5000028b6000000
+01:36:14.278  [TEL] car/telemetry/sensor 01020a48d604ffbf07904d4b00
+01:36:15.283  [TEL] car/telemetry/motion 01010f30da040068012cb5000028b6000000
+01:36:15.289  [TEL] car/telemetry/sensor 01020a30da04ffbf07904d4b00
+01:36:16.285  [TEL] car/telemetry/motion 01010f18de040068012cb5000028b6000000
+01:36:16.289  [TEL] car/telemetry/sensor 01020a18de04ffbf07904d4b00
+01:36:17.287  [TEL] car/telemetry/motion 01010f00e2040068012cb5000028b6000000
+01:36:17.289  [TEL] car/telemetry/sensor 01020a00e204ffbf07904d4b00
+01:36:17.327  [DBG] alive: SDK timer 321119 ms, kernel time 320053 ms, difference 1066 ms
+01:36:18.289  [TEL] car/telemetry/motion 01010fe8e5040068012cb5000028b6000000
+01:36:18.291  [TEL] car/telemetry/sensor 01020ae8e504ffbf07904d4b00
+01:36:18.292  [TEL] car/telemetry/heartbeat 010706e8e504004300
+01:36:19.272  [TEL] car/telemetry/motion 01010fd0e9040068012cb5000028b6000000
+01:36:19.272  [TEL] car/telemetry/sensor 01020ad0e904ffbf07904d4b00
+01:36:20.274  [TEL] car/telemetry/motion 01010fb8ed040068012cb5000028b6000000
+01:36:20.284  [TEL] car/telemetry/sensor 01020ab8ed04ffbf07904d4b00
+01:36:21.277  [TEL] car/telemetry/motion 01010fa0f1040068012cb5000028b6000000
+01:36:21.277  [TEL] car/telemetry/sensor 01020aa0f104ffbf07904d4b00
+01:36:22.272  [TEL] car/telemetry/motion 01010f88f5040068012cb5000028b6000000
+01:36:22.285  [TEL] car/telemetry/sensor 01020a88f504ffbf07904d4b00
+01:36:23.277  [TEL] car/telemetry/motion 01010f70f9040068012cb5000028b6000000
+01:36:23.285  [TEL] car/telemetry/sensor 01020a70f904ffbf07904d4b00
+01:36:23.285  [TEL] car/telemetry/heartbeat 01070670f904004300
+01:36:24.274  [TEL] car/telemetry/motion 01010f58fd040068012cb5000028b6000000
+01:36:24.286  [TEL] car/telemetry/sensor 01020a58fd04ffbf07904d4b00
+01:36:25.284  [TEL] car/telemetry/motion 01010f4001050068012cb5000028b6000000
+01:36:25.288  [TEL] car/telemetry/sensor 01020a400105ffbf07904d4b00
+01:36:26.285  [TEL] car/telemetry/motion 01010f2805050068012cb5000028b6000000
+01:36:26.289  [TEL] car/telemetry/sensor 01020a280505ffbf07904d4b00
+01:36:27.281  [TEL] car/telemetry/motion 01010f1009050068012cb5000028b6000000
+01:36:27.290  [TEL] car/telemetry/sensor 01020a100905ffbf07904d4b00
+01:36:27.329  [DBG] alive: SDK timer 331129 ms, kernel time 330063 ms, difference 1066 ms
+01:36:28.288  [TEL] car/telemetry/motion 01010ff80c050068012cb5000028b6000000
+01:36:28.290  [TEL] car/telemetry/sensor 01020af80c05ffbf07904d4b00
+01:36:28.290  [TEL] car/telemetry/heartbeat 010706f80c05004300
+01:36:29.284  [TEL] car/telemetry/motion 01010fe010050068012cb5000028b6000000
+01:36:29.284  [TEL] car/telemetry/sensor 01020ae01005ffbf07904d4b00
+01:36:30.279  [TEL] car/telemetry/motion 01010fc814050068012cb5000028b6000000
+01:36:30.279  [TEL] car/telemetry/sensor 01020ac81405ffbf07904d4b00
+01:36:31.273  [TEL] car/telemetry/motion 01010fb018050068012cb5000028b6000000
+01:36:31.283  [TEL] car/telemetry/sensor 01020ab01805ffbf07904d4b00
+01:36:32.280  [TEL] car/telemetry/motion 01010f981c050068012cb5000028b6000000
+01:36:32.285  [TEL] car/telemetry/sensor 01020a981c05ffbf07904d4b00
+01:36:33.277  [TEL] car/telemetry/motion 01010f8020050068012cb5000028b6000000
+01:36:33.283  [TEL] car/telemetry/sensor 01020a802005ffbf07904d4b00
+01:36:33.283  [TEL] car/telemetry/heartbeat 010706802005004300
+01:36:34.269  [TEL] car/telemetry/motion 01010f6824050068012cb5000028b6000000
+01:36:34.285  [TEL] car/telemetry/sensor 01020a682405ffbf07904d4b00
+01:36:35.281  [TEL] car/telemetry/motion 01010f5028050068012cb5000028b6000000
+01:36:35.288  [TEL] car/telemetry/sensor 01020a502805ffbf07904d4b00
+01:36:36.278  [TEL] car/telemetry/motion 01010f382c050068012cb5000028b6000000
+01:36:36.278  [TEL] car/telemetry/sensor 01020a382c05ffbf07904d4b00
+01:36:37.283  [TEL] car/telemetry/motion 01010f2030050068012cb5000028b6000000
+01:36:37.283  [TEL] car/telemetry/sensor 01020a203005ffbf07904d4b00
+01:36:37.333  [DBG] alive: SDK timer 341129 ms, kernel time 340063 ms, difference 1066 ms
+01:36:38.280  [TEL] car/telemetry/motion 01010f0834050068012cb5000028b6000000
+01:36:38.288  [TEL] car/telemetry/sensor 01020a083405ffbf07904d4b00
+01:36:38.288  [TEL] car/telemetry/heartbeat 010706083405004300
+01:36:39.281  [TEL] car/telemetry/motion 01010ff037050068012cb5000028b6000000
+01:36:39.294  [TEL] car/telemetry/sensor 01020af03705ffbf07904d4b00
+01:36:40.271  [TEL] car/telemetry/motion 01010fd83b050068012cb5000028b6000000
+01:36:40.271  [TEL] car/telemetry/sensor 01020ad83b05ffbf07904d4b00
+01:36:41.266  [TEL] car/telemetry/motion 01010fc03f050068012cb5000028b6000000
+01:36:41.281  [TEL] car/telemetry/sensor 01020ac03f05ffbf07904d4b00
+01:36:42.272  [TEL] car/telemetry/motion 01010fa843050068012cb5000028b6000000
+01:36:42.272  [TEL] car/telemetry/sensor 01020aa84305ffbf07904d4b00
+01:36:43.272  [TEL] car/telemetry/motion 01010f9047050068012cb5000028b6000000
+01:36:43.283  [TEL] car/telemetry/sensor 01020a904705ffbf07904d4b00
+01:36:43.286  [TEL] car/telemetry/heartbeat 010706904705004300
+01:36:44.281  [TEL] car/telemetry/motion 01010f784b050068012cb5000028b6000000
+01:36:44.281  [TEL] car/telemetry/sensor 01020a784b05ffbf07904d4b00
+01:36:45.284  [TEL] car/telemetry/motion 01010f604f050068012cb5000028b6000000
+01:36:45.284  [TEL] car/telemetry/sensor 01020a604f05ffbf07904d4b00
+01:36:46.274  [TEL] car/telemetry/motion 01010f4853050068012cb5000028b6000000
+01:36:46.290  [TEL] car/telemetry/sensor 01020a485305ffbf07904d4b00
+01:36:47.287  [TEL] car/telemetry/motion 01010f3057050068012cb5000028b6000000
+01:36:47.289  [TEL] car/telemetry/sensor 01020a305705ffbf07904d4b00
+01:36:47.333  [DBG] alive: SDK timer 351129 ms, kernel time 350063 ms, difference 1066 ms
+01:36:48.277  [TEL] car/telemetry/motion 01010f185b050068012cb5000028b6000000
+01:36:48.290  [TEL] car/telemetry/sensor 01020a185b05ffbf07904d4b00
+01:36:48.290  [TEL] car/telemetry/heartbeat 010706185b05004300
+01:36:49.289  [TEL] car/telemetry/motion 01010f005f050068012cb5000028b6000000
+01:36:49.294  [TEL] car/telemetry/sensor 01020a005f05ffbf07904d4b00
+01:36:50.278  [TEL] car/telemetry/motion 01010fe862050068012cb5000028b6000000
+01:36:50.282  [TEL] car/telemetry/sensor 01020ae86205ffbf07904d4b00
+01:36:51.279  [TEL] car/telemetry/motion 01010fd066050068012cb5000028b6000000
+01:36:51.283  [TEL] car/telemetry/sensor 01020ad06605ffbf07904d4b00
+01:36:52.277  [TEL] car/telemetry/motion 01010fb86a050068012cb5000028b6000000
+01:36:52.277  [TEL] car/telemetry/sensor 01020ab86a05ffbf07904d4b00
+01:36:53.280  [TEL] car/telemetry/motion 01010fa06e050068012cb5000028b6000000
+01:36:53.284  [TEL] car/telemetry/sensor 01020aa06e05ffbf07904d4b00
+01:36:53.284  [TEL] car/telemetry/heartbeat 010706a06e05004300
+01:36:54.281  [TEL] car/telemetry/motion 01010f8872050068012cb5000028b6000000
+01:36:54.285  [TEL] car/telemetry/sensor 01020a887205ffbf07904d4b00
+01:36:55.273  [TEL] car/telemetry/motion 01010f7076050068012cb5000028b6000000
+01:36:55.288  [TEL] car/telemetry/sensor 01020a707605ffbf07904d4b00
+01:36:56.123  [capture] done
