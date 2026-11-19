@@ -29,7 +29,7 @@
 #define LF_N_SEARCH     LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
 #define LF_N_SWAP       LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
 #define LF_N_STOP       LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
-#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 180 = 900 ms */
+#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 220 = 1100 ms at 15 cm/s */
 
 _Static_assert((uint32_t)LF_ST_COUNT == DREP_FSM_LF_STATES,
                "lf_state_t is the telemetry LF FSM code");

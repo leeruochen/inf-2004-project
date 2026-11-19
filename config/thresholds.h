@@ -159,8 +159,12 @@
 #define MOTION_SPEED_SLOW_NOMINAL_CMPS      (15U)
 /** Nominal bypass speed. Closed to 25 cm/s on 2026-11-04 for NFR14. */
 #define MOTION_SPEED_BYPASS_NOMINAL_CMPS    (25U)
-/** Bring-up cruise speed. TUNE */
+/** Bring-up cruise speed. TUNE
+ *  Overridable for a test build only (-DMOTION_SPEED_CRUISE_BRINGUP_CMPS=10U,
+ *  Buddy 3's slow-bend test, 19 Nov 2026); the team default stays here. */
+#ifndef MOTION_SPEED_CRUISE_BRINGUP_CMPS
 #define MOTION_SPEED_CRUISE_BRINGUP_CMPS    (15U)
+#endif
 /** Bring-up slow speed. TUNE */
 #define MOTION_SPEED_SLOW_BRINGUP_CMPS      (5U)
 /** Bring-up bypass speed. Aligned to 25 cm/s for NFR14. */

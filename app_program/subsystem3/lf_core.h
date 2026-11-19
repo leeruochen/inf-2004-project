@@ -224,9 +224,10 @@
  *  the last quarter of the pivot can show the line the car came along. */
 #define LF_PIVOT_UTURN_CNT      (3U * LF_PIVOT_HALF_CNT)
 /** JUNCTION is posted after this long even if the odometer has not moved
- *  (an encoder fault); at cruise the travel takes 400 ms (300 mm/s) to
- *  600 ms (bring-up 200 mm/s). TUNE */
-#define LF_T_JCT_MAX_MS         (900U)
+ *  (an encoder fault): the post travel's time at the cruise speed plus
+ *  300 ms, so it follows a cruise change (900 ms at 200 mm/s, the value
+ *  LF-3 used; 1100 ms at 150; 1500 ms at 100). */
+#define LF_T_JCT_MAX_MS         (((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) + 300U)
 
 /* Times as sample counts (one lf_core_step() call = LF_SAMPLE_PERIOD_MS). */
 #define LF_SAMPLES(ms)          ((uint32_t)(ms) / LF_SAMPLE_PERIOD_MS)
