@@ -207,7 +207,9 @@
 /** Sensing point of the line sensors to the wheel axle, which is Motion's
  *  pivot centre for a turn (task_motion.c TURN_L/TURN_R/UTURN drive the
  *  wheels in opposite directions).  Ruler on the car, 4 Nov 2026. */
+#ifndef LF_D_PIVOT_MM
 #define LF_D_PIVOT_MM           (120U)
+#endif
 /** JUNCTION is posted this much before the axle reaches the cross line,
  *  for the car's travel while the turn command takes effect (Motion's
  *  next 20 ms period, then the wheels slowing). TUNE */
