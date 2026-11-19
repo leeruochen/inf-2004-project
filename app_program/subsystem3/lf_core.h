@@ -164,7 +164,13 @@
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault); at cruise the travel takes 400 ms (300 mm/s) to
  *  600 ms (bring-up 200 mm/s). TUNE */
-#define LF_T_JCT_MAX_MS         (900U)
+/*  2026-11-19: 900 -> 3000 ms.  The assertion in lf_core.c ties this cap
+ *  to the cruise speed: the car must cover LF_D_JCT_POST_MM (120 mm)
+ *  before the cap expires.  At the new 5 cm/s bring-up cruise that takes
+ *  2400 ms, so 900 ms would time the junction out instead of posting it.
+ *  Changed with Buddy 3's agreement for the Subsystem 5 obstacle run;
+ *  revisit together when the cruise speed is settled. */
+#define LF_T_JCT_MAX_MS         (3000U)
 
 /* Times as sample counts (one lf_core_step() call = LF_SAMPLE_PERIOD_MS). */
 #define LF_SAMPLES(ms)          ((uint32_t)(ms) / LF_SAMPLE_PERIOD_MS)

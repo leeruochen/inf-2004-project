@@ -71,6 +71,10 @@ void obs_scan_task_entry(INT stacd, void *p_exinf);
 /** True once obs_scan_task_entry() has started. */
 bool obs_scan_is_running(void);
 
+/** True while the servo is parked ahead and only pinging, rather than
+ *  sweeping.  The coarse sweep starts when something answers ahead. */
+bool obs_scan_is_watching(void);
+
 /* ---------------------------------------------------------------------------
  * Pure geometry and analysis.  No kernel calls, no hardware: the on-target
  * tests (S5-U06..S5-U12) drive these with synthetic sweeps.

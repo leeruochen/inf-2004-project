@@ -156,6 +156,23 @@ static uint32_t           s_seq = 0U;
 static bool               s_no_echo_set = false;  /* last state written; diagnostics only */
 
 /* Sweep cursor. */
+/** Bearing the servo holds while watching ahead: straight on.
+ *
+ *  WATCH MODE (2026-11-19).  Stage 1 of specs.md used to ping-pong the
+ *  coarse span continuously, so the servo swept for the whole run even on
+ *  empty track.  The sensor now parks here and only pings, and the coarse
+ *  sweep starts when something answers ahead.  The beam is OBS_BEAM_DEG
+ *  (40 degrees) wide, so parked at 90 it already covers 70..110 degrees --
+ *  everything in the car's own path.
+ *
+ *  What this costs: an obstacle that is beside the car but not in front of
+ *  it is no longer seen until the car faces it.  For a line follower the
+ *  obstacles are on the path ahead, so that is an acceptable trade, but it
+ *  is a real reduction in what the subsystem notices. */
+#define OBS_WATCH_AHEAD_DEG     (90U)
+
+/** True while the servo is parked at OBS_WATCH_AHEAD_DEG, pinging only. */
+static bool     s_watch_mode = true;
 static bool     s_fine_mode = false;
 static uint32_t s_slot = OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN);
 static int32_t  s_dir = 1;                  /* +1 towards the left, -1 right */
@@ -765,6 +782,43 @@ static void enter_coarse(uint32_t now_ms)
     }
 }
 
+/** Park the servo ahead and stop sweeping until something answers. */
+static void enter_watch(uint32_t now_ms)
+{
+    if (!s_watch_mode)
+    {
+        dbg_puts("[S5] nothing ahead, watching");
+    }
+    s_watch_mode = true;
+    s_fine_mode = false;
+    s_confirm = 0U;
+    set_analysis_window(OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN),
+                        OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX));
+    move_to_slot(OBS_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG), now_ms);
+}
+
+/** Watching ahead: the servo is parked, so only the range matters.  A
+ *  confirmed return inside OBS_DETECT_MM starts the Stage 1 coarse sweep,
+ *  which then locates the obstacle properly. */
+static void watch_step(uint16_t mm, uint32_t now_ms)
+{
+    if ((mm != 0U) && (mm <= (uint16_t)OBS_DETECT_MM))
+    {
+        s_confirm++;
+        if (s_confirm >= (uint32_t)OBS_DETECT_CONFIRM_COUNT)
+        {
+            dbg_printf("[S5] watch hit %lu mm ahead, coarse scan",
+                       (unsigned long)mm);
+            s_watch_mode = false;
+            enter_coarse(now_ms);   /* clears s_confirm, picks a sweep end */
+        }
+    }
+    else
+    {
+        s_confirm = 0U;
+    }
+}
+
 /** A coarse sweep has just finished: decide whether to profile it. */
 static void finish_coarse_sweep(uint32_t now_ms)
 {
@@ -791,7 +845,16 @@ static void finish_coarse_sweep(uint32_t now_ms)
         s_confirm = 0U;
     }
 
-    /* Keep ping-ponging the coarse span. */
+    /* Nothing in range anywhere in the span: park ahead instead of
+     * sweeping an empty track.  A partial confirmation keeps sweeping, so
+     * a real obstacle still gets its OBS_DETECT_CONFIRM_COUNT sweeps. */
+    if (s_confirm == 0U)
+    {
+        enter_watch(now_ms);
+        return;
+    }
+
+    /* Partly confirmed: sweep again to confirm it or clear it. */
     s_dir = -s_dir;
     move_to_slot((s_dir > 0) ? OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN)
                              : OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX),
@@ -903,7 +966,9 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
     s_dir = 1;
 
     app_period_init(&per, (uint32_t)OBS_SERVO_STEP_PERIOD_MS);
-    move_to_slot(OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN), app_period_now_ms());
+    /* Start parked ahead: the sweep begins when something answers. */
+    s_watch_mode = true;
+    move_to_slot(OBS_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG), app_period_now_ms());
 
     for (;;)
     {
@@ -946,8 +1011,20 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
             }
         }
 
-        advance_cursor(app_period_now_ms());
+        if (s_watch_mode)
+        {
+            watch_step(mm, app_period_now_ms());
+        }
+        else
+        {
+            advance_cursor(app_period_now_ms());
+        }
     }
+}
+
+bool obs_scan_is_watching(void)
+{
+    return s_watch_mode;
 }
 
 bool obs_scan_is_running(void)

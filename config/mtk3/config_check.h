@@ -61,7 +61,11 @@ _Static_assert(USE_IMALLOC == 1, "config: USE_IMALLOC must be 1 (port supplies t
 /* Mirrors of the #error checks in priorities.h / thresholds.h as _Static_asserts. */
 _Static_assert((TASK_STACK_TOTAL_BYTES + KERNEL_POOL_MBF_RESERVE_BYTES) <= KERNEL_POOL_BYTES,
                "config: task stacks (+128 B system stack each) do not fit KERNEL_POOL_BYTES");
+/* The 15 cm/s floor is NFR14's; OBS_BYPASS_SLOW_BRINGUP (timing.h) relaxes
+ * it for the 5 cm/s bring-up bypass and restores it when cleared. */
+#if !OBS_BYPASS_SLOW_BRINGUP
 _Static_assert(MOTION_SPEED_BYPASS_CMPS >= 15U, "config: bypass speed must be >= 15 cm/s");
+#endif
 _Static_assert(MOTION_SPEED_BYPASS_CMPS >= MOTION_SPEED_BYPASS_MIN_CMPS,
                "config: bypass speed below MOTION_SPEED_BYPASS_MIN_CMPS");
 _Static_assert((BC_CAPTURE_TIMEOUT_MS * 1000UL) < (1UL << BC_GAP_BITS),
