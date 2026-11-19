@@ -136,7 +136,9 @@ typedef struct
     double      speed_mmps;     /* cruise speed */
     double      steer_dz;       /* STEER dead zone, Q7: the first steer_dz of a steering command
                                  * does nothing (the speed controller cancels it); 0 = none */
-    double      steer_gain;     /* what is left of the command is scaled by this (1 = as is) */
+    double      steer_gain;     /* what is left of the command is scaled by this (1 = as is).
+                                 * The car at 7 cm/s, steady steering (20 Nov traces): 24 ->
+                                 * 0.06, 96 -> 0.33, 127 -> 0.45 deg/mm = dz 11, gain 0.72 */
     double      motor_k;        /* mm/s per permille of duty */
     double      left_gain;      /* left motor's K relative to the right's */
     double      lag_s;          /* wheel response time constant */

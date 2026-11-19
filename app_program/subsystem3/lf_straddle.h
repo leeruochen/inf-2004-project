@@ -101,9 +101,9 @@
  *  the probe distance before declaring the line lost.  At the end of a bend
  *  the line is behind, on the other side, and the hold has turned the car
  *  away from it (20 Nov, new track: 60 degrees left, then lost).  Host model
- *  fitted to the car (steering dead zone 56, gain 1.19), 7 cm/s, bends of
- *  45-180 degrees at R 110-300: hold 60 degrees with or without it 104/160;
- *  hold 30 degrees 94 -> 97; hold 45 degrees 104.  Kept off. TUNE */
+ *  fitted to the car's measured turn rates (dead zone 11, gain 0.72, below),
+ *  7 cm/s, bends of 45-180 degrees at R 110-300: no change (104/160 with or
+ *  without it, at a 60 or a 30 degree hold).  Kept off. TUNE */
 #define LF_SD_FLIP              (0)
 #endif
 #ifndef LF_SD_FLIP_Q7
@@ -112,14 +112,13 @@
 #define LF_SD_FLIP_Q7           (96)
 #endif
 #ifndef LF_SD_COMP_DZ
-/** EXPERIMENT: steering dead-zone compensation, Q7.  The car ignores the
- *  first ~56 of 127 steering units at 7 cm/s (fitted from two measurements:
- *  127 turned it 0.46 deg/mm, 96 only 0.26), so small corrections do nothing
- *  and the next big one overshoots (the wobble).  When non-zero, any steering
- *  is lifted past that: out = dz + |s| (127 - dz) / 127, same sign.  0 = off.
- *  It works round Motion's speed controller (Buddy 2's code; the real fix is
- *  per-wheel targets there) and depends on the speed.  Host model: offset
- *  starts failing 6/18 -> 0/18, bends and the wobble unchanged.  Kept off. */
+/** EXPERIMENT: steering dead-zone compensation, Q7.  Measured on the car at
+ *  7 cm/s, steady steering, 20 Nov traces (state 1, 4-9 stretches each): steer
+ *  24 -> 0.06 deg/mm, 96 -> 0.33, 127 -> 0.45: a dead zone of about 11 units
+ *  and 0.72 of the host model's authority.  (An earlier fit of 56 mixed in a
+ *  point from another run and was wrong.)  When non-zero, any steering is
+ *  lifted past the zone: out = dz + |s| (127 - dz) / 127, same sign.  0 = off.
+ *  With a zone this small it changes nothing in the host model.  Kept off. */
 #define LF_SD_COMP_DZ           (0)
 #endif
 #ifndef LF_SD_CONF_MM
