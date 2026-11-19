@@ -15,6 +15,7 @@
 
 #include "subsystem4.h"
 #include "drv_imu.h"
+#include "imu_hump.h"
 #include "imu_lift.h"
 #include "task_imu.h"
 #include "task_safety.h"
@@ -27,7 +28,7 @@
 /* Wait for this many 10 ms IMU cycles before checking the samples. */
 #define S4_TEST_SETTLE_MS   (100U)
 
-/* Operator-guided tests S4-U14..U16, S4-U18..U20 and S4-U23: the console asks for
+/* Operator-guided tests S4-U14..U16, S4-U18..U20, S4-U23, S4-U25 and S4-U26: the console asks for
  * one action at a time and the test detects it.  Off by default so other
  * members' APP_TEST runs do not wait for someone to lift their car; turn on
  * with
@@ -35,6 +36,12 @@
  * (S4-U13, collision, was dropped with the requirement change of 11 Nov 2026.) */
 #ifndef S4_MANUAL_TESTS
 #define S4_MANUAL_TESTS     (0)
+#endif
+
+/* -DS4_HUMP_ONLY=ON: of the guided tests, run only the hump steps
+ * (S4-U15/U25 on the desk, S4-U26 on the track). */
+#ifndef S4_HUMP_ONLY
+#define S4_HUMP_ONLY        (0)
 #endif
 
 #if S4_MANUAL_TESTS
@@ -51,6 +58,14 @@
 #define S4_DRIVE_WINDOW_MS  (6000U)
 #define S4_STOP_LIMIT_MS    (200U)
 #define S4_STILL_POLLS      (3U)
+
+/* S4-U25: the object put under the front wheels, mm (measure it: a stack of
+ * coins, a block, a book), and NFR11's tolerance, +-20 % or +-5 mm,
+ * whichever is larger (here 5 mm). */
+#define S4_HUMP_OBJ_MM      (20)
+#define S4_HUMP_TOL_MM      (5)
+/* S4-U26: drive this far over the track's hump (start ~20 cm before it). */
+#define S4_HUMP_DRIVE_CM    (40)
 
 /* Wait until p_get() changes from before, or window_ms; reminder every 5 s. */
 static bool s4_wait_change(uint32_t (*p_get)(void), uint32_t before, uint32_t window_ms)
@@ -91,6 +106,7 @@ static bool s4_wait_true(bool (*p_ok)(void), uint32_t window_ms)
     return p_ok();
 }
 
+#if !S4_HUMP_ONLY
 /* Sum of both encoder counts (free-running), or the previous value on error. */
 static int32_t s4_enc_sum(int32_t prev)
 {
@@ -102,6 +118,7 @@ static int32_t s4_enc_sum(int32_t prev)
     }
     return st.enc_count[0] + st.enc_count[1];
 }
+#endif /* !S4_HUMP_ONLY */
 
 static bool s4_fault_latched(void)
 {
@@ -131,20 +148,34 @@ static void s4_manual_tests(uint32_t *p_pass, uint32_t *p_fail)
 
     dbg_puts("[S4] ===== MANUAL TESTS: do each step when asked (20 s each) =====");
 
-    /* S4-U15: hump, and the pitch sign (nose up must read positive). */
-    dbg_puts("[S4] MANUAL S4-U15: put a ~2 cm book under the FRONT wheels for 2 s, then remove it");
+    /* S4-U15: hump, and the pitch sign (nose up must read positive).
+     * S4-U25: its height, from the same step (FR11, NFR11). */
+    dbg_printf("[S4] MANUAL S4-U15/U25: put a %ld mm object under the FRONT wheels 2 s, then remove it",
+               (long)S4_HUMP_OBJ_MM);
     {
-        bool const    seen  = s4_wait_change(imu_get_hump_count, imu_get_hump_count(), S4_WINDOW_MS);
-        int32_t const pitch = imu_get_last_hump_pitch_half_deg();
+        bool const    seen   = s4_wait_change(imu_get_hump_count, imu_get_hump_count(), S4_WINDOW_MS);
+        int32_t const pitch  = imu_get_last_hump_pitch_half_deg();
+        int32_t const height = imu_get_last_hump_height_mm();
+        int32_t const sin_p  = imu_hump_sin_x10000(pitch);
 
         if (seen)
         {
-            dbg_printf("[S4]   hump seen, pitch=%ld half-deg", (long)pitch);
+            /* The wheelbase this pitch implies for the object's height, to
+             * check IMU_HUMP_WHEELBASE_MM: wheelbase = height / sin(pitch). */
+            dbg_printf("[S4]   hump seen, pitch=%ld half-deg, height=%ld mm (object %ld mm)",
+                       (long)pitch, (long)height, (long)S4_HUMP_OBJ_MM);
+            dbg_printf("[S4]   implied wheelbase %ld mm (configured %lu mm)",
+                       (sin_p > 0) ? (long)((S4_HUMP_OBJ_MM * 10000) / sin_p) : -1L,
+                       (unsigned long)IMU_HUMP_WHEELBASE_MM);
         }
         TEST_CHECK("S4-U15", seen && (pitch > 0), "hump reported, nose up = positive pitch");
-        (void)tk_dly_tsk(3000U);    /* time to take the book out */
+        TEST_CHECK("S4-U25", seen && (height >= (S4_HUMP_OBJ_MM - S4_HUMP_TOL_MM))
+                             && (height <= (S4_HUMP_OBJ_MM + S4_HUMP_TOL_MM)),
+                   "hump height within NFR11 of the object under the front wheels");
+        (void)tk_dly_tsk(1000U);
     }
 
+#if !S4_HUMP_ONLY
     /* S4-U18: lifted -> emergency brake + FAULT_LATCHED. */
     (void)s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
     dbg_puts("[S4] MANUAL S4-U18: LIFT the car ~10 cm off the desk, hold it 2 s, put it back down FLAT");
@@ -206,7 +237,45 @@ static void s4_manual_tests(uint32_t *p_pass, uint32_t *p_fail)
         TEST_CHECK("S4-U16", back, "IMU readings resume after it is plugged back in");
         s4_reset_fault();
     }
+#endif /* !S4_HUMP_ONLY */
 
+    /* S4-U26: drive straight over the track's hump and report its height
+     * (FR11 on the real hump; compare with a ruler for NFR11).  Placing the
+     * car is a lift, so wait until it stands still, then reset the fault. */
+    dbg_puts("[S4] MANUAL S4-U26: PUT the car on the TRACK ~20 cm before the HUMP, facing it; hands off");
+    {
+        (void)s4_wait_change(imu_get_lift_count, imu_get_lift_count(), S4_WINDOW_MS);
+        (void)tk_dly_tsk(1000U);
+        bool const placed = s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
+
+        s4_reset_fault();
+        dbg_printf("[S4]   car drives %ld cm straight over the hump in 3 s: hands off",
+                   (long)S4_HUMP_DRIVE_CM);
+        (void)tk_dly_tsk(3000U);
+
+        uint32_t const humps   = imu_get_hump_count();
+        uint32_t const dropped = imu_get_hump_dropped_count();
+        uint32_t const lifts   = imu_get_lift_count();
+
+        (void)motion_move_forward(S4_HUMP_DRIVE_CM);
+        (void)tk_dly_tsk(S4_DRIVE_WINDOW_MS);
+        (void)motion_stop();
+        (void)tk_dly_tsk(4000U);    /* a hump ends 0.5 s after the car stops; then its trace */
+
+        uint32_t const n_humps = imu_get_hump_count() - humps;
+        bool const     no_lift = (imu_get_lift_count() == lifts);
+
+        dbg_printf("[S4]   U26 placed=%d humps=%lu dropped=%lu height=%ld mm pitch=%ld hd lift=%d",
+                   (int)placed, (unsigned long)n_humps,
+                   (unsigned long)(imu_get_hump_dropped_count() - dropped),
+                   (long)imu_get_last_hump_height_mm(), (long)imu_get_last_hump_pitch_half_deg(),
+                   (int)!no_lift);
+        dbg_puts("[S4]   measure the hump with a ruler and write both heights in the TEST_LOG");
+        TEST_CHECK("S4-U26", placed && (n_humps == 1U) && (imu_get_last_hump_height_mm() > 0) && no_lift,
+                   "one hump with a height reported over the track hump, no false lift");
+    }
+
+#if !S4_HUMP_ONLY
     /* S4-U23: lifted WHILE DRIVING -> wheels stop within 200 ms (FR12, NFR10,
      * the demo's end-of-run signal).  Moving the car to the track is itself a
      * lift, so wait until it stands level and still, then reset the fault. */
@@ -279,6 +348,7 @@ static void s4_manual_tests(uint32_t *p_pass, uint32_t *p_fail)
         (void)s4_wait_true(imu_is_lift_armed, S4_WINDOW_MS);
         s4_reset_fault();
     }
+#endif /* !S4_HUMP_ONLY */
 
     *p_pass = test_pass_;
     *p_fail = test_fail_;

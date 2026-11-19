@@ -1,5 +1,6 @@
 # testing/subsystem4/s4_test.ps1 - Subsystem 4 (Buddy 4): build, flash and record the
-# APP_TEST firmware with the operator-guided tests S4-U14..U16 and S4-U18..U20 (S4_MANUAL_TESTS=ON).
+# APP_TEST firmware with the operator-guided tests S4-U14..U16, S4-U18..U20, S4-U23, S4-U25
+# and S4-U26 (S4_MANUAL_TESTS=ON).
 # Needs the Pico SDK v1.5.1 Windows installer (HANDOVER.md section 5).
 # Run from the repo root:
 #   powershell -ExecutionPolicy Bypass -File testing\subsystem4\s4_test.ps1
@@ -14,6 +15,9 @@
 #                     the IMU checks start about 5 s after boot. Builds in build/s4imu
 #                     (guided) or build/s4imuauto (with -AutoOnly), and stops by itself
 #                     after the subsystem 4 summary.
+#   -HumpOnly         only the hump steps: S4-U15/U25 (20 mm object under the front
+#                     wheels) and S4-U26 (drive over the track's hump). Implies -ImuOnly.
+#                     Builds in build/s4hump.
 #   -WaitMinutes 10   how long to wait for the robot to be plugged in.
 # Stop: Ctrl+C.
 param(
@@ -21,6 +25,7 @@ param(
     [switch]$SkipBuild,
     [switch]$AutoOnly,
     [switch]$ImuOnly,
+    [switch]$HumpOnly,
     [int]$WaitMinutes = 10
 )
 
@@ -49,7 +54,10 @@ Step "Repo $Repo on $branch at $commit"
 # --- 1. Build ---------------------------------------------------------------
 if ($AutoOnly) { $bdir = "build/s4auto"; $manual = "OFF" } else { $bdir = "build/s4test"; $manual = "ON" }
 $only = "0"
+$hump = "OFF"
+if ($HumpOnly) { $ImuOnly = $true; $AutoOnly = $false; $manual = "ON"; $hump = "ON" }
 if ($ImuOnly) { $only = "4"; $bdir = if ($AutoOnly) { "build/s4imuauto" } else { "build/s4imu" } }
+if ($HumpOnly) { $bdir = "build/s4hump" }
 $uf2 = Join-Path $Repo ($bdir.Replace('/', '\') + "\robocar.uf2")
 if (-not $SkipBuild) {
     Step "1/4 Building the test firmware (APP_TEST=ON, S4 guided tests $manual, only subsystem $only (0 = all)) in $bdir"
@@ -60,9 +68,11 @@ if (-not $SkipBuild) {
         Write-Host "Removing the old $bdir folder (wrong compiler flags)" -ForegroundColor DarkYellow
         Remove-Item -Recurse -Force $bdir
     }
-    & $CM -S . -B $bdir @common -DDBG_BACKEND=USB -DAPP_TEST=ON "-DS4_MANUAL_TESTS=$manual" "-DAPP_TEST_ONLY=$only"
+    & $CM -S . -B $bdir @common -DDBG_BACKEND=USB -DAPP_TEST=ON "-DS4_MANUAL_TESTS=$manual" "-DAPP_TEST_ONLY=$only" "-DS4_HUMP_ONLY=$hump"
     if ($LASTEXITCODE -ne 0) { Stop-Here "CMake configure failed (scroll up for the first error)" }
-    & $CM --build $bdir
+    # Not `cmake --build`: its final link hangs on some PCs (fw_build.py explains).
+    Remove-Item "$bdir\robocar.uf2" -ErrorAction SilentlyContinue
+    & "$R\python\python.exe" testing\subsystem4\fw_build.py $bdir
     if ($LASTEXITCODE -ne 0) { Stop-Here "Build failed (scroll up for the first error)" }
 }
 if (-not (Test-Path $uf2)) { Stop-Here "$uf2 was not produced" }

@@ -14,7 +14,8 @@
  *    - Sets EVF_SAFETY_IMU_ALIVE after every good sample (watchdog input).
  *    - Sets EVF_SAFETY_LIFTED once per pick-up when the car is lifted or
  *      overturned (imu_lift.c; replaces collision detection, 11 Nov 2026).
- *    - Sends one DREP_TEL_HUMP event per hump (pitch above IMU_HUMP_PITCH_DEG).
+ *    - Sends one DREP_TEL_HUMP event per hump (pitch above IMU_HUMP_PITCH_DEG)
+ *      with its estimated height (imu_hump.c, FR11), when the hump is over.
  *    - Sets EVF_SAFETY_FAULT_IMU_I2C after repeated I2C failures.
  */
 
@@ -23,16 +24,13 @@
 #include "config/thresholds.h"
 #include "config/timing.h"
 #include "drv_imu.h"
+#include "imu_hump.h"
 #include "imu_lift.h"
 #include "../subsystem1/subsystem1.h"   /* tel_set_attitude (IF-12, dashboard integration) */
+#include "../subsystem2/subsystem2.h"   /* motion_get_state: hump distance (IF-08) */
 
 /* Consecutive I2C failures before FAULT_IMU_I2C (5 x 10 ms). */
 #define IMU_I2C_FAIL_THRESHOLD      (5U)
-
-/* Samples above the hump pitch before a hump is reported (debounce). */
-#define IMU_HUMP_CONFIRM_SAMPLES    (3U)
-
-#define IMU_HUMP_PITCH_HALF_DEG     ((int32_t)IMU_HUMP_PITCH_DEG * 2)
 
 /* Lift tuning log: once a second, print the peaks if the car moved up faster
  * than this or tilted past 15 deg (debug console only; quiet at rest). */
@@ -40,8 +38,31 @@
 #define IMU_LIFT_LOG_V_MMPS         (40)
 #define IMU_LIFT_LOG_COS_X1000      (966)
 
-/* A hump ends once |pitch| falls below half the hump threshold (hysteresis). */
-#define IMU_HUMP_EXIT_HALF_DEG      (IMU_HUMP_PITCH_HALF_DEG / 2)
+/* "Turning" for the hump estimator: the two wheels' travel differs by more
+ * than half their total (an in-place turn is 100 %, straight is ~0 %). */
+#define IMU_TURN_DIFF_PCT           (50)
+/* Treat the car as still turning this long after the wheels last moved
+ * against each other: Motion publishes every 20 ms (every other sample
+ * sees no travel) and the 80 ms filter still holds the turn's tilt. */
+#define IMU_TURN_HOLD_SAMPLES       (20U)       /* 200 ms */
+
+/* "Speed change" for the hump estimator: the wheel speed changed by more
+ * than this between two Motion periods (20 mm/s in 20 ms = 1 m/s^2, which
+ * reads as ~6 deg of pitch).  Pulling away and braking at 22 cm/s read
+ * +-13 deg; the slowdown on the 10 mm hump itself is ~12 mm/s (S4-U26
+ * traces, 19 Nov 2026).  Held for 200 ms: the 80 ms filter still shows
+ * the acceleration after it ends. TUNE */
+#define IMU_SPEED_STEP_MMPS         (20)
+#define IMU_SPEED_HOLD_SAMPLES      (20U)       /* 200 ms */
+
+/* Hump trace for tuning (debug console): the last IMU_TRACE_LEN samples of
+ * pitch (half-deg) and wheel travel (0.25 mm), printed after every hump,
+ * from IMU_TRACE_PRE samples before it started, one line per 10 ms so the
+ * dbg_ ring (2 KB) never overflows.  32 samples per line, 2 hex digits each
+ * (signed 8 bit, two's complement). */
+#define IMU_TRACE_LEN               (256U)
+#define IMU_TRACE_PRE               (30U)
+#define IMU_TRACE_PER_LINE          (32U)
 
 /* Low-pass for pitch: each sample moves the filtered value 1/8 of the way
  * (time constant about 8 x 10 ms = 80 ms).  Motor and servo vibration
@@ -75,10 +96,26 @@ static volatile uint32_t s_lift_count;
 static volatile uint32_t s_last_lift_event;
 static volatile uint32_t s_hump_count;
 static volatile int32_t  s_last_hump_pitch;
+static volatile int32_t  s_last_hump_height_mm;
+static volatile int32_t  s_max_hump_height_mm;
+static volatile uint32_t s_hump_dropped_count;
 
 static uint32_t s_consecutive_fail;
-static uint32_t s_hump_confirm;
-static bool     s_hump_active;
+static imu_hump_t s_hump;
+static bool       s_enc_primed;
+static int32_t    s_enc_prev[2];
+static uint32_t   s_turn_hold;
+static uint32_t   s_speed_hold;
+static uint32_t   s_prev_tick;
+static int32_t    s_prev_v_mmps;
+static int8_t     s_tr_pitch[IMU_TRACE_LEN];
+static int8_t     s_tr_ds[IMU_TRACE_LEN];
+static uint32_t   s_tr_head;        /* next write index */
+static uint32_t   s_tr_since;       /* samples since the hump started */
+static uint32_t   s_tr_out_left;    /* samples still to print */
+static uint32_t   s_tr_out_pos;     /* index of the next sample to print */
+static uint32_t   s_tr_out_n;       /* samples in the dump being printed */
+static bool       s_tr_out_ds;      /* printing the travel series */
 static imu_lift_t s_lift;
 static uint32_t   s_lift_log_n;
 static bool     s_filter_primed;
@@ -165,6 +202,21 @@ int32_t imu_get_last_hump_pitch_half_deg(void)
     return s_last_hump_pitch;
 }
 
+int32_t imu_get_last_hump_height_mm(void)
+{
+    return s_last_hump_height_mm;
+}
+
+int32_t imu_get_max_hump_height_mm(void)
+{
+    return s_max_hump_height_mm;
+}
+
+uint32_t imu_get_hump_dropped_count(void)
+{
+    return s_hump_dropped_count;
+}
+
 bool imu_task_init(void)
 {
     s_running          = false;
@@ -178,9 +230,24 @@ bool imu_task_init(void)
     s_last_lift_event  = (uint32_t)IMU_LIFT_NONE;
     s_hump_count       = 0U;
     s_last_hump_pitch  = 0;
+    s_last_hump_height_mm = 0;
+    s_max_hump_height_mm  = 0;
+    s_hump_dropped_count  = 0U;
     s_consecutive_fail = 0U;
-    s_hump_confirm     = 0U;
-    s_hump_active      = false;
+    imu_hump_init(&s_hump);
+    s_enc_primed       = false;
+    s_enc_prev[0]      = 0;
+    s_enc_prev[1]      = 0;
+    s_turn_hold        = 0U;
+    s_speed_hold       = 0U;
+    s_prev_tick        = 0U;
+    s_prev_v_mmps      = 0;
+    s_tr_head          = 0U;
+    s_tr_since         = 0U;
+    s_tr_out_left      = 0U;
+    s_tr_out_pos       = 0U;
+    s_tr_out_n         = 0U;
+    s_tr_out_ds        = false;
     imu_lift_init(&s_lift);
     s_lift_log_n       = 0U;
     s_filter_primed    = false;
@@ -318,35 +385,170 @@ static void check_lift(void)
     }
 }
 
+/* Wheel travel since the last call (um, mean of both wheels).  Motion
+ * publishes its state every 20 ms, so every other call sees no travel.
+ * Also notes when the wheels move against each other (a turn). */
+static int32_t wheel_travel_um(void)
+{
+    motion_state_t st;
+
+    if (motion_get_state(&st) != E_OK)
+    {
+        return 0;
+    }
+
+    if (!s_enc_primed)
+    {
+        s_enc_prev[0] = st.enc_count[0];
+        s_enc_prev[1] = st.enc_count[1];
+        s_prev_tick   = st.tick_ms;
+        s_enc_primed  = true;
+        return 0;
+    }
+
+    if (st.tick_ms == s_prev_tick)
+    {
+        return 0;               /* Motion has not published since the last call */
+    }
+
+    /* Wrap-safe deltas of the free-running counts. */
+    int32_t const dl = (int32_t)((uint32_t)st.enc_count[0] - (uint32_t)s_enc_prev[0]);
+    int32_t const dr = (int32_t)((uint32_t)st.enc_count[1] - (uint32_t)s_enc_prev[1]);
+
+    s_enc_prev[0] = st.enc_count[0];
+    s_enc_prev[1] = st.enc_count[1];
+
+    int32_t const abs_l = (dl >= 0) ? dl : -dl;
+    int32_t const abs_r = (dr >= 0) ? dr : -dr;
+    int32_t const diff  = ((dl - dr) >= 0) ? (dl - dr) : (dr - dl);
+
+    if (((diff * 100) > ((abs_l + abs_r) * IMU_TURN_DIFF_PCT)) && (diff > 2))
+    {
+        s_turn_hold = IMU_TURN_HOLD_SAMPLES;
+    }
+
+    /* Speed over this Motion period (um per ms = mm/s), compared with the
+     * last period's. */
+    int32_t const  um    = imu_hump_counts_to_um((dl + dr) / 2);
+    uint32_t const dt_ms = st.tick_ms - s_prev_tick;
+    int32_t const  v     = (dt_ms > 0U) ? (um / (int32_t)dt_ms) : 0;
+    int32_t const  dv    = v - s_prev_v_mmps;
+
+    s_prev_tick   = st.tick_ms;
+    s_prev_v_mmps = v;
+    if ((dv > IMU_SPEED_STEP_MMPS) || (dv < -IMU_SPEED_STEP_MMPS))
+    {
+        s_speed_hold = IMU_SPEED_HOLD_SAMPLES;
+    }
+
+    return um;
+}
+
+static int8_t clamp_s8(int32_t v)
+{
+    return (int8_t)((v > 127) ? 127 : ((v < -127) ? -127 : v));
+}
+
+/* Start printing the trace of the hump that just ended. */
+static void trace_dump_start(void)
+{
+    uint32_t n = s_tr_since + IMU_TRACE_PRE;
+
+    n = (n > IMU_TRACE_LEN) ? IMU_TRACE_LEN : n;
+    s_tr_out_n    = n;
+    s_tr_out_left = n;
+    s_tr_out_pos  = (s_tr_head + IMU_TRACE_LEN - n) % IMU_TRACE_LEN;
+    s_tr_out_ds   = false;
+    dbg_printf("[HTR] %lu samples, 10 ms apart: p = pitch half-deg, d = travel 0.25 mm",
+               (unsigned long)n);
+}
+
+/* Print at most one trace line (called every sample). */
+static void trace_dump_line(void)
+{
+    static char const hex[] = "0123456789abcdef";
+    char              line[IMU_TRACE_PER_LINE * 2U + 1U];
+    uint32_t          k = 0U;
+    uint32_t const    first = s_tr_out_n - s_tr_out_left;
+
+    if (s_tr_out_left == 0U)
+    {
+        return;
+    }
+
+    while ((k < IMU_TRACE_PER_LINE) && (s_tr_out_left > 0U))
+    {
+        uint8_t const v = (uint8_t)(s_tr_out_ds ? s_tr_ds[s_tr_out_pos] : s_tr_pitch[s_tr_out_pos]);
+
+        line[k * 2U]      = hex[v >> 4];
+        line[k * 2U + 1U] = hex[v & 0x0FU];
+        k++;
+        s_tr_out_left--;
+        s_tr_out_pos = (s_tr_out_pos + 1U) % IMU_TRACE_LEN;
+    }
+    line[k * 2U] = '\0';
+    dbg_printf("[HTR] %c%03lu %s", s_tr_out_ds ? 'd' : 'p', (unsigned long)first, line);
+
+    if ((s_tr_out_left == 0U) && !s_tr_out_ds)
+    {
+        /* Pitch done: now the same samples' travel. */
+        s_tr_out_ds   = true;
+        s_tr_out_left = s_tr_out_n;
+        s_tr_out_pos  = (s_tr_head + IMU_TRACE_LEN - s_tr_out_n) % IMU_TRACE_LEN;
+    }
+}
+
 static void check_hump(int32_t pitch)
 {
-    int32_t const abs_pitch = (pitch >= 0) ? pitch : -pitch;
+    int32_t const          ds_um   = wheel_travel_um();
+    /* Not trustworthy while turning, or while the car is (or was just)
+     * lifted: a hump in progress is then dropped, so carrying the car
+     * (e.g. the end-of-run pick-up) never reports a hump. */
+    bool const             turning = (s_turn_hold > 0U) || !s_lift.armed;
+    imu_hump_report_t      rep;
+    bool const             speed_change = (s_speed_hold > 0U);
+    imu_hump_event_t const ev    = imu_hump_step(&s_hump, pitch, ds_um, turning, speed_change, &rep);
 
-    if (abs_pitch < IMU_HUMP_EXIT_HALF_DEG)
+    s_turn_hold  = (s_turn_hold > 0U) ? (s_turn_hold - 1U) : 0U;
+    s_speed_hold = (s_speed_hold > 0U) ? (s_speed_hold - 1U) : 0U;
+
+    /* Trace: a new dump overwrites one still printing (the newer hump wins). */
+    if (s_tr_out_left == 0U)
     {
-        s_hump_confirm = 0U;
-        s_hump_active  = false;
-        return;
+        s_tr_pitch[s_tr_head] = clamp_s8(pitch);
+        s_tr_ds[s_tr_head]    = clamp_s8(ds_um / 250);
+        s_tr_head             = (s_tr_head + 1U) % IMU_TRACE_LEN;
     }
+    s_tr_since = (ev == IMU_HUMP_START) ? 0U : (s_tr_since + 1U);
 
-    if (abs_pitch < IMU_HUMP_PITCH_HALF_DEG)
+    if (ev == IMU_HUMP_START)
     {
-        s_hump_confirm = 0U;    /* between exit and entry level: no change */
-        return;
+        dbg_printf("[IMU] hump start pitch=%ld half-deg", (long)pitch);
     }
-
-    if (s_hump_confirm < IMU_HUMP_CONFIRM_SAMPLES)
+    else if (ev == IMU_HUMP_END)
     {
-        s_hump_confirm++;
-    }
-
-    if ((s_hump_confirm >= IMU_HUMP_CONFIRM_SAMPLES) && !s_hump_active)
-    {
-        s_hump_active = true;
-        s_last_hump_pitch = pitch;
+        s_last_hump_pitch     = rep.pitch_half_deg;
+        s_last_hump_height_mm = rep.height_mm;
+        if (rep.height_mm > s_max_hump_height_mm)
+        {
+            s_max_hump_height_mm = rep.height_mm;
+        }
         s_hump_count++;
-        dbg_printf("[IMU] hump pitch=%ld half-deg", (long)pitch);
-        send_tel(drep_tel_hump(app_period_now_ms(), 0, pitch));
+        dbg_printf("[IMU] hump h=%ld mm (tilt %ld climb %ld) held=%ld spike=%ld hd max=%ld",
+                   (long)rep.height_mm, (long)rep.tilt_mm, (long)rep.climb_mm,
+                   (long)rep.pitch_half_deg, (long)rep.spike_half_deg, (long)s_max_hump_height_mm);
+        send_tel(drep_tel_hump(app_period_now_ms(), rep.height_mm, rep.pitch_half_deg));
+        trace_dump_start();
+    }
+    else if (ev == IMU_HUMP_DROPPED)
+    {
+        s_hump_dropped_count++;
+        dbg_puts("[IMU] hump dropped: the car turned or was lifted during it");
+        trace_dump_start();
+    }
+    else
+    {
+        trace_dump_line();
     }
 }
 

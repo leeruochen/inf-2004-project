@@ -1,0 +1,157 @@
+# Subsystem 4 APP_TEST run, main at c8cde50, 2026-11-19T15:48:25
+pre-kernel ok
+
+
+microT-Kernel Version 3.00
+
+[IPC] kernel spec version 3.00 OK
+[IPC] 8 objects created, MBF depth self-check OK
+[S3] IR_R (GP26/ADC0) ADC sanity OK
+[S3] IR_C (GP28/ADC2) ADC sanity OK
+[S4] IMU init OK
+[S4] tasks started
+[SAFETY] task started
+[IMU] task started
+[IMU] I2C1 scan (SDA GP2, SCL GP3): 0x1D
+[IMU] chip LSM303D, accel+mag at 0x1D
+[TEL] backend: console ([TEL] <topic> <hex>)
+[TEL] link DISCONNECTED -> CONNECTING
+[TEL] link CONNECTING -> CONNECTED
+[IMU] level reference: board at 9 half-deg when flat (0 tries)
+[TEST] S4-U01 PASS  accelerometer found and identified
+[TEST] S4-U02 PASS  magnetometer present
+[TEST] S4-U03 PASS  accel configured (imu_is_ready)
+[TEST] S4-U04 PASS  IMU task reads new samples
+[S4] z=-907 mg mag=917 mg pitch=0 half-deg (board 9 when flat)
+[TEST] S4-U05 PASS  z-axis ~1 g at rest
+[TEST] S4-U06 PASS  magnitude ~1 g at rest
+[TEST] S4-U07 PASS  pitch within 10 deg of the boot level reference
+[TEST] S4-U08 PASS  IMU task running
+[TEST] S4-U09 PASS  Safety task running
+[TEST] S4-U10 PASS  IMU period ~10 ms
+[TEST] S4-U11 PASS  no I2C errors
+[TEST] S4-U12 PASS  no IMU watchdog timeouts
+[TEST] S4-U17 PASS  lift detector armed, no false lift event with the car at rest
+[S4] ===== MANUAL TESTS: do each step when asked (20 s each) =====
+[S4] MANUAL S4-U15/U25: put a 20 mm object under the FRONT wheels 2 s, then remove it
+[TEL] car/telemetry/motion 01010fe80300000000000000000000000000
+[TEL] car/telemetry/motion 01010fd00700000000000000000000000000
+[TEL] car/telemetry/motion 01010fb80b00000000000000000000000000
+[TEL] car/telemetry/motion 01010fa00f00000000000000000000000000
+[TEL] car/telemetry/motion 01010f881300000000000000000000000000
+[TEL] car/telemetry/heartbeat 010706881300000100
+[S4]   waiting... 15 s left
+[TEL] car/telemetry/motion 01010f701700000000000000000000000000
+[TEL] car/telemetry/motion 01010f581b00000000000000000000000000
+[TEL] car/telemetry/motion 01010f401f00000000000000000000000000
+[TEL] car/telemetry/motion 01010f282300000000000000000000000000
+[DBG] alive: SDK timer 10675 ms, kernel time 9879 ms, difference 796 ms
+[TEL] car/telemetry/motion 01010f102700000000000000000000000000
+[TEL] car/telemetry/heartbeat 010706102700000100
+[TEL] car/telemetry/motion 01010ff82a00000000000000000000000000
+[S4]   waiting... 10 s left
+[TEL] car/telemetry/motion 01010fe02e00000000000000000000000000
+[TEL] car/telemetry/motion 01010fc83200000000000000000000000000
+[TEL] car/telemetry/motion 01010fb03600000000000000000000000000
+[TEL] car/telemetry/motion 01010f983a00000000000000000000000000
+[TEL] car/telemetry/heartbeat 010706983a00000100
+[TEL] car/telemetry/motion 01010f803e00000000000000000000000000
+[S4]   waiting... 5 s left
+[TEL] car/telemetry/motion 01010f684200000000000000000000000000
+[TEL] car/telemetry/motion 01010f504600000000000000000000000000
+[TEL] car/telemetry/motion 01010f384a00000000000000000000000000
+[DBG] alive: SDK timer 20686 ms, kernel time 19890 ms, difference 796 ms
+[TEL] car/telemetry/motion 01010f204e00000000000000000000000000
+[TEL] car/telemetry/heartbeat 010706204e00000100
+[TEL] car/telemetry/motion 01010f085200000000000000000000000000
+[TEST] S4-U15 FAIL  hump reported, nose up = positive pitch   (subsystem4_test.c:169)
+[TEST] S4-U25 FAIL  hump height within NFR11 of the object under the front wheels   (subsystem4_
+[TEL] car/telemetry/motion 01010ff05500000000000000000000000000
+[S4] MANUAL S4-U26: PUT the car on the TRACK ~20 cm before the HUMP, facing it; hands off
+[TEL] car/telemetry/motion 01010fd85900000000000000000000000000
+[TEL] car/telemetry/motion 01010fc05d00000000000000000000000000
+[TEL] car/telemetry/motion 01010fa86100000000000000000000000000
+[TEL] car/telemetry/heartbeat 010706a86100000100
+[TEL] car/telemetry/motion 01010f906500000000000000000000000000
+[TEL] car/telemetry/motion 01010f786900000000000000000000000000
+[S4]   waiting... 15 s left
+[TEL] car/telemetry/motion 01010f606d00000000000000000000000000
+[TEL] car/telemetry/motion 01010f487100000000000000000000000000
+[DBG] alive: SDK timer 30697 ms, kernel time 29901 ms, difference 796 ms
+[TEL] car/telemetry/motion 01010f307500000000000000000000000000
+[TEL] car/telemetry/heartbeat 010706307500000100
+[TEL] car/telemetry/motion 01010f187900000000000000000000000000
+[TEL] car/telemetry/motion 01010f007d00000000000000000000000000
+[S4]   waiting... 10 s left
+[TEL] car/telemetry/motion 01010fe88000000000000000000000000000
+[TEL] car/telemetry/motion 01010fd08400000000000000000000000000
+[TEL] car/telemetry/motion 01010fb88800000000000000000000000000
+[TEL] car/telemetry/heartbeat 010706b88800000100
+[TEL] car/telemetry/motion 01010fa08c00000000000000000000000000
+[IMU] hump start pitch=15 half-deg
+[TEL] car/telemetry/motion 01010f88900000000000000000f8ffffff03
+[S4]   waiting... 5 s left
+[IMU] lift peak 1s: v=42/100 mm/s acc=62 mg cos=974/866
+[TEL] car/telemetry/motion 01010f709400000000fcffffffffffffff03
+[S5] coarse hit 87 mm @ 90 deg, fine scan
+[IMU] hump h=28 mm (tilt 28 climb 0) pitch=27 hd max=28
+[TEL] car/telemetry/hump 0104051897009c0d
+[IMU] lift peak 1s: v=41/100 mm/s acc=58 mg cos=995/866
+[TEL] car/telemetry/motion 01010f589800000000fcffffff0300000000
+[S5] obstacle 115 mm @ 30 deg w=50 clrL=635 clrR=635
+[S5RAW]   30 deg = 115 mm
+[S5RAW]   60 deg = 636 mm
+[S5RAW]   70 deg = 636 mm
+[S5RAW]   80 deg = 636 mm
+[S5RAW]   90 deg = 636 mm
+[S5RAW]   100 deg = 640 mm
+[S5RAW]   110 deg = 645 mm
+[S5RAW]   120 deg = 693 mm
+[S5RAW] near=115 edges 30..30 deg width=50
+[S5] avoid -> SLOW (3000 ms)
+[DBG] alive: SDK timer 40698 ms, kernel time 39902 ms, difference 796 ms
+[TEL] car/telemetry/motion 01010f409c00000000fcffffff0300000000
+[TEL] car/telemetry/heartbeat 010706409c00000100
+[TEL] car/telemetry/motion 01010f28a000000000fcffffff0300000000
+[TEL] car/telemetry/motion 01010f10a400000000fcffffff0300000000
+[S5] avoid -> IDLE (reacquired=0)
+[TEL] car/telemetry/motion 01010ff8a700000000fcffffff0300000000
+[TEL] car/telemetry/motion 01010fe0ab00000000fcffffff0300000000
+[S4]   fault reset requested: FAULT_LATCHED cleared
+[S4]   car drives 70 cm straight over the hump in 3 s: hands off
+[TEL] car/telemetry/motion 01010fc8af00000000fcffffff0300000000
+[TEL] car/telemetry/heartbeat 010706c8af00000100
+[TEL] car/telemetry/motion 01010fb0b300000000fcffffff0300000000
+[TEL] car/telemetry/motion 01010f98b700000000fcffffff0300000000
+[IMU] hump start pitch=22 half-deg
+[IMU] lift peak 1s: v=21/100 mm/s acc=35 mg cos=960/866
+[TEL] car/telemetry/motion 01010f80bb00eb2800dc120000e012000000
+[TEL] car/telemetry/motion 01010f68bf00cd8400083d0000fc3c000000
+[DBG] alive: SDK timer 50708 ms, kernel time 49912 ms, difference 796 ms
+[TEL] car/telemetry/motion 01010f50c300d6d8003c6400004c64000000
+[TEL] car/telemetry/heartbeat 01070650c300000100
+[IMU] hump h=33 mm (tilt 33 climb 7) pitch=32 hd max=33
+[TEL] car/telemetry/hump 01040518c4002110
+[IMU] hump start pitch=-17 half-deg
+[IMU] lift peak 1s: v=21/100 mm/s acc=22 mg cos=943/866
+[SAFETY] BRAKE: lifted or overturned
+[IMU] LIFTED (tilted): cos_tilt=726/1000 up_accel=-39 mg v=-169 mm/s
+[TEL] car/telemetry/fault 0106055cc6000400
+[TEL] car/telemetry/heartbeat 01070670c600004300
+[TEL] car/telemetry/motion 01010f38c700001401fc7f00001c81000000
+[IMU] lift peak 1s: v=0/100 mm/s acc=0 mg cos=635/866 [disarmed]
+[TEL] car/telemetry/motion 01010f20cb00001401fc7f00000c81000000
+[IMU] lift peak 1s: v=0/100 mm/s acc=15 mg cos=758/866 [disarmed]
+[TEL] car/telemetry/motion 01010f08cf00001401fc7f00000c81000000
+[IMU] lift detection re-armed (car level and still)
+[IMU] lift peak 1s: v=56/100 mm/s acc=123 mg cos=960/866
+[IMU] hump dropped: the car turned during it
+[TEL] car/telemetry/motion 01010ff0d200001401fc7f00000881000000
+[S4]   U26 placed=1 humps=1 dropped=1 height=33 mm pitch=32 hd lift=1
+[S4]   measure the hump with a ruler and write both heights in the TEST_LOG
+[TEST] S4-U26 FAIL  one hump with a height reported over the track hump, no false lift   (subsys
+[TEST] subsystem4 SUMMARY 13 passed, 3 failed
+[TEL] car/telemetry/motion 01010fd8d600001401fc7f00000881000000
+[TEL] car/telemetry/heartbeat 010706d8d600004300
+[TEL] car/telemetry/motion 01010fc0da00001401fc7f00000881000000
+[TEL] car/telemetry/motion 01010fa8de00001401fc7f00000881000000
