@@ -139,6 +139,7 @@ static void sd_contact_steer(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt)
     }
     p_sd->bw = LF_SD_BW_NONE;
     p_sd->bw_cnt = 0U;
+    p_sd->flipped = false;
     p_sd->steer_q7 = sd_clamp((LF_SD_KP_Q7 * ((int32_t)p_v->dr - (int32_t)p_v->dl)) / (int32_t)LF_PM_FULL);
 }
 
@@ -174,6 +175,22 @@ static bool sd_both_white(lf_sd_t *p_sd, lf_in_t const *p_in, uint32_t dcnt)
 
         p_sd->steer_q7 = sd_side_steer(p_sd->side, LF_SD_HOLD_Q7);
         lost = (p_sd->bw_cnt >= LF_SD_HOLD_CNT) || (turned >= LF_SD_HOLD_YAW_CNT);
+        if (lost && (LF_SD_FLIP != 0) && !p_sd->flipped)
+        {
+            /* The line was not that way: look the other way before giving up. */
+            p_sd->flipped = true;
+            p_sd->side = sd_other_side(p_sd->side);
+            p_sd->bw = LF_SD_BW_PROBE;
+            p_sd->bw_cnt = LF_SD_CONF_CNT;
+            p_sd->steer_q7 = sd_side_steer(p_sd->side, LF_SD_FLIP_Q7);
+            lost = false;
+        }
+    }
+    else if (p_sd->flipped && (p_sd->bw == LF_SD_BW_PROBE))
+    {
+        /* the reverse probe: its own steering for the probe distance */
+        p_sd->steer_q7 = sd_side_steer(p_sd->side, LF_SD_FLIP_Q7);
+        lost = (p_sd->bw_cnt >= (LF_SD_CONF_CNT + LF_SD_PROBE_CNT));
     }
     else if (p_sd->bw_cnt < LF_SD_CONF_CNT)
     {
@@ -459,6 +476,7 @@ void lf_sd_init(lf_sd_t *p_sd, lf_cal_t const *p_cal)
         p_sd->bw = LF_SD_BW_CENTRED;
         p_sd->bw_cnt = 0U;
         p_sd->hold_yaw0 = 0;
+        p_sd->flipped = false;
         p_sd->jct_armed = true;
         p_sd->jct_n = 0U;
         p_sd->jct_pending = false;
@@ -613,6 +631,13 @@ static void lf_sd_step_body(lf_sd_t *p_sd, lf_in_t const *p_in, lf_out_t *p_out)
 
     p_out->state = p_sd->state;
     p_out->steer_q7 = p_sd->steer_q7;
+    if ((LF_SD_COMP_DZ > 0) && (p_sd->steer_q7 != 0))
+    {
+        int32_t const a = (p_sd->steer_q7 < 0) ? -p_sd->steer_q7 : p_sd->steer_q7;
+        int32_t const e = LF_SD_COMP_DZ + ((a * (LF_STEER_FULL_Q7 - LF_SD_COMP_DZ)) / LF_STEER_FULL_Q7);
+
+        p_out->steer_q7 = (p_sd->steer_q7 < 0) ? -e : e;
+    }
     p_out->line_found = (p_sd->state != LF_ST_IDLE)
                         && ((p_sd->state == LF_ST_ON_LINE) || (v.zl != LF_ZONE_LIGHT) || (v.zr != LF_ZONE_LIGHT));
     p_out->d_c_pm = v.dl;

@@ -96,6 +96,32 @@
  *  well inside this. TUNE */
 #define LF_SD_HOLD_DEG          (60U)
 #endif
+#ifndef LF_SD_FLIP
+/** 0 (off; no gain in the host model fitted to the car, below).  1: when the hold ends without finding the line, steer the OTHER way for
+ *  the probe distance before declaring the line lost.  At the end of a bend
+ *  the line is behind, on the other side, and the hold has turned the car
+ *  away from it (20 Nov, new track: 60 degrees left, then lost).  Host model
+ *  fitted to the car (steering dead zone 56, gain 1.19), 7 cm/s, bends of
+ *  45-180 degrees at R 110-300: hold 60 degrees with or without it 104/160;
+ *  hold 30 degrees 94 -> 97; hold 45 degrees 104.  Kept off. TUNE */
+#define LF_SD_FLIP              (0)
+#endif
+#ifndef LF_SD_FLIP_Q7
+/** Steering of that reverse probe, Q7: above the car's dead zone, where small
+ *  steering does nothing (host model fitted to the car: ~56 of 127). */
+#define LF_SD_FLIP_Q7           (96)
+#endif
+#ifndef LF_SD_COMP_DZ
+/** EXPERIMENT: steering dead-zone compensation, Q7.  The car ignores the
+ *  first ~56 of 127 steering units at 7 cm/s (fitted from two measurements:
+ *  127 turned it 0.46 deg/mm, 96 only 0.26), so small corrections do nothing
+ *  and the next big one overshoots (the wobble).  When non-zero, any steering
+ *  is lifted past that: out = dz + |s| (127 - dz) / 127, same sign.  0 = off.
+ *  It works round Motion's speed controller (Buddy 2's code; the real fix is
+ *  per-wheel targets there) and depends on the speed.  Host model: offset
+ *  starts failing 6/18 -> 0/18, bends and the wobble unchanged.  Kept off. */
+#define LF_SD_COMP_DZ           (0)
+#endif
 #ifndef LF_SD_CONF_MM
 /** Both white after a shallow contact: straight on for this much travel.
  *  Host model: 250 mm drove 19 cm past a line end before the probe; 120 mm
@@ -204,6 +230,7 @@ typedef struct
     lf_sd_bw_t     bw;              /**< belief while both are white */
     uint32_t       bw_cnt;          /**< forward counts since the last contact */
     int32_t        hold_yaw0;       /**< yaw_cnt when the hold began */
+    bool           flipped;         /**< the hold failed and the reverse probe has begun */
     bool           jct_armed;       /**< not both DARK since the last junction */
     uint32_t       jct_n;           /**< consecutive both-DARK confirmed samples */
     bool           jct_pending;     /**< junction detected, JUNCTION not posted yet */

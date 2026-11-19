@@ -134,6 +134,9 @@ typedef struct
     double      span_raw;       /* actual black - white on the track */
     double      noise_raw;      /* uniform +- noise */
     double      speed_mmps;     /* cruise speed */
+    double      steer_dz;       /* STEER dead zone, Q7: the first steer_dz of a steering command
+                                 * does nothing (the speed controller cancels it); 0 = none */
+    double      steer_gain;     /* what is left of the command is scaled by this (1 = as is) */
     double      motor_k;        /* mm/s per permille of duty */
     double      left_gain;      /* left motor's K relative to the right's */
     double      lag_s;          /* wheel response time constant */
@@ -264,6 +267,8 @@ static inline void sim_init(sim_t *p_sim)
     p_sim->span_raw = 1000.0;
     p_sim->noise_raw = 30.0;
     p_sim->speed_mmps = 200.0;
+    p_sim->steer_dz = 0.0;
+    p_sim->steer_gain = 1.0;
     p_sim->motor_k = SIM_MOTOR_K;
     p_sim->left_gain = 1.0;
     p_sim->lag_s = SIM_MOTOR_LAG_S;
@@ -396,9 +401,16 @@ static inline void sim_motion_control(sim_t *p_sim, int32_t dl, int32_t dr)
     switch (p_sim->mc_type)
     {
         case SIM_MC_STEER:
-            duty_l = base + ((base * p_sim->cmd_arg) / 256);
-            duty_r = base - ((base * p_sim->cmd_arg) / 256);
+        {
+            /* arg is Q7 x 2: a dead zone in Q7 is twice that in arg units */
+            double const a = fabs((double)p_sim->cmd_arg);
+            double const e = fmax(0.0, a - (2.0 * p_sim->steer_dz)) * p_sim->steer_gain;
+            int32_t const arg = (int32_t)lround((p_sim->cmd_arg < 0) ? -e : e);
+
+            duty_l = base + ((base * arg) / 256);
+            duty_r = base - ((base * arg) / 256);
             break;
+        }
         case SIM_MC_PIVOT_L:
             duty_l = -turn;
             duty_r = turn;
