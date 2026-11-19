@@ -12,7 +12,7 @@ ONLINE/OFFLINE, heartbeat and data age, VC state) and the **EMERGENCY STOP** but
 | Page | What it does |
 |---|---|
 | Overview | Every sensor's state (VALID / STALE / INVALID / UNAVAILABLE / DISCONNECTED), newest value, measured update rate and owner; VC state, speed, distance, last command |
-| Drive | START / STOP / RESET over the existing MQTT commands, with a pre-START checklist. START needs **Arm motion** (one START per arming, 60 s) and a confirm dialog. Each command shows *broker acknowledged* and then **CONFIRMED** only when the car's heartbeat shows the result, else **NOT CONFIRMED** with the reason. PAUSE is shown disabled (see below) |
+| Drive | START / STOP / RESET over the existing MQTT commands, with a pre-START checklist. One press of START sends it (arming and the confirm dialog were removed on 19 Nov); the dashboard still refuses START unless the car is ONLINE, its heartbeat is fresh and it is in READY_WAITING. Each command shows *broker acknowledged* and then **CONFIRMED** only when the car's heartbeat shows the result, else **NOT CONFIRMED** with the reason. PAUSE is shown disabled (see below) |
 | Recording | One row per telemetry wake: time, car ms, IR centre/right, pitch, roll, speed, distance, range, VC state. Live or paged back through history; **Record** marks a span; CSV export of the span or of every row |
 | Data gaps | One event per sensor each time it stops being VALID, with start, end, length and reason; CSV export |
 | Line calibration | Guided capture over white and over the black line for both IR sensors; per-sensor verdict, span and raw thresholds using Buddy 3's rules (read from `lf_core.h` / `thresholds.h`); live zone (white / edge / black); the car's own measurement from its `[LF]` console lines |
@@ -33,7 +33,7 @@ valid, without the frame that proves it.
 | `test_tel_web.py` | Tests for the web API on a real local server (fake MQTT client) |
 | `tel_record.py` | Dashboard v2: recording table and CSV, sensor health, update rates, data-gap events |
 | `tel_calib.py` | Dashboard v2: line-sensor calibration on the laptop with Buddy 3's rules |
-| `tel_control.py` | Dashboard v2: command rules (arming, preconditions) and confirmation from telemetry |
+| `tel_control.py` | Dashboard v2: command rules (preconditions) and confirmation from telemetry |
 | `test_tel_record.py`, `test_tel_calib.py`, `test_tel_control.py` | Unit tests for the three, with replays of the hardware logs (S1-H06..H08) |
 | `stationary_test.ps1`, `SUBSYSTEM_TESTS.md` | Flash, view live and check: IMU and obstacle tests with the motors never commanded |
 

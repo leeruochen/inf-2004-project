@@ -90,23 +90,24 @@ class WebApi(unittest.TestCase):
         self.assertTrue(_wait(lambda: not self.s.jget("/api/state")[1]["source"]["running"]))
         return self.s.jget("/api/state?since=0")[1]
 
-    def test_page_start_needs_arming(self):
-        # Dashboard v2: START is on the page, but only behind "Arm motion" and a confirm
-        # dialog; the server refuses it unless armed (test_start_refused_even_when_asked).
+    def test_page_start_is_one_press(self):
+        # Arming and the confirm dialog were removed on 19 Nov 2026 at the owner's request:
+        # START sends at once; the server still refuses it unless the car is live and ready.
         code, body = self.s.get("/")
         self.assertEqual(code, 200)
         page = body.decode()
         self.assertIn("Robocar dashboard", page)
-        self.assertIn("Arm motion", page)
+        self.assertNotIn("Arm motion", page)
+        self.assertNotIn("confirm(", page)
         self.assertIn("EMERGENCY STOP", page)
-        self.assertRegex(page, r'if \(!confirm\("START drives the motors[^"]*"\)\) return;\s*sendCmd\("start"\)')
+        self.assertIn('$("startBtn").onclick = () => sendCmd("start");', page)
         for label in ("MEASURED", "DERIVED", "REPORTED", "SIMULATED", "N/A"):
             self.assertIn(label, page)
 
-    def test_start_refused_even_when_asked(self):
+    def test_start_refused_without_a_car(self):
         code, j = self.s.post("/api/cmd", {"cmd": "start"})
-        self.assertEqual(code, 403)
-        self.assertIn("--allow-motion", j["error"])
+        self.assertEqual(code, 409)
+        self.assertIn("not connected", j["error"])
         code, j = self.s.post("/api/cmd", {"cmd": "stop"})
         self.assertEqual(code, 409)        # no MQTT source
 
@@ -231,9 +232,10 @@ class WebApi(unittest.TestCase):
         self.assertTrue(st["source"]["mqtt_connected"])
         self.assertEqual(st["source"]["car_status"], "ONLINE")
         self.assertEqual(_reading(st, "mqtt", "heartbeats received")["value"], "35")
-        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 403)
+        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 200)    # live and ready: one press
         self.assertEqual(self.s.post("/api/cmd", {"cmd": "stop"})[0], 200)
-        self.assertEqual(fake.published, [("car/cmd/stop", bytes.fromhex("010900"))])
+        self.assertEqual(fake.published, [("car/cmd/start", bytes.fromhex("010800")),
+                                          ("car/cmd/stop", bytes.fromhex("010900"))])
         res = {v["name"]: v["result"] for v in self.s.jget("/api/check?kind=mqtt")[1]}
         self.assertEqual(res["Heartbeats delivered to the laptop"], "PASS")
         saved = [f for f in os.listdir(self.tmp) if f.startswith("dash-mqtt-")]
@@ -287,11 +289,8 @@ class WebV2(unittest.TestCase):
     def _history(self):
         return self.s.jget("/api/state")[1]["ctl"]["history"]
 
-    def test_start_arm_confirm_and_estop(self):
+    def test_start_confirm_and_estop(self):
         fake = self._mqtt()
-        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 403)           # not armed
-        self.assertEqual(fake.published, [])
-        self.assertEqual(self.s.post("/api/arm", {"armed": True})[0], 200)
         code, j = self.s.post("/api/cmd", {"cmd": "start"})
         self.assertEqual(code, 200, j)
         self.assertEqual(fake.published, [("car/cmd/start", bytes.fromhex("010800"))])
@@ -299,7 +298,7 @@ class WebV2(unittest.TestCase):
         self.assertEqual(self._history()[0]["broker"], "ok")
         self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(5300, "NAV_LINE_TRACKING").split()[-1])
         self.assertEqual(self._history()[0]["result"], "CONFIRMED")
-        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 403)           # one START per arming
+        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 409)           # already moving
         code, j = self.s.post("/api/estop", {})
         self.assertEqual(code, 200, j)
         self.assertEqual([t for t, _ in fake.published[1:]], ["car/cmd/stop"] * 3)
@@ -316,7 +315,7 @@ class WebV2(unittest.TestCase):
         code, j = self.s.post("/api/estop", {})
         self.assertEqual(code, 409)
         self.assertIn("by hand", j["error"])
-        self.assertEqual(self.s.post("/api/arm", {"armed": True})[0], 409)
+        self.assertEqual(self.s.post("/api/arm", {"armed": True})[0], 404)      # arming is gone
 
     def _log(self):
         """5 rows/s for 4 s, a 6 s silence, then an IR reading at the top of the ADC."""

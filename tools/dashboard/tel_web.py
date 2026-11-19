@@ -19,10 +19,11 @@ export (tel_record.Recorder), sensor health and the data-gap table
 (tel_record.Health), the line-sensor calibration helper (tel_calib) and
 remote commands with confirmation (tel_control).
 
-Safety: START is sent only after "arm motion" (one START per arming, see
-tel_control); STOP, RESET and the emergency STOP go out over MQTT only.  A
-command is shown as done only when the car's telemetry confirms it.  It
-listens on 127.0.0.1 unless --host says otherwise.
+Safety: START is sent only when the car is online, its heartbeat is fresh and
+it waits in READY_WAITING (tel_control); one press drives the car.  STOP,
+RESET and the emergency STOP go out over MQTT only.  A command is shown as
+done only when the car's telemetry confirms it.  It listens on 127.0.0.1
+unless --host says otherwise.
 """
 
 from __future__ import annotations
@@ -316,7 +317,7 @@ class Monitor:
                 reason = "not connected to the broker"
             if reason:
                 entry = self.ctl.refused(cmd, reason, now, dash._stamp())
-                code = 501 if cmd == "pause" else 403 if reason == control.START_NOT_ARMED else 409
+                code = 501 if cmd == "pause" else 409
                 return code, reason, entry.as_dict(now)
             before = self.ctl.state
         mid = self._publish(cmd)
@@ -342,13 +343,6 @@ class Monitor:
         with self.lock:
             entry = self.ctl.sent("estop", now, dash._stamp(), mids, before)
             return 200, f"emergency STOP sent {repeats} times", entry.as_dict(time.monotonic())
-
-    def arm(self, on: bool) -> str:
-        with self.lock:
-            if not on:
-                self.ctl.disarm("disarmed by the user")
-                return ""
-            return self.ctl.arm(time.monotonic())
 
     # -- recording, calibration, export ------------------------------------------
 
@@ -783,9 +777,6 @@ class Handler(BaseHTTPRequestHandler):
         elif u.path == "/api/estop":
             code, msg, entry = m.estop()
             self._json(code, {"error": msg, "cmd": entry} if code != 200 else {"ok": msg, "cmd": entry})
-        elif u.path == "/api/arm":
-            err = m.arm(bool(req.get("armed")))
-            self._json(409 if err else 200, {"error": err} if err else {"ok": True})
         elif u.path == "/api/record":
             err = m.record(str(req.get("action", "")))
             self._json(400 if err else 200, {"error": err} if err else {"ok": True})

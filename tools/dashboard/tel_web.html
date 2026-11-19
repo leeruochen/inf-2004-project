@@ -99,7 +99,6 @@ tr.open td { background: color-mix(in srgb, var(--bad) 8%, transparent); }
 .checks li.ok::before { content: "\2713"; color: var(--ok); }
 .controls { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); margin: 10px 0; }
 .controls button { padding: 12px 8px; font-size: 15px; font-weight: 600; border-radius: 8px; }
-.armed { color: var(--warn); font-weight: 700; }
 
 /* calibration */
 .steps { counter-reset: s; list-style: none; margin: 0; padding: 0; }
@@ -170,10 +169,6 @@ ol { margin: 4px 0 0 18px; padding: 0; }
         <div class="card">
           <h2>Remote control</h2>
           <ul class="checks" id="checks"></ul>
-          <div class="row" style="margin-top:10px">
-            <button id="armBtn">Arm motion</button>
-            <span id="armInfo" class="note"></span>
-          </div>
           <div class="controls">
             <button id="startBtn" class="primary">START</button>
             <button id="pauseBtn" disabled title="Not in the car firmware yet">PAUSE</button>
@@ -182,7 +177,7 @@ ol { margin: 4px 0 0 18px; padding: 0; }
           </div>
           <p class="note" id="pauseNote"></p>
           <p class="note">A command counts as done only when the car's own telemetry shows the result: the broker's
-            acknowledgement means the broker has it, not the car. START needs a fresh arming each time and only
+            acknowledgement means the broker has it, not the car. <b>START drives the car at once</b> and only
             works from READY_WAITING. RESET clears a safety latch only after the car has been still for 0.5 s.</p>
         </div>
         <div class="card">
@@ -380,7 +375,6 @@ function renderChips() {
   else if (s.live && s.kind === "mqtt") add("no heartbeat yet", "warn");
   if (s.live && s.data_age_s !== undefined) add("data " + ageText(s.data_age_s), s.data_age_s > 3 ? "bad" : "ok");
   if (ctl.state) add("VC " + ctl.state, ctl.state === "SAFETY_FAULT_LATCHED" ? "bad" : "");
-  if (ctl.armed) add("MOTION ARMED " + Math.ceil(ctl.armed_left_s) + " s", "warn");
   if (st.s1_ran) add("APP_TEST build: S1 self-test values are SIMULATED", "warn");
   if (s.error) add("error: " + s.error, "bad");
   $("estop").disabled = !(s.kind === "mqtt" && s.mqtt_connected);
@@ -415,11 +409,6 @@ function renderOverview() {
 function renderDrive() {
   const ctl = st.ctl, ul = clear($("checks"));
   for (const c of ctl.checklist) ul.append(el("li", { class: c.ok ? "ok" : "" }, c.text));
-  const live = st.source.kind === "mqtt" && st.source.mqtt_connected;
-  $("armBtn").textContent = ctl.armed ? "Disarm" : "Arm motion";
-  $("armBtn").disabled = !live;
-  $("armInfo").textContent = ctl.armed ? "armed for one START, " + Math.ceil(ctl.armed_left_s) + " s left" : (ctl.disarm_reason ? "not armed (" + ctl.disarm_reason + ")" : "not armed");
-  $("armInfo").className = ctl.armed ? "armed" : "note";
   $("startBtn").disabled = !!ctl.can.start;
   $("startBtn").title = ctl.can.start || "Drives the motors";
   $("stopCmdBtn").disabled = !!ctl.can.stop;
@@ -623,11 +612,7 @@ $("usbBtn").onclick = () => setSource({ type: "usb", seconds: 60 * (parseInt($("
 $("mqttBtn").onclick = () => { if ($("broker").value.trim()) setSource({ type: "mqtt", broker: $("broker").value.trim(), port: parseInt($("port").value, 10) || 1883 }); };
 $("stopBtn").onclick = () => api("/api/source", { type: "stop" }).then(poll).catch(showErr);
 $("estop").onclick = async () => { try { const j = await api("/api/estop", {}); showErr(j.cmd && j.cmd.warning ? j.cmd.warning : ""); } catch (e) { showErr(e); } view = "drive"; renderSide(); showView(); poll(); };
-$("armBtn").onclick = async () => { try { await api("/api/arm", { armed: !(st && st.ctl.armed) }); showErr(""); } catch (e) { showErr(e); } poll(); };
-$("startBtn").onclick = () => {
-  if (!confirm("START drives the motors.\n\nIs the car on the track, the area clear, and someone ready to pick it up?")) return;
-  sendCmd("start");
-};
+$("startBtn").onclick = () => sendCmd("start");
 $("stopCmdBtn").onclick = () => sendCmd("stop");
 $("resetBtn").onclick = () => sendCmd("reset");
 $("recBtn").onclick = async () => { const active = st && st.table.recording.active; try { await api("/api/record", { action: active ? "stop" : "start" }); } catch (e) { showErr(e); } poll(); };
