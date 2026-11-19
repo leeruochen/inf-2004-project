@@ -90,6 +90,62 @@ lf_cal_status_t lf_cal_from_start_pose(lf_adc_stats_t const *p_c_on_line,
     return st;
 }
 
+/* One sensor from its readings over black and over white. */
+static lf_sens_t cal_one(lf_adc_stats_t const *p_black, lf_adc_stats_t const *p_white, lf_cal_ch_t *p_ch)
+{
+    lf_sens_t v = LF_SENS_DISCONNECTED;
+    lf_adc_status_t const sb = lf_adc_check(p_black);
+    lf_adc_status_t const sw = lf_adc_check(p_white);
+
+    p_ch->black = lf_adc_stats_avg(p_black);
+    p_ch->white = lf_adc_stats_avg(p_white);
+    if ((sb == LF_ADC_NOISY) || (sw == LF_ADC_NOISY))
+    {
+        v = LF_SENS_NOISY;
+    }
+    else if ((sb != LF_ADC_OK) || (sw != LF_ADC_OK))
+    {
+        v = LF_SENS_DISCONNECTED;
+    }
+    else if ((uint32_t)p_ch->black < ((uint32_t)p_ch->white + LF_MIN_SPAN_RAW))
+    {
+        v = LF_SENS_BLIND;
+    }
+    else if ((p_ch->black < LF_CAL_BLACK_MIN_RAW) || (p_ch->white > LF_CAL_WHITE_MAX_RAW)
+             || (((uint32_t)p_ch->black - p_ch->white) < LF_CAL_SPAN_GOOD_RAW))
+    {
+        v = LF_SENS_WEAK;
+    }
+    else
+    {
+        v = LF_SENS_OK;
+    }
+    return v;
+}
+
+bool lf_cal_from_two_poses(lf_adc_stats_t const *p_c_black, lf_adc_stats_t const *p_r_white,
+                           lf_adc_stats_t const *p_c_white, lf_adc_stats_t const *p_r_black,
+                           lf_cal2_t *p_out)
+{
+    bool ok = false;
+
+    if (p_out != NULL)
+    {
+        p_out->cal.c.white = 0U;
+        p_out->cal.c.black = 0U;
+        p_out->cal.r = p_out->cal.c;
+        p_out->c = LF_SENS_DISCONNECTED;
+        p_out->r = LF_SENS_DISCONNECTED;
+        if ((p_c_black != NULL) && (p_r_white != NULL) && (p_c_white != NULL) && (p_r_black != NULL))
+        {
+            p_out->c = cal_one(p_c_black, p_c_white, &p_out->cal.c);
+            p_out->r = cal_one(p_r_black, p_r_white, &p_out->cal.r);
+            ok = (p_out->c == LF_SENS_OK) && (p_out->r == LF_SENS_OK);
+        }
+    }
+    return ok;
+}
+
 uint16_t lf_norm(lf_cal_ch_t const *p_cal, uint16_t raw)
 {
     uint16_t d = 0U;

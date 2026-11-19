@@ -78,6 +78,15 @@
  *  correction.  On the black side the car has the line's width to spare. */
 #define LF_EDGE_TARGET_PM       (900U)
 
+/** Mounting criteria for the two-pose calibration, from the car (19 Nov
+ *  2026, sensors ~10 mm above the mat): white 116-200, black 1888-2124
+ *  (CENTRE and RIGHT, line middle); with the sensors lowered, black fell to
+ *  700-1040 with white unchanged, and pose A failed.  Below these a sensor is
+ *  LF_SENS_WEAK: re-mount it, do not drive on it. TUNE */
+#define LF_CAL_BLACK_MIN_RAW    (1500U)
+#define LF_CAL_WHITE_MAX_RAW    (400U)
+#define LF_CAL_SPAN_GOOD_RAW    (1200U)
+
 /** Calibration refused if black - white is smaller than this (raw counts;
  *  same contrast rule as S3-U09, about 10 % of the 12-bit scale). */
 #define LF_MIN_SPAN_RAW         (400U)
@@ -258,6 +267,24 @@ typedef enum
     LF_CAL_NO_CONTRAST      /**< black not >= white + LF_MIN_SPAN_RAW (or reversed) */
 } lf_cal_status_t;
 
+/** One sensor's verdict from the two-pose calibration (lf_cal_from_two_poses). */
+typedef enum
+{
+    LF_SENS_OK = 0,
+    LF_SENS_DISCONNECTED,   /**< at an ADC rail, or no samples, in either pose */
+    LF_SENS_NOISY,          /**< spread above ADC_NOISE_MAX_RAW in either pose */
+    LF_SENS_BLIND,          /**< black not >= white + LF_MIN_SPAN_RAW: cannot tell them apart */
+    LF_SENS_WEAK            /**< tells them apart, but below the mounting criteria */
+} lf_sens_t;
+
+/** The two-pose calibration: each sensor's own white and black, and verdicts. */
+typedef struct
+{
+    lf_cal_t  cal;          /**< each channel from its own two readings */
+    lf_sens_t c;            /**< CENTRE (straddle: LEFT) */
+    lf_sens_t r;            /**< RIGHT */
+} lf_cal2_t;
+
 /** A sensor's zone, after LF_HYST_SAMPLES-sample hysteresis. */
 typedef enum
 {
@@ -399,6 +426,19 @@ typedef struct
 lf_cal_status_t lf_cal_from_start_pose(lf_adc_stats_t const *p_c_on_line,
                                        lf_adc_stats_t const *p_r_on_white,
                                        lf_cal_t *p_cal);
+
+/*
+ * Two-pose calibration, each sensor independently.  Pose A: CENTRE over the
+ * line's middle, RIGHT over white; pose B: RIGHT over the line's middle,
+ * CENTRE over white (straddle mounting: shift the car so the named sensor
+ * is over the line).  p_c_black / p_r_white are pose A's statistics,
+ * p_c_white / p_r_black pose B's.  Each channel gets its own white and black
+ * and a verdict (lf_sens_t); *p_out is always filled.  Returns true only if
+ * both sensors are LF_SENS_OK.
+ */
+bool lf_cal_from_two_poses(lf_adc_stats_t const *p_c_black, lf_adc_stats_t const *p_r_white,
+                           lf_adc_stats_t const *p_c_white, lf_adc_stats_t const *p_r_black,
+                           lf_cal2_t *p_out);
 
 /*
  * Darkness of one raw reading: 0 at or below white, LF_PM_FULL at or above

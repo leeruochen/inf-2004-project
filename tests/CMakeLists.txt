@@ -104,6 +104,20 @@ target_link_libraries(test_lf_core PRIVATE m)
 set_target_properties(test_lf_core PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
 add_test(NAME lf_core COMMAND test_lf_core)
 
+# EXPERIMENT straddle line-following core (app_program/subsystem3/
+# lf_straddle.c, pure C) with the closed-loop simulator, and the two-pose
+# calibration (lf_core.c): branch buddy3/lf-straddle.
+add_executable(test_lf_straddle host/test_lf_straddle.c
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_straddle.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_core.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_link.c"
+    "${ROBOCAR_ROOT}/app_program/subsystem3/lf_sanity.c")
+target_include_directories(test_lf_straddle PRIVATE "${ROBOCAR_ROOT}")
+target_compile_options(test_lf_straddle PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_lf_straddle PRIVATE m)
+set_target_properties(test_lf_straddle PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)
+add_test(NAME lf_straddle COMMAND test_lf_straddle)
+
 # Line-following link to Motion's published state (app_program/subsystem3/
 # lf_link.c, pure C): forward odometer and junction turn-done detector,
 # Subsystem 3 test S3-U11.
