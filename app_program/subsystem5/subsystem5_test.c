@@ -136,7 +136,21 @@ void subsystem5_test(void)
                && (res.width_mm > 0U),
                "one near bearing dead ahead: 150 mm at 90 degrees");
 
+    /* A wide obstacle whose TRUE angular size is 60..120 degrees.  The sweep
+     * below is what the sensor actually returns for it, not its true extent:
+     * the object keeps answering for half a beam past each edge, so a
+     * OBS_BEAM_DEG (40 degree) beam smears the returns out to 40..140.
+     *
+     * This test used to supply returns across exactly 60..120, i.e. data a
+     * beamless sensor would produce, and assert width >= 200 mm.  That held
+     * only while OBS_BEAM_DEG was the datasheet's 15 degrees.  Once the beam
+     * was measured at 40 degrees (S5-U33, 2026-11-04) obs_analyse() began
+     * subtracting a smear the test had never added, and reported 104 mm.
+     * The input was unphysical, not the estimator: fixed here by smearing
+     * the returns the way a real beam does. */
     empty_sweep(&scan);
+    put_return(&scan, 40U, 200U);
+    put_return(&scan, 50U, 200U);
     put_return(&scan, 60U, 200U);
     put_return(&scan, 70U, 200U);
     put_return(&scan, 80U, 200U);
@@ -144,17 +158,21 @@ void subsystem5_test(void)
     put_return(&scan, 100U, 200U);
     put_return(&scan, 110U, 200U);
     put_return(&scan, 120U, 200U);
-    scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(60U);
-    scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(120U);
+    put_return(&scan, 130U, 200U);
+    put_return(&scan, 140U, 200U);
+    scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(40U);
+    scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(140U);
     {
-        /* Lateral extent of the run is 200 x (cos 60 - cos 120) = 200 mm. */
+        /* Run edges are the SMEARED ones, 40 and 140; the beam is removed
+         * from the width, not from the reported bearings.  Width recovers
+         * the true size: (110 - 40) degrees x 200 mm = about 244 mm. */
         bool const ok = obs_analyse(&scan, &res) && res.valid
-                        && (res.left_deg == 120U) && (res.right_deg == 60U)
+                        && (res.left_deg == 140U) && (res.right_deg == 40U)
                         && (res.bearing_deg == 90U)
                         && (res.width_mm >= 200U);
 
         TEST_CHECK("S5-U11", ok,
-                   "a wide obstacle spans 60..120 degrees, centres on 90, reports >= 200 mm");
+                   "a wide obstacle smeared to 40..140 degrees recovers >= 200 mm wide");
     }
 
     empty_sweep(&scan);

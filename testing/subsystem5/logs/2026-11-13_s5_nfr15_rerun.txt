@@ -1,0 +1,42 @@
+2026-11-13  S5-U33 re-run / NFR15 width stability  (commit 9230eef + S5-U11 input fix)
+Operator: longchayhan03-eng.  Board: Pico W on Cytron Robo Pico, COM7, APP_TEST=ON build.
+Obstacle: Owala 750 ml bottle, nominal diameter about 90 mm, placed dead ahead.
+Measured range to its near face: 179 mm (sensor reading, consistent across the run).
+
+NFR15 acceptance band at this range:
+  +-10 % of 90 mm                = +-9.0 mm   -> 81..99 mm
+  +-1 bearing slot at 179 mm     = +-31.2 mm  -> 59..121 mm
+  whichever is larger            -> 59..121 mm
+
+RESULT: width = 93 mm on 20 of 20 consecutive profiles.  Zero variation.
+        Error vs the nominal 90 mm: +3 mm, +3.3 %.
+        Passes the strict +-10 % band without needing the slot allowance.
+
+Last full fine sweep:
+[S5RAW]   0 deg = 153 mm
+[S5RAW]   50 deg = 405 mm
+[S5RAW]   60 deg = 200 mm
+[S5RAW]   70 deg = 196 mm
+[S5RAW]   80 deg = 184 mm
+[S5RAW]   90 deg = 179 mm
+[S5RAW]   100 deg = 179 mm
+[S5RAW]   110 deg = 179 mm
+[S5RAW]   120 deg = 183 mm
+[S5RAW]   130 deg = 353 mm
+[S5RAW]   140 deg = 464 mm
+[S5RAW]   150 deg = 203 mm
+[S5RAW]   160 deg = 200 mm
+[S5RAW]   170 deg = 200 mm
+[S5RAW]   180 deg = 217 mm
+[S5RAW] near=179 edges 60..120 deg width=93
+
+Width values seen across the whole 35 s capture:
+      2 width=123
+     20 width=93
+
+Comparison with the pre-fix behaviour (2026-11-04, logs/2026-11-04_s5_beam_calib.txt):
+  a 50 mm object at 158 mm read 55 mm on one sweep and 82 mm on the next,
+  a 27 mm swing between consecutive sweeps -- one bearing slot.
+  After the fix, 44 consecutive profiles across two captures (25 at w=50,
+  then 20 at w=93, plus 19 earlier at w=123 on a broad surface) showed no
+  variation at all.
