@@ -149,8 +149,10 @@
 /** Trace: one row per this many polls (20 ms), and how it is printed: a
  *  burst of rows, then a pause so the console drains the 2 KB ring. */
 #define LF2_TRACE_EVERY_POLLS   (2U)
-#if S3_CURVE_TEST
-#define LF2_TRACE_ROWS          (400U)      /* 8 s: a whole curve drive */
+#if S3_CURVE_TEST || (S3_DRIVE_MM > 0)
+/* 8 s: a whole curve drive.  Drive mode keeps the LAST 8 s (a ring), so a
+ * failure far along an unknown track is in the dump with the approach to it. */
+#define LF2_TRACE_ROWS          (400U)
 #else
 #define LF2_TRACE_ROWS          (256U)
 #endif
@@ -277,6 +279,8 @@ _Static_assert((LF2_CURVE_EXIT_MM + LF2_CURVE_START_MM) < LF2_CURVE_MM,
                "the exit window starts after the curve's start");
 _Static_assert((LF2_CURVE_GROUPS >= 1U) && ((LF2_CURVE_FIRST + LF2_CURVE_GROUPS) <= 3U), "left, right, S");
 _Static_assert(LF2_CURVE_MM < 0xFFFFU, "trace mm is uint16_t");
+_Static_assert((LF2_MS_FOR((uint32_t)S3_DRIVE_MM) + LF2_DRIVE_EXTRA_MS) < 0xFFFFU,
+               "a drive's time limit fits the trace's uint16_t t_ms");
 
 /** Why a drive ended. */
 typedef enum
@@ -322,8 +326,8 @@ typedef struct
     uint16_t mm;        /**< mean wheel travel since START */
     uint16_t raw_c;
     uint16_t raw_r;
-    int16_t  cnt_l;     /**< left wheel counts since START */
-    int16_t  cnt_r;     /**< right wheel counts since START */
+    int32_t  cnt_l;     /**< left wheel counts since START */
+    int32_t  cnt_r;     /**< right wheel counts since START */
     int8_t   steer_q7;  /**< last steering posted */
     uint8_t  state;     /**< lf_state_t */
 } lf2_trace_row_t;
@@ -415,9 +419,12 @@ static motion_state_t   s_m_half;
 static motion_state_t   s_m_end;
 static motion_state_t   s_m_turn;   /* at the JUNCTION post */
 static motion_state_t   s_m_branch; /* at the first ON_LINE after the turn */
-/* The 20 ms trace of the current drive (3.6 KB; APP_TEST builds only). */
+/* The 20 ms trace of the current drive (up to 8 KB; APP_TEST builds only).
+ * Drive mode writes it as a ring: s_trace_w is the next row to write, so
+ * once full it is also the oldest row. */
 static lf2_trace_row_t  s_trace[LF2_TRACE_ROWS];
 static uint32_t         s_trace_n;
+static uint32_t         s_trace_w;
 /* Static pose A (start pose): RIGHT over white, for the noise comparison. */
 static uint16_t         s_static_r_min;
 static uint16_t         s_static_r_max;
@@ -608,23 +615,28 @@ static void lf2_static(char const *p_tag, char const *p_place,
     dbg_printf("[LF] static %s: R raw %u..%u avg %u = %u pm", p_tag, r_min, r_max, avg_r, *p_dr);
 }
 
-/* One trace row.  Counts since START fit int16_t: the longest drive is
- * 1200 mm = 14 300 counts. */
+/* One trace row.  Counts since START are int32_t: a 3 m drive is about
+ * 35 700 counts, past int16_t.  The other modes keep the first
+ * LF2_TRACE_ROWS rows; drive mode overwrites the oldest (a ring). */
 static void lf2_trace_add(uint32_t t, uint32_t mm)
 {
-    if (s_trace_n < LF2_TRACE_ROWS)
+    if ((s_trace_n < LF2_TRACE_ROWS) || (LF2_DRIVE_ONLY != 0U))
     {
-        lf2_trace_row_t *const p_r = &s_trace[s_trace_n];
+        lf2_trace_row_t *const p_r = &s_trace[s_trace_w];
 
         p_r->t_ms = (uint16_t)t;
         p_r->mm = (uint16_t)mm;
         p_r->raw_c = s_now.raw_c;
         p_r->raw_r = s_now.raw_r;
-        p_r->cnt_l = (int16_t)((uint32_t)s_m.enc_count[0] - (uint32_t)s_m0.enc_count[0]);
-        p_r->cnt_r = (int16_t)((uint32_t)s_m.enc_count[1] - (uint32_t)s_m0.enc_count[1]);
+        p_r->cnt_l = (int32_t)((uint32_t)s_m.enc_count[0] - (uint32_t)s_m0.enc_count[0]);
+        p_r->cnt_r = (int32_t)((uint32_t)s_m.enc_count[1] - (uint32_t)s_m0.enc_count[1]);
         p_r->steer_q7 = (int8_t)s_now.last_steer_q7;
         p_r->state = (uint8_t)s_now.state;
-        s_trace_n++;
+        s_trace_w = (s_trace_w + 1U) % LF2_TRACE_ROWS;
+        if (s_trace_n < LF2_TRACE_ROWS)
+        {
+            s_trace_n++;
+        }
     }
 }
 
@@ -633,14 +645,16 @@ static void lf2_trace_add(uint32_t t, uint32_t mm)
 static void lf2_trace_dump(char const *p_tag)
 {
     uint32_t const dropped0 = dbg_overflow_count();
+    /* Oldest row first: once a ring is full, the next row to write is the oldest. */
+    uint32_t const first = (s_trace_n < LF2_TRACE_ROWS) ? 0U : s_trace_w;
 
     dbg_printf("[LF] tr %s: t mm st c r s L R (%lu rows, 20 ms)", p_tag, (unsigned long)s_trace_n);
     for (uint32_t i = 0U; i < s_trace_n; i++)
     {
-        lf2_trace_row_t const *const p_r = &s_trace[i];
+        lf2_trace_row_t const *const p_r = &s_trace[(first + i) % LF2_TRACE_ROWS];
 
-        dbg_printf("[LF] tr %u %u %u %u %u %d %d %d", p_r->t_ms, p_r->mm, p_r->state, p_r->raw_c,
-                   p_r->raw_r, (int)p_r->steer_q7, (int)p_r->cnt_l, (int)p_r->cnt_r);
+        dbg_printf("[LF] tr %u %u %u %u %u %d %ld %ld", p_r->t_ms, p_r->mm, p_r->state, p_r->raw_c,
+                   p_r->raw_r, (int)p_r->steer_q7, (long)p_r->cnt_l, (long)p_r->cnt_r);
         if (((i + 1U) % LF2_TRACE_BURST) == 0U)
         {
             (void)tk_dly_tsk((RELTIM)LF2_TRACE_PAUSE_MS);
@@ -856,6 +870,7 @@ static void lf2_drive(lf2_drive_t const *p_d)
 
     *p = s_zero_run;
     s_trace_n = 0U;
+    s_trace_w = 0U;
     p->t_on_ms = LF2_NEVER;
     p->settle_mm = LF2_NEVER;
     p->r_white_min = 0xFFFFU;
@@ -1451,6 +1466,14 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                        (unsigned long)s_run.mm_end, (unsigned long)s_run.t_end_ms, (unsigned long)s_run.cv_n_lost,
                        (unsigned long)s_run.n_lost, (unsigned long)s_run.n_jct, (unsigned long)s_run.n_avoid,
                        s_run.still ? 1 : 0);
+            /* Where it failed, and commanded against measured speed. */
+            dbg_printf("[LF] drive %lu: speed %lu mm/s measured (cruise %lu commanded); first LINE_LOST at %ld mm; "
+                       "LINE_LOST -> TRACK_LOST %lu ms; wheels moved %lu mm after the end; largest |steer| %ld",
+                       (unsigned long)run, (unsigned long)s_run.speed_mmps, (unsigned long)LF2_CRUISE_MMPS,
+                       (s_run.cv_first_lost_mm == LF2_NEVER) ? -1L : (long)s_run.cv_first_lost_mm,
+                       (unsigned long)((s_run.n_lost > 0U) ? s_run.lost_to_track_ms : 0U),
+                       (unsigned long)s_run.mm_stop, (long)s_run.cv_steer_max);
+            lf2_trace_dump("drive");
             /* What a drive on an unknown line can show: that it stopped
              * safely, and whether it got all the way on the line. */
             TEST_CHECK(LF2_ID, s_run.still && (s_run.end != LF2_END_NOT_PLACED) && (s_run.end != LF2_END_NOT_READY),
