@@ -33,7 +33,7 @@ VIEWS = ("imu", "obstacle", "barcode", "lf", "vc", "mqtt", "all")
 # Console line prefixes shown by each view (firmware dbg lines).
 _PREFIXES = {
     "imu": ("[IMU]", "[SAFETY]", "[S4]"),
-    "obstacle": ("[S5]", "[S5RAW]"),
+    "obstacle": ("[S5]", "[S5RAW]", "[LF] drive: obstacle"),
     "barcode": ("[BC]",),
     "lf": ("[LF]",),
     "vc": ("[VC]", "[SAFETY] BRAKE", "[TEL] cmd"),

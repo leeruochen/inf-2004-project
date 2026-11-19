@@ -31,6 +31,7 @@
 #include "lf_core.h"
 #include "lf_link.h"
 #include "lf_sanity.h"
+#include "../subsystem1/subsystem1.h"   /* tel_set_ir_raw (IF-12, dashboard integration) */
 
 /** Boot calibration: samples per sensor, one per LF_SAMPLE_PERIOD_MS
  *  (32 x 5 ms = 160 ms in the start pose). */
@@ -306,6 +307,7 @@ static void lf_sample(void)
     s_st.releases++;
     s_st.raw_c = in.raw_c;
     s_st.raw_r = in.raw_r;
+    tel_set_ir_raw(in.raw_r, in.raw_c);     /* IF-12: newest raws for the 200 ms sensor frame; one store */
     s_st.state = out.state;
     s_st.vc_state = vc_state;
     if (out.state != prev_state)

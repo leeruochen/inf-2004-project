@@ -119,8 +119,29 @@
 #ifndef S3_CURVE_TEST
 #define S3_CURVE_TEST           (0)
 #endif
+/** Controlled moving drives for team tests (-DS3_DRIVE_MM=<mm>, sources.cmake;
+ *  0 = off): LF2_DRIVE_RUNS drives of up to S3_DRIVE_MM of wheel travel on any
+ *  line, each from the start guard, started and stopped through MBF_NAV_IN as
+ *  Telemetry would (REMOTE_RESET/START/STOP), so the Vehicle Controller owns
+ *  every motor command.  Obstacle avoidance may take over and hand back: the
+ *  drive goes on (the other modes STOP there).  No layout is assumed: the
+ *  result is how far it got and why it stopped. */
+#ifndef S3_DRIVE_MM
+#define S3_DRIVE_MM             (0)
+#endif
+#define LF2_DRIVE_ONLY          ((S3_DRIVE_MM > 0) ? 1U : 0U)
+#define LF2_DRIVE_RUNS          (3U)
+#define LF2_DRIVE_EXTRA_MS      (20000U)    /* bypasses, searches and pivots on top of the cruise time */
+#if (S3_DRIVE_MM > 0) && S3_CURVE_TEST
+#error "lf_run_test.c: S3_DRIVE_MM and S3_CURVE_TEST are exclusive (sources.cmake)"
+#endif
+#if (S3_DRIVE_MM > 0) && ((S3_DRIVE_MM < 300) || (S3_DRIVE_MM > 20000))
+#error "lf_run_test.c: S3_DRIVE_MM is 300..20000 mm"
+#endif
 /** Test ID of this build's checks. */
-#if S3_CURVE_TEST
+#if (S3_DRIVE_MM > 0)
+#define LF2_ID                  "S3-U19"
+#elif S3_CURVE_TEST
 #define LF2_ID                  "S3-U17"
 #else
 #define LF2_ID                  "S3-U14"
@@ -184,7 +205,7 @@
 /** S3-U14: a junction turn, in place of the straight and mat drives.  The
  *  command is what a barcode would post: left and right passed on 5 Nov, now
  *  the U-turn. */
-#if S3_CURVE_TEST
+#if S3_CURVE_TEST || (S3_DRIVE_MM > 0)
 #define LF2_TURN_ONLY           (0U)
 #else
 #define LF2_TURN_ONLY           (1U)
@@ -379,6 +400,8 @@ typedef struct
     int32_t   cv_steer_max;     /**< ... largest |steer| posted in the drive */
     uint32_t  cv_hard_polls;    /**< ... polls with |steer| >= LF2_CURVE_HARD_Q7 */
     uint32_t  cv_first_lost_mm; /**< ... travel at the first LINE_LOST (LF2_NEVER: none) */
+    uint32_t  n_avoid;          /**< drive mode: times obstacle avoidance took over */
+    bool      in_avoid;         /**< drive mode: the VC is in OBSTACLE_AVOIDANCE now */
 } lf2_run_t;
 
 /* The test task's stack is small: the snapshots live here. */
@@ -893,6 +916,14 @@ static void lf2_drive(lf2_drive_t const *p_d)
         {
             lf2_curve_watch(p, mm);
         }
+        if ((LF2_DRIVE_ONLY != 0U) && ((vc == VC_SYS_OBSTACLE_AVOIDANCE) != p->in_avoid))
+        {
+            p->in_avoid = !p->in_avoid;
+            p->n_avoid += p->in_avoid ? 1U : 0U;
+            dbg_printf("[LF] drive: obstacle avoidance %s at %lu mm (LF state %u, line found %d)",
+                       p->in_avoid ? "took over" : "handed back", (unsigned long)mm,
+                       (unsigned)s_now.state, lf2_line_found_flag() ? 1 : 0);
+        }
         if ((polls % LF2_TRACE_EVERY_POLLS) == 0U)
         {
             lf2_trace_add(t, mm);
@@ -940,7 +971,7 @@ static void lf2_drive(lf2_drive_t const *p_d)
         {
             p->end = LF2_END_FAULT;
         }
-        else if (vc == VC_SYS_OBSTACLE_AVOIDANCE)
+        else if ((vc == VC_SYS_OBSTACLE_AVOIDANCE) && (LF2_DRIVE_ONLY == 0U))
         {
             lf2_remote(DREP_NAV_REMOTE_STOP);
             p->end = LF2_END_AVOID;
@@ -1178,7 +1209,8 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
         "line end", "START POSE, the line's END 30 cm ahead (temporary line OK)",
         LF2_END_MM, LF2_END_MS, false, false, false
     };
-    uint32_t const straight_runs = ((LF2_JMAT_ONLY != 0U) || (LF2_TURN_ONLY != 0U) || (LF2_CURVE_ONLY != 0U))
+    uint32_t const straight_runs = ((LF2_JMAT_ONLY != 0U) || (LF2_TURN_ONLY != 0U) || (LF2_CURVE_ONLY != 0U)
+                                    || (LF2_DRIVE_ONLY != 0U))
                                    ? 0U : LF2_STRAIGHT_RUNS;
     uint32_t test_pass_ = *p_pass;
     uint32_t test_fail_ = *p_fail;
@@ -1392,6 +1424,39 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                                    && lf2_pct_ok(s_run.cv_exit_band, s_run.cv_exit_polls),
                            "(k3) exit straight: CENTRE on line >= 90%");
             }
+        }
+    }
+
+    /* (d) Controlled moving drives (S3_DRIVE_MM): the production line
+     * following on whatever line it is put on, with obstacle avoidance free to
+     * take over and hand back.  No layout is assumed. */
+    if ((LF2_DRIVE_ONLY != 0U) && pose_a_ok)
+    {
+        static lf2_drive_t const k_drive =
+        {
+            "drive", "on a STRAIGHT part of the line: CENTRE on black, RIGHT on white, square to the line",
+            (uint32_t)S3_DRIVE_MM, LF2_MS_FOR((uint32_t)S3_DRIVE_MM) + LF2_DRIVE_EXTRA_MS, false, false, true
+        };
+
+        dbg_puts("[LF] variant A: production line following (recovery start 32)");
+        dbg_printf("[LF] DRIVE: %lu drives, each up to %lu mm of wheel travel or %lu ms; obstacle avoidance may "
+                   "take over and hand back", (unsigned long)LF2_DRIVE_RUNS, (unsigned long)S3_DRIVE_MM,
+                   (unsigned long)k_drive.max_ms);
+        for (uint32_t run = 1U; run <= LF2_DRIVE_RUNS; run++)
+        {
+            dbg_printf("[LF] >>> drive %lu of %lu", (unsigned long)run, (unsigned long)LF2_DRIVE_RUNS);
+            lf2_drive(&k_drive);
+            dbg_printf("[LF] drive %lu: %s at %lu mm %lu ms; LINE_LOST %lu, TRACK_LOST %lu, JUNCTION %lu, "
+                       "avoidance %lu, still %d", (unsigned long)run, k_end_name[s_run.end],
+                       (unsigned long)s_run.mm_end, (unsigned long)s_run.t_end_ms, (unsigned long)s_run.cv_n_lost,
+                       (unsigned long)s_run.n_lost, (unsigned long)s_run.n_jct, (unsigned long)s_run.n_avoid,
+                       s_run.still ? 1 : 0);
+            /* What a drive on an unknown line can show: that it stopped
+             * safely, and whether it got all the way on the line. */
+            TEST_CHECK(LF2_ID, s_run.still && (s_run.end != LF2_END_NOT_PLACED) && (s_run.end != LF2_END_NOT_READY),
+                       "(d1) drive ran and ended with the wheels still");
+            TEST_CHECK(LF2_ID, (s_run.end == LF2_END_DIST) && (s_run.n_lost == 0U) && (s_run.st_end == LF_ST_ON_LINE),
+                       "(d2) reached the distance limit on the line, no TRACK_LOST");
         }
     }
 
