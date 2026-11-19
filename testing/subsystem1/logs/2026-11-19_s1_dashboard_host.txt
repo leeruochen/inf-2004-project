@@ -1,0 +1,126 @@
+S1-H06..S1-H08 host run (dashboard v2), 2026-11-19
+commit: 46a8dedd2ed74d173d33552c7ec9262917eb24b0 (branch buddy1/dashboard-v2); working tree clean: yes
+python: Python 3.13.15
+
+=== S1-H06: python -m unittest -v test_tel_record
+test_invalid_readings (test_tel_record.Classify.test_invalid_readings) ... ok
+test_motion_saturation (test_tel_record.Classify.test_motion_saturation) ... ok
+test_no_echo_is_a_valid_reading (test_tel_record.Classify.test_no_echo_is_a_valid_reading) ... ok
+test_old_firmware_without_flags (test_tel_record.Classify.test_old_firmware_without_flags) ... ok
+test_unavailable_when_no_producer (test_tel_record.Classify.test_unavailable_when_no_producer) ... ok
+test_valid_readings (test_tel_record.Classify.test_valid_readings) ... ok
+test_car_restart_resets_the_rate_window (test_tel_record.HealthStates.test_car_restart_resets_the_rate_window) ... ok
+test_disconnect_and_back (test_tel_record.HealthStates.test_disconnect_and_back) ... ok
+test_frozen_ir_value (test_tel_record.HealthStates.test_frozen_ir_value) ... ok
+test_invalid_then_valid_is_one_event (test_tel_record.HealthStates.test_invalid_then_valid_is_one_event) ... ok
+test_live_silence_goes_stale_then_recovers (test_tel_record.HealthStates.test_live_silence_goes_stale_then_recovers) ... ok
+test_rate_from_the_car_clock (test_tel_record.HealthStates.test_rate_from_the_car_clock) ... ok
+test_replayed_gap_is_found_afterwards (test_tel_record.HealthStates.test_replayed_gap_is_found_afterwards) ... ok
+test_every_log_replays (test_tel_record.RealLogs.test_every_log_replays) ... ok
+test_s1_unit_log_rates (test_tel_record.RealLogs.test_s1_unit_log_rates) ... ok
+test_usb_console_cadence_is_not_a_gap (test_tel_record.RealLogs.test_usb_console_cadence_is_not_a_gap) ... ok
+test_csv_and_recording_span (test_tel_record.Recording.test_csv_and_recording_span) ... ok
+test_motion_and_sensor_of_one_wake_make_one_row (test_tel_record.Recording.test_motion_and_sensor_of_one_wake_make_one_row) ... ok
+test_motion_without_sensor_frames (test_tel_record.Recording.test_motion_without_sensor_frames) ... ok
+test_paging (test_tel_record.Recording.test_paging) ... ok
+test_simulated_rows_are_marked (test_tel_record.Recording.test_simulated_rows_are_marked) ... ok
+test_unavailable_values_stay_empty (test_tel_record.Recording.test_unavailable_values_stay_empty) ... ok
+----------------------------------------------------------------------
+Ran 22 tests in 0.647s
+OK
+exit: 0
+
+=== S1-H07: python -m unittest -v test_tel_calib
+test_boot_calibration_lines (test_tel_calib.BuddyThreeMeasurement.test_boot_calibration_lines) ... ok
+test_both_steps_win_over_single_sensor_steps (test_tel_calib.BuddyThreeMeasurement.test_both_steps_win_over_single_sensor_steps) ... ok
+test_same_verdicts_as_his_hardware_test (test_tel_calib.BuddyThreeMeasurement.test_same_verdicts_as_his_hardware_test) ... ok
+test_bad_requests (test_tel_calib.GuidedCapture.test_bad_requests) ... ok
+test_simulated_and_missing_values_are_not_used (test_tel_calib.GuidedCapture.test_simulated_and_missing_values_are_not_used) ... ok
+test_white_then_black (test_tel_calib.GuidedCapture.test_white_then_black) ... ok
+test_adc_check (test_tel_calib.Maths.test_adc_check) ... ok
+test_average_rounds_to_nearest (test_tel_calib.Maths.test_average_rounds_to_nearest) ... ok
+test_channel_verdicts (test_tel_calib.Maths.test_channel_verdicts) ... ok
+test_darkness_and_zone_match_lf_norm_and_lf_zone_of (test_tel_calib.Maths.test_darkness_and_zone_match_lf_norm_and_lf_zone_of) ... ok
+test_define_parser (test_tel_calib.Rules.test_define_parser) ... ok
+test_missing_file_falls_back_to_documented_defaults (test_tel_calib.Rules.test_missing_file_falls_back_to_documented_defaults) ... ok
+test_read_from_the_firmware (test_tel_calib.Rules.test_read_from_the_firmware) ... ok
+----------------------------------------------------------------------
+Ran 13 tests in 0.013s
+OK
+exit: 0
+
+=== S1-H08: python -m unittest -v test_tel_control test_tel_web
+test_arm_needs_a_live_car (test_tel_control.Arming.test_arm_needs_a_live_car) ... ok
+test_arming_expires (test_tel_control.Arming.test_arming_expires) ... ok
+test_losing_the_link_disarms (test_tel_control.Arming.test_losing_the_link_disarms) ... ok
+test_one_start_per_arming (test_tel_control.Arming.test_one_start_per_arming) ... ok
+test_stale_heartbeat_blocks_start (test_tel_control.Arming.test_stale_heartbeat_blocks_start) ... ok
+test_start_refused_when_latched_or_moving (test_tel_control.Arming.test_start_refused_when_latched_or_moving) ... ok
+test_ack_before_the_command_is_logged (test_tel_control.Confirmation.test_ack_before_the_command_is_logged) ... ok
+test_answer_before_logging_keeps_the_true_state_before (test_tel_control.Confirmation.test_answer_before_logging_keeps_the_true_state_before) ... ok
+test_broker_ack (test_tel_control.Confirmation.test_broker_ack) ... ok
+test_estop_needs_every_ack (test_tel_control.Confirmation.test_estop_needs_every_ack) ... ok
+test_no_heartbeat_after_the_command (test_tel_control.Confirmation.test_no_heartbeat_after_the_command) ... ok
+test_refused_entries_are_logged (test_tel_control.Confirmation.test_refused_entries_are_logged) ... ok
+test_reset (test_tel_control.Confirmation.test_reset) ... ok
+test_start_confirmed_by_a_newer_heartbeat_only (test_tel_control.Confirmation.test_start_confirmed_by_a_newer_heartbeat_only) ... ok
+test_start_not_confirmed_when_nothing_changes (test_tel_control.Confirmation.test_start_not_confirmed_when_nothing_changes) ... ok
+test_stop_to_a_silent_car_warns (test_tel_control.Confirmation.test_stop_to_a_silent_car_warns) ... ok
+test_stop_waits_for_the_speed_to_drop (test_tel_control.Confirmation.test_stop_waits_for_the_speed_to_drop) ... ok
+test_stop_when_already_stopped (test_tel_control.Confirmation.test_stop_when_already_stopped) ... ok
+test_pause_is_refused_with_the_reason (test_tel_control.Refusals.test_pause_is_refused_with_the_reason) ... ok
+test_start_needs_arming_even_with_no_car (test_tel_control.Refusals.test_start_needs_arming_even_with_no_car) ... ok
+test_stop_needs_only_the_broker (test_tel_control.Refusals.test_stop_needs_only_the_broker) ... ok
+test_unknown_command (test_tel_control.Refusals.test_unknown_command) ... ok
+test_node_syntax (test_tel_web.PageScript.test_node_syntax) ... ok
+test_follow_live_synthetic_run (test_tel_web.WebApi.test_follow_live_synthetic_run) ... ok
+test_logs_listed (test_tel_web.WebApi.test_logs_listed) ... ok
+test_mqtt_with_fake_client (test_tel_web.WebApi.test_mqtt_with_fake_client) ... ok
+test_obstacle_check_params (test_tel_web.WebApi.test_obstacle_check_params) ... ok
+test_only_repo_files (test_tel_web.WebApi.test_only_repo_files) ... ok
+test_page_start_needs_arming (test_tel_web.WebApi.test_page_start_needs_arming) ... ok
+test_real_s4_log (test_tel_web.WebApi.test_real_s4_log) ... ok
+test_start_refused_even_when_asked (test_tel_web.WebApi.test_start_refused_even_when_asked) ... ok
+test_usb_needs_windows (test_tel_web.WebApi.test_usb_needs_windows) ... skipped 'on Windows this would open the real serial port'
+test_calibration_endpoints (test_tel_web.WebV2.test_calibration_endpoints) ... ok
+test_estop_without_broker (test_tel_web.WebV2.test_estop_without_broker) ... ok
+test_start_arm_confirm_and_estop (test_tel_web.WebV2.test_start_arm_confirm_and_estop) ... ok
+test_table_export_and_gaps (test_tel_web.WebV2.test_table_export_and_gaps) ... ok
+----------------------------------------------------------------------
+Ran 36 tests in 8.447s
+OK (skipped=1)
+exit: 0
+
+=== regression (existing): python -m unittest -v test_tel_decode test_tel_views
+test_parse_line (test_tel_decode.ConsoleLog.test_parse_line) ... ok
+test_signed_edges (test_tel_decode.ConsoleLog.test_signed_edges) ... ok
+test_commands_match_firmware (test_tel_decode.GoldenFrames.test_commands_match_firmware) ... ok
+test_golden_decode (test_tel_decode.GoldenFrames.test_golden_decode) ... ok
+test_rules (test_tel_decode.Rejects.test_rules) ... ok
+test_listen_save_then_check (test_tel_views.Cli.test_listen_save_then_check) ... ok
+test_peak_hump_zero_is_not_a_height (test_tel_views.Cli.test_peak_hump_zero_is_not_a_height) ... ok
+test_start_needs_allow_motion (test_tel_views.Cli.test_start_needs_allow_motion) ... ok
+test_bad_magnitude_fails (test_tel_views.ImuCheck.test_bad_magnitude_fails) ... ok
+test_empty_log_never_passes (test_tel_views.ImuCheck.test_empty_log_never_passes) ... ok
+test_healthy_stationary_run (test_tel_views.ImuCheck.test_healthy_stationary_run) ... ok
+test_hump_height_zero_is_not_measured (test_tel_views.ImuCheck.test_hump_height_zero_is_not_measured) ... ok
+test_motors_commanded_fails (test_tel_views.ImuCheck.test_motors_commanded_fails) ... ok
+test_no_tilt_is_not_tested (test_tel_views.ImuCheck.test_no_tilt_is_not_tested) ... ok
+test_s1_injection_is_simulated (test_tel_views.ImuCheck.test_s1_injection_is_simulated) ... ok
+test_unplug_test_faults_not_counted (test_tel_views.ImuCheck.test_unplug_test_faults_not_counted) ... ok
+test_console_backend_is_not_mqtt (test_tel_views.Mqtt.test_console_backend_is_not_mqtt) ... ok
+test_delivery (test_tel_views.Mqtt.test_delivery) ... ok
+test_expect_distances (test_tel_views.ObstacleCheck.test_expect_distances) ... ok
+test_no_echo_only_fails (test_tel_views.ObstacleCheck.test_no_echo_only_fails) ... ok
+test_plateaus (test_tel_views.ObstacleCheck.test_plateaus) ... ok
+test_width_errs_wide (test_tel_views.ObstacleCheck.test_width_errs_wide) ... ok
+test_without_ground_truth_only_compare (test_tel_views.ObstacleCheck.test_without_ground_truth_only_compare) ... ok
+test_s4_app_test_log (test_tel_views.RealLogs.test_s4_app_test_log) ... ok
+test_s5_log (test_tel_views.RealLogs.test_s5_log) ... ok
+test_flag_bytes_match_c (test_tel_views.SensorFlags.test_flag_bytes_match_c) ... ok
+test_summary_marks_unavailable (test_tel_views.SensorFlags.test_summary_marks_unavailable) ... ok
+test_formats_from_task_tel (test_tel_views.StatusLines.test_formats_from_task_tel) ... ok
+----------------------------------------------------------------------
+Ran 28 tests in 0.088s
+OK
+exit: 0
