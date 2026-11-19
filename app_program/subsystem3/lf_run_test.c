@@ -199,10 +199,14 @@
 #define LF2_JMAT_DET_MAX_MM     (320U)
 /** Detection to JUNCTION: LF_D_JCT_POST_MM, +-2 polls of a published count.
  *  The time checks that the odometer, not the time cap, ended the travel. */
-#define LF2_JMAT_DELAY_MIN_MM   (110U)
-#define LF2_JMAT_DELAY_MAX_MM   (135U)
-#define LF2_JMAT_DELAY_MIN_MS   (450U)
-#define LF2_JMAT_DELAY_MAX_MS   (800U)
+/* Relative to the configured post distance (120 mm: 110..135) and the cruise
+ * (120 mm at 200 mm/s = 600 ms: 450..800), so a build with another mounting
+ * distance (-DLF_D_PIVOT_MM) or speed keeps the same meaning. */
+#define LF2_JMAT_DELAY_MIN_MM   (LF_D_JCT_POST_MM - 10U)
+#define LF2_JMAT_DELAY_MAX_MM   (LF_D_JCT_POST_MM + 15U)
+#define LF2_JMAT_NOMINAL_MS     ((LF_D_JCT_POST_MM * 1000U) / LF2_CRUISE_MMPS)
+#define LF2_JMAT_DELAY_MIN_MS   ((LF2_JMAT_NOMINAL_MS * 3U) / 4U)
+#define LF2_JMAT_DELAY_MAX_MS   ((LF2_JMAT_NOMINAL_MS * 4U) / 3U)
 /** Past the cross line: CENTRE is judged from this far after detection. */
 #define LF2_JMAT_TAIL_FROM_MM   (60U)
 /** JUNCTION to STOP at most, if ON_LINE does not come first. */
