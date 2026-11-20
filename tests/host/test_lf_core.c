@@ -238,7 +238,7 @@ static void test_constants(void)
     CHECK(ENC_QUAD_MULT == 4U);
     CHECK(ENC_CPR == 616U);
     CHECK(WHEEL_CIRC_MM == 207U);
-    CHECK(LF_T_JCT_MAX_MS == 2014U);     /* 120 mm at 7 cm/s = 12000 / 7 = 1714 ms, + 300 (by hand) */
+    CHECK(LF_T_JCT_MAX_MS == 2700U);     /* 120 mm at 5 cm/s = 12000 / 5 = 2400 ms, + 300 (by hand) */
     CHECK(LF_D_JCT_LOOK_CNT == JCT_LOOK_CNT);
     CHECK(LF_RECOVER_RAMP_Q7 == 1);
     CHECK(LF_PIVOT_HALF_CNT == 1065U);          /* 45 degrees, by hand: see lf_core.h */
@@ -638,11 +638,11 @@ static void test_junction(void)
     }
 
     /* Odometer frozen (encoder fault): JUNCTION after LF_T_JCT_MAX_MS
-     * (2014 ms at the 7 cm/s cruise = 402 samples after detection), not before. */
+     * (2700 ms at the 5 cm/s cruise = 540 samples after detection), not before. */
     start_tracking(&lf);
     g_fwd_step = 0U;
     (void)run(&lf, 3U, 1000U, 1000U);
-    r = run(&lf, 401U, 500U, 0U);
+    r = run(&lf, 539U, 500U, 0U);
     CHECK(r.junctions == 0U);
     r = run(&lf, 1U, 500U, 0U);
     CHECK(r.junctions == 1U);

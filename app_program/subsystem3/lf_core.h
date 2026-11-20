@@ -239,8 +239,8 @@
 /** The cruise speed line following runs at, cm/s: the build fails for any
  *  other MOTION_SPEED_CRUISE_CMPS (lf_core.c), so a change elsewhere (15 on
  *  main, 30 in the nominal set) cannot silently speed the car up.  7 cm/s is
- *  the owner's decision (20 Nov 2026): slow enough for the collision and
- *  obstacle tests.  What it costs, measured: the car's turn at full steering
+ *  the owner's decision (20 Nov 2026, 7 then 5 cm/s): slow enough for the collision
+ *  and obstacle tests; 5 is the lowest the slow speed (thresholds.h) allows.  What it costs, measured: the car's turn at full steering
  *  is wider the slower it goes (steady, 20 Nov traces: 7 cm/s 0.50 deg/mm, a
  *  115 mm circle; 15 cm/s ~0.56), so with the sensors 120 mm ahead of the
  *  axle the tightest bend the sensors follow is ~165 mm, and the track's bend
@@ -250,10 +250,10 @@
  *  following only: Buddy 5's slow approach (5 cm/s) and bypass (25 cm/s) are
  *  not it. */
 #ifndef LF_CRUISE_MIN_CMPS
-#define LF_CRUISE_MIN_CMPS      (7U)
+#define LF_CRUISE_MIN_CMPS      (5U)
 #endif
 #ifndef LF_CRUISE_MAX_CMPS
-#define LF_CRUISE_MAX_CMPS      (7U)
+#define LF_CRUISE_MAX_CMPS      (5U)
 #endif
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault): the post travel's time at the cruise speed plus

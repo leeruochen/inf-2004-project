@@ -160,12 +160,13 @@
 /** Nominal bypass speed. Closed to 25 cm/s on 2026-11-04 for NFR14. */
 #define MOTION_SPEED_BYPASS_NOMINAL_CMPS    (25U)
 /** Bring-up cruise speed. TUNE
- *  7 cm/s on branch buddy3/lf-straddle (Buddy 3, 20 Nov 2026): a slow car for
- *  the collision and obstacle tests.  main has 15 (Damian, 19 Nov).  Line
+ *  5 cm/s on branch buddy3/lf-straddle (Buddy 3, 20 Nov 2026; 7 until the 13:00
+ *  run): a slow car for the collision and obstacle tests, the lowest the slow
+ *  speed (5) allows.  main has 15 (Damian, 19 Nov).  Line
  *  following only builds at exactly this speed (lf_core.h LF_CRUISE_*).
  *  Overridable for a test build (-DMOTION_SPEED_CRUISE_BRINGUP_CMPS=...). */
 #ifndef MOTION_SPEED_CRUISE_BRINGUP_CMPS
-#define MOTION_SPEED_CRUISE_BRINGUP_CMPS    (7U)
+#define MOTION_SPEED_CRUISE_BRINGUP_CMPS    (5U)
 #endif
 /** Bring-up slow speed. TUNE */
 #define MOTION_SPEED_SLOW_BRINGUP_CMPS      (5U)
