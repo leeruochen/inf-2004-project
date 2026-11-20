@@ -56,8 +56,11 @@ void bc_cfg_default(bc_cfg_t *p_cfg);
  * either direction.
  * p_elem: count elements in crossing order, first one a bar.  Each width is
  * gap_us x speed_mmps (bc_gap_to_width_um); the 27 character elements are
- * classified wide or narrow by their ratio to the median of those 27, so a
- * constant speed cancels and a changing one is corrected element by element.
+ * classified wide or narrow by their ratio to a median: bars against the
+ * median of the 15 bars, spaces against the median of the 12 spaces, so a
+ * constant speed cancels, a changing one is corrected element by element,
+ * and a sensor that shows every bar thinner (or thicker) than it is cancels
+ * too.
  * The 2 gaps between characters are not checked (Code 39 allows them wider).
  * Crossed backwards, the elements arrive mirrored: both ends then read as
  * '*' mirrored, and the middle character is mirrored back before lookup, so

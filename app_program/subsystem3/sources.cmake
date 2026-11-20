@@ -12,6 +12,8 @@
 # with -DS3_LF_STRADDLE=ON (always compiled, so the rules check it).
 # lf_run_test.c is the on-target S3-U12 (APP_TEST builds only).
 # lf_step_test.c is the on-target S3-U16 diagnostic (APP_TEST, -DS3_STEP_DIAG=1).
+# bc_edge.c is pure C too (tests/host/test_bc_edge.c); it sits on the SDK side with
+# its caller, the GP27 handler in drv_bc.c.
 list(APPEND ROBOCAR_KERNEL_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3.c"
     "${CMAKE_CURRENT_LIST_DIR}/subsystem3_test.c"
@@ -23,13 +25,16 @@ list(APPEND ROBOCAR_KERNEL_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/lf_straddle.c"
     "${CMAKE_CURRENT_LIST_DIR}/task_lf.c"
     "${CMAKE_CURRENT_LIST_DIR}/lf_run_test.c"
-    "${CMAKE_CURRENT_LIST_DIR}/lf_step_test.c")
+    "${CMAKE_CURRENT_LIST_DIR}/lf_step_test.c"
+    "${CMAKE_CURRENT_LIST_DIR}/task_bc.c")
 # SDK-side drivers:
 # lf_sanity.c is pure C (host-tested by tests/host/test_lf_sanity.c); it sits
 # on the SDK side with its caller, drv_ir.c.
 list(APPEND ROBOCAR_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/drv_ir.c"
-    "${CMAKE_CURRENT_LIST_DIR}/lf_sanity.c")
+    "${CMAKE_CURRENT_LIST_DIR}/lf_sanity.c"
+    "${CMAKE_CURRENT_LIST_DIR}/drv_bc.c"
+    "${CMAKE_CURRENT_LIST_DIR}/bc_edge.c")
 # -DS3_STEP_DIAG=ON (APP_TEST builds): subsystem3_test() runs the S3-U16
 # steering step diagnostic on the open floor in place of the track test.
 # -DS3_TURN_DIAG=ON: S3-U18, the turning radius diagnostic, likewise.
