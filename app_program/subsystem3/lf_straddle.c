@@ -140,7 +140,16 @@ static void sd_contact_steer(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt)
     p_sd->bw = LF_SD_BW_NONE;
     p_sd->bw_cnt = 0U;
     p_sd->flipped = false;
+#if LF_SD_BANG
+    {
+        int32_t const diff = (int32_t)p_v->dr - (int32_t)p_v->dl;
+
+        p_sd->steer_q7 = sd_clamp((diff > LF_SD_BANG_DB_PM) ? LF_SD_BANG_Q7
+                                  : ((diff < -LF_SD_BANG_DB_PM) ? -LF_SD_BANG_Q7 : 0));
+    }
+#else
     p_sd->steer_q7 = sd_clamp((LF_SD_KP_Q7 * ((int32_t)p_v->dr - (int32_t)p_v->dl)) / (int32_t)LF_PM_FULL);
+#endif
 }
 
 /*

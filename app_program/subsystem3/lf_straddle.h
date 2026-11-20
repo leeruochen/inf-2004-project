@@ -110,6 +110,22 @@
  *  suspend, faults, calibration) is unchanged.  0 = the full core. */
 #define LF_SD_SIMPLE            (0)
 #endif
+#ifndef LF_SD_BANG
+/** 1: fixed steering, not proportional: any contact steers LF_SD_BANG_Q7 toward
+ *  the darker sensor (a plain differential car's "left black = 15/45").  The
+ *  proportional rule gives darkness x Kp, and in a bend the sensor sits on the
+ *  line's EDGE reading 35-75% dark (20 Nov, 5 cm/s, RIGHT raw 800-1500 on a
+ *  162..2001 span): it steered 44-92 of 127, turned ~0.3 deg/mm, and the line
+ *  left the sensor in all three drives at 31-33 degrees.  0 = proportional. */
+#define LF_SD_BANG              (0)
+#endif
+#ifndef LF_SD_BANG_Q7
+#define LF_SD_BANG_Q7           (127)
+#endif
+#ifndef LF_SD_BANG_DB_PM
+/** Below this difference between the two sensors' darkness (per mille) steer 0. */
+#define LF_SD_BANG_DB_PM        (100)
+#endif
 #ifndef LF_SD_FLIP
 /** 0 (off; no gain in the host model fitted to the car, below).  1: when the hold ends without finding the line, steer the OTHER way for
  *  the probe distance before declaring the line lost.  At the end of a bend
