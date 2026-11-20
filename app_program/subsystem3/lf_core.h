@@ -236,23 +236,24 @@
 /** The same for a u-turn, at 135 degrees: the cross arm goes by at 90, so only
  *  the last quarter of the pivot can show the line the car came along. */
 #define LF_PIVOT_UTURN_CNT      (3U * LF_PIVOT_HALF_CNT)
-/** The cruise speed line following is validated for, cm/s: the build fails
- *  outside it (lf_core.c), whoever changes MOTION_SPEED_CRUISE_CMPS.  Why
- *  exactly 15: the car turns tighter the faster it goes (full steering, steady,
- *  20 Nov traces: 7 cm/s 0.50 deg/mm, 15 cm/s ~0.56; older runs ~0.62 at 15-20),
- *  and the track's bends are 117 mm (ruler, 16 Nov).  The sensors follow it only
- *  at 15 cm/s with the bracket ~60 mm from the axle (host model R 117 U-bends:
- *  15 cm/s 11 of 12, 7 and 10 cm/s 0-1 of 12; 7 cm/s on the car lost the line
- *  at the same place every drive).  Above it nothing is validated: bends were
- *  never run faster with the straddle core, and the edge core's junction turns
- *  are a documented limit above 200 mm/s.  A test build may pass
- *  -DLF_ALLOW_ANY_SPEED=1 to try another speed.  Applies to line following
- *  only: Buddy 5's slow approach (5 cm/s) and bypass (25 cm/s) are not it. */
+/** The cruise speed line following runs at, cm/s: the build fails for any
+ *  other MOTION_SPEED_CRUISE_CMPS (lf_core.c), so a change elsewhere (15 on
+ *  main, 30 in the nominal set) cannot silently speed the car up.  7 cm/s is
+ *  the owner's decision (20 Nov 2026): slow enough for the collision and
+ *  obstacle tests.  What it costs, measured: the car's turn at full steering
+ *  is wider the slower it goes (steady, 20 Nov traces: 7 cm/s 0.50 deg/mm, a
+ *  115 mm circle; 15 cm/s ~0.56), so with the sensors 120 mm ahead of the
+ *  axle the tightest bend the sensors follow is ~165 mm, and the track's bend
+ *  is 117 mm (ruler, 16 Nov): at 7 cm/s every drive lost the line there (host
+ *  model: 0 of 12 U-bends).  Tighter bends than ~165 mm need a pivot, not
+ *  faster driving.  A test build may pass -DLF_ALLOW_ANY_SPEED=1.  Line
+ *  following only: Buddy 5's slow approach (5 cm/s) and bypass (25 cm/s) are
+ *  not it. */
 #ifndef LF_CRUISE_MIN_CMPS
-#define LF_CRUISE_MIN_CMPS      (15U)
+#define LF_CRUISE_MIN_CMPS      (7U)
 #endif
 #ifndef LF_CRUISE_MAX_CMPS
-#define LF_CRUISE_MAX_CMPS      (15U)
+#define LF_CRUISE_MAX_CMPS      (7U)
 #endif
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault): the post travel's time at the cruise speed plus
