@@ -133,7 +133,7 @@
  * ------------------------------------------------------------------------- */
 
 /** D_cmd: a pending barcode command expires after this distance without a junction. TUNE */
-#define BC_D_CMD_CM                 (30U)
+#define BC_D_CMD_CM                 (60U)
 /** Ignore a repeat of the same barcode within this distance. Not in design.md. TUNE */
 #define BC_REPEAT_IGNORE_CM         (10U)
 /** Wide/narrow threshold (NFR9): an element is wide when its width is more

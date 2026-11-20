@@ -427,10 +427,16 @@ static int32_t wheel_travel_um(void)
 
     int32_t const abs_l    = (dl >= 0) ? dl : -dl;
     int32_t const abs_r    = (dr >= 0) ? dr : -dr;
-    int32_t const diff     = ((dl - dr) >= 0) ? (dl - dr) : (dr - dl);
+    int32_t const sum_lr   = dl + dr;
+    int32_t const abs_sum  = (sum_lr >= 0) ? sum_lr : -sum_lr;
     bool const    opp_sign = ((dl > 0) && (dr < 0)) || ((dl < 0) && (dr > 0));
 
-    if (opp_sign && ((diff * 100) > ((abs_l + abs_r) * IMU_TURN_DIFF_PCT)) && (diff > 2))
+    /* Only mark an in-place turn when both wheels move significantly in
+     * opposite directions and cancel out most forward travel; a 1-2 count
+     * inside-wheel dip during a line-following steering correction while
+     * climbing a hump is forward motion, not an in-place turn. */
+    if (opp_sign && (abs_l >= 6) && (abs_r >= 6)
+        && ((abs_sum * 100) < ((abs_l + abs_r) * IMU_TURN_DIFF_PCT)))
     {
         s_turn_hold = IMU_TURN_HOLD_SAMPLES;
     }
@@ -513,16 +519,17 @@ static void check_hump(int32_t pitch)
 {
     int32_t const          ds_um   = wheel_travel_um();
 #if APP_TEST
-    bool const             nav_driving = true;
+    bool const             nav_straight = s_lift.armed;
 #else
     uint32_t const         vc_st = vc_get_system_state();
-    bool const             nav_driving = (vc_st >= VC_SYS_NAV_LINE_TRACKING)
-                                         && (vc_st <= VC_SYS_NAV_TURN_RIGHT);
+    bool const             nav_straight = (vc_st == VC_SYS_NAV_LINE_TRACKING)
+                                          || (vc_st == VC_SYS_NAV_HUMP_SENSING)
+                                          || (vc_st == VC_SYS_NAV_GO_STRAIGHT);
 #endif
-    /* Not trustworthy while turning, while not actively navigating the line,
-     * or while the car is (or was just) lifted: a hump in progress is then
-     * dropped, so carrying or tilting the car while stopped never reports a hump. */
-    bool const             turning = (s_turn_hold > 0U) || !s_lift.armed || !nav_driving;
+    /* Not trustworthy while turning or while not actively tracking the line:
+     * a hump in progress is then dropped, so carrying or tilting the car
+     * while stopped or turning at a junction never reports a hump. */
+    bool const             turning = (s_turn_hold > 0U) || !nav_straight;
     imu_hump_report_t      rep;
     bool const             speed_change = (s_speed_hold > 0U);
     imu_hump_event_t const ev    = imu_hump_step(&s_hump, pitch, ds_um, turning, speed_change, &rep);

@@ -370,6 +370,8 @@ static void handle_commands(void)
  * Frames
  * ========================================================================= */
 
+static uint32_t safety_bits(void);
+
 static void outbox_add(uint8_t const *p_frame, uint32_t len)
 {
     (void)tel_outbox_push(&s_outbox, p_frame, len);
@@ -401,6 +403,9 @@ static void handle_event(tel_evt_t e)
             len = drep_frame_fault(frame, ts, e.payload & EVF_SAFETY_ALL_MASK);
             break;
         case DREP_TEL_STATE:
+            len = drep_frame_heartbeat(frame, app_period_now_ms(),
+                                       e.payload & DREP_MASK(DREP_FSM_SYSTEM_BITS),
+                                       safety_bits());
             s_hb_due = true;    /* the heartbeat carries the 4-bit system state */
             break;
         default:

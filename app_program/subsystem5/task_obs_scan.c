@@ -66,6 +66,15 @@
  *  its 60 ms period: one 30 ms timeout fits, a second one does not.  TUNE. */
 #define OBS_PING_BUDGET_MS          (45U)
 
+/** Shorter echo timeout (12 ms = ~2 m) and range cap (400 mm) used during
+ *  the stationary 5-deg width sweep (SCAN_SWEEP) so oblique pings that bounce
+ *  off a wide flat block into a distant room wall (1..3 m away) never outvote
+ *  a true ~240..360 mm block return in obs_median3_mm(), and a missed oblique
+ *  ping never consumes 30 ms of the 45 ms per-bearing budget. */
+#define OBS_SWEEP_ECHO_TIMEOUT_MS   (12U)
+#define OBS_SWEEP_MAX_ECHO_MM       (400U)
+#define OBS_SWEEP_PINGS_PER_BEARING (4U)
+
 /** Standstill confirmation ticks (3 x 60 ms = 180 ms) before confirming range. */
 #define OBS_CONFIRM_STILL_TICKS     (3U)
 
@@ -93,7 +102,7 @@
  *  This is only the outer bound; OBS_EDGE_STEP_MM below is what actually
  *  decides the run.  100 mm on its own is looser than most obstacles are
  *  wide, so any neighbouring bearing that answered at all used to join. */
-#define OBS_EDGE_TOL_MM         (100U)
+#define OBS_EDGE_TOL_MM         (120U)
 
 /** Largest jump in range, between one bearing and the next one already in
  *  the run, that still counts as the same surface.
@@ -116,7 +125,7 @@
  *  23 mm.  40 mm keeps that wall in one run with margin for surface noise,
  *  while rejecting the ~80 mm step to the background that caused the
  *  jitter.  TUNE: re-measure with S5-U33 if the detect range changes. */
-#define OBS_EDGE_STEP_MM        (40U)
+#define OBS_EDGE_STEP_MM        (55U)
 
 /** Effective HC-SR04 beam width, subtracted from the measured angular span
  *  and from the measured lateral extent so a narrow post is not reported as
@@ -352,18 +361,46 @@ static bool analyse_sweep_common(uint16_t const *p_dist,
     uint32_t       left_slot = near_slot;
     uint32_t       prev_mm = near_mm;
 
-    while ((right_slot > lo)
-           && slot_joins_run(p_dist, right_slot - 1U, thresh_mm, prev_mm))
+    while (right_slot > lo)
     {
-        right_slot--;
-        prev_mm = (uint32_t)p_dist[right_slot];
+        if (slot_joins_run(p_dist, right_slot - 1U, thresh_mm, prev_mm))
+        {
+            right_slot--;
+            prev_mm = (uint32_t)p_dist[right_slot];
+        }
+        else if ((step_deg == (uint32_t)OBS_FINE5_STEP_DEG)
+                 && (right_slot > (lo + 1U))
+                 && slot_joins_run(p_dist, right_slot - 2U, thresh_mm, prev_mm))
+        {
+            /* Bridge a single-slot oblique specular dropout on a wide flat face. */
+            right_slot -= 2U;
+            prev_mm = (uint32_t)p_dist[right_slot];
+        }
+        else
+        {
+            break;
+        }
     }
     prev_mm = near_mm;
-    while ((left_slot < hi)
-           && slot_joins_run(p_dist, left_slot + 1U, thresh_mm, prev_mm))
+    while (left_slot < hi)
     {
-        left_slot++;
-        prev_mm = (uint32_t)p_dist[left_slot];
+        if (slot_joins_run(p_dist, left_slot + 1U, thresh_mm, prev_mm))
+        {
+            left_slot++;
+            prev_mm = (uint32_t)p_dist[left_slot];
+        }
+        else if ((step_deg == (uint32_t)OBS_FINE5_STEP_DEG)
+                 && (left_slot < (hi - 1U))
+                 && slot_joins_run(p_dist, left_slot + 2U, thresh_mm, prev_mm))
+        {
+            /* Bridge a single-slot oblique specular dropout on a wide flat face. */
+            left_slot += 2U;
+            prev_mm = (uint32_t)p_dist[left_slot];
+        }
+        else
+        {
+            break;
+        }
     }
 
     /* 3. Lateral extent of the run.  Positive x is to the car's right, so
@@ -627,13 +664,16 @@ static void drain_echo_sem(void)
  * median range in millimetres (0 = nothing in range).  Never runs longer
  * than budget_ms, so a bearing cannot overrun its 60 ms period.
  */
-static uint16_t ping_bearing_mm(uint32_t budget_ms)
+static uint16_t ping_bearing_filtered_mm(uint32_t budget_ms,
+                                         uint32_t echo_timeout_ms,
+                                         uint32_t max_range_mm,
+                                         uint32_t max_tries)
 {
     uint16_t       sample[3] = { 0U, 0U, 0U };
     uint32_t       taken = 0U;
     uint32_t const start_ms = app_period_now_ms();
 
-    for (uint32_t i = 0U; i < (uint32_t)OBS_PINGS_PER_BEARING; i++)
+    for (uint32_t i = 0U; (i < max_tries) && (taken < 3U); i++)
     {
         if ((app_period_now_ms() - start_ms) >= budget_ms)
         {
@@ -652,7 +692,7 @@ static uint16_t ping_bearing_mm(uint32_t budget_ms)
             break;                      /* driver not ready */
         }
 
-        if (tk_wai_sem(SEM_ECHO, 1, (TMO)OBS_ECHO_TIMEOUT_MS) < (ER)E_OK)
+        if (tk_wai_sem(SEM_ECHO, 1, (TMO)echo_timeout_ms) < (ER)E_OK)
         {
             continue;                   /* no echo = nothing in range */
         }
@@ -666,8 +706,7 @@ static uint16_t ping_bearing_mm(uint32_t budget_ms)
 
         uint32_t const mm = us_echo_us_to_mm(echo_us);
 
-        if ((mm >= (uint32_t)US_MIN_RANGE_MM) && (mm <= OBS_MAX_RANGE_MM)
-            && (taken < 3U))
+        if ((mm >= (uint32_t)US_MIN_RANGE_MM) && (mm <= max_range_mm))
         {
             sample[taken] = (uint16_t)mm;
             taken++;
@@ -675,6 +714,22 @@ static uint16_t ping_bearing_mm(uint32_t budget_ms)
     }
 
     return obs_median3_mm(sample[0], sample[1], sample[2]);
+}
+
+static uint16_t ping_bearing_mm(uint32_t budget_ms)
+{
+    return ping_bearing_filtered_mm(budget_ms,
+                                    (uint32_t)OBS_ECHO_TIMEOUT_MS,
+                                    OBS_MAX_RANGE_MM,
+                                    (uint32_t)OBS_PINGS_PER_BEARING);
+}
+
+static uint16_t ping_sweep_bearing_mm(uint32_t budget_ms)
+{
+    return ping_bearing_filtered_mm(budget_ms,
+                                    (uint32_t)OBS_SWEEP_ECHO_TIMEOUT_MS,
+                                    (uint32_t)OBS_SWEEP_MAX_ECHO_MM,
+                                    (uint32_t)OBS_SWEEP_PINGS_PER_BEARING);
 }
 
 /*
@@ -904,7 +959,17 @@ static void record_ping_health(uint16_t mm, bool is_ahead, uint32_t *p_echo_miss
 
 static void watch_step(uint16_t mm, uint32_t now_ms)
 {
-    bool const nav = scan_vc_is_navigating(vc_get_system_state());
+    uint32_t const vc_st = vc_get_system_state();
+    bool const     nav = scan_vc_is_navigating(vc_st);
+
+#if !APP_TEST
+    if (vc_st == VC_SYS_SAFETY_FAULT_LATCHED)
+    {
+        /* Do not sweep the servo while the car is picked up / fault-latched. */
+        s_confirm = 0U;
+        return;
+    }
+#endif
 
     if (!nav && ((int32_t)(now_ms - s_watch_cooldown_until_ms) < 0))
     {
@@ -1143,7 +1208,7 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
                         s_sweep_settling = false;
                         s_phase = SCAN_SWEEP;
 
-                        uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
+                        uint16_t const mm = ping_sweep_bearing_mm(OBS_PING_BUDGET_MS);
 
                         record_ping_health(mm, false, &echo_missed);
                         sweep_step(mm);
@@ -1161,7 +1226,7 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
                 }
 
                 bool const     is_ahead = (s_fine5_slot == OBS_FINE5_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG));
-                uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
+                uint16_t const mm = ping_sweep_bearing_mm(OBS_PING_BUDGET_MS);
 
                 record_ping_health(mm, is_ahead, &echo_missed);
                 sweep_step(mm);
