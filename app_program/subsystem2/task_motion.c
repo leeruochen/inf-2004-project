@@ -95,6 +95,39 @@
 
 /** Consecutive 20 ms periods at >= 50% duty with zero counts -> stall/encoder fault. */
 #define MOTION_STALL_PERIODS    (25U)   /* 25 x 20 ms = 500 ms */
+
+/* ---------------------------------------------------------------------------
+ * EXPERIMENT (Buddy 3, branch buddy3/lf-straddle-openloop, 20 Nov 2026, with
+ * Buddy 2's go-ahead): open-loop steering.  OFF by default: with 0 this file
+ * behaves exactly as before.
+ *
+ * Why: DREP_MC_STEER sets a duty difference, but the per-wheel speed PID then
+ * works toward the SAME target speed on both wheels and pushes back against the
+ * turn.  On the car at 7 cm/s the half-steering command (a 50% difference, the
+ * 15/45 of a plain differential car) ended as ~66/35 mm/s (about 1.9:1, not
+ * 3:1), and the base duty at 5 cm/s is only 9.5%.
+ *
+ * What: while a STEER command with |cmd_arg| >= MOTION_STEER_OL_MIN_ARG is
+ * active, the PID is skipped and each wheel gets its own learned straight-line
+ * duty, scaled by (1 +/- cmd_arg x GAIN_PCT / 25600).  The straight-line duty is
+ * learned per wheel (moving average) from FWD and STEER-0 cycles at the same
+ * setpoint, so it follows the battery and the motors and nothing is hard-coded;
+ * until MOTION_STEER_OL_LEARN_N cycles have been seen, or if the setpoint
+ * differs, the closed-loop path is used.  Straight driving, TURN, UTURN, BACK
+ * and every fault path are untouched.
+ * ------------------------------------------------------------------------- */
+#ifndef MOTION_STEER_OPENLOOP
+#define MOTION_STEER_OPENLOOP       (0)
+#endif
+#ifndef MOTION_STEER_OL_GAIN_PCT
+#define MOTION_STEER_OL_GAIN_PCT    (100)   /* % of the commanded differential applied */
+#endif
+#ifndef MOTION_STEER_OL_MIN_ARG
+#define MOTION_STEER_OL_MIN_ARG     (16)    /* |cmd_arg| below this stays closed-loop (Q7 x 2) */
+#endif
+#ifndef MOTION_STEER_OL_LEARN_N
+#define MOTION_STEER_OL_LEARN_N     (50U)   /* 50 x 20 ms of straight driving to learn the duty */
+#endif
 /** Minimum duty magnitude (permille) before stall detection arms. */
 #define MOTION_STALL_DUTY_PM    (500)
 
@@ -146,6 +179,11 @@ typedef struct
 #if MOTION_HAS_GEOMETRY
     uint16_t         fault_bits_set;    /* EVF_SAFETY b5..b6                 */
     uint8_t          stall_ticks;       /* 0..MOTION_STALL_PERIODS (25)      */
+#endif
+#if MOTION_HAS_GEOMETRY && MOTION_STEER_OPENLOOP
+    int16_t          cruise_duty_pm[ENC_WHEEL_COUNT]; /* learned straight-line duty */
+    uint8_t          cruise_n;          /* straight cycles seen at cruise_cmps   */
+    uint8_t          cruise_cmps;       /* the setpoint they were seen at        */
 #endif
     uint8_t          cmd_type;          /* 3-bit DREP_MC_* (0..7)            */
     uint8_t          setpoint_cmps;     /* 6-bit speed (0..50 cm/s)          */
@@ -490,8 +528,38 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
         int32_t const  tgt_r = (duty_r >= 0) ? mag_counts : -mag_counts;
         int32_t const  mean_d = (dl + dr) / 2;
 
-        duty_l += pid_step_wheel(ENC_WHEEL_LEFT, tgt_l, dl);
-        duty_r += pid_step_wheel(ENC_WHEEL_RIGHT, tgt_r, dr);
+#if MOTION_STEER_OPENLOOP
+        bool const ol_steer = (cmd_type == DREP_MC_STEER)
+                              && ((int32_t)abs_i32((int32_t)s_mot.cmd_arg) >= MOTION_STEER_OL_MIN_ARG)
+                              && (s_mot.cruise_n >= MOTION_STEER_OL_LEARN_N)
+                              && ((uint32_t)s_mot.cruise_cmps == setpoint_cmps);
+#else
+        bool const ol_steer = false;
+#endif
+
+        if (ol_steer)
+        {
+#if MOTION_STEER_OPENLOOP
+            /* Open loop: each wheel's own straight-line duty, scaled by the steering. */
+            int32_t const cl = s_mot.cruise_duty_pm[ENC_WHEEL_LEFT];
+            int32_t const cr = s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT];
+            int32_t const g = (int32_t)s_mot.cmd_arg * (int32_t)MOTION_STEER_OL_GAIN_PCT;
+
+            duty_l = cl + ((cl * g) / 25600);
+            duty_r = cr - ((cr * g) / 25600);
+            if (duty_l < 0) { duty_l = 0; }
+            if (duty_r < 0) { duty_r = 0; }
+            /* keep the PID's memory of the error current, its integral untouched, so
+             * the first closed-loop cycle after the turn has no derivative kick */
+            s_mot.pid[ENC_WHEEL_LEFT].prev_err = tgt_l - dl;
+            s_mot.pid[ENC_WHEEL_RIGHT].prev_err = tgt_r - dr;
+#endif
+        }
+        else
+        {
+            duty_l += pid_step_wheel(ENC_WHEEL_LEFT, tgt_l, dl);
+            duty_r += pid_step_wheel(ENC_WHEEL_RIGHT, tgt_r, dr);
+        }
 
         if ((cmd_type == DREP_MC_FWD) || (cmd_type == DREP_MC_BACK))
         {
@@ -518,6 +586,32 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
                 if (duty_r > 0) { duty_r = 0; }
             }
         }
+
+#if MOTION_STEER_OPENLOOP
+        /* Learn each wheel's straight-line duty from FWD and STEER-0 cycles. */
+        if (((cmd_type == DREP_MC_FWD) || ((cmd_type == DREP_MC_STEER) && (s_mot.cmd_arg == 0)))
+            && (dl > 0) && (dr > 0))
+        {
+            if ((uint32_t)s_mot.cruise_cmps != setpoint_cmps)
+            {
+                s_mot.cruise_cmps = (uint8_t)setpoint_cmps;
+                s_mot.cruise_n = 0U;
+                s_mot.cruise_duty_pm[ENC_WHEEL_LEFT] = (int16_t)duty_l;
+                s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT] = (int16_t)duty_r;
+            }
+            else
+            {
+                s_mot.cruise_duty_pm[ENC_WHEEL_LEFT] = (int16_t)(s_mot.cruise_duty_pm[ENC_WHEEL_LEFT]
+                    + ((duty_l - s_mot.cruise_duty_pm[ENC_WHEEL_LEFT]) / 8));
+                s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT] = (int16_t)(s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT]
+                    + ((duty_r - s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT]) / 8));
+            }
+            if (s_mot.cruise_n < 255U)
+            {
+                s_mot.cruise_n++;
+            }
+        }
+#endif
 
         if ((dl == 0) && (dr == 0))
         {
