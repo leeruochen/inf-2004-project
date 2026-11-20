@@ -136,6 +136,7 @@ typedef struct
     double      speed_mmps;     /* cruise speed */
     double      steer_dz;       /* STEER dead zone, Q7: the first steer_dz of a steering command
                                  * does nothing (the speed controller cancels it); 0 = none */
+    double      steer_gain_left; /* if > 0, the gain for LEFT steering (negative command); right uses steer_gain */
     double      steer_gain;     /* what is left of the command is scaled by this (1 = as is).
                                  * The car at 7 cm/s, steady steering (20 Nov traces): 24 ->
                                  * 0.06, 96 -> 0.33, 127 -> 0.45 deg/mm = dz 11, gain 0.72 */
@@ -271,6 +272,7 @@ static inline void sim_init(sim_t *p_sim)
     p_sim->speed_mmps = 200.0;
     p_sim->steer_dz = 0.0;
     p_sim->steer_gain = 1.0;
+    p_sim->steer_gain_left = 0.0;
     p_sim->motor_k = SIM_MOTOR_K;
     p_sim->left_gain = 1.0;
     p_sim->lag_s = SIM_MOTOR_LAG_S;
@@ -406,7 +408,7 @@ static inline void sim_motion_control(sim_t *p_sim, int32_t dl, int32_t dr)
         {
             /* arg is Q7 x 2: a dead zone in Q7 is twice that in arg units */
             double const a = fabs((double)p_sim->cmd_arg);
-            double const e = fmax(0.0, a - (2.0 * p_sim->steer_dz)) * p_sim->steer_gain;
+            double const e = fmax(0.0, a - (2.0 * p_sim->steer_dz)) * ((p_sim->cmd_arg < 0 && p_sim->steer_gain_left > 0.0) ? p_sim->steer_gain_left : p_sim->steer_gain);
             int32_t const arg = (int32_t)lround((p_sim->cmd_arg < 0) ? -e : e);
 
             duty_l = base + ((base * arg) / 256);

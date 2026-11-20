@@ -299,7 +299,7 @@ static void test_deep_hold(void)
     CHECK(sd.bw == LF_SD_BW_CENTRED);
     CHECK((r.min_steer == 0) && (r.max_steer == 0));
 
-    /* The hold ends at 60 degrees of turn (yaw_cnt), before its 150 mm. */
+    /* The hold ends at LF_SD_HOLD_DEG of turn (yaw_cnt), before its distance. */
     start_centred(&sd);
     (void)run(&sd, DEEP_SAMPLES + 2U, 0U, 1000U);
     {
@@ -310,8 +310,8 @@ static void test_deep_hold(void)
             g_in.yaw_cnt += 40;                         /* turning right */
             n++;
         }
-        /* 60 deg = 60 x 1065 / 45 = 1420 counts / 40 = 35.5 samples */
-        CHECK((n >= 34U) && (n <= 38U));
+        /* 120 deg = 120 x 1065 / 45 = 2840 counts / 40 = 71 samples */
+        CHECK((n >= (LF_SD_HOLD_YAW_CNT / 40U) - 2U) && (n <= (LF_SD_HOLD_YAW_CNT / 40U) + 2U));
     }
 }
 
@@ -540,9 +540,19 @@ static void sd_fn(void *p_core, lf_in_t const *p_in, lf_out_t *p_out)
     lf_sd_step((lf_sd_t *)p_core, p_in, p_out);
 }
 
+/* The car's steady full-lock turn at 7 cm/s (S3-U18, 20 Nov 2026, open floor): left 0.60
+ * deg/mm, right 0.9 measured (the model's right is 0.69, conservative). */
+static bool g_fitted = false;
+
 static void sim_straddle(sim_t *p_s, double v, uint32_t seed)
 {
     sim_init(p_s);
+    if (g_fitted)
+    {
+        p_s->steer_dz = 0.0;
+        p_s->steer_gain = 1.0;
+        p_s->steer_gain_left = 0.87;
+    }
     p_s->rng = seed;
     p_s->speed_mmps = v;
     p_s->spacing_mm = 26.0;
@@ -595,6 +605,31 @@ static bool sim_bend(double R, int dir, double deg, double v, uint32_t seed)
         }
     }
     return ok;
+}
+
+/* Test 10: the track's 117 mm bend (ruler, 16 Nov) at the owner's 7 cm/s, on the model fitted to
+ * the car's steady full lock.  With the hold at 60 deg / 150 mm every one of these 180 degree
+ * bends failed (as on the car, 20 Nov); the longer hold passes them, and every gentler bend. */
+static void test_fitted_u_bends(void)
+{
+    double const radii[3] = { 117.0, 140.0, 200.0 };
+    double const degs[3] = { 90.0, 120.0, 180.0 };
+
+    g_fitted = true;
+    for (int dir = -1; dir <= 1; dir += 2)
+    {
+        for (int ri = 0; ri < 3; ri++)
+        {
+            for (int di = 0; di < 3; di++)
+            {
+                for (uint32_t k = 0U; k < 2U; k++)
+                {
+                    CHECK(sim_bend(radii[ri], dir, degs[di], 70.0, 12345U + (k * 7919U)));
+                }
+            }
+        }
+    }
+    g_fitted = false;
 }
 
 /* Test 7: 90 degree bends both ways at the bring-up speeds, R 150-600 mm
@@ -745,6 +780,7 @@ int main(void)
     test_both_dark();
     test_bend_memory();
     test_sim_bends();
+    test_fitted_u_bends();
     test_sim_straights();
     printf("lf_straddle: %d deferred checks not yet a gate, %d of them failing (U-bends)\n",
            g_deferred, g_deferred_failing);

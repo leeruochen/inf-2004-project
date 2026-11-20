@@ -85,8 +85,14 @@
 #define LF_SD_HOLD_Q7           (127)
 #endif
 #ifndef LF_SD_HOLD_MM
-/** The hold lasts at most this much travel, then LINE_LOST. TUNE */
-#define LF_SD_HOLD_MM           (150U)
+/** The hold lasts at most this much travel, then LINE_LOST.  300 mm: at 7 cm/s
+ *  the car's steady full lock is a 65 mm (right) to 95 mm (left) axle radius
+ *  (S3-U18 diagnostic, 20 Nov, 180 degrees in 5.2-5.8 s), and the line follower
+ *  never holds it that long: on the car, 150 mm lost the 117 mm U-bend's second
+ *  half in every drive.  Host model refitted to that diagnostic, 7 cm/s,
+ *  117 mm U-bends both ways: hold 60 deg/150 mm 0 of 8, 120 deg/300 mm 8 of 8 in
+ *  every condition tried (noise, poor black, motors +-8%). TUNE */
+#define LF_SD_HOLD_MM           (300U)
 #endif
 #ifndef LF_SD_HOLD_DEG
 /** ... or until the car has turned this far since the hold began.  A line
@@ -94,7 +100,7 @@
  *  bounded only by distance, the host model's car swung 78 degrees and
  *  stopped 36 cm from a line end at 150 mm/s.  A real bend is caught again
  *  well inside this. TUNE */
-#define LF_SD_HOLD_DEG          (60U)
+#define LF_SD_HOLD_DEG          (120U)
 #endif
 #ifndef LF_SD_FLIP
 /** 0 (off; no gain in the host model fitted to the car, below).  1: when the hold ends without finding the line, steer the OTHER way for
