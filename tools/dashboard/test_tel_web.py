@@ -383,6 +383,63 @@ class WebV2(unittest.TestCase):
         self.assertEqual(self.s.jget("/api/state")[1]["calib"]["result"]["c"]["verdict"], "INCOMPLETE")
         self.assertEqual(self.s.post("/api/calib", {"action": "capture", "seconds": "x"})[0], 400)
 
+    def test_overview_demo_rubric_and_clear(self):
+        code, body = self.s.get("/")
+        self.assertEqual(code, 200)
+        page = body.decode()
+        for tok in ("ovStartBtn", "ovStopBtn", "ovResetBtn", "ovClearRunBtn",
+                    "rubricRows", "ovLiveGrid", "ovEvents",
+                    'id="broker" value="127.0.0.1"'):
+            self.assertIn(tok, page)
+
+        fake = self._mqtt()
+        self.assertEqual(self.s.post("/api/cmd", {"cmd": "start"})[0], 200)
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(6000, "NAV_LINE_TRACKING").split()[-1])
+        self._car(fake, "car/telemetry/motion", _motion_hex(6100, 15.0))
+        self._car(fake, "car/telemetry/obstacle", tv.obstacle(6200, 18, 90, 120, 300, 400).split()[-1])
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(6500, "OBSTACLE_AVOIDANCE").split()[-1])
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(8000, "NAV_LINE_TRACKING").split()[-1])
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(11100, "NAV_LINE_TRACKING").split()[-1])
+        bc_hex = tv._W(3).put(11500, 24).put(0, 2).hex()
+        self._car(fake, "car/telemetry/barcode", bc_hex)
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(12000, "NAV_TURN_LEFT").split()[-1])
+        self._car(fake, "car/telemetry/hump", tv.hump(13000, height=14, pitch=7.5).split()[-1])
+        self._car(fake, "car/telemetry/heartbeat",
+                  tv.heartbeat(14000, "SAFETY_FAULT_LATCHED", ("LIFTED", "FAULT_LATCHED")).split()[-1])
+
+        st = self.s.jget("/api/state")[1]
+        dm = st["demo"]
+        rm = {r["id"]: r["status"] for r in dm["rubric"]}
+        self.assertEqual(rm["bc_detect"], "DONE")
+        self.assertEqual(rm["bc_decode"], "DONE")
+        self.assertEqual(rm["bc_follow"], "DONE")
+        self.assertEqual(rm["hump_height"], "DONE")
+        self.assertEqual(rm["obs_detect"], "DONE")
+        self.assertEqual(rm["obs_width"], "DONE")
+        self.assertEqual(rm["obs_rejoin"], "DONE")
+        self.assertEqual(rm["mqtt_tel"], "ACTIVE")
+        self.assertEqual(rm["pickup_stop"], "DONE")
+        self.assertTrue(dm["events"])
+
+        code, j = self.s.post("/api/demo/clear", {})
+        self.assertEqual(code, 200, j)
+        st2 = self.s.jget("/api/state")[1]
+        self.assertTrue(st2["source"]["mqtt_connected"])
+        self.assertEqual(st2["ctl"]["state"], "SAFETY_FAULT_LATCHED")
+        self.assertEqual(st2["demo"]["events"], [])
+        self.assertEqual(st2["demo"]["summary"]["done"], 0)
+        rm2 = {r["id"]: r["status"] for r in st2["demo"]["rubric"]}
+        self.assertEqual(rm2["obs_detect"], "WAITING")
+        self.assertEqual(rm2["pickup_stop"], "WAITING")
+        self.assertEqual(rm2["mqtt_tel"], "WARN")
+
+        self._car(fake, "car/telemetry/heartbeat", tv.heartbeat(15000, "READY_WAITING").split()[-1])
+        st3 = self.s.jget("/api/state")[1]
+        rm3 = {r["id"]: r["status"] for r in st3["demo"]["rubric"]}
+        self.assertEqual(rm3["mqtt_tel"], "ACTIVE")
+        self.assertEqual(rm3["pickup_stop"], "WAITING")
+        self.assertEqual(st3["demo"]["summary"]["done"], 1)
+
 
 class OneConnection(unittest.TestCase):
     """Regression, 19 Nov 2026: two clients with one id took the broker connection off each other."""
