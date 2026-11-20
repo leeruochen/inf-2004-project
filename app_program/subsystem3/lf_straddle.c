@@ -23,8 +23,11 @@
 
 /* Sample counts (5 ms each), from the same times as lf_core. */
 #define LF_SD_N_STOP     LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
-#define LF_SD_N_SEARCH   LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
-#define LF_SD_N_SWAP     LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
+/* Time safety for a search (a stopped car): three times the search distance at the cruise, never
+ * shorter than lf_core's T_search.  The search itself ends on distance (LF_SD_SEARCH_MM). */
+#define LF_SD_SEARCH_MAX_MS_RAW  ((LF_SD_SEARCH_MM * 3000U) / (MOTION_SPEED_CRUISE_CMPS * 10U))
+#define LF_SD_SEARCH_MAX_MS      ((LF_SD_SEARCH_MAX_MS_RAW > LF_T_SEARCH_MS) ? LF_SD_SEARCH_MAX_MS_RAW : LF_T_SEARCH_MS)
+#define LF_SD_N_SEARCH   LF_SAMPLES(LF_SD_SEARCH_MAX_MS)
 #define LF_SD_N_JCT_MAX  LF_SAMPLES(LF_T_JCT_MAX_MS)
 
 _Static_assert((LF_SD_KP_Q7 > 0) && (LF_SD_KP_Q7 <= LF_STEER_FULL_Q7), "Kp fits full steering");
@@ -323,16 +326,62 @@ static bool sd_st_junction(lf_sd_t *p_sd, lf_in_t const *p_in, sd_view_t const *
     p_sd->timer_n++;
     if (p_in->manoeuvre != LF_MAN_NONE)
     {
+        if (p_sd->man_seen == LF_MAN_NONE)
+        {
+            p_sd->turn_yaw0 = p_in->yaw_cnt;        /* the turn's first sample */
+            p_sd->turn_contact = false;
+        }
         p_sd->man_seen = p_in->manoeuvre;
         p_sd->jct_pending = false;          /* the VC turned: no post */
         if (p_v->contact)
         {
             p_sd->side = (p_v->dl >= p_v->dr) ? LF_SIDE_LEFT : LF_SIDE_RIGHT;
+            p_sd->turn_contact = true;
         }
     }
     else if (p_sd->man_seen != LF_MAN_NONE)
     {
-        sd_enter_on_line(p_sd, true);       /* the turn ended */
+        /* The turn ended.  The side to go to first.  A U-turn leaves the sensors' sweep across the line
+         * halfway round, so a contact DURING it says nothing, and the pivot stops short of the line
+         * (20 Nov, U-turn at 5 cm/s, 6 of 6 runs: at the end both sensors white, the line just outside
+         * the RIGHT one): it keeps rotating the turn's own way, from the sign of the yaw (grows turning
+         * right).  Order: the sensor clearly darker NOW (LF_SD_TURN_SIDE_PM); then, for a U-turn, the turn's
+         * direction; for a 90-degree turn the side of a clear contact during the pivot, else its direction. */
+        bool const uturn = (p_sd->man_seen == LF_MAN_UTURN);
+        int32_t const yaw_d = (int32_t)((uint32_t)p_in->yaw_cnt - (uint32_t)p_sd->turn_yaw0);
+        lf_side_t const dir_side = (yaw_d > 0) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
+
+        if (p_v->dl >= (p_v->dr + LF_SD_TURN_SIDE_PM))
+        {
+            p_sd->side = LF_SIDE_LEFT;
+        }
+        else if (p_v->dr >= (p_v->dl + LF_SD_TURN_SIDE_PM))
+        {
+            p_sd->side = LF_SIDE_RIGHT;
+        }
+        else if (uturn)
+        {
+            p_sd->side = dir_side;
+        }
+        else if (p_sd->turn_contact)
+        {
+            /* a clear contact during the turn already set the side */
+        }
+        else
+        {
+            p_sd->side = dir_side;
+        }
+        if (!p_v->contact && (uturn || (p_v->dl >= LF_SD_SEEK_PM) || (p_v->dr >= LF_SD_SEEK_PM)))
+        {
+            /* The line is not under a sensor (always so after a U-turn: it stops short): search, arcing
+             * towards that side at LF_SEARCH_Q7, steering to an edge and ending on a clear contact, not a
+             * weak 60 mm probe that gives up. */
+            sd_enter_search(p_sd, false);
+        }
+        else
+        {
+            sd_enter_on_line(p_sd, true);       /* the turn ended */
+        }
         may_post = true;
     }
     else if (p_sd->jct_pending)
@@ -401,26 +450,40 @@ static bool sd_st_search(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt, lf_
     bool may_post = true;
 
     p_sd->timer_n++;
-    if (p_sd->srch_capped)
-    {
-        p_sd->srch_cnt += dcnt;
-    }
+    p_sd->srch_cnt += dcnt;
     if ((p_v->zl != LF_ZONE_LIGHT) || (p_v->zr != LF_ZONE_LIGHT))
     {
         sd_enter_on_line(p_sd, false);
         sd_contact_steer(p_sd, p_v, dcnt);
     }
     else if ((p_sd->timer_n >= LF_SD_N_SEARCH)
-             || (p_sd->srch_capped && (p_sd->srch_cnt >= LF_D_SEARCH_MAX_CNT)))
+             || (p_sd->srch_cnt >= (p_sd->srch_capped ? LF_D_SEARCH_MAX_CNT : LF_SD_SEARCH_CNT)))
     {
         p_out->event = LF_EV_TRACK_LOST;        /* once: then IDLE until a new run */
         sd_enter(p_sd, LF_ST_IDLE);
         p_sd->steer_q7 = 0;
         may_post = false;
     }
+    else if ((p_v->dl >= LF_SD_SEEK_PM) || (p_v->dr >= LF_SD_SEEK_PM))
+    {
+        int32_t const diff = (int32_t)p_v->dr - (int32_t)p_v->dl;
+        bool const both = (p_v->dl >= LF_SD_SEEK_PM) && (p_v->dr >= LF_SD_SEEK_PM);
+
+        if (both && (diff < (int32_t)LF_SD_SEEK_DB_PM) && (diff > -(int32_t)LF_SD_SEEK_DB_PM))
+        {
+            sd_enter_on_line(p_sd, false);      /* the line is between the sensors: straight on */
+            p_sd->steer_q7 = 0;
+        }
+        else
+        {
+            /* an edge: towards the darker sensor, and remember that side */
+            p_sd->side = (diff > 0) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
+            p_sd->steer_q7 = sd_side_steer(p_sd->side, LF_SD_SEEK_Q7);
+        }
+    }
     else
     {
-        lf_side_t const s = (p_sd->timer_n > LF_SD_N_SWAP) ? sd_other_side(p_sd->side) : p_sd->side;
+        lf_side_t const s = (p_sd->srch_cnt > LF_SD_SWAP_CNT) ? sd_other_side(p_sd->side) : p_sd->side;
 
         p_sd->steer_q7 = sd_side_steer(s, LF_SEARCH_Q7);
     }
@@ -498,6 +561,8 @@ void lf_sd_init(lf_sd_t *p_sd, lf_cal_t const *p_cal)
         p_sd->over_n = 0U;
         p_sd->bd_cnt = 0U;
         p_sd->mem_q15 = 0;
+        p_sd->turn_yaw0 = 0;
+        p_sd->turn_contact = false;
         sd_enter(p_sd, LF_ST_IDLE);
     }
 }

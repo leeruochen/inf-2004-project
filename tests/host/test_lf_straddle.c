@@ -361,6 +361,113 @@ static void test_junction(void)
     CHECK(r.max_steer == LF_SD_PROBE_Q7);               /* towards the RIGHT */
 }
 
+/* Test 5b: the probe side after a turn when nothing clear was seen during it (20 Nov, right turn
+ * at 5 cm/s: the line was faint on the RIGHT, the car probed LEFT and lost it, 2 of 3 runs). */
+static void test_turn_side(void)
+{
+    lf_sd_t sd;
+    run_t r;
+
+    /* faintly darker RIGHT at the end of the turn (76 against 23 per mille): probe RIGHT */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 100U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 23U, 76U);
+    CHECK(sd.state == LF_ST_REACQUIRING);              /* only an edge in view: the search, not the probe */
+    CHECK(r.max_steer == LF_SEARCH_Q7);
+
+    /* faintly darker LEFT: probe LEFT */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 100U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 76U, 23U);
+    CHECK(r.min_steer == -LF_SEARCH_Q7);
+
+    /* the 20 Nov U-turn: a clear LEFT contact mid-pivot, a faint RIGHT reading at the end: RIGHT */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_UTURN;
+    (void)run(&sd, 50U, 0U, 0U);
+    (void)run(&sd, 3U, 600U, 0U);                           /* LEFT crosses the line mid-pivot */
+    (void)run(&sd, 50U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 5U, 66U);                              /* the end: RIGHT faint, LEFT quiet */
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    CHECK(r.max_steer == LF_SEARCH_Q7);
+
+    /* the 20 Nov U-turn, the later runs: both sensors quiet at the end, a clear LEFT contact mid-pivot,
+     * the pivot turned right (yaw_cnt grows): keep rotating RIGHT, in the search, not a probe left */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_UTURN;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.yaw_cnt += 1500;
+    (void)run(&sd, 3U, 600U, 0U);                           /* LEFT crosses the line mid-pivot */
+    g_in.yaw_cnt += 1500;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 0U, 0U);
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    CHECK(r.max_steer == LF_SEARCH_Q7);
+    CHECK(r.min_steer > -LF_SEARCH_Q7);
+
+    /* nothing at all at the end: the turn's own direction (yaw_cnt grows turning right) */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.yaw_cnt += 2000;                                   /* a right turn */
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 0U, 0U);
+    CHECK(r.max_steer == LF_SD_PROBE_Q7);
+
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.yaw_cnt -= 2000;                                   /* a left turn */
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 0U, 0U);
+    CHECK(r.min_steer == -LF_SD_PROBE_Q7);
+}
+
+/* Test 5c: the search uses faint edge readings (20 Nov, U-turn at 5 cm/s: 95 and 77 per mille, the
+ * line between the sensors, never a clear contact).  Both faint and equal: ON_LINE, straight.
+ * One side faint: steer towards it, still searching. */
+static void test_search_seek(void)
+{
+    lf_sd_t sd;
+    run_t r;
+    uint32_t n = 0U;
+
+    start_centred(&sd);
+    while ((sd.state != LF_ST_REACQUIRING) && (n < 4000U))
+    {
+        (void)feed(&sd, 0U, 0U);
+        n++;
+    }
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    r = run(&sd, 2U, 95U, 77U);                           /* both faint, nearly equal */
+    CHECK(r.last.state == LF_ST_ON_LINE);
+    CHECK(r.last.steer_q7 == 0);
+
+    start_centred(&sd);
+    n = 0U;
+    while ((sd.state != LF_ST_REACQUIRING) && (n < 4000U))
+    {
+        (void)feed(&sd, 0U, 0U);
+        n++;
+    }
+    r = run(&sd, 2U, 0U, 80U);                            /* only RIGHT faint: towards it */
+    CHECK(r.last.state == LF_ST_REACQUIRING);
+    CHECK(r.last.steer_q7 == LF_SD_SEEK_Q7);
+    r = run(&sd, 2U, 85U, 0U);                            /* only LEFT faint */
+    CHECK(r.last.steer_q7 == -LF_SD_SEEK_Q7);
+    r = run(&sd, 2U, 20U, 20U);                           /* nothing faint enough: the arc continues */
+    CHECK(r.last.state == LF_ST_REACQUIRING);
+    CHECK((r.last.steer_q7 == LF_SEARCH_Q7) || (r.last.steer_q7 == -LF_SEARCH_Q7));
+}
+
 /* Test 6: avoidance hand-back and a sensor fault. */
 static void test_suspended_and_fault(void)
 {
@@ -466,6 +573,41 @@ static void test_floor(void)
         CHECK(tl == 1U);
         CHECK(sd.state == LF_ST_IDLE);
     }
+}
+
+/* Test 11: the search ends on DISTANCE, not on lf_core's 2 s.  20 Nov, left junction turn at
+ * 5 cm/s: the search ran 2.0 s = 47 mm of travel and gave up.  A car at ~3 counts per 5 ms sample
+ * (50 mm/s) must search the whole capped distance before TRACK_LOST. */
+static void test_slow_search(void)
+{
+    lf_sd_t sd;
+    uint32_t n = 0U;
+    uint32_t t0 = 0U;
+    bool lost = false;
+    uint32_t const fwd0 = 0U;
+
+    (void)fwd0;
+    start_centred(&sd);
+    g_fwd_step = 3U;                                    /* ~50 mm/s */
+    while ((sd.state != LF_ST_REACQUIRING) && (n < 4000U))
+    {
+        (void)feed(&sd, 0U, 0U);                        /* both white: loss, then the search */
+        n++;
+    }
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    t0 = g_in.fwd_cnt;
+    n = 0U;
+    while (!lost && (n < 6000U))
+    {
+        lost = (feed(&sd, 0U, 0U).event == LF_EV_TRACK_LOST);
+        n++;
+    }
+    CHECK(lost);
+    /* at least 90% of the capped distance (the sample the car was in when it began is not counted) */
+    CHECK((g_in.fwd_cnt - t0) >= ((LF_D_SEARCH_MAX_CNT * 9U) / 10U));
+    CHECK((g_in.fwd_cnt - t0) <= (LF_D_SEARCH_MAX_CNT + 24U));
+    CHECK(n > 400U);                                    /* longer than the old 2 s */
+    g_fwd_step = 12U;
 }
 
 /* Test 8: both sensors DARK outside a junction is not a line.  After a
@@ -776,7 +918,10 @@ int main(void)
     test_deep_hold();
     test_junction();
     test_suspended_and_fault();
+    test_turn_side();
+    test_search_seek();
     test_floor();
+    test_slow_search();
     test_both_dark();
     test_bend_memory();
     test_sim_bends();

@@ -126,6 +126,43 @@
 /** Below this difference between the two sensors' darkness (per mille) steer 0. */
 #define LF_SD_BANG_DB_PM        (100)
 #endif
+#ifndef LF_SD_TURN_SIDE_PM
+/** After a turn the first probe goes to the side the line was last seen on.  During the pivot that is
+ *  updated only on a clear contact; a faint reading never counted.  20 Nov, right turn at 5 cm/s:
+ *  the line was seen faintly on the RIGHT (76 per mille), the remembered side was still the LEFT
+ *  from the cross, the car probed left and lost the line (2 of 3 runs).  At the end of the turn the
+ *  darker sensor decides if the two differ by at least this much (per mille); otherwise the turn's
+ *  own direction does (a left turn leaves the line to the left, a right turn to the right). */
+#define LF_SD_TURN_SIDE_PM      (40U)
+#endif
+#ifndef LF_SD_SEEK_PM
+/** While SEARCHING, a sensor reading at least this darkness (per mille, well below the 250 of a clear
+ *  contact) is the line's edge.  20 Nov, U-turn at 5 cm/s: the search arced past the line and both
+ *  sensors read 95 and 77 (the line between them, 26 mm apart on an 18 mm line: each sees an edge
+ *  4 mm away) without ever reaching a clear contact; the car carried on and lost it.  Both at
+ *  least this and within LF_SD_SEEK_DB_PM of each other: the line is between the sensors, go straight
+ *  on (ON_LINE, centred).  Only one, or clearly unequal: steer towards the darker one at
+ *  LF_SD_SEEK_Q7, still searching until a clear contact. TUNE */
+#define LF_SD_SEEK_PM           (50U)
+#endif
+#ifndef LF_SD_SEEK_DB_PM
+#define LF_SD_SEEK_DB_PM        (40U)
+#endif
+#ifndef LF_SD_SEEK_Q7
+#define LF_SD_SEEK_Q7           (64)
+#endif
+#ifndef LF_SD_SEARCH_MM
+/** How far a search (after a turn, or at the start) may drive before TRACK_LOST, and how far
+ *  it arcs one way before swapping.  lf_core's T_search (2 s) and swap (700 ms) are times
+ *  tuned at 200 mm/s: 400 mm and 140 mm of travel.  At 5 cm/s they were 70 mm and 35 mm:
+ *  20 Nov, left junction turn, run 2: the pivot ended with both sensors white, the
+ *  search ran 2.0 s (47 mm), found nothing, TRACK_LOST.  A loss while driving keeps its own
+ *  150 mm cap.  The old time stays as a safety (never shorter than T_search). TUNE */
+#define LF_SD_SEARCH_MM         (400U)
+#endif
+#ifndef LF_SD_SWAP_MM
+#define LF_SD_SWAP_MM           (140U)
+#endif
 #ifndef LF_SD_FLIP
 /** 0 (off; no gain in the host model fitted to the car, below).  1: when the hold ends without finding the line, steer the OTHER way for
  *  the probe distance before declaring the line lost.  At the end of a bend
@@ -220,6 +257,8 @@
 #define LF_SD_CONF_CNT          ((LF_SD_CONF_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_PROBE_CNT         ((LF_SD_PROBE_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_DEEP_CNT          ((LF_SD_DEEP_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+#define LF_SD_SEARCH_CNT        ((LF_SD_SEARCH_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+#define LF_SD_SWAP_CNT          ((LF_SD_SWAP_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_BOTHDARK_CNT      ((LF_SD_BOTHDARK_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_MEM_CNT           ((LF_SD_MEM_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 /** LF_SD_HOLD_DEG as left-minus-right counts, as LF_PIVOT_HALF_CNT is 45 deg:
@@ -271,6 +310,8 @@ typedef struct
     uint32_t       fault_n;         /**< consecutive samples with a sensor at a rail */
     uint32_t       over_n;          /**< consecutive samples with a sensor above LF_SD_OVER_RAW */
     uint32_t       bd_cnt;          /**< forward counts with both sensors DARK in ON_LINE */
+    int32_t        turn_yaw0;       /**< yaw_cnt when the VC's turn began (its sign gives the direction) */
+    bool           turn_contact;    /**< a clear contact was seen during the turn (it set the side) */
     int32_t        mem_q15;         /**< steering averaged over ~LF_SD_MEM_MM of travel, Q7 x 256 (an integer
                                      *   average of Q7 values stalls 59 short of its target) */
 } lf_sd_t;
