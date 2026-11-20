@@ -418,17 +418,19 @@ static int32_t wheel_travel_um(void)
     s_enc_prev[0] = st.enc_count[0];
     s_enc_prev[1] = st.enc_count[1];
 
-    int32_t const abs_l = (dl >= 0) ? dl : -dl;
-    int32_t const abs_r = (dr >= 0) ? dr : -dr;
-    int32_t const diff  = ((dl - dr) >= 0) ? (dl - dr) : (dr - dl);
+    int32_t const abs_l    = (dl >= 0) ? dl : -dl;
+    int32_t const abs_r    = (dr >= 0) ? dr : -dr;
+    int32_t const diff     = ((dl - dr) >= 0) ? (dl - dr) : (dr - dl);
+    bool const    opp_sign = ((dl > 0) && (dr < 0)) || ((dl < 0) && (dr > 0));
 
-    if (((diff * 100) > ((abs_l + abs_r) * IMU_TURN_DIFF_PCT)) && (diff > 2))
+    if (opp_sign && ((diff * 100) > ((abs_l + abs_r) * IMU_TURN_DIFF_PCT)) && (diff > 2))
     {
         s_turn_hold = IMU_TURN_HOLD_SAMPLES;
     }
 
     /* Speed over this Motion period (um per ms = mm/s), compared with the
-     * last period's. */
+     * last period's.  Once a hump is already active, gradual climb speed
+     * assist must not blank out the hump's pitch measurement. */
     int32_t const  um    = imu_hump_counts_to_um((dl + dr) / 2);
     uint32_t const dt_ms = st.tick_ms - s_prev_tick;
     int32_t const  v     = (dt_ms > 0U) ? (um / (int32_t)dt_ms) : 0;
@@ -436,7 +438,7 @@ static int32_t wheel_travel_um(void)
 
     s_prev_tick   = st.tick_ms;
     s_prev_v_mmps = v;
-    if ((dv > IMU_SPEED_STEP_MMPS) || (dv < -IMU_SPEED_STEP_MMPS))
+    if (!s_hump.active && ((dv > IMU_SPEED_STEP_MMPS) || (dv < -IMU_SPEED_STEP_MMPS)))
     {
         s_speed_hold = IMU_SPEED_HOLD_SAMPLES;
     }
