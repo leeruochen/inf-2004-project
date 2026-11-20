@@ -85,6 +85,11 @@ void lf_task_test_arm(bool armed);
  * high, so the on-track test calibrates at pose A instead.
  */
 void lf_task_test_recalibrate(void);
+
+/* APP_TEST only: replace the calibration with *p_cal (e.g. the two-pose
+ * calibration, lf_cal_from_two_poses) and restart the core with it, at the
+ * task's next sample.  Waits until applied (at most LF_RECAL_WAIT_MS). */
+void lf_task_test_set_cal(lf_cal_t const *p_cal);
 #endif /* APP_TEST */
 
 #endif /* TASK_LF_H */

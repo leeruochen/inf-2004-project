@@ -23,12 +23,13 @@
 
 /* Sample counts (5 ms each). */
 #define LF_N_LOST       LF_SAMPLES(LF_T_LOST_MS)        /* 20  = 100 ms */
+#define LF_N_LOST_MAX   LF_SAMPLES(LF_T_LOST_MAX_MS)    /* 80  = 400 ms */
 #define LF_N_TURN       LF_SAMPLES(LF_T_TURN_MS)        /* 100 = 500 ms */
 #define LF_N_UTURN      LF_SAMPLES(LF_T_UTURN_MS)       /* 200 = 1 s    */
 #define LF_N_SEARCH     LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
 #define LF_N_SWAP       LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
 #define LF_N_STOP       LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
-#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 180 = 900 ms */
+#define LF_N_JCT_MAX    LF_SAMPLES(LF_T_JCT_MAX_MS)     /* 220 = 1100 ms at 15 cm/s */
 
 _Static_assert((uint32_t)LF_ST_COUNT == DREP_FSM_LF_STATES,
                "lf_state_t is the telemetry LF FSM code");
@@ -45,12 +46,20 @@ _Static_assert((ENC_CPR > 0U) && (WHEEL_CIRC_MM > 0U), "encoder geometry known")
 _Static_assert(LF_D_JCT_LEAD_MM < LF_D_PIVOT_MM, "JUNCTION posted after detection");
 _Static_assert(LF_D_JCT_LOOK_MM < LF_D_JCT_POST_MM, "the look past the cross ends before the post");
 _Static_assert((LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7) <= LF_STEER_FULL_Q7, "the ramp starts inside full steering");
+#ifndef LF_ALLOW_ANY_SPEED
+_Static_assert((MOTION_SPEED_CRUISE_CMPS >= LF_CRUISE_MIN_CMPS) && (MOTION_SPEED_CRUISE_CMPS <= LF_CRUISE_MAX_CMPS),
+               "line following is validated only for LF_CRUISE_MIN/MAX_CMPS (lf_core.h): see there before changing the cruise, or pass -DLF_ALLOW_ANY_SPEED=1 for a test build");
+#endif
 _Static_assert(((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) < LF_T_JCT_MAX_MS,
                "at cruise the travel ends before the time cap");
+_Static_assert((LF_RESCUE_N >= 2U) && (LF_RESCUE_N < LF_HYST_SAMPLES + 1U),
+               "C: RIGHT's rescue needs 2 samples, and no more than the zone filter it bypasses");
 _Static_assert((LF_UTURN_HOLD_Q7 > 0) && (LF_UTURN_HOLD_Q7 <= LF_ACQUIRE_STEER_Q7),
                "the hold steers right, no harder than the look for the line");
 _Static_assert((LF_EDGE_TARGET_PM < LF_UTURN_HOLD_FULL_PM) && (LF_UTURN_HOLD_FULL_PM <= LF_PM_FULL),
                "the line's body reads above the edge target");
+_Static_assert((LF_N_LOST_MAX > LF_N_LOST) && (LF_D_LOST_CNT > 0U),
+               "LINE_LOST: the time cap is longer than T_lost, the distance is set");
 
 /* ---------------------------------------------------------------------------
  * Calibration, normalisation, zones, edge steering
@@ -83,6 +92,62 @@ lf_cal_status_t lf_cal_from_start_pose(lf_adc_stats_t const *p_c_on_line,
     }
 
     return st;
+}
+
+/* One sensor from its readings over black and over white. */
+static lf_sens_t cal_one(lf_adc_stats_t const *p_black, lf_adc_stats_t const *p_white, lf_cal_ch_t *p_ch)
+{
+    lf_sens_t v = LF_SENS_DISCONNECTED;
+    lf_adc_status_t const sb = lf_adc_check(p_black);
+    lf_adc_status_t const sw = lf_adc_check(p_white);
+
+    p_ch->black = lf_adc_stats_avg(p_black);
+    p_ch->white = lf_adc_stats_avg(p_white);
+    if ((sb == LF_ADC_NOISY) || (sw == LF_ADC_NOISY))
+    {
+        v = LF_SENS_NOISY;
+    }
+    else if ((sb != LF_ADC_OK) || (sw != LF_ADC_OK))
+    {
+        v = LF_SENS_DISCONNECTED;
+    }
+    else if ((uint32_t)p_ch->black < ((uint32_t)p_ch->white + LF_MIN_SPAN_RAW))
+    {
+        v = LF_SENS_BLIND;
+    }
+    else if ((p_ch->black < LF_CAL_BLACK_MIN_RAW) || (p_ch->white > LF_CAL_WHITE_MAX_RAW)
+             || (((uint32_t)p_ch->black - p_ch->white) < LF_CAL_SPAN_GOOD_RAW))
+    {
+        v = LF_SENS_WEAK;
+    }
+    else
+    {
+        v = LF_SENS_OK;
+    }
+    return v;
+}
+
+bool lf_cal_from_two_poses(lf_adc_stats_t const *p_c_black, lf_adc_stats_t const *p_r_white,
+                           lf_adc_stats_t const *p_c_white, lf_adc_stats_t const *p_r_black,
+                           lf_cal2_t *p_out)
+{
+    bool ok = false;
+
+    if (p_out != NULL)
+    {
+        p_out->cal.c.white = 0U;
+        p_out->cal.c.black = 0U;
+        p_out->cal.r = p_out->cal.c;
+        p_out->c = LF_SENS_DISCONNECTED;
+        p_out->r = LF_SENS_DISCONNECTED;
+        if ((p_c_black != NULL) && (p_r_white != NULL) && (p_c_white != NULL) && (p_r_black != NULL))
+        {
+            p_out->c = cal_one(p_c_black, p_c_white, &p_out->cal.c);
+            p_out->r = cal_one(p_r_black, p_r_white, &p_out->cal.r);
+            ok = (p_out->c == LF_SENS_OK) && (p_out->r == LF_SENS_OK);
+        }
+    }
+    return ok;
 }
 
 uint16_t lf_norm(lf_cal_ch_t const *p_cal, uint16_t raw)
@@ -234,8 +299,106 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
     p_lf->state = st;
     p_lf->timer_n = 0U;
     p_lf->lost_n = 0U;
+    p_lf->lost_cnt = 0U;
     p_lf->post_now = true;      /* post at once in the new state */
     p_lf->hold_on = false;      /* the hold after a u-turn never outlives a state */
+}
+
+/*
+ * EXPERIMENT T80: the bend floor, CENTRE back on the body during bend memory.
+ * The first such sample decides: a floor below LF_BEND_MIN_Q7 means a short
+ * rescue (a drift), and the memory ends.
+ */
+static void bend_floor(lf_core_t *p_lf)
+{
+    if (!p_lf->bend_regain)
+    {
+        p_lf->bend_regain = true;
+        p_lf->bend_on = (p_lf->bend_q7 >= LF_BEND_MIN_Q7);
+    }
+    else
+    {
+        /* floor already fixed */
+    }
+    if (p_lf->bend_on)
+    {
+        if (p_lf->steer_q7 < p_lf->bend_q7)
+        {
+            p_lf->steer_q7 = p_lf->bend_q7;
+        }
+        else
+        {
+            /* the edge steering is stronger */
+        }
+        if (p_lf->bend_q7 > LF_BEND_FLOOR_Q7)
+        {
+            p_lf->bend_q7--;
+        }
+        else
+        {
+            /* at the floor */
+        }
+    }
+    else
+    {
+        /* not a bend */
+    }
+}
+
+/*
+ * EXPERIMENT T80: bend memory entry and exit, each sample before the state
+ * handler (r_dark_n already counts this sample).
+ */
+static void bend_track(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
+{
+    bool const light = (p_v->c_now == LF_ZONE_LIGHT);
+    bool const tracking = (p_lf->state == LF_ST_ON_LINE) || (p_lf->state == LF_ST_LINE_LOST)
+                          || (p_lf->state == LF_ST_REACQUIRING);
+
+    if (!tracking || !p_in->running || (p_in->manoeuvre != LF_MAN_NONE))
+    {
+        p_lf->bend_on = false;
+    }
+    else if (light && (p_lf->r_dark_n >= LF_RESCUE_N)
+             && ((p_lf->state == LF_ST_ON_LINE) || (p_lf->state == LF_ST_LINE_LOST)))
+    {
+        if (!p_lf->bend_on)
+        {
+            p_lf->bend_on = true;
+            p_lf->bend_cnt0 = p_in->fwd_cnt;
+            p_lf->bend_edge_n = 0U;
+        }
+        else
+        {
+            /* still rescuing */
+        }
+        p_lf->bend_regain = false;
+        p_lf->bend_q7 = (p_lf->steer_q7 > LF_BEND_FLOOR_Q7) ? p_lf->steer_q7 : LF_BEND_FLOOR_Q7;
+    }
+    else if (p_lf->bend_on)
+    {
+        if ((p_in->fwd_cnt - p_lf->bend_cnt0) >= LF_BEND_CNT)
+        {
+            p_lf->bend_on = false;
+        }
+        else if (!light && (p_v->d_c < LF_EDGE_TARGET_PM))
+        {
+            p_lf->bend_edge_n++;
+            p_lf->bend_on = (p_lf->bend_edge_n < LF_BEND_SETTLE_N);
+        }
+        else if (!light)
+        {
+            p_lf->bend_edge_n = 0U;
+        }
+        else
+        {
+            /* CENTRE white without RIGHT: keep the count */
+        }
+    }
+    else
+    {
+        /* off */
+    }
 }
 
 /*
@@ -276,6 +439,14 @@ static void online_steer(lf_core_t *p_lf, lf_view_t const *p_v)
     {
         p_lf->recover_q7 = LF_RECOVER_Q7;
         p_lf->steer_q7 = lf_edge_steer(p_v->d_c);
+        if (p_lf->bend_on && (p_v->d_c >= LF_EDGE_TARGET_PM))
+        {
+            bend_floor(p_lf);
+        }
+        else
+        {
+            /* edge steering */
+        }
     }
 }
 
@@ -387,19 +558,27 @@ static void update_side(lf_core_t *p_lf, lf_view_t const *p_v)
     }
 }
 
-/* Both confirmed LIGHT for LF_T_LOST_MS -> true. */
-static bool lost_check(lf_core_t *p_lf, lf_view_t const *p_v)
+/* Both confirmed LIGHT for LF_T_LOST_MS and LF_D_LOST_MM of travel, or for
+ * LF_T_LOST_MAX_MS whatever the travel -> true.  The travel is this streak's
+ * own: each sample adds its forward counts (fwd_cnt only grows; the unsigned
+ * difference is right across a wrap, and a streak is at most LF_N_LOST_MAX
+ * samples of a few dozen counts, far from overflow).  C: not while RIGHT has
+ * read the line for LF_RESCUE_N samples, before its zone filter confirms it. */
+static bool lost_check(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)
 {
-    if ((p_v->zc == LF_ZONE_LIGHT) && (p_v->zr == LF_ZONE_LIGHT))
+    if ((p_v->zc == LF_ZONE_LIGHT) && (p_v->zr == LF_ZONE_LIGHT) && (p_lf->r_dark_n < LF_RESCUE_N))
     {
         p_lf->lost_n++;
+        p_lf->lost_cnt += p_in->fwd_cnt - p_lf->prev_fwd;
     }
     else
     {
         p_lf->lost_n = 0U;
+        p_lf->lost_cnt = 0U;
     }
 
-    return (p_lf->lost_n >= LF_N_LOST);
+    return (p_lf->lost_n >= LF_N_LOST)
+           && ((p_lf->lost_cnt >= LF_D_LOST_CNT) || (p_lf->lost_n >= LF_N_LOST_MAX));
 }
 
 static void enter_on_line(lf_core_t *p_lf, lf_view_t const *p_v)
@@ -408,11 +587,23 @@ static void enter_on_line(lf_core_t *p_lf, lf_view_t const *p_v)
     online_steer(p_lf, p_v);
 }
 
-static void enter_search(lf_core_t *p_lf)
+/* capped: the search follows a loss while driving the line, so its own
+ * travel is limited to LF_D_SEARCH_MAX_CNT as well as T_search. */
+static void enter_search(lf_core_t *p_lf, bool capped)
 {
     enter(p_lf, LF_ST_REACQUIRING);
     p_lf->timer_n = 1U;         /* this sample is the search's first */
     p_lf->steer_q7 = side_steer(p_lf->side, LF_SEARCH_Q7);
+    p_lf->srch_capped = capped;
+    p_lf->srch_cnt = 0U;
+}
+
+/* LINE_LOST; driving: the line was lost while the car drove it (not at the
+ * end of a junction turn's look). */
+static void enter_lost(lf_core_t *p_lf, bool driving)
+{
+    enter(p_lf, LF_ST_LINE_LOST);
+    p_lf->lost_driving = driving;
 }
 
 static void enter_turn(lf_core_t *p_lf, lf_manoeuvre_t man)
@@ -451,9 +642,9 @@ static bool st_on_line(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_
             p_lf->jct_cnt0 = p_in->fwd_cnt;
             p_lf->steer_q7 = 0;
         }
-        else if (lost_check(p_lf, p_v))
+        else if (lost_check(p_lf, p_in, p_v))
         {
-            enter(p_lf, LF_ST_LINE_LOST);
+            enter_lost(p_lf, true);
             may_post = false;
         }
         else if (p_lf->hold_on)
@@ -564,9 +755,9 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
             p_lf->junction_armed = true;
             enter_on_line(p_lf, p_v);
         }
-        else if (lost_check(p_lf, p_v))
+        else if (lost_check(p_lf, p_in, p_v))
         {
-            enter(p_lf, LF_ST_LINE_LOST);
+            enter_lost(p_lf, true);
             may_post = false;
         }
         else
@@ -619,7 +810,7 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
             {
                 p_lf->side = LF_SIDE_RIGHT;
             }
-            enter(p_lf, LF_ST_LINE_LOST);
+            enter_lost(p_lf, false);    /* the turn's look ran out: T_search alone */
             may_post = false;
         }
         else
@@ -632,7 +823,9 @@ static bool st_junction(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p
 }
 
 /* LINE_LOST: post nothing so Motion's hold timeout stops the car, then
- * search.  The line coming back meanwhile ends it early. */
+ * search.  The line coming back meanwhile ends it early: under CENTRE, or (C)
+ * under RIGHT for LF_RESCUE_N samples, which returns to the recovery towards
+ * the right (update_side has made the side RIGHT). */
 static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
 {
     bool may_post = false;
@@ -643,9 +836,14 @@ static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
         enter_on_line(p_lf, p_v);
         may_post = true;
     }
+    else if (p_lf->r_dark_n >= LF_RESCUE_N)
+    {
+        enter_on_line(p_lf, p_v);
+        may_post = true;
+    }
     else if (p_lf->timer_n >= LF_N_STOP)
     {
-        enter_search(p_lf);
+        enter_search(p_lf, p_lf->lost_driving);
         may_post = true;
     }
     else
@@ -657,17 +855,23 @@ static bool st_line_lost(lf_core_t *p_lf, lf_view_t const *p_v)
 }
 
 /* REACQUIRING_TRACK: search steer towards the remembered side, then the other
- * side, until CENTRE sees solid black or T_search runs out. */
-static bool st_search(lf_core_t *p_lf, lf_view_t const *p_v, lf_out_t *p_out)
+ * side, until CENTRE sees solid black or T_search runs out, or (a search
+ * after a loss while driving) its own travel reaches LF_D_SEARCH_MAX_CNT. */
+static bool st_search(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v, lf_out_t *p_out)
 {
     bool may_post = true;
 
     p_lf->timer_n++;
+    if (p_lf->srch_capped)
+    {
+        p_lf->srch_cnt += p_in->fwd_cnt - p_lf->prev_fwd;  /* at most 400 samples of a few dozen counts */
+    }
     if (p_v->zc == LF_ZONE_DARK)
     {
         enter_on_line(p_lf, p_v);
     }
-    else if (p_lf->timer_n >= LF_N_SEARCH)
+    else if ((p_lf->timer_n >= LF_N_SEARCH)
+             || (p_lf->srch_capped && (p_lf->srch_cnt >= LF_D_SEARCH_MAX_CNT)))
     {
         p_out->event = LF_EV_TRACK_LOST;        /* once: then IDLE until a new run */
         enter(p_lf, LF_ST_IDLE);
@@ -698,7 +902,7 @@ static bool st_suspended(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *
         }
         else
         {
-            enter_search(p_lf);
+            enter_search(p_lf, false);  /* hand-back without the line: T_search alone */
         }
         may_post = true;
     }
@@ -739,11 +943,21 @@ static void lf_core_init_body(lf_core_t *p_lf, lf_cal_t const *p_cal)
     p_lf->hold_on = false;
     p_lf->hold_full = false;
     p_lf->hold_cnt0 = 0U;
+    p_lf->r_dark_n = 0U;
+    p_lf->bend_on = false;
+    p_lf->bend_regain = false;
+    p_lf->bend_q7 = LF_BEND_FLOOR_Q7;
+    p_lf->bend_cnt0 = 0U;
+    p_lf->bend_edge_n = 0U;
     p_lf->man_seen = LF_MAN_NONE;
     p_lf->man_done = false;
     p_lf->jct_pending = false;
     p_lf->jct_line_ahead = false;
     p_lf->jct_cnt0 = 0U;
+    p_lf->prev_fwd = 0U;
+    p_lf->lost_driving = false;
+    p_lf->srch_capped = false;
+    p_lf->srch_cnt = 0U;
     enter(p_lf, LF_ST_IDLE);
 }
 
@@ -769,6 +983,19 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
     v.zc = lf_zone_update(&p_lf->zc, v.d_c);
     v.zr = lf_zone_update(&p_lf->zr, v.d_r);
     update_side(p_lf, &v);
+    if (v.r_now == LF_ZONE_LIGHT)
+    {
+        p_lf->r_dark_n = 0U;
+    }
+    else if (p_lf->r_dark_n < LF_RESCUE_N)
+    {
+        p_lf->r_dark_n++;
+    }
+    else
+    {
+        /* saturated: RIGHT has the line */
+    }
+    bend_track(p_lf, p_in, &v);
     if ((p_in->manoeuvre == LF_MAN_TURN) || (p_in->manoeuvre == LF_MAN_UTURN))
     {
         pivot_watch(p_lf, p_in, &v);
@@ -807,7 +1034,7 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
             else
             {
                 p_lf->side = LF_SIDE_LEFT;
-                enter_search(p_lf);
+                enter_search(p_lf, false);  /* run start off the line: T_search alone */
                 may_post = true;
             }
         }
@@ -843,7 +1070,7 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
                 }
                 else
                 {
-                    may_post = st_search(p_lf, &v, p_out);
+                    may_post = st_search(p_lf, p_in, &v, p_out);
                 }
                 break;
             case LF_ST_SUSPENDED:
@@ -877,6 +1104,8 @@ static void lf_core_step_body(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_
                         && ((p_lf->state == LF_ST_ON_LINE) || (v.zc == LF_ZONE_DARK));
     p_out->d_c_pm = v.d_c;
     p_out->d_r_pm = v.d_r;
+    /* Every sample, every state: the next sample's travel is its own. */
+    p_lf->prev_fwd = p_in->fwd_cnt;
 }
 
 void lf_core_step(lf_core_t *p_lf, lf_in_t const *p_in, lf_out_t *p_out)

@@ -171,10 +171,13 @@
 #define MOTION_SPEED_BYPASS_NOMINAL_CMPS    (25U)
 /** Bring-up cruise speed. TUNE
  *  2026-11-19: 15 -> 5 cm/s so the obstacle run can be watched and the car
- *  caught.  Needs LF_T_JCT_MAX_MS raised to match (lf_core.h): the
- *  assertion there ties the junction time cap to this speed.  Buddy 3
- *  agreed to the change. */
+ *  caught (Buddy 5 / Buddy 3 agreed).  Line following (lf_core.h LF_CRUISE_*)
+ *  builds only at exactly this speed: a test build passes -DLF_ALLOW_ANY_SPEED=1
+ *  to try another.  LF_T_JCT_MAX_MS (lf_core.h) follows this speed.
+ *  Overridable for a test build (-DMOTION_SPEED_CRUISE_BRINGUP_CMPS=...). */
+#ifndef MOTION_SPEED_CRUISE_BRINGUP_CMPS
 #define MOTION_SPEED_CRUISE_BRINGUP_CMPS    (5U)
+#endif
 /** Bring-up slow speed. TUNE */
 #define MOTION_SPEED_SLOW_BRINGUP_CMPS      (5U)
 /** Bring-up bypass speed.

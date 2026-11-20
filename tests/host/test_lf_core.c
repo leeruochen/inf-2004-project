@@ -238,7 +238,7 @@ static void test_constants(void)
     CHECK(ENC_QUAD_MULT == 4U);
     CHECK(ENC_CPR == 616U);
     CHECK(WHEEL_CIRC_MM == 207U);
-    CHECK(LF_T_JCT_MAX_MS == 900U);
+    CHECK(LF_T_JCT_MAX_MS == 2700U);     /* 120 mm at 5 cm/s = 12000 / 5 = 2400 ms, + 300 (by hand) */
     CHECK(LF_D_JCT_LOOK_CNT == JCT_LOOK_CNT);
     CHECK(LF_RECOVER_RAMP_Q7 == 1);
     CHECK(LF_PIVOT_HALF_CNT == 1065U);          /* 45 degrees, by hand: see lf_core.h */
@@ -638,11 +638,11 @@ static void test_junction(void)
     }
 
     /* Odometer frozen (encoder fault): JUNCTION after LF_T_JCT_MAX_MS
-     * (900 ms = 180 samples after detection), not before. */
+     * (2700 ms at the 5 cm/s cruise = 540 samples after detection), not before. */
     start_tracking(&lf);
     g_fwd_step = 0U;
     (void)run(&lf, 3U, 1000U, 1000U);
-    r = run(&lf, 179U, 500U, 0U);
+    r = run(&lf, 539U, 500U, 0U);
     CHECK(r.junctions == 0U);
     r = run(&lf, 1U, 500U, 0U);
     CHECK(r.junctions == 1U);
@@ -722,7 +722,11 @@ static void test_lost_and_search(void)
     CHECK((n * 5U) <= 115U);
 
     /* LINE_LOST posts nothing for 120 ms (Motion's 100 ms hold + one
-     * period), then the search starts on the remembered side (left). */
+     * period), then the search starts on the remembered side (left).  The
+     * search's time pattern is checked slowly (4 counts a sample, ~67 mm/s:
+     * 2 s of search is 1596 counts, under its 1785-count travel limit); at
+     * the cruise speeds that limit ends it sooner (test 32). */
+    g_fwd_step = 4U;
     r = run(&lf, 23U, 0U, 0U);
     CHECK(r.posts == 0U);
     CHECK(r.last.state == LF_ST_LINE_LOST);
@@ -745,6 +749,7 @@ static void test_lost_and_search(void)
     CHECK(r.track_lost == 0U);
     CHECK(r.posts == 0U);
     CHECK(r.last.state == LF_ST_IDLE);
+    g_fwd_step = 12U;
 
     /* Overshoot left: RIGHT was the last sensor on the line -> the line is
      * on the right: recovery steer right, search right first. */
@@ -1979,6 +1984,192 @@ static void test_uturn_hold(void)
     CHECK(r.max_steer == 4);
 }
 
+/* Test 30 (EXPERIMENT C, branch buddy3/ab-rescue): RIGHT keeps the line.
+ * S3-U17 A/B, 16 Nov 2026: on a right bend CENTRE went white, RIGHT reached the
+ * line about 18-22 samples later, and in 8 of 10 drives LINE_LOST was declared
+ * on a sample where RIGHT read black: T_lost (20 samples of both confirmed
+ * LIGHT) ended before RIGHT's 3-sample zone filter confirmed it, and in
+ * LINE_LOST a line under RIGHT did nothing.  C: RIGHT not LIGHT (its own
+ * reading, this sample) for LF_RESCUE_N consecutive samples stops the lost
+ * count, and in LINE_LOST returns to ON_LINE: the recovery then steers to the
+ * right, from LF_RECOVER_Q7.  Expected values by hand: LF_RESCUE_N 2; the
+ * first right post is 32 + 1 = 33. */
+static uint32_t lost_entries(lf_core_t *p_lf, uint32_t n, uint16_t dc, uint16_t dr, int32_t *p_max)
+{
+    uint32_t entries = 0U;
+
+    for (uint32_t i = 0U; i < n; i++)
+    {
+        lf_state_t const before = p_lf->state;
+        lf_out_t const o = feed(p_lf, dc, dr);
+
+        entries += ((o.state == LF_ST_LINE_LOST) && (before != LF_ST_LINE_LOST)) ? 1U : 0U;
+        if (o.post_steer && (o.steer_q7 > *p_max))
+        {
+            *p_max = o.steer_q7;
+        }
+    }
+    return entries;
+}
+
+static void test_rescue(void)
+{
+    lf_core_t lf;
+    lf_out_t  o;
+    int32_t   mx;
+
+    CHECK(LF_RESCUE_N == 2U);
+
+    /* RIGHT reaches the line 18, 20, 22 and 26 samples after CENTRE went
+     * white (the hardware spread): the core ends ON_LINE steering right. */
+    for (uint32_t k = 18U; k <= 26U; k += 2U)
+    {
+        start_tracking(&lf);
+        (void)run(&lf, 120U, 1000U, 0U);
+        mx = -1000;
+        (void)lost_entries(&lf, k, 0U, 0U, &mx);
+        mx = -1000;
+        (void)lost_entries(&lf, 12U, 0U, 1000U, &mx);
+        CHECK(lf.state == LF_ST_ON_LINE);
+        CHECK(mx >= (LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7));
+        CHECK(lf.side == LF_SIDE_RIGHT);
+    }
+
+    /* Before T_lost ends (18 samples), no LINE_LOST at all. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    mx = -1000;
+    CHECK(lost_entries(&lf, 18U, 0U, 0U, &mx) == 0U);
+    CHECK(lost_entries(&lf, 12U, 0U, 1000U, &mx) == 0U);
+
+    /* One noisy RIGHT sample does not count: LINE_LOST as before. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    mx = -1000;
+    (void)lost_entries(&lf, 19U, 0U, 0U, &mx);
+    o = feed(&lf, 0U, 1000U);
+    (void)o;
+    CHECK(lost_entries(&lf, 10U, 0U, 0U, &mx) == 1U);
+    CHECK(lf.state == LF_ST_LINE_LOST);
+
+    /* A real loss (both white): LINE_LOST, the stop, the search, as before. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 40U) <= 40U);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 40U) <= 40U);
+}
+
+/* Test 32 (EXPERIMENT T80, branch buddy3/ab-bend-150): bend memory.  S3-U17,
+ * C at 150 mm/s, 16 Nov 2026: RIGHT rescued the line on the right bend, the
+ * recovery ramped past +100, CENTRE came back onto the body and the edge
+ * steering fell to +4 (5 of 5 drives); the bend slid out again.  T80 keeps a
+ * right floor on the body side after a long rescue only.  Expected values by
+ * hand from the definitions: the floor is the steering one sample before the
+ * regain (the ramp is +1 per sample), easing by 1 per sample to 32; the edge
+ * steering at d_c 1000 is (1000 - 900) * 24 / 500 = +4, at 700 it is -9. */
+static void test_bend_memory(void)
+{
+    lf_core_t lf;
+    run_t     r;
+    int32_t   s;
+
+    CHECK(LF_BEND_MIN_Q7 == 80);
+    CHECK(LF_BEND_FLOOR_Q7 == 32);
+    CHECK(LF_BEND_SETTLE_N == 20U);
+    CHECK(LF_BEND_MM == 300U);
+    CHECK(lf_edge_steer(1000U) == 4);
+    CHECK(lf_edge_steer(700U) == -9);
+
+    /* A bend: CENTRE white, RIGHT on the line long enough to ramp past 80. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    CHECK(!lf.bend_on);
+    (void)run(&lf, 70U, 0U, 1000U);
+    CHECK(lf.bend_on);
+    CHECK(lf.state == LF_ST_ON_LINE);
+    s = lf.steer_q7;
+    CHECK(s > LF_BEND_MIN_Q7);
+    /* CENTRE back on the body, RIGHT white: no drop to +4. */
+    r = run(&lf, 1U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == (s - 1));
+    r = run(&lf, 20U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == (s - 21));
+    CHECK(r.min_steer >= (s - 21));
+    CHECK(lf.bend_on);
+    /* Still on the body: eases down to the floor 32, not below. */
+    r = run(&lf, 120U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == LF_BEND_FLOOR_Q7);
+    CHECK(r.min_steer == LF_BEND_FLOOR_Q7);
+    /* At the right edge: the edge steering, unchanged (left if needed);
+     * 20 samples there end the memory. */
+    r = run(&lf, 19U, 700U, 0U);
+    CHECK(r.last.steer_q7 == -9);
+    CHECK(lf.bend_on);
+    r = run(&lf, 1U, 700U, 0U);
+    CHECK(!lf.bend_on);
+    r = run(&lf, 8U, 1000U, 0U);
+    CHECK(r.last.steer_q7 == 4);
+
+    /* A drift: a short rescue (ramp below 80) leaves the edge steering as in C. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 12U, 0U, 1000U);
+    CHECK(lf.bend_on);
+    CHECK(lf.steer_q7 < LF_BEND_MIN_Q7);
+    r = run(&lf, 8U, 1000U, 0U);
+    CHECK(!lf.bend_on);
+    CHECK(r.last.steer_q7 == 4);
+    CHECK(r.max_steer == 4);
+
+    /* Distance cap: LF_BEND_MM of travel since entry ends it on the body. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 70U, 0U, 1000U);
+    /* Entry at the 2nd RIGHT sample: 68 samples in; 3571 counts = 298 samples. */
+    CHECK(LF_BEND_CNT == 3571U);
+    r = run(&lf, 225U, 1000U, 0U);
+    CHECK(lf.bend_on);
+    CHECK(r.last.steer_q7 == LF_BEND_FLOOR_Q7);
+    r = run(&lf, 10U, 1000U, 0U);
+    CHECK(!lf.bend_on);
+    CHECK(r.last.steer_q7 == 4);
+
+    /* A manoeuvre (junction turn, u-turn, avoidance) or the stop ends it. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 70U, 0U, 1000U);
+    CHECK(lf.bend_on);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)feed(&lf, 0U, 1000U);
+    CHECK(!lf.bend_on);
+    g_in.manoeuvre = LF_MAN_NONE;
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 10U, 0U, 0U);
+    (void)run(&lf, 70U, 0U, 1000U);
+    g_in.running = false;
+    (void)feed(&lf, 0U, 1000U);
+    CHECK(!lf.bend_on);
+
+    /* Noise: one RIGHT sample on the line while CENTRE is white does not start it. */
+    start_tracking(&lf);
+    (void)run(&lf, 120U, 1000U, 0U);
+    (void)run(&lf, 5U, 0U, 0U);
+    (void)feed(&lf, 0U, 1000U);
+    (void)run(&lf, 5U, 0U, 0U);
+    CHECK(!lf.bend_on);
+
+    /* Plain straight tracking at the edge never starts it. */
+    start_tracking(&lf);
+    r = run(&lf, 400U, 900U, 0U);
+    CHECK(!lf.bend_on);
+    CHECK(r.max_steer == 0);
+}
+
 /* Test 22: the simulator against the 4 Nov 2026 hardware runs, so a change
  * to the model cannot quietly drift away from the real car.  Expected
  * values are the logged ones, not computed the way the model computes. */
@@ -2176,6 +2367,185 @@ static void test_sim_recovery_starts(void)
     }
 }
 
+/* Test 30: LINE_LOST needs the distance as well as the time.  Expected
+ * sample counts worked by hand: LF_D_LOST_MM 20 mm = 20 x 2464 / 207 = 238
+ * counts; the fixture moves g_fwd_step counts per 5 ms sample, so the streak
+ * of both-LIGHT samples must cover 238 counts and last at least 20 samples
+ * (T_lost 100 ms):
+ *   24 counts (400 mm/s): 10 samples of travel, the 20-sample time decides;
+ *   12 counts (200 mm/s): 20 samples -> the same as 400 (nothing changes);
+ *    9 counts (150 mm/s): 27 samples -> 7 later;
+ *    6 counts (100 mm/s): 40 samples -> 20 later;
+ *    0 counts (stalled):  the 400 ms cap, 80 samples -> 60 later. */
+static void test_lost_by_distance(void)
+{
+    uint32_t const steps[5] = { 24U, 12U, 9U, 6U, 0U };
+    int32_t const later[5] = { 0, 0, 7, 20, 60 };
+    uint32_t n[5];
+    lf_core_t lf;
+
+    for (int i = 0; i < 5; i++)
+    {
+        start_tracking(&lf);
+        g_fwd_step = steps[i];
+        n[i] = until_state(&lf, 0U, 0U, LF_ST_LINE_LOST, 200U);
+        CHECK(n[i] <= 200U);
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        CHECK(((int32_t)n[i] - (int32_t)n[0]) == later[i]);
+    }
+    CHECK(n[0] * LF_SAMPLE_PERIOD_MS >= LF_T_LOST_MS);  /* never sooner than T_lost */
+
+    /* The benefit: at 100 mm/s a 30-sample dip (15 mm, under 20 mm) is a
+     * correction coming back, not a lost line.  Time alone ended it. */
+    start_tracking(&lf);
+    g_fwd_step = 6U;
+    {
+        bool lost = false;
+
+        for (uint32_t i = 0U; i < 30U; i++)
+        {
+            lost = lost || (feed(&lf, 0U, 0U).state == LF_ST_LINE_LOST);
+        }
+        for (uint32_t i = 0U; i < 20U; i++)
+        {
+            lost = lost || (feed(&lf, 500U, 0U).state == LF_ST_LINE_LOST);
+        }
+        CHECK(!lost);
+        CHECK(feed(&lf, 500U, 0U).state == LF_ST_ON_LINE);
+    }
+    g_fwd_step = 12U;
+}
+
+/* Test 31: straights from offset and angled starts at the bring-up cruise
+ * speeds (closed loop).  At 150 and 100 mm/s the time-only T_lost declared
+ * corrections lost (host model: 1 of 27 runs at 150, 9 of 27 at 100 left
+ * ON_LINE after the settle; hardware S3-U17 16 Nov: launch LINE_LOST 3 of 5
+ * at 150 against 1 of 5 at 200).  Gate: always ON_LINE after 3 s, no
+ * TRACK_LOST.  Deferred: at 100 mm/s with the nose 10 deg left the car
+ * weaves about +-30 mm (Motion's shared PID target, task_motion.c; the model
+ * with per-wheel targets settles in 1-2.5 s), so the edge error is reported,
+ * not gated. */
+static void test_sim_slow_straights(void)
+{
+    double const speeds[2] = { 150.0, 100.0 };
+    double const ys[3] = { -6.0, 0.0, 6.0 };
+    double const ths_deg[3] = { -10.0, 0.0, 10.0 };
+
+    for (int i = 0; i < 2; i++)
+    {
+        uint32_t clean = 0U;
+        double worst = 0.0;
+
+        for (int a = 0; a < 3; a++)
+        {
+            for (int b = 0; b < 3; b++)
+            {
+                for (uint32_t seed = 0U; seed < 3U; seed++)
+                {
+                    sim_t s;
+                    loop_t l;
+
+                    sim_init(&s);
+                    s.rng = 12345U + (seed * 7919U);
+                    s.speed_mmps = speeds[i];
+                    l = drive_straight(&s, ys[a], ths_deg[b] * SIM_PI / 180.0, 9.0, 3.0, 6000.0);
+                    clean += (l.always_on_line && (s.n_track_lost == 0U) && (s.n_junction == 0U)) ? 1U : 0U;
+                    worst = fmax(worst, l.max_err_mm);
+                    DEFER(l.max_err_mm <= 9.0);
+                }
+            }
+        }
+        CHECK_AT(speeds[i], clean == 27U);
+        printf("  straight starts %3.0f mm/s: %u/27 ON_LINE throughout after 3 s, max |CENTRE - edge| %.1f mm\n",
+               speeds[i], clean, worst);
+    }
+}
+
+/* Samples of a search, from its first (the sample the state became
+ * REACQUIRING) to the one that reports TRACK_LOST; 0 if not within limit. */
+static uint32_t search_samples(lf_core_t *p_lf, uint32_t limit)
+{
+    for (uint32_t i = 2U; i <= limit; i++)
+    {
+        if (feed(p_lf, 0U, 0U).event == LF_EV_TRACK_LOST)
+        {
+            return i;
+        }
+    }
+    return 0U;
+}
+
+/* LF_D_SEARCH_MAX_MM 150 mm x 2464 / 207 = 1785 counts, worked by hand. */
+#define SEARCH_MAX_CNT  (1785U)
+
+/* Test 32: a search after a genuine loss while driving ends in TRACK_LOST
+ * after 150 mm of its own travel, or at T_search (400 samples) if that comes
+ * first.  The search's travel starts after its first sample, so it ends on
+ * sample 1 + ceil(1785 / step): 12 counts (200 mm/s) -> 150, 9 (150 mm/s)
+ * -> 200, 6 (100 mm/s) -> 299; stalled (0) -> 400, as before.  Searches that
+ * do not follow a loss while driving keep T_search alone: after a junction
+ * turn's look (junction turns as they were), at run start, after an
+ * avoidance hand-back (Buddy 5's bypass ends near the line). */
+static void test_search_cap(void)
+{
+    uint32_t const steps[4] = { 12U, 9U, 6U, 0U };
+    lf_core_t lf;
+
+    for (int i = 0; i < 4; i++)
+    {
+        uint32_t const capped = 1U + ((SEARCH_MAX_CNT + steps[i] - 1U) / ((steps[i] > 0U) ? steps[i] : 1U));
+        uint32_t const want = (steps[i] == 0U) ? 400U : ((capped < 400U) ? capped : 400U);
+        uint32_t n;
+
+        start_tracking(&lf);
+        g_fwd_step = steps[i];
+        CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 300U) <= 300U);
+        n = search_samples(&lf, 500U);
+        CHECK(n == want);
+        if (n != want)
+        {
+            printf("  search cap step %u: TRACK_LOST at search sample %u, want %u\n",
+                   (unsigned)steps[i], (unsigned)n, (unsigned)want);
+        }
+    }
+    g_fwd_step = 12U;
+
+    /* Lost after going straight on over a junction: capped too. */
+    start_tracking(&lf);
+    post_junction(&lf);
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 300U) <= 300U);
+    CHECK(search_samples(&lf, 500U) == 150U);
+
+    /* After a junction turn's look ran out: T_search alone (as before). */
+    start_tracking(&lf);
+    post_junction(&lf);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&lf, 50U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 300U) <= 300U);
+    CHECK(search_samples(&lf, 500U) == 400U);
+
+    /* Run start off the line: T_search alone. */
+    reset_inputs();
+    lf_core_init(&lf, &k_cal);
+    (void)run(&lf, 5U, 0U, 0U);
+    g_in.running = true;
+    CHECK(feed(&lf, 0U, 0U).state == LF_ST_REACQUIRING);
+    CHECK(search_samples(&lf, 500U) == 400U);
+
+    /* Avoidance hand-back without the line: T_search alone. */
+    start_tracking(&lf);
+    g_in.avoid_active = true;
+    (void)run(&lf, 20U, 0U, 0U);
+    g_in.avoid_active = false;
+    g_in.reacquired = true;
+    CHECK(feed(&lf, 0U, 0U).state == LF_ST_REACQUIRING);
+    CHECK(search_samples(&lf, 500U) == 400U);
+    g_in.reacquired = false;
+}
+
 int main(void)
 {
     test_constants();
@@ -2207,6 +2577,11 @@ int main(void)
     test_pivot_memory();
     test_uturn_memory();
     test_uturn_hold();
+    test_lost_by_distance();
+    test_sim_slow_straights();
+    test_search_cap();
+    test_rescue();
+    test_bend_memory();
     printf("lf_core: %d deferred checks not yet a gate, %d of them failing "
            "(curves, junction turns, > 200 mm/s)\n", g_deferred, g_deferred_failing);
     return TEST_RESULT("lf_core");

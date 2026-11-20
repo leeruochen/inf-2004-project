@@ -78,6 +78,17 @@
  *  correction.  On the black side the car has the line's width to spare. */
 #define LF_EDGE_TARGET_PM       (900U)
 
+/** Mounting criteria for the two-pose calibration, from the car: white
+ *  116-200 throughout (19-20 Nov 2026); black 1888-2124 at ~10 mm, 1250-1430
+ *  in the straddle mount, 700-1040 with the sensors lowered.  The line
+ *  follower only uses the span (everything is darkness 0..1000 of it), and
+ *  in the host model straddle followed every 90 degree bend at a span of 560
+ *  (black 700) with the sensor noise doubled; the limits keep a margin above
+ *  LF_MIN_SPAN_RAW (400).  Below them a sensor is LF_SENS_WEAK: re-mount it. TUNE */
+#define LF_CAL_BLACK_MIN_RAW    (600U)
+#define LF_CAL_WHITE_MAX_RAW    (400U)
+#define LF_CAL_SPAN_GOOD_RAW    (450U)
+
 /** Calibration refused if black - white is smaller than this (raw counts;
  *  same contrast rule as S3-U09, about 10 % of the 12-bit scale). */
 #define LF_MIN_SPAN_RAW         (400U)
@@ -124,6 +135,37 @@
 /** The same in encoder counts. */
 #define LF_UTURN_HOLD_CNT       ((LF_UTURN_HOLD_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 
+/* EXPERIMENT C (branch buddy3/ab-rescue, 16 Nov 2026), NOT production: RIGHT
+ * keeps the line.  On a right bend the line slides right under the car:
+ * CENTRE goes white first, and RIGHT reaches the line a few mm later.  On
+ * the car (S3-U17 A/B) LINE_LOST was declared on a sample where RIGHT read
+ * black in 8 of 10 drives: T_lost ended before RIGHT's 3-sample zone filter
+ * confirmed it, and in LINE_LOST a line under RIGHT did nothing.  C: RIGHT
+ * not LIGHT by this sample's own reading for LF_RESCUE_N consecutive samples
+ * stops the lost count, and in LINE_LOST returns to ON_LINE (side RIGHT, so
+ * the recovery steers right from LF_RECOVER_Q7).  Two samples, not one, so a
+ * single noisy reading cannot keep the car going.  A/B on the car decides. TUNE */
+#define LF_RESCUE_N             (2U)
+
+/* EXPERIMENT T80 (branch buddy3/ab-bend-150, 17 Nov 2026, NOT for merge):
+ * bend memory.  C at 150 mm/s, 16 Nov: RIGHT rescued the line on a right bend
+ * and the recovery ramped to +105..+127, CENTRE came back onto the body, and
+ * the edge steering dropped to +4 at once: the bend slid out again.
+ *   On:  C's rescue moment (CENTRE LIGHT, RIGHT not LIGHT for LF_RESCUE_N
+ *        samples, ON_LINE or LINE_LOST); the floor is the steering then.
+ *   Use: when CENTRE is back with d_c >= LF_EDGE_TARGET_PM, and only if the
+ *        floor at that moment is >= LF_BEND_MIN_Q7 (a long rescue = a bend;
+ *        a short one is a drift): steering at least the floor, the floor
+ *        easing by 1 per sample down to LF_BEND_FLOOR_Q7.  Below the target
+ *        (at the right edge) the edge steering is unchanged.
+ *   Off: LF_BEND_SETTLE_N samples at the edge (d_c < target, not LIGHT),
+ *        LF_BEND_MM of travel, or any junction, turn, avoidance or stop. */
+#define LF_BEND_MIN_Q7          (80)
+#define LF_BEND_FLOOR_Q7        (32)
+#define LF_BEND_SETTLE_N        (20U)
+#define LF_BEND_MM              (300U)
+#define LF_BEND_CNT             ((LF_BEND_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+
 /** Search the remembered side this long, then the other side until
  *  LF_T_SEARCH_MS. TUNE */
 #define LF_SEARCH_SWAP_MS       (700U)
@@ -131,10 +173,43 @@
  *  (MOTION_T_HOLD_MS) stops the car before the search starts. */
 #define LF_T_STOP_MS            (MOTION_T_HOLD_MS + MOTION_PERIOD_MS)
 
+/** LINE_LOST needs both sensors LIGHT for LF_T_LOST_MS (design.md T_lost)
+ *  AND for this much forward travel: the distance T_lost covered at
+ *  200 mm/s, the speed the recovery was tuned at (LF-3.3).  A time alone
+ *  covers less line as the car slows, and ended corrections that were still
+ *  coming back: launch LINE_LOST in 3 of 5 drives at 150 mm/s against 1 of 5
+ *  at 200 (S3-U17, 16 Nov 2026); host model, straights from offset starts,
+ *  1 of 27 runs lost at 150 mm/s and 9 of 27 at 100, none with this rule.
+ *  At 200 mm/s and above the time is the longer, so nothing changes there.
+ *  Deviation from design.md T_lost: ARCHITECTURE.md D13 (proposed). TUNE */
+#define LF_D_LOST_MM            (20U)
+/** The same in encoder counts. */
+#define LF_D_LOST_CNT           ((LF_D_LOST_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+/** LINE_LOST after this long with both LIGHT whatever the travel: a stalled
+ *  or very slow car (20 mm at 50 mm/s). */
+#define LF_T_LOST_MAX_MS        (400U)
+
+/** A search that follows a genuine loss while driving the line (LINE_LOST
+ *  from ON_LINE, or going straight on past a junction) ends in TRACK_LOST
+ *  after this much of its own forward travel, if T_search has not ended it
+ *  first.  The VC drives the search's arcs at the cruise speed, so T_search
+ *  alone let the car wander: host model, tight bends at 150 mm/s, the car
+ *  stopped 15-36 cm from the line; with 150 mm mostly within 5 cm, and the
+ *  searches that found the line (gentle bends) found it well inside 150 mm.
+ *  150 mm of the search's 64 arc is about 75 degrees of turn, past a line
+ *  lost to either side.  Not used after a junction turn's look, at run
+ *  start, or after an avoidance hand-back: those keep T_search alone.
+ *  Shortens design.md T_search: ARCHITECTURE.md D13 (proposed). TUNE */
+#define LF_D_SEARCH_MAX_MM      (150U)
+/** The same in encoder counts. */
+#define LF_D_SEARCH_MAX_CNT     ((LF_D_SEARCH_MAX_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+
 /** Sensing point of the line sensors to the wheel axle, which is Motion's
  *  pivot centre for a turn (task_motion.c TURN_L/TURN_R/UTURN drive the
  *  wheels in opposite directions).  Ruler on the car, 4 Nov 2026. */
+#ifndef LF_D_PIVOT_MM
 #define LF_D_PIVOT_MM           (120U)
+#endif
 /** JUNCTION is posted this much before the axle reaches the cross line,
  *  for the car's travel while the turn command takes effect (Motion's
  *  next 20 ms period, then the wheels slowing). TUNE */
@@ -161,16 +236,33 @@
 /** The same for a u-turn, at 135 degrees: the cross arm goes by at 90, so only
  *  the last quarter of the pivot can show the line the car came along. */
 #define LF_PIVOT_UTURN_CNT      (3U * LF_PIVOT_HALF_CNT)
+/** The cruise speed line following runs at, cm/s: the build fails for any
+ *  other MOTION_SPEED_CRUISE_CMPS (lf_core.c), so a change elsewhere (15 on
+ *  main, 30 in the nominal set) cannot silently speed the car up.  7 cm/s is
+ *  the owner's decision (20 Nov 2026, 7 then 5 cm/s): slow enough for the collision
+ *  and obstacle tests; 5 is the lowest the slow speed (thresholds.h) allows.  What it costs, measured: the car's turn at full steering
+ *  is wider the slower it goes (steady, 20 Nov traces: 7 cm/s 0.50 deg/mm, a
+ *  115 mm circle; 15 cm/s ~0.56), so with the sensors 120 mm ahead of the
+ *  axle the tightest bend the sensors follow is ~165 mm, and the track's bend
+ *  is 117 mm (ruler, 16 Nov): at 7 cm/s every drive lost the line there (host
+ *  model: 0 of 12 U-bends).  Tighter bends than ~165 mm need a pivot, not
+ *  faster driving.  A test build may pass -DLF_ALLOW_ANY_SPEED=1.  Line
+ *  following only: Buddy 5's slow approach (5 cm/s) and bypass (25 cm/s) are
+ *  not it. */
+#ifndef LF_CRUISE_MIN_CMPS
+#define LF_CRUISE_MIN_CMPS      (5U)
+#endif
+#ifndef LF_CRUISE_MAX_CMPS
+#define LF_CRUISE_MAX_CMPS      (5U)
+#endif
 /** JUNCTION is posted after this long even if the odometer has not moved
- *  (an encoder fault); at cruise the travel takes 400 ms (300 mm/s) to
- *  600 ms (bring-up 200 mm/s). TUNE */
-/*  2026-11-19: 900 -> 3000 ms.  The assertion in lf_core.c ties this cap
- *  to the cruise speed: the car must cover LF_D_JCT_POST_MM (120 mm)
- *  before the cap expires.  At the new 5 cm/s bring-up cruise that takes
- *  2400 ms, so 900 ms would time the junction out instead of posting it.
- *  Changed with Buddy 3's agreement for the Subsystem 5 obstacle run;
- *  revisit together when the cruise speed is settled. */
-#define LF_T_JCT_MAX_MS         (3000U)
+ *  (an encoder fault): the post travel's time at the cruise speed plus
+ *  300 ms, so it follows a cruise change (2700 ms at the 5 cm/s bring-up
+ *  cruise; 900 ms at 200 mm/s, the value LF-3 used).  2026-11-19 main set a
+ *  fixed 3000 ms for 5 cm/s because 900 ms timed the junction out before the
+ *  car had covered LF_D_JCT_POST_MM; this derives the same margin from the
+ *  cruise instead (the assertion in lf_core.c still ties them). */
+#define LF_T_JCT_MAX_MS         (((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) + 300U)
 
 /* Times as sample counts (one lf_core_step() call = LF_SAMPLE_PERIOD_MS). */
 #define LF_SAMPLES(ms)          ((uint32_t)(ms) / LF_SAMPLE_PERIOD_MS)
@@ -200,6 +292,24 @@ typedef enum
     LF_CAL_BAD_SENSOR,      /**< a sensor failed lf_adc_check (stuck, noisy, empty) */
     LF_CAL_NO_CONTRAST      /**< black not >= white + LF_MIN_SPAN_RAW (or reversed) */
 } lf_cal_status_t;
+
+/** One sensor's verdict from the two-pose calibration (lf_cal_from_two_poses). */
+typedef enum
+{
+    LF_SENS_OK = 0,
+    LF_SENS_DISCONNECTED,   /**< at an ADC rail, or no samples, in either pose */
+    LF_SENS_NOISY,          /**< spread above ADC_NOISE_MAX_RAW in either pose */
+    LF_SENS_BLIND,          /**< black not >= white + LF_MIN_SPAN_RAW: cannot tell them apart */
+    LF_SENS_WEAK            /**< tells them apart, but below the mounting criteria */
+} lf_sens_t;
+
+/** The two-pose calibration: each sensor's own white and black, and verdicts. */
+typedef struct
+{
+    lf_cal_t  cal;          /**< each channel from its own two readings */
+    lf_sens_t c;            /**< CENTRE (straddle: LEFT) */
+    lf_sens_t r;            /**< RIGHT */
+} lf_cal2_t;
 
 /** A sensor's zone, after LF_HYST_SAMPLES-sample hysteresis. */
 typedef enum
@@ -294,6 +404,11 @@ typedef struct
     bool           junction_armed;  /**< false from a junction until RIGHT is LIGHT */
     lf_side_t      side;            /**< side memory */
     uint32_t       lost_n;          /**< consecutive samples with both LIGHT */
+    uint32_t       lost_cnt;        /**< forward counts over those samples */
+    uint32_t       prev_fwd;        /**< fwd_cnt at the previous sample */
+    bool           lost_driving;    /**< this LINE_LOST came while driving the line */
+    bool           srch_capped;     /**< this search ends at LF_D_SEARCH_MAX_CNT */
+    uint32_t       srch_cnt;        /**< its forward counts so far */
     uint32_t       timer_n;         /**< samples spent in the current state/phase */
     bool           post_now;        /**< post at the next sample that may post (state entry) */
     int32_t        steer_q7;        /**< last computed steering */
@@ -313,6 +428,12 @@ typedef struct
     bool           hold_on;         /**< the hold after a u-turn is steering (LF_UTURN_HOLD_Q7) */
     bool           hold_full;       /**< CENTRE has been on the line's body during it */
     uint32_t       hold_cnt0;       /**< fwd_cnt when it started */
+    bool           bend_on;         /**< T80: bend memory active */
+    bool           bend_regain;     /**< T80: CENTRE is back, the floor is fixed */
+    int32_t        bend_q7;         /**< T80: steering floor */
+    uint32_t       bend_cnt0;       /**< T80: fwd_cnt at entry */
+    uint32_t       bend_edge_n;     /**< T80: samples settled at the edge */
+    uint32_t       r_dark_n;        /**< C: consecutive samples RIGHT is not LIGHT (its own reading; saturates) */
 } lf_core_t;
 
 /* ---------------------------------------------------------------------------
@@ -331,6 +452,19 @@ typedef struct
 lf_cal_status_t lf_cal_from_start_pose(lf_adc_stats_t const *p_c_on_line,
                                        lf_adc_stats_t const *p_r_on_white,
                                        lf_cal_t *p_cal);
+
+/*
+ * Two-pose calibration, each sensor independently.  Pose A: CENTRE over the
+ * line's middle, RIGHT over white; pose B: RIGHT over the line's middle,
+ * CENTRE over white (straddle mounting: shift the car so the named sensor
+ * is over the line).  p_c_black / p_r_white are pose A's statistics,
+ * p_c_white / p_r_black pose B's.  Each channel gets its own white and black
+ * and a verdict (lf_sens_t); *p_out is always filled.  Returns true only if
+ * both sensors are LF_SENS_OK.
+ */
+bool lf_cal_from_two_poses(lf_adc_stats_t const *p_c_black, lf_adc_stats_t const *p_r_white,
+                           lf_adc_stats_t const *p_c_white, lf_adc_stats_t const *p_r_black,
+                           lf_cal2_t *p_out);
 
 /*
  * Darkness of one raw reading: 0 at or below white, LF_PM_FULL at or above

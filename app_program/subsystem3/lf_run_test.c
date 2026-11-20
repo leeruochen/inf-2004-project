@@ -65,6 +65,9 @@
 #include "lf_core.h"                    /* lf_norm, LF_DARK_MIN_PM, LF_LIGHT_MAX_PM */
 #include "lf_run_test.h"
 #include "task_lf.h"
+#if S3_LF_STRADDLE
+#include "lf_straddle.h"                /* LF_SD_SIMPLE, LF_SD_BANG, ... for the variant line */
+#endif
 
 #define LF2_SECOND_MS           (1000U)
 #define LF2_POLL_MS             (10U)
@@ -106,9 +109,11 @@
 /** Pose A: CENTRE on the line's middle must read at least this, or the boot
  *  calibration is too high for the 900 pm target (see the guide). */
 #define LF2_POSE_A_MIN_PM       (950U)
-/** Pose A sets the calibration, so it needs a limit of its own: black has
- *  read 1694-1967 on the mat, and grey would pass a check against itself. */
-#define LF2_POSE_A_MIN_RAW      (1500U)
+/** Pose A sets the calibration, so it needs a limit of its own: grey would
+ *  pass a check against itself.  The same black limit as the two-pose
+ *  mounting criteria (lf_core.h): 1500 here refused the straddle mount's
+ *  1250-1430, which the follower handles (host model). */
+#define LF2_POSE_A_MIN_RAW      (LF_CAL_BLACK_MIN_RAW)
 /** Tries at pose A before the test gives up. */
 #define LF2_POSE_A_TRIES        (3U)
 /** LF-3.3: only the straight drive, this many times. */
@@ -138,6 +143,23 @@
 #if (S3_DRIVE_MM > 0) && ((S3_DRIVE_MM < 300) || (S3_DRIVE_MM > 20000))
 #error "lf_run_test.c: S3_DRIVE_MM is 300..20000 mm"
 #endif
+/** EXPERIMENT straddle build (sources.cmake -DS3_LF_STRADDLE=ON): the
+ *  sensors one each side of the line; placement and the start check follow. */
+#ifndef S3_LF_STRADDLE
+#define S3_LF_STRADDLE          (0)
+#endif
+#if S3_LF_STRADDLE
+#define LF2_MODE_TEXT           "STRADDLE (sensors one each side of the line, 26 mm apart)"
+#define LF2_START_TEXT          "the line centred between the two sensors, both on white, square to the line"
+#define LF2_POSE_A_HINT         " (straddle mount: slide the car about 13 mm to the RIGHT)"
+#define LF2_POSE_B_HINT         " (straddle mount: slide the car about 13 mm to the LEFT)"
+#else
+#define LF2_MODE_TEXT           "EDGE (CENTRE on the line's right edge, RIGHT on white)"
+#define LF2_START_TEXT          "CENTRE on black, RIGHT on white, square to the line"
+#define LF2_POSE_A_HINT         ""
+#define LF2_POSE_B_HINT         ""
+#endif
+
 /** Test ID of this build's checks. */
 #if (S3_DRIVE_MM > 0)
 #define LF2_ID                  "S3-U19"
@@ -149,8 +171,10 @@
 /** Trace: one row per this many polls (20 ms), and how it is printed: a
  *  burst of rows, then a pause so the console drains the 2 KB ring. */
 #define LF2_TRACE_EVERY_POLLS   (2U)
-#if S3_CURVE_TEST
-#define LF2_TRACE_ROWS          (400U)      /* 8 s: a whole curve drive */
+#if S3_CURVE_TEST || (S3_DRIVE_MM > 0)
+/* 8 s: a whole curve drive.  Drive mode keeps the LAST 8 s (a ring), so a
+ * failure far along an unknown track is in the dump with the approach to it. */
+#define LF2_TRACE_ROWS          (400U)
 #else
 #define LF2_TRACE_ROWS          (256U)
 #endif
@@ -178,10 +202,14 @@
 #define LF2_JMAT_DET_MAX_MM     (320U)
 /** Detection to JUNCTION: LF_D_JCT_POST_MM, +-2 polls of a published count.
  *  The time checks that the odometer, not the time cap, ended the travel. */
-#define LF2_JMAT_DELAY_MIN_MM   (110U)
-#define LF2_JMAT_DELAY_MAX_MM   (135U)
-#define LF2_JMAT_DELAY_MIN_MS   (450U)
-#define LF2_JMAT_DELAY_MAX_MS   (800U)
+/* Relative to the configured post distance (120 mm: 110..135) and the cruise
+ * (120 mm at 200 mm/s = 600 ms: 450..800), so a build with another mounting
+ * distance (-DLF_D_PIVOT_MM) or speed keeps the same meaning. */
+#define LF2_JMAT_DELAY_MIN_MM   (LF_D_JCT_POST_MM - 10U)
+#define LF2_JMAT_DELAY_MAX_MM   (LF_D_JCT_POST_MM + 15U)
+#define LF2_JMAT_NOMINAL_MS     ((LF_D_JCT_POST_MM * 1000U) / LF2_CRUISE_MMPS)
+#define LF2_JMAT_DELAY_MIN_MS   ((LF2_JMAT_NOMINAL_MS * 3U) / 4U)
+#define LF2_JMAT_DELAY_MAX_MS   ((LF2_JMAT_NOMINAL_MS * 4U) / 3U)
 /** Past the cross line: CENTRE is judged from this far after detection. */
 #define LF2_JMAT_TAIL_FROM_MM   (60U)
 /** JUNCTION to STOP at most, if ON_LINE does not come first. */
@@ -277,6 +305,8 @@ _Static_assert((LF2_CURVE_EXIT_MM + LF2_CURVE_START_MM) < LF2_CURVE_MM,
                "the exit window starts after the curve's start");
 _Static_assert((LF2_CURVE_GROUPS >= 1U) && ((LF2_CURVE_FIRST + LF2_CURVE_GROUPS) <= 3U), "left, right, S");
 _Static_assert(LF2_CURVE_MM < 0xFFFFU, "trace mm is uint16_t");
+_Static_assert((LF2_MS_FOR((uint32_t)S3_DRIVE_MM) + LF2_DRIVE_EXTRA_MS) < 0xFFFFU,
+               "a drive's time limit fits the trace's uint16_t t_ms");
 
 /** Why a drive ended. */
 typedef enum
@@ -322,8 +352,8 @@ typedef struct
     uint16_t mm;        /**< mean wheel travel since START */
     uint16_t raw_c;
     uint16_t raw_r;
-    int16_t  cnt_l;     /**< left wheel counts since START */
-    int16_t  cnt_r;     /**< right wheel counts since START */
+    int32_t  cnt_l;     /**< left wheel counts since START */
+    int32_t  cnt_r;     /**< right wheel counts since START */
     int8_t   steer_q7;  /**< last steering posted */
     uint8_t  state;     /**< lf_state_t */
 } lf2_trace_row_t;
@@ -415,9 +445,12 @@ static motion_state_t   s_m_half;
 static motion_state_t   s_m_end;
 static motion_state_t   s_m_turn;   /* at the JUNCTION post */
 static motion_state_t   s_m_branch; /* at the first ON_LINE after the turn */
-/* The 20 ms trace of the current drive (3.6 KB; APP_TEST builds only). */
+/* The 20 ms trace of the current drive (up to 8 KB; APP_TEST builds only).
+ * Drive mode writes it as a ring: s_trace_w is the next row to write, so
+ * once full it is also the oldest row. */
 static lf2_trace_row_t  s_trace[LF2_TRACE_ROWS];
 static uint32_t         s_trace_n;
+static uint32_t         s_trace_w;
 /* Static pose A (start pose): RIGHT over white, for the noise comparison. */
 static uint16_t         s_static_r_min;
 static uint16_t         s_static_r_max;
@@ -504,9 +537,17 @@ static bool lf2_start_ok(uint16_t raw_c, uint16_t raw_r)
     uint32_t const span = (uint32_t)s_now.cal.c.black - white;
     uint32_t const lifted = white + ((span * LF2_JMAT_LIFTED_PCT) / 100U);
 
+#if S3_LF_STRADDLE
+    /* Straddle: the line between the sensors, both on white (lifted, both
+     * read far above black instead). */
+    return (raw_c <= lifted) && (raw_r <= lifted)
+           && (lf_norm(&s_now.cal.c, raw_c) < LF_LIGHT_MAX_PM)
+           && (lf_norm(&s_now.cal.r, raw_r) < LF_LIGHT_MAX_PM);
+#else
     return (raw_c <= lifted)
            && (lf_norm(&s_now.cal.c, raw_c) >= LF2_JMAT_BLACK_MIN_PM)
            && (lf_norm(&s_now.cal.r, raw_r) < LF_LIGHT_MAX_PM);
+#endif
 }
 
 /* Hold a jmat drive until CENTRE sits steady on black and RIGHT on white,
@@ -524,7 +565,7 @@ static bool lf2_place_guard(char const *p_tag, char const *p_place)
     bool     ready = false;
 
     dbg_printf("[LF] >>> %s: %s", p_tag, p_place);
-    dbg_puts("[LF] >>> put the car against the tape, hands off: it starts when CENTRE is steady on black");
+    dbg_printf("[LF] >>> put the car against the tape, hands off: it starts when it is steady with %s", LF2_START_TEXT);
     for (uint32_t tick = 0U; (tick < wait_ticks) && !ready; tick++)
     {
         bool ok;
@@ -557,7 +598,7 @@ static bool lf2_place_guard(char const *p_tag, char const *p_place)
         dbg_printf("[LF] place: CENTRE %u pm, RIGHT %u pm: %s", lf_norm(&s_now.cal.c, s_now.raw_c),
                    lf_norm(&s_now.cal.r, s_now.raw_r),
                    ok ? (moved ? "OK, keep still" : "lift the car and put it at the start")
-                      : "NOT READY: CENTRE on black, RIGHT on white");
+                      : "NOT READY: " LF2_START_TEXT);
         if (!ready)
         {
             (void)tk_dly_tsk((RELTIM)LF2_JMAT_LIVE_MS);
@@ -570,7 +611,8 @@ static bool lf2_place_guard(char const *p_tag, char const *p_place)
 /* Static measurement in one pose, motors stopped.  Returns the average
  * darkness of CENTRE and RIGHT; keeps RIGHT's raw range. */
 static void lf2_static(char const *p_tag, char const *p_place,
-                       uint16_t *p_dc, uint16_t *p_dr, uint16_t *p_rmin, uint16_t *p_rmax)
+                       uint16_t *p_dc, uint16_t *p_dr, uint16_t *p_rmin, uint16_t *p_rmax,
+                       lf_adc_stats_t *p_sc, lf_adc_stats_t *p_sr)
 {
     uint32_t sum_c = 0U;
     uint32_t sum_r = 0U;
@@ -586,9 +628,25 @@ static void lf2_static(char const *p_tag, char const *p_place,
     {
         lf2_place(p_tag, p_place, false);
     }
+    if (p_sc != NULL)
+    {
+        lf_adc_stats_reset(p_sc);
+    }
+    if (p_sr != NULL)
+    {
+        lf_adc_stats_reset(p_sr);
+    }
     for (uint32_t t = 0U; t < LF2_STATIC_MS; t += LF2_POLL_MS)
     {
         lf_task_get_status(&s_now);
+        if (p_sc != NULL)
+        {
+            lf_adc_stats_add(p_sc, s_now.raw_c);
+        }
+        if (p_sr != NULL)
+        {
+            lf_adc_stats_add(p_sr, s_now.raw_r);
+        }
         sum_c += s_now.raw_c;
         sum_r += s_now.raw_r;
         c_min = (s_now.raw_c < c_min) ? s_now.raw_c : c_min;
@@ -608,23 +666,28 @@ static void lf2_static(char const *p_tag, char const *p_place,
     dbg_printf("[LF] static %s: R raw %u..%u avg %u = %u pm", p_tag, r_min, r_max, avg_r, *p_dr);
 }
 
-/* One trace row.  Counts since START fit int16_t: the longest drive is
- * 1200 mm = 14 300 counts. */
+/* One trace row.  Counts since START are int32_t: a 3 m drive is about
+ * 35 700 counts, past int16_t.  The other modes keep the first
+ * LF2_TRACE_ROWS rows; drive mode overwrites the oldest (a ring). */
 static void lf2_trace_add(uint32_t t, uint32_t mm)
 {
-    if (s_trace_n < LF2_TRACE_ROWS)
+    if ((s_trace_n < LF2_TRACE_ROWS) || (LF2_DRIVE_ONLY != 0U))
     {
-        lf2_trace_row_t *const p_r = &s_trace[s_trace_n];
+        lf2_trace_row_t *const p_r = &s_trace[s_trace_w];
 
         p_r->t_ms = (uint16_t)t;
         p_r->mm = (uint16_t)mm;
         p_r->raw_c = s_now.raw_c;
         p_r->raw_r = s_now.raw_r;
-        p_r->cnt_l = (int16_t)((uint32_t)s_m.enc_count[0] - (uint32_t)s_m0.enc_count[0]);
-        p_r->cnt_r = (int16_t)((uint32_t)s_m.enc_count[1] - (uint32_t)s_m0.enc_count[1]);
+        p_r->cnt_l = (int32_t)((uint32_t)s_m.enc_count[0] - (uint32_t)s_m0.enc_count[0]);
+        p_r->cnt_r = (int32_t)((uint32_t)s_m.enc_count[1] - (uint32_t)s_m0.enc_count[1]);
         p_r->steer_q7 = (int8_t)s_now.last_steer_q7;
         p_r->state = (uint8_t)s_now.state;
-        s_trace_n++;
+        s_trace_w = (s_trace_w + 1U) % LF2_TRACE_ROWS;
+        if (s_trace_n < LF2_TRACE_ROWS)
+        {
+            s_trace_n++;
+        }
     }
 }
 
@@ -633,14 +696,16 @@ static void lf2_trace_add(uint32_t t, uint32_t mm)
 static void lf2_trace_dump(char const *p_tag)
 {
     uint32_t const dropped0 = dbg_overflow_count();
+    /* Oldest row first: once a ring is full, the next row to write is the oldest. */
+    uint32_t const first = (s_trace_n < LF2_TRACE_ROWS) ? 0U : s_trace_w;
 
     dbg_printf("[LF] tr %s: t mm st c r s L R (%lu rows, 20 ms)", p_tag, (unsigned long)s_trace_n);
     for (uint32_t i = 0U; i < s_trace_n; i++)
     {
-        lf2_trace_row_t const *const p_r = &s_trace[i];
+        lf2_trace_row_t const *const p_r = &s_trace[(first + i) % LF2_TRACE_ROWS];
 
-        dbg_printf("[LF] tr %u %u %u %u %u %d %d %d", p_r->t_ms, p_r->mm, p_r->state, p_r->raw_c,
-                   p_r->raw_r, (int)p_r->steer_q7, (int)p_r->cnt_l, (int)p_r->cnt_r);
+        dbg_printf("[LF] tr %u %u %u %u %u %d %ld %ld", p_r->t_ms, p_r->mm, p_r->state, p_r->raw_c,
+                   p_r->raw_r, (int)p_r->steer_q7, (long)p_r->cnt_l, (long)p_r->cnt_r);
         if (((i + 1U) % LF2_TRACE_BURST) == 0U)
         {
             (void)tk_dly_tsk((RELTIM)LF2_TRACE_PAUSE_MS);
@@ -856,6 +921,7 @@ static void lf2_drive(lf2_drive_t const *p_d)
 
     *p = s_zero_run;
     s_trace_n = 0U;
+    s_trace_w = 0U;
     p->t_on_ms = LF2_NEVER;
     p->settle_mm = LF2_NEVER;
     p->r_white_min = 0xFFFFU;
@@ -1221,9 +1287,40 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     uint16_t rmin;
     uint16_t rmax;
     bool     pose_a_ok;
+    lf_adc_stats_t a_c;     /* pose A: CENTRE over black */
+    lf_adc_stats_t a_r;     /* pose A: RIGHT over white */
+    lf_adc_stats_t b_c;     /* pose B: CENTRE over white */
+    lf_adc_stats_t b_r;     /* pose B: RIGHT over black */
+    lf_cal2_t      cal2;
 
     dbg_printf("[LF] %s on the track, motors LIVE, cruise %lu mm/s", LF2_ID,
                (unsigned long)LF2_CRUISE_MMPS);
+    dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
+    dbg_printf("[LF] build: sensors %lu mm ahead of the axle (LF_D_PIVOT_MM), cruise %lu mm/s",
+               (unsigned long)LF_D_PIVOT_MM, (unsigned long)LF2_CRUISE_MMPS);
+    /* The Motion options are defaulted inside task_motion.c: seen here only when the build passes them. */
+#ifdef MOTION_STEER_OPENLOOP
+#define LF2_V_OL    (MOTION_STEER_OPENLOOP)
+#else
+#define LF2_V_OL    (0)
+#endif
+#ifdef MOTION_STEER_TARGETS
+#define LF2_V_TGT   (MOTION_STEER_TARGETS)
+#else
+#define LF2_V_TGT   (0)
+#endif
+#ifdef MOTION_INTEGRAL_MAX
+#define LF2_V_INT   (MOTION_INTEGRAL_MAX)
+#else
+#define LF2_V_INT   (400)
+#endif
+#if S3_LF_STRADDLE
+    dbg_printf("[LF] variant: simple=%d bang=%d | motion: openloop=%d steer_targets=%d integral_max=%d",
+               (int)LF_SD_SIMPLE, (int)LF_SD_BANG, (int)LF2_V_OL, (int)LF2_V_TGT, (int)LF2_V_INT);
+#else
+    dbg_printf("[LF] variant: edge core | motion: openloop=%d steer_targets=%d integral_max=%d",
+               (int)LF2_V_OL, (int)LF2_V_TGT, (int)LF2_V_INT);
+#endif
     dbg_puts("[LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts");
 
     /* (a) The task runs every 5 ms.  First let the boot calibration end. */
@@ -1276,13 +1373,15 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
      * RIGHT's resting noise over white; pose B RIGHT's black level (the
      * residual risk of the S3-U09 waiver). */
     pose_a_ok = false;
+    lf_adc_stats_reset(&a_c);
+    lf_adc_stats_reset(&a_r);
     for (uint32_t tries = 0U; (tries < LF2_POSE_A_TRIES) && !pose_a_ok; tries++)
     {
-        lf2_place("pose A", "CENTRE on black in the middle of the line, RIGHT on white, hands off", false);
+        lf2_place("pose A", "CENTRE on black in the middle of the line, RIGHT on white, hands off" LF2_POSE_A_HINT, false);
         dbg_puts("[LF] calibrating here, keep the car still");
         lf_task_test_recalibrate();
         lf_task_get_status(&s_now);
-        lf2_static("pose A", NULL, &dc, &dr, &rmin, &rmax);
+        lf2_static("pose A", NULL, &dc, &dr, &rmin, &rmax, &a_c, &a_r);
         s_static_r_min = rmin;
         s_static_r_max = rmax;
         pose_a_ok = (s_now.cal_status == LF_CAL_OK) && (s_now.cal_c_avg >= LF2_POSE_A_MIN_RAW)
@@ -1297,9 +1396,34 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                "(g2) pose A: calibrated on black, CENTRE >= 950 pm, RIGHT on white");
     if (pose_a_ok)
     {
-        lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off", &dc, &dr, &rmin, &rmax);
+        static char const *const k_sens[] = { "OK", "DISCONNECTED", "NOISY", "BLIND", "WEAK (re-mount)" };
+        bool cal2_ok;
+
+        lf2_static("pose B", "RIGHT over the line middle, CENTRE on white, hands off" LF2_POSE_B_HINT,
+                   &dc, &dr, &rmin, &rmax, &b_c, &b_r);
         TEST_CHECK(LF2_ID, dr > LF_DARK_MIN_PM,
                    "(g) static: RIGHT on black is DARK (> 750 pm)");
+        /* (g3) Each sensor's own black and white from poses A and B, against
+         * the mounting criteria (lf_core.h LF_CAL_*). */
+        cal2_ok = lf_cal_from_two_poses(&a_c, &a_r, &b_c, &b_r, &cal2);
+        dbg_printf("[LF] two-pose: CENTRE white %u black %u span %d %s; RIGHT white %u black %u span %d %s",
+                   cal2.cal.c.white, cal2.cal.c.black, (int)cal2.cal.c.black - (int)cal2.cal.c.white,
+                   k_sens[cal2.c], cal2.cal.r.white, cal2.cal.r.black,
+                   (int)cal2.cal.r.black - (int)cal2.cal.r.white, k_sens[cal2.r]);
+        dbg_printf("[LF] mounting criteria: black >= %u, white <= %u, span >= %u raw",
+                   LF_CAL_BLACK_MIN_RAW, LF_CAL_WHITE_MAX_RAW, LF_CAL_SPAN_GOOD_RAW);
+        TEST_CHECK(LF2_ID, cal2_ok,
+                   "(g3) two-pose calibration: both sensors meet the mounting criteria");
+        if (cal2_ok)
+        {
+            lf_task_test_set_cal(&cal2.cal);
+            lf_task_get_status(&s_now);
+        }
+        else
+        {
+            dbg_puts("[LF] >>> STOP: no drives.  Fix the sensor mounting (height ~10 mm, both the same) and restart.");
+            pose_a_ok = false;
+        }
     }
     else
     {
@@ -1394,12 +1518,15 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     /* (k) Curves: the same piece driven each way, then an S-curve. */
     if ((LF2_CURVE_ONLY != 0U) && pose_a_ok)
     {
-#if defined(LF_RESCUE_N)
+#if defined(LF_BEND_MIN_Q7)
+        dbg_printf("[LF] variant T80: C + bend memory (floor from the regain steering >= %d, easing to %d)",
+                   (int)LF_BEND_MIN_Q7, (int)LF_BEND_FLOOR_Q7);
+#elif defined(LF_RESCUE_N)
         dbg_printf("[LF] variant C: RIGHT keeps the line from being lost (%u samples)", (unsigned)LF_RESCUE_N);
 #elif defined(LF_CURVE_START_Q7)
         dbg_printf("[LF] variant B: curve recovery start %d after steady tracking", (int)LF_CURVE_START_Q7);
 #else
-        dbg_puts("[LF] variant A: production line following (recovery start 32)");
+        dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
 #endif
         for (uint32_t g = LF2_CURVE_FIRST; g < (LF2_CURVE_FIRST + LF2_CURVE_GROUPS); g++)
         {
@@ -1434,11 +1561,11 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     {
         static lf2_drive_t const k_drive =
         {
-            "drive", "on a STRAIGHT part of the line: CENTRE on black, RIGHT on white, square to the line",
+            "drive", "on a STRAIGHT part of the line: " LF2_START_TEXT,
             (uint32_t)S3_DRIVE_MM, LF2_MS_FOR((uint32_t)S3_DRIVE_MM) + LF2_DRIVE_EXTRA_MS, false, false, true
         };
 
-        dbg_puts("[LF] variant A: production line following (recovery start 32)");
+        dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
         dbg_printf("[LF] DRIVE: %lu drives, each up to %lu mm of wheel travel or %lu ms; obstacle avoidance may "
                    "take over and hand back", (unsigned long)LF2_DRIVE_RUNS, (unsigned long)S3_DRIVE_MM,
                    (unsigned long)k_drive.max_ms);
@@ -1451,6 +1578,14 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                        (unsigned long)s_run.mm_end, (unsigned long)s_run.t_end_ms, (unsigned long)s_run.cv_n_lost,
                        (unsigned long)s_run.n_lost, (unsigned long)s_run.n_jct, (unsigned long)s_run.n_avoid,
                        s_run.still ? 1 : 0);
+            /* Where it failed, and commanded against measured speed. */
+            dbg_printf("[LF] drive %lu: speed %lu mm/s measured (cruise %lu commanded); first LINE_LOST at %ld mm; "
+                       "LINE_LOST -> TRACK_LOST %lu ms; wheels moved %lu mm after the end; largest |steer| %ld",
+                       (unsigned long)run, (unsigned long)s_run.speed_mmps, (unsigned long)LF2_CRUISE_MMPS,
+                       (s_run.cv_first_lost_mm == LF2_NEVER) ? -1L : (long)s_run.cv_first_lost_mm,
+                       (unsigned long)((s_run.n_lost > 0U) ? s_run.lost_to_track_ms : 0U),
+                       (unsigned long)s_run.mm_stop, (long)s_run.cv_steer_max);
+            lf2_trace_dump("drive");
             /* What a drive on an unknown line can show: that it stopped
              * safely, and whether it got all the way on the line. */
             TEST_CHECK(LF2_ID, s_run.still && (s_run.end != LF2_END_NOT_PLACED) && (s_run.end != LF2_END_NOT_READY),

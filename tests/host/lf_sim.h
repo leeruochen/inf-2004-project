@@ -109,7 +109,9 @@ typedef enum
 typedef enum
 {
     SIM_SEG = 0,            /* straight segment (x0,y0)-(x1,y1) */
-    SIM_ARC                 /* full circle, centre (x0,y0), radius r */
+    SIM_ARC,                /* full circle, centre (x0,y0), radius r */
+    SIM_ARC_PART            /* arc, centre (x0,y0), radius r, from angle x1 to
+                             * y1 (radians, counter-clockwise, y1 > x1) */
 } sim_kind_t;
 
 typedef struct
@@ -125,11 +127,19 @@ typedef struct
     sim_strip_t strips[SIM_MAX_STRIPS];
     int         n_strips;
     double      spacing_mm;     /* CENTRE -> RIGHT, centre to centre */
+    double      c_lat_mm;       /* CENTRE's lateral place, + = left (0: edge layout;
+                                 * spacing / 2: straddle, CENTRE = LEFT) */
     double      fwd_mm;         /* sensors in front of the axle */
     double      spot_mm;        /* spot radius */
     double      span_raw;       /* actual black - white on the track */
     double      noise_raw;      /* uniform +- noise */
     double      speed_mmps;     /* cruise speed */
+    double      steer_dz;       /* STEER dead zone, Q7: the first steer_dz of a steering command
+                                 * does nothing (the speed controller cancels it); 0 = none */
+    double      steer_gain_left; /* if > 0, the gain for LEFT steering (negative command); right uses steer_gain */
+    double      steer_gain;     /* what is left of the command is scaled by this (1 = as is).
+                                 * The car at 7 cm/s, steady steering (20 Nov traces): 24 ->
+                                 * 0.06, 96 -> 0.33, 127 -> 0.45 deg/mm = dz 11, gain 0.72 */
     double      motor_k;        /* mm/s per permille of duty */
     double      left_gain;      /* left motor's K relative to the right's */
     double      lag_s;          /* wheel response time constant */
@@ -191,6 +201,21 @@ static inline double sim_strip_dist(sim_strip_t const *p_s, double px, double py
     {
         return fabs(hypot(px - p_s->x0, py - p_s->y0) - p_s->r);
     }
+    if (p_s->kind == SIM_ARC_PART)
+    {
+        double a = atan2(py - p_s->y0, px - p_s->x0);
+
+        while (a < p_s->x1)
+        {
+            a += 2.0 * SIM_PI;
+        }
+        if (a <= p_s->y1)
+        {
+            return fabs(hypot(px - p_s->x0, py - p_s->y0) - p_s->r);
+        }
+        return fmin(hypot(px - (p_s->x0 + (p_s->r * cos(p_s->x1))), py - (p_s->y0 + (p_s->r * sin(p_s->x1)))),
+                    hypot(px - (p_s->x0 + (p_s->r * cos(p_s->y1))), py - (p_s->y0 + (p_s->r * sin(p_s->y1)))));
+    }
     {
         double const dx = p_s->x1 - p_s->x0;
         double const dy = p_s->y1 - p_s->y0;
@@ -222,6 +247,10 @@ static inline void sim_add_seg(sim_t *p_sim, double x0, double y0, double x1, do
     p_s->x0 = x0; p_s->y0 = y0; p_s->x1 = x1; p_s->y1 = y1; p_s->r = 0.0;
 }
 
+/* A bend of angle deg from the end of a straight along +x at (x, y): dir +1
+ * turns left, -1 right; the line goes on straight for exit_mm after it. */
+static inline void sim_add_bend(sim_t *p_sim, double x, double y, double r, int dir, double deg, double exit_mm);
+
 static inline void sim_add_arc(sim_t *p_sim, double cx, double cy, double r)
 {
     sim_strip_t *p_s = &p_sim->strips[p_sim->n_strips++];
@@ -235,11 +264,15 @@ static inline void sim_init(sim_t *p_sim)
 {
     p_sim->n_strips = 0;
     p_sim->spacing_mm = 26.0;
+    p_sim->c_lat_mm = 0.0;
     p_sim->fwd_mm = (double)LF_D_PIVOT_MM;   /* measured F = 120 mm */
     p_sim->spot_mm = SIM_SPOT_MM;
     p_sim->span_raw = 1000.0;
     p_sim->noise_raw = 30.0;
     p_sim->speed_mmps = 200.0;
+    p_sim->steer_dz = 0.0;
+    p_sim->steer_gain = 1.0;
+    p_sim->steer_gain_left = 0.0;
     p_sim->motor_k = SIM_MOTOR_K;
     p_sim->left_gain = 1.0;
     p_sim->lag_s = SIM_MOTOR_LAG_S;
@@ -372,9 +405,16 @@ static inline void sim_motion_control(sim_t *p_sim, int32_t dl, int32_t dr)
     switch (p_sim->mc_type)
     {
         case SIM_MC_STEER:
-            duty_l = base + ((base * p_sim->cmd_arg) / 256);
-            duty_r = base - ((base * p_sim->cmd_arg) / 256);
+        {
+            /* arg is Q7 x 2: a dead zone in Q7 is twice that in arg units */
+            double const a = fabs((double)p_sim->cmd_arg);
+            double const e = fmax(0.0, a - (2.0 * p_sim->steer_dz)) * ((p_sim->cmd_arg < 0 && p_sim->steer_gain_left > 0.0) ? p_sim->steer_gain_left : p_sim->steer_gain);
+            int32_t const arg = (int32_t)lround((p_sim->cmd_arg < 0) ? -e : e);
+
+            duty_l = base + ((base * arg) / 256);
+            duty_r = base - ((base * arg) / 256);
             break;
+        }
         case SIM_MC_PIVOT_L:
             duty_l = -turn;
             duty_r = turn;
@@ -492,9 +532,12 @@ static inline void sim_vc_junction(sim_t *p_sim)
     p_sim->bc = SIM_BC_NONE;
 }
 
-/* One 5 ms sample: Motion (every 4th) -> sensors -> link -> core -> VC ->
- * car. */
-static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out_t *p_out)
+/* The line-following core under test: one call per 5 ms sample. */
+typedef void (*sim_core_fn_t)(void *p_core, lf_in_t const *p_in, lf_out_t *p_out);
+
+/* One 5 ms sample with any core: Motion (every 4th) -> sensors -> link ->
+ * core -> VC -> car. */
+static inline void sim_step_core(sim_t *p_sim, sim_core_fn_t fn, void *p_core, lf_in_t *p_in, lf_out_t *p_out)
 {
     double        tl;
     double        tr;
@@ -506,9 +549,9 @@ static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out
     p_in->fwd_cnt = lk.fwd_cnt;
     p_in->yaw_cnt = lk.yaw_cnt;
     p_in->post_slot = lf_link_post_slot(p_sim->pub_tick_ms, p_sim->step_n * LF_SAMPLE_PERIOD_MS);
-    p_in->raw_c = sim_raw(p_sim, 0.0);
-    p_in->raw_r = sim_raw(p_sim, -p_sim->spacing_mm);
-    lf_core_step(p_lf, p_in, p_out);
+    p_in->raw_c = sim_raw(p_sim, p_sim->c_lat_mm);
+    p_in->raw_r = sim_raw(p_sim, p_sim->c_lat_mm - p_sim->spacing_mm);
+    fn(p_core, p_in, p_out);
 
     if (p_out->event == LF_EV_JUNCTION)
     {
@@ -565,6 +608,44 @@ static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out
         p_sim->y += v * sin(p_sim->th) * SIM_DT_S;
         p_sim->th += w * SIM_DT_S;
     }
+}
+
+static inline void sim_add_bend(sim_t *p_sim, double x, double y, double r, int dir, double deg, double exit_mm)
+{
+    double const sweep = deg * SIM_PI / 180.0;
+    double const cy = y + ((double)dir * r);
+    sim_strip_t *p_s = &p_sim->strips[p_sim->n_strips++];
+
+    p_s->kind = SIM_ARC_PART;
+    p_s->x0 = x; p_s->y0 = cy; p_s->r = r;
+    if (dir > 0)
+    {
+        p_s->x1 = -SIM_PI / 2.0; p_s->y1 = (-SIM_PI / 2.0) + sweep;
+    }
+    else
+    {
+        p_s->x1 = (SIM_PI / 2.0) - sweep; p_s->y1 = SIM_PI / 2.0;
+    }
+    {
+        /* the end of the arc and its heading */
+        double const a_end = (dir > 0) ? p_s->y1 : p_s->x1;
+        double const ex = x + (r * cos(a_end));
+        double const ey = cy + (r * sin(a_end));
+        double const hd = (double)dir * sweep;      /* heading after the bend */
+
+        sim_add_seg(p_sim, ex, ey, ex + (exit_mm * cos(hd)), ey + (exit_mm * sin(hd)));
+    }
+}
+
+static inline void sim_lf_core_fn(void *p_core, lf_in_t const *p_in, lf_out_t *p_out)
+{
+    lf_core_step((lf_core_t *)p_core, p_in, p_out);
+}
+
+/* One 5 ms sample with the edge-following core (lf_core). */
+static inline void sim_step(sim_t *p_sim, lf_core_t *p_lf, lf_in_t *p_in, lf_out_t *p_out)
+{
+    sim_step_core(p_sim, sim_lf_core_fn, p_lf, p_in, p_out);
 }
 
 #endif /* LF_SIM_H */
