@@ -236,6 +236,24 @@
 /** The same for a u-turn, at 135 degrees: the cross arm goes by at 90, so only
  *  the last quarter of the pivot can show the line the car came along. */
 #define LF_PIVOT_UTURN_CNT      (3U * LF_PIVOT_HALF_CNT)
+/** The cruise speed line following is validated for, cm/s: the build fails
+ *  outside it (lf_core.c), whoever changes MOTION_SPEED_CRUISE_CMPS.  Why
+ *  exactly 15: the car turns tighter the faster it goes (full steering, steady,
+ *  20 Nov traces: 7 cm/s 0.50 deg/mm, 15 cm/s ~0.56; older runs ~0.62 at 15-20),
+ *  and the track's bends are 117 mm (ruler, 16 Nov).  The sensors follow it only
+ *  at 15 cm/s with the bracket ~60 mm from the axle (host model R 117 U-bends:
+ *  15 cm/s 11 of 12, 7 and 10 cm/s 0-1 of 12; 7 cm/s on the car lost the line
+ *  at the same place every drive).  Above it nothing is validated: bends were
+ *  never run faster with the straddle core, and the edge core's junction turns
+ *  are a documented limit above 200 mm/s.  A test build may pass
+ *  -DLF_ALLOW_ANY_SPEED=1 to try another speed.  Applies to line following
+ *  only: Buddy 5's slow approach (5 cm/s) and bypass (25 cm/s) are not it. */
+#ifndef LF_CRUISE_MIN_CMPS
+#define LF_CRUISE_MIN_CMPS      (15U)
+#endif
+#ifndef LF_CRUISE_MAX_CMPS
+#define LF_CRUISE_MAX_CMPS      (15U)
+#endif
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault): the post travel's time at the cruise speed plus
  *  300 ms, so it follows a cruise change (900 ms at 200 mm/s, the value

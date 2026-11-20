@@ -46,6 +46,10 @@ _Static_assert((ENC_CPR > 0U) && (WHEEL_CIRC_MM > 0U), "encoder geometry known")
 _Static_assert(LF_D_JCT_LEAD_MM < LF_D_PIVOT_MM, "JUNCTION posted after detection");
 _Static_assert(LF_D_JCT_LOOK_MM < LF_D_JCT_POST_MM, "the look past the cross ends before the post");
 _Static_assert((LF_RECOVER_Q7 + LF_RECOVER_RAMP_Q7) <= LF_STEER_FULL_Q7, "the ramp starts inside full steering");
+#ifndef LF_ALLOW_ANY_SPEED
+_Static_assert((MOTION_SPEED_CRUISE_CMPS >= LF_CRUISE_MIN_CMPS) && (MOTION_SPEED_CRUISE_CMPS <= LF_CRUISE_MAX_CMPS),
+               "line following is validated only for LF_CRUISE_MIN/MAX_CMPS (lf_core.h): see there before changing the cruise, or pass -DLF_ALLOW_ANY_SPEED=1 for a test build");
+#endif
 _Static_assert(((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) < LF_T_JCT_MAX_MS,
                "at cruise the travel ends before the time cap");
 _Static_assert((LF_RESCUE_N >= 2U) && (LF_RESCUE_N < LF_HYST_SAMPLES + 1U),
