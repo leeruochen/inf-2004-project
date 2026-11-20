@@ -32,6 +32,7 @@
 #include "config/timing.h"              /* BC_POLL_PERIOD_MS */
 #include "src/debug/dbg.h"
 #include "src/rtos/port/hal.h"          /* hal_time_us() */
+#include "../subsystem1/subsystem1.h"   /* tel_post_barcode() (telemetry, IF-12) */
 #include "../subsystem2/subsystem2.h"   /* motion_get_state() (IF-08) */
 #include "bc_decode.h"
 #include "bc_frame.h"
@@ -97,6 +98,13 @@ static void bc_log(bc_frame_result_t res, bc_frame_out_t const *p_out, uint32_t 
                    (unsigned long)n, p_out->letter, (unsigned long)p_out->window,
                    (unsigned long)s_frame.seen, (long)v_min, (long)v_max,
                    (unsigned long)(quiet_us / 1000U), drv_bc_level() ? 1U : 0U);
+        /* A, B, C, D are navigation commands (FR9: left, right, straight, U-turn = DREP_BC_CMD_* 0..3):
+         * tell telemetry (dashboard Barcode view, MQTT).  Other letters are valid reads but no
+         * command.  Never waits; a full queue is counted there. */
+        if ((p_out->letter >= 'A') && (p_out->letter <= 'D'))
+        {
+            (void)tel_post_barcode((uint32_t)(p_out->letter - 'A'));
+        }
     }
     else
     {

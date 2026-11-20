@@ -301,21 +301,19 @@ void subsystem5_test(void)
                "avoidance starts in a valid state with no aborts");
 
     /*
-     * Give the scanner time for at least one full coarse sweep: about
-     * 2 periods per bearing (settle, then ping) over
-     * OBS_COARSE_BEARING_COUNT bearings, plus margin.
+     * Give the scanner time for at least one full stationary 5-degree sweep
+     * when an object is present ahead (~4.0 s total), plus margin.
      */
     {
-        uint32_t const sweep_ms = 3U * (uint32_t)OBS_COARSE_BEARING_COUNT
-                                  * (uint32_t)OBS_SERVO_STEP_PERIOD_MS;
+        uint32_t const wait_ms = 5500U;
 
-        (void)tk_dly_tsk((RELTIM)(2U * sweep_ms));
+        (void)tk_dly_tsk((RELTIM)wait_ms);
 
         uint32_t const sweeps = obs_scan_get_sweep_count();
         uint32_t const echoes = us_echo_count();
 
         dbg_printf("[S5] after %lu ms: %lu sweeps, %lu echoes, %lu misses",
-                   (unsigned long)(2U * sweep_ms), (unsigned long)sweeps,
+                   (unsigned long)wait_ms, (unsigned long)sweeps,
                    (unsigned long)echoes, (unsigned long)us_miss_count());
 
         /* WATCH MODE (2026-11-19): the servo parks ahead and only sweeps
@@ -392,6 +390,34 @@ void subsystem5_test(void)
         TEST_CHECK("S5-U31", ok,
                    "a flat wall at 60..120 degrees stays one run despite its range rise");
     }
+
+    {
+        /* 86 mm object at 240 mm smeared 65..115 deg with the physical 35 deg beam. */
+        obs_scan5_t scan5;
+
+        for (uint32_t i = 0U; i < OBS_FINE5_SLOTS; i++)
+        {
+            scan5.dist_mm[i] = 0U;
+        }
+        scan5.lo_slot = (uint8_t)OBS_FINE5_DEG_TO_SLOT(OBS_COARSE_DEG_MIN);
+        scan5.hi_slot = (uint8_t)OBS_FINE5_DEG_TO_SLOT(OBS_COARSE_DEG_MAX);
+        for (uint32_t deg = 65U; deg <= 115U; deg += OBS_FINE5_STEP_DEG)
+        {
+            scan5.dist_mm[OBS_FINE5_DEG_TO_SLOT(deg)] = 240U;
+        }
+        bool const ok = obs_analyse_fine5(&scan5, &res) && res.valid
+                        && (res.bearing_deg == 90U)
+                        && (res.width_mm >= 80U) && (res.width_mm <= 95U);
+
+        TEST_CHECK("S5-U32", ok,
+                   "5-degree scan resolves an 86 mm object at 240 mm within 80..95 mm");
+    }
+
+    TEST_CHECK("S5-U33",
+               (obs_leg_along_mm(250U, 90U) > obs_leg_along_mm(150U, 90U))
+               && (obs_leg_along_mm(0U, 300U) == 150U)
+               && (obs_mm_to_counts(207U) == 2464U),
+               "along-leg uses 100 mm depth + chassis margin (150 mm floor); 207 mm = 2464 counts");
 
     TEST_SUMMARY("subsystem5");
 }

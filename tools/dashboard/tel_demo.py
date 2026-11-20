@@ -288,11 +288,13 @@ class DemoTracker:
             if sim:
                 self.hump_sim_count += 1
                 return
+            if self.last_vc_state in ("READY_WAITING", "SAFETY_FAULT_LATCHED", "INITIALISING"):
+                return
             h = int(f["height_mm"])
             p = float(f["pitch_deg"])
             self.hump_count += 1
             self.last_hump = {"height_mm": h, "pitch_deg": p, "oor": bool(f["oor"]), "time": stamp}
-            if h > self.peak_hump_mm:
+            if h > 0:
                 self.peak_hump_mm = h
             self._add_event(
                 stamp, "HUMP", "info",
