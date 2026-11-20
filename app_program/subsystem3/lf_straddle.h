@@ -126,6 +126,15 @@
 /** Below this difference between the two sensors' darkness (per mille) steer 0. */
 #define LF_SD_BANG_DB_PM        (100)
 #endif
+#ifndef LF_SD_TURN_SIDE_PM
+/** After a turn the first probe goes to the side the line was last seen on.  During the pivot that is
+ *  updated only on a clear contact; a faint reading never counted.  20 Nov, right turn at 5 cm/s:
+ *  the line was seen faintly on the RIGHT (76 per mille), the remembered side was still the LEFT
+ *  from the cross, the car probed left and lost the line (2 of 3 runs).  At the end of the turn the
+ *  darker sensor decides if the two differ by at least this much (per mille); otherwise the turn's
+ *  own direction does (a left turn leaves the line to the left, a right turn to the right). */
+#define LF_SD_TURN_SIDE_PM      (40U)
+#endif
 #ifndef LF_SD_SEARCH_MM
 /** How far a search (after a turn, or at the start) may drive before TRACK_LOST, and how far
  *  it arcs one way before swapping.  lf_core's T_search (2 s) and swap (700 ms) are times
@@ -285,6 +294,8 @@ typedef struct
     uint32_t       fault_n;         /**< consecutive samples with a sensor at a rail */
     uint32_t       over_n;          /**< consecutive samples with a sensor above LF_SD_OVER_RAW */
     uint32_t       bd_cnt;          /**< forward counts with both sensors DARK in ON_LINE */
+    int32_t        turn_yaw0;       /**< yaw_cnt when the VC's turn began (its sign gives the direction) */
+    bool           turn_contact;    /**< a clear contact was seen during the turn (it set the side) */
     int32_t        mem_q15;         /**< steering averaged over ~LF_SD_MEM_MM of travel, Q7 x 256 (an integer
                                      *   average of Q7 values stalls 59 short of its target) */
 } lf_sd_t;

@@ -326,15 +326,46 @@ static bool sd_st_junction(lf_sd_t *p_sd, lf_in_t const *p_in, sd_view_t const *
     p_sd->timer_n++;
     if (p_in->manoeuvre != LF_MAN_NONE)
     {
+        if (p_sd->man_seen == LF_MAN_NONE)
+        {
+            p_sd->turn_yaw0 = p_in->yaw_cnt;        /* the turn's first sample */
+            p_sd->turn_contact = false;
+        }
         p_sd->man_seen = p_in->manoeuvre;
         p_sd->jct_pending = false;          /* the VC turned: no post */
         if (p_v->contact)
         {
             p_sd->side = (p_v->dl >= p_v->dr) ? LF_SIDE_LEFT : LF_SIDE_RIGHT;
+            p_sd->turn_contact = true;
         }
     }
     else if (p_sd->man_seen != LF_MAN_NONE)
     {
+        /* The turn ended: the side to probe first.  The darker sensor if it is clearly darker, else
+         * the turn's own direction (a U-turn keeps the remembered side). */
+        if (p_sd->turn_contact)
+        {
+            /* a clear contact during the turn already set the side */
+        }
+        else if (p_v->dl >= (p_v->dr + LF_SD_TURN_SIDE_PM))
+        {
+            p_sd->side = LF_SIDE_LEFT;
+        }
+        else if (p_v->dr >= (p_v->dl + LF_SD_TURN_SIDE_PM))
+        {
+            p_sd->side = LF_SIDE_RIGHT;
+        }
+        else if (p_sd->man_seen == LF_MAN_TURN)
+        {
+            /* yaw_cnt grows turning right (the same convention as the hold) */
+            int32_t const d = (int32_t)((uint32_t)p_in->yaw_cnt - (uint32_t)p_sd->turn_yaw0);
+
+            p_sd->side = (d > 0) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
+        }
+        else
+        {
+            /* U-turn: keep the remembered side */
+        }
         sd_enter_on_line(p_sd, true);       /* the turn ended */
         may_post = true;
     }
@@ -498,6 +529,8 @@ void lf_sd_init(lf_sd_t *p_sd, lf_cal_t const *p_cal)
         p_sd->over_n = 0U;
         p_sd->bd_cnt = 0U;
         p_sd->mem_q15 = 0;
+        p_sd->turn_yaw0 = 0;
+        p_sd->turn_contact = false;
         sd_enter(p_sd, LF_ST_IDLE);
     }
 }

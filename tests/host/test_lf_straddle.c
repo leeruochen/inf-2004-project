@@ -361,6 +361,50 @@ static void test_junction(void)
     CHECK(r.max_steer == LF_SD_PROBE_Q7);               /* towards the RIGHT */
 }
 
+/* Test 5b: the probe side after a turn when nothing clear was seen during it (20 Nov, right turn
+ * at 5 cm/s: the line was faint on the RIGHT, the car probed LEFT and lost it, 2 of 3 runs). */
+static void test_turn_side(void)
+{
+    lf_sd_t sd;
+    run_t r;
+
+    /* faintly darker RIGHT at the end of the turn (76 against 23 per mille): probe RIGHT */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 100U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 23U, 76U);
+    CHECK(sd.bw == LF_SD_BW_PROBE);
+    CHECK(r.max_steer == LF_SD_PROBE_Q7);
+
+    /* faintly darker LEFT: probe LEFT */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 100U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 76U, 23U);
+    CHECK(r.min_steer == -LF_SD_PROBE_Q7);
+
+    /* nothing at all at the end: the turn's own direction (yaw_cnt grows turning right) */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.yaw_cnt += 2000;                                   /* a right turn */
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 0U, 0U);
+    CHECK(r.max_steer == LF_SD_PROBE_Q7);
+
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_TURN;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.yaw_cnt -= 2000;                                   /* a left turn */
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 0U, 0U);
+    CHECK(r.min_steer == -LF_SD_PROBE_Q7);
+}
+
 /* Test 6: avoidance hand-back and a sensor fault. */
 static void test_suspended_and_fault(void)
 {
@@ -811,6 +855,7 @@ int main(void)
     test_deep_hold();
     test_junction();
     test_suspended_and_fault();
+    test_turn_side();
     test_floor();
     test_slow_search();
     test_both_dark();
