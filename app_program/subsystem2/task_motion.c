@@ -91,7 +91,14 @@
 /** Maximum differential steering trim (permille) for straight-line tracking. */
 #define MOTION_SYNC_MAX_PM      (120)
 /** Anti-windup cap on the integral term (in count units). */
+#ifndef MOTION_INTEGRAL_MAX
 #define MOTION_INTEGRAL_MAX     (400)
+#endif
+/* EXPERIMENT (Buddy 3, 20 Nov 2026, with Buddy 2's go-ahead): overridable for a test build
+ * (-DMOTION_INTEGRAL_MAX=1200).  At 5 cm/s on the car both wheels ran below the target (L 25-34,
+ * R 34-47 mm/s of 50, mean 38-44) and R/L = 1.4-1.5 on straights, a leftward heading drift of
+ * 0.16-0.2 deg/mm: the integral term is capped at KI x 400 = 40 per mille, which the weaker left
+ * motor cannot make up at this speed.  Default unchanged. */
 
 /** Consecutive 20 ms periods at >= 50% duty with zero counts -> stall/encoder fault. */
 #define MOTION_STALL_PERIODS    (25U)   /* 25 x 20 ms = 500 ms */
