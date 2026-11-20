@@ -1,636 +1,1602 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Robocar dashboard</title>
-<style>
-:root {
-  --bg: #eef1f4; --panel: #ffffff; --sunk: #f6f8fa; --text: #16202a; --muted: #5a6673; --line: #d5dbe1;
-  --accent: #0f766e; --accent-ink: #ffffff;
-  --ok: #18794e; --warn: #a15c00; --bad: #c0262d; --off: #6b7480; --dis: #4b2a6b;
-  --measured: #18794e; --derived: #1d5fa8; --reported: #6b3fa0; --simulated: #a15c00; --na: #6b7480;
-  --stop: #c0262d; --stop-ink: #ffffff;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #11161b; --panel: #1a2128; --sunk: #141a20; --text: #e4e8ec; --muted: #97a3ae; --line: #2e3842;
-    --accent: #2bb3a3; --accent-ink: #06201d;
-    --ok: #4cc38a; --warn: #e0a43a; --bad: #ff6b6b; --off: #8a949e; --dis: #c39bf0;
-    --measured: #4cc38a; --derived: #6aa8ff; --reported: #b48cf0; --simulated: #e0a43a; --na: #8a949e;
-    --stop: #e5484d; --stop-ink: #ffffff; }
-}
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, "Segoe UI", sans-serif; }
-button, input, select { font: inherit; color: var(--text); background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; }
-button { cursor: pointer; }
-button:hover:not(:disabled) { border-color: var(--accent); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-button.danger { background: var(--stop); color: var(--stop-ink); border-color: var(--stop); font-weight: 700; }
-.mono, td.val { font-family: ui-monospace, Consolas, monospace; }
-.muted, .note { color: var(--muted); font-size: 12.5px; }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Robocar dashboard</title>
+  <style>
+    :root {
+      --bg: #eef1f4;
+      --panel: #ffffff;
+      --sunk: #f6f8fa;
+      --text: #16202a;
+      --muted: #5a6673;
+      --line: #d5dbe1;
+      --accent: #0f766e;
+      --accent-ink: #ffffff;
+      --ok: #18794e;
+      --warn: #a15c00;
+      --bad: #c0262d;
+      --off: #6b7480;
+      --dis: #4b2a6b;
+      --measured: #18794e;
+      --derived: #1d5fa8;
+      --reported: #6b3fa0;
+      --simulated: #a15c00;
+      --na: #6b7480;
+      --stop: #c0262d;
+      --stop-ink: #ffffff;
+    }
 
-/* top bar */
-.top { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
-  padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
-.top h1 { font-size: 17px; margin: 0; letter-spacing: .01em; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line);
-  font-size: 12.5px; white-space: nowrap; }
-.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--off); }
-.chip.ok::before { background: var(--ok); } .chip.warn::before { background: var(--warn); } .chip.bad::before { background: var(--bad); }
-#estop { padding: 8px 18px; font-size: 15px; letter-spacing: .04em; border-radius: 8px; }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11161b;
+        --panel: #1a2128;
+        --sunk: #141a20;
+        --text: #e4e8ec;
+        --muted: #97a3ae;
+        --line: #2e3842;
+        --accent: #2bb3a3;
+        --accent-ink: #06201d;
+        --ok: #4cc38a;
+        --warn: #e0a43a;
+        --bad: #ff6b6b;
+        --off: #8a949e;
+        --dis: #c39bf0;
+        --measured: #4cc38a;
+        --derived: #6aa8ff;
+        --reported: #b48cf0;
+        --simulated: #e0a43a;
+        --na: #8a949e;
+        --stop: #e5484d;
+        --stop-ink: #ffffff;
+      }
+    }
 
-/* source bar */
-.sources { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 16px; background: var(--sunk); border-bottom: 1px solid var(--line); }
-.src { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 3px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
-.src b { font-size: 12.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-select { max-width: 340px; }
-#err { color: var(--bad); padding: 0 16px; min-height: 0; }
-#err:not(:empty) { padding: 6px 16px; }
+    * {
+      box-sizing: border-box;
+    }
 
-/* layout */
-.shell { display: grid; grid-template-columns: 196px minmax(0, 1fr); min-height: calc(100vh - 110px); }
-.side { border-right: 1px solid var(--line); background: var(--panel); padding: 10px 8px; }
-.side button { display: block; width: 100%; text-align: left; border: none; background: none; padding: 8px 10px; border-radius: 6px; margin-bottom: 2px; }
-.side button.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.side .count { float: right; font-size: 11.5px; padding: 0 6px; border-radius: 999px; background: var(--bad); color: #fff; }
-main { padding: 14px 16px 40px; min-width: 0; }
-@media (max-width: 820px) {
-  .shell { grid-template-columns: minmax(0, 1fr); }
-  .side { border-right: none; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 4px; }
-  .side button { display: inline-block; width: auto; margin: 0; }
-}
-.view { display: none; }
-.view.on { display: block; }
-h2 { font-size: 15px; margin: 0 0 10px; }
-h3 { font-size: 13px; margin: 14px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
-.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-.two { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-@media (max-width: 1000px) { .two { grid-template-columns: minmax(0, 1fr); } }
-.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
-.stack > * + * { margin-top: 12px; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 system-ui, "Segoe UI", sans-serif;
+    }
 
-/* sensor cards */
-.sensor .head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-.sensor .name { font-weight: 600; }
-.sensor .big { font: 600 20px/1.2 ui-monospace, Consolas, monospace; margin: 6px 0 2px; min-height: 24px; }
-.sensor .meta { display: flex; gap: 12px; font-size: 12.5px; color: var(--muted); }
-.st { font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; color: #fff; white-space: nowrap; }
-.st.VALID { background: var(--ok); } .st.STALE { background: var(--warn); } .st.INVALID { background: var(--bad); }
-.st.UNAVAILABLE { background: var(--off); } .st.DISCONNECTED { background: var(--dis); }
-.st.PENDING { background: var(--derived); } .st.CONFIRMED { background: var(--ok); } .st.NOT { background: var(--bad); } .st.REFUSED { background: var(--off); }
+    button,
+    input,
+    select {
+      font: inherit;
+      color: var(--text);
+      background: var(--sunk);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 9px;
+    }
 
-/* tables */
-table { border-collapse: collapse; width: 100%; }
-td, th { text-align: left; padding: 5px 7px; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
-td.val { white-space: nowrap; }
-th { color: var(--muted); font-weight: 600; font-size: 12px; position: sticky; top: 0; background: var(--panel); overflow-wrap: normal; }
-.scroll { max-height: 520px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
-.data td { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; white-space: nowrap; }
-td.na { color: var(--na); } td.invalid { color: var(--bad); font-weight: 600; } td.simulated { color: var(--simulated); }
-tr.open td { background: color-mix(in srgb, var(--bad) 8%, transparent); }
+    button {
+      cursor: pointer;
+    }
 
-/* drive */
-.checks { list-style: none; margin: 0; padding: 0; }
-.checks li { padding: 3px 0; }
-.checks li::before { content: "\2715"; color: var(--bad); font-weight: 700; display: inline-block; width: 1.4em; }
-.checks li.ok::before { content: "\2713"; color: var(--ok); }
-.controls { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); margin: 10px 0; }
-.controls button { padding: 12px 8px; font-size: 15px; font-weight: 600; border-radius: 8px; }
+    button:hover:not(:disabled) {
+      border-color: var(--accent);
+    }
 
-/* calibration */
-.steps { counter-reset: s; list-style: none; margin: 0; padding: 0; }
-.steps li { counter-increment: s; padding: 8px 0 8px 34px; position: relative; border-bottom: 1px dashed var(--line); }
-.steps li::before { content: counter(s); position: absolute; left: 0; top: 7px; width: 24px; height: 24px; border-radius: 50%;
-  background: var(--accent); color: var(--accent-ink); text-align: center; font-weight: 700; line-height: 24px; }
-.zone { display: inline-block; min-width: 72px; text-align: center; padding: 6px 10px; border-radius: 8px; font-weight: 700; border: 2px solid var(--line); }
-.zone.white { background: #ffffff; color: #111; } .zone.black { background: #111; color: #fff; }
-.zone.edge { background: linear-gradient(90deg, #fff 50%, #111 50%); color: var(--accent); }
-.bar { height: 8px; border-radius: 4px; background: var(--sunk); border: 1px solid var(--line); overflow: hidden; }
-.bar > i { display: block; height: 100%; background: var(--accent); }
-.verdict { font-weight: 700; } .verdict.OK { color: var(--ok); } .verdict.bad { color: var(--bad); } .verdict.wait { color: var(--muted); }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
 
-/* subsystem tests (kept from the first web UI) */
-.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
-.tabs button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.badge { font-size: 11px; font-weight: 700; letter-spacing: .03em; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
-.MEASURED { color: var(--measured); } .DERIVED { color: var(--derived); } .REPORTED { color: var(--reported); }
-.SIMULATED { color: var(--simulated); } .NA { color: var(--na); }
-.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-pre.feed { margin: 0; max-height: 460px; overflow: auto; font: 12px/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
-.res { font-weight: 700; white-space: nowrap; }
-.res.PASS { color: var(--ok); } .res.FAIL { color: var(--bad); } .res.other { color: var(--warn); }
-ol { margin: 4px 0 0 18px; padding: 0; }
-.banner { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--warn); color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, transparent); margin-bottom: 12px; }
-.banner.bad { border-color: var(--bad); color: var(--bad); background: color-mix(in srgb, var(--bad) 8%, transparent); }
-</style>
+    button.primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    button.danger {
+      background: var(--stop);
+      color: var(--stop-ink);
+      border-color: var(--stop);
+      font-weight: 700;
+    }
+
+    .mono,
+    td.val {
+      font-family: ui-monospace, Consolas, monospace;
+    }
+
+    .muted,
+    .note {
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+
+    /* top bar */
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 16px;
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .top h1 {
+      font-size: 17px;
+      margin: 0;
+      letter-spacing: .01em;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      font-size: 12.5px;
+      white-space: nowrap;
+    }
+
+    .chip::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--off);
+    }
+
+    .chip.ok::before {
+      background: var(--ok);
+    }
+
+    .chip.warn::before {
+      background: var(--warn);
+    }
+
+    .chip.bad::before {
+      background: var(--bad);
+    }
+
+    #estop {
+      padding: 8px 18px;
+      font-size: 15px;
+      letter-spacing: .04em;
+      border-radius: 8px;
+    }
+
+    /* source bar */
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 16px;
+      background: var(--sunk);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .src {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .src b {
+      font-size: 12.5px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    select {
+      max-width: 340px;
+    }
+
+    #err {
+      color: var(--bad);
+      padding: 0 16px;
+      min-height: 0;
+    }
+
+    #err:not(:empty) {
+      padding: 6px 16px;
+    }
+
+    /* layout */
+    .shell {
+      display: grid;
+      grid-template-columns: 196px minmax(0, 1fr);
+      min-height: calc(100vh - 110px);
+    }
+
+    .side {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 10px 8px;
+    }
+
+    .side button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: none;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 2px;
+    }
+
+    .side button.on {
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-weight: 600;
+    }
+
+    .side .count {
+      float: right;
+      font-size: 11.5px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--bad);
+      color: #fff;
+    }
+
+    main {
+      padding: 14px 16px 40px;
+      min-width: 0;
+    }
+
+    @media (max-width: 820px) {
+      .shell {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .side {
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .side button {
+        display: inline-block;
+        width: auto;
+        margin: 0;
+      }
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.on {
+      display: block;
+    }
+
+    h2 {
+      font-size: 15px;
+      margin: 0 0 10px;
+    }
+
+    h3 {
+      font-size: 13px;
+      margin: 14px 0 6px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    }
+
+    .two {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    @media (max-width: 1000px) {
+      .two {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 6px 0;
+    }
+
+    .stack>*+* {
+      margin-top: 12px;
+    }
+
+    /* sensor cards */
+    .sensor .head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+    }
+
+    .sensor .name {
+      font-weight: 600;
+    }
+
+    .sensor .big {
+      font: 600 20px/1.2 ui-monospace, Consolas, monospace;
+      margin: 6px 0 2px;
+      min-height: 24px;
+    }
+
+    .sensor .meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .st {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: #fff;
+      background: var(--off);
+      white-space: nowrap;
+    }
+
+    .st.VALID {
+      background: var(--ok);
+    }
+
+    .st.STALE {
+      background: var(--warn);
+    }
+
+    .st.INVALID {
+      background: var(--bad);
+    }
+
+    .st.UNAVAILABLE {
+      background: var(--off);
+    }
+
+    .st.DISCONNECTED {
+      background: var(--dis);
+    }
+
+    .st.PENDING {
+      background: var(--derived);
+    }
+
+    .st.CONFIRMED {
+      background: var(--ok);
+    }
+
+    .st.NOT {
+      background: var(--bad);
+    }
+
+    .st.REFUSED {
+      background: var(--off);
+    }
+
+    .st.ACTIVE {
+      background: var(--derived);
+    }
+
+    .st.DONE {
+      background: var(--ok);
+    }
+
+    .st.WARN {
+      background: var(--warn);
+    }
+
+    .st.FAIL {
+      background: var(--bad);
+    }
+
+    .st.SIMULATED {
+      background: var(--simulated);
+    }
+
+    .st.WAITING {
+      background: var(--off);
+    }
+
+    .st.tone-ok {
+      background: var(--ok);
+    }
+
+    .st.tone-info {
+      background: var(--derived);
+    }
+
+    .st.tone-warn {
+      background: var(--warn);
+    }
+
+    .st.tone-bad {
+      background: var(--bad);
+    }
+
+    .st.tone-off {
+      background: var(--off);
+    }
+
+    /* overview dashboard */
+    .head-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .ov-main {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+
+    @media (max-width: 1080px) {
+      .ov-main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .ov-checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      list-style: none;
+      margin: 8px 0 4px;
+      padding: 0;
+      font-size: 12.5px;
+    }
+
+    .ov-checks li::before {
+      content: "\2715";
+      color: var(--bad);
+      font-weight: 700;
+      display: inline-block;
+      width: 1.2em;
+    }
+
+    .ov-checks li.ok::before {
+      content: "\2713";
+      color: var(--ok);
+    }
+
+    .live-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    }
+
+    .live-tile {
+      background: var(--sunk);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--off);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-width: 0;
+    }
+
+    .live-tile.ok {
+      border-left-color: var(--ok);
+    }
+
+    .live-tile.info {
+      border-left-color: var(--derived);
+    }
+
+    .live-tile.warn {
+      border-left-color: var(--warn);
+    }
+
+    .live-tile.bad {
+      border-left-color: var(--bad);
+    }
+
+    .live-tile .k {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .live-tile .v {
+      font: 700 15px/1.3 ui-monospace, Consolas, monospace;
+      margin: 3px 0 2px;
+      overflow-wrap: break-word;
+    }
+
+    .live-tile .d {
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: break-word;
+    }
+
+    .rubric-tbl td:first-child {
+      width: 2em;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ev-row {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      padding: 5px 7px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px;
+    }
+
+    .ev-row .t {
+      font-family: ui-monospace, Consolas, monospace;
+      color: var(--muted);
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+
+    .ev-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #fff;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .ev-tag.ok {
+      background: var(--ok);
+    }
+
+    .ev-tag.info {
+      background: var(--derived);
+    }
+
+    .ev-tag.warn {
+      background: var(--warn);
+    }
+
+    .ev-tag.bad {
+      background: var(--bad);
+    }
+
+    /* tables */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td,
+    th {
+      text-align: left;
+      padding: 5px 7px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      overflow-wrap: break-word;
+    }
+
+    td.val {
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      position: sticky;
+      top: 0;
+      background: var(--panel);
+      overflow-wrap: normal;
+    }
+
+    .scroll {
+      max-height: 520px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .data td {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 12.5px;
+      white-space: nowrap;
+    }
+
+    td.na {
+      color: var(--na);
+    }
+
+    td.invalid {
+      color: var(--bad);
+      font-weight: 600;
+    }
+
+    td.simulated {
+      color: var(--simulated);
+    }
+
+    tr.open td {
+      background: color-mix(in srgb, var(--bad) 8%, transparent);
+    }
+
+    /* drive */
+    .checks {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .checks li {
+      padding: 3px 0;
+    }
+
+    .checks li::before {
+      content: "\2715";
+      color: var(--bad);
+      font-weight: 700;
+      display: inline-block;
+      width: 1.4em;
+    }
+
+    .checks li.ok::before {
+      content: "\2713";
+      color: var(--ok);
+    }
+
+    .controls {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+      margin: 10px 0;
+    }
+
+    .controls button {
+      padding: 12px 8px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+    }
+
+    /* calibration */
+    .steps {
+      counter-reset: s;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .steps li {
+      counter-increment: s;
+      padding: 8px 0 8px 34px;
+      position: relative;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .steps li::before {
+      content: counter(s);
+      position: absolute;
+      left: 0;
+      top: 7px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--accent-ink);
+      text-align: center;
+      font-weight: 700;
+      line-height: 24px;
+    }
+
+    .zone {
+      display: inline-block;
+      min-width: 72px;
+      text-align: center;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      border: 2px solid var(--line);
+    }
+
+    .zone.white {
+      background: #ffffff;
+      color: #111;
+    }
+
+    .zone.black {
+      background: #111;
+      color: #fff;
+    }
+
+    .zone.edge {
+      background: linear-gradient(90deg, #fff 50%, #111 50%);
+      color: var(--accent);
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--sunk);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .bar>i {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .verdict {
+      font-weight: 700;
+    }
+
+    .verdict.OK {
+      color: var(--ok);
+    }
+
+    .verdict.bad {
+      color: var(--bad);
+    }
+
+    .verdict.wait {
+      color: var(--muted);
+    }
+
+    /* subsystem tests (kept from the first web UI) */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .tabs button.on {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: var(--accent);
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      padding: 1px 6px;
+      border-radius: 3px;
+      border: 1px solid currentColor;
+      white-space: nowrap;
+    }
+
+    .MEASURED {
+      color: var(--measured);
+    }
+
+    .DERIVED {
+      color: var(--derived);
+    }
+
+    .REPORTED {
+      color: var(--reported);
+    }
+
+    .SIMULATED {
+      color: var(--simulated);
+    }
+
+    .NA {
+      color: var(--na);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    pre.feed {
+      margin: 0;
+      max-height: 460px;
+      overflow: auto;
+      font: 12px/1.4 ui-monospace, Consolas, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .res {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .res.PASS {
+      color: var(--ok);
+    }
+
+    .res.FAIL {
+      color: var(--bad);
+    }
+
+    .res.other {
+      color: var(--warn);
+    }
+
+    ol {
+      margin: 4px 0 0 18px;
+      padding: 0;
+    }
+
+    .banner {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--warn);
+      color: var(--warn);
+      background: color-mix(in srgb, var(--warn) 8%, transparent);
+      margin-bottom: 12px;
+    }
+
+    .banner.bad {
+      border-color: var(--bad);
+      color: var(--bad);
+      background: color-mix(in srgb, var(--bad) 8%, transparent);
+    }
+
+    .banner.info {
+      border-color: var(--derived);
+      color: var(--derived);
+      background: color-mix(in srgb, var(--derived) 8%, transparent);
+    }
+  </style>
 </head>
+
 <body>
-<header class="top">
-  <h1>Robocar dashboard</h1>
-  <div class="chips" id="chips"></div>
-  <button id="estop" class="danger" title="Sends STOP three times. Works in any car state while the broker is connected.">EMERGENCY STOP</button>
-</header>
-<div class="sources">
-  <div class="src"><b>Live car</b>
-    <input id="broker" placeholder="broker IP, e.g. 127.0.0.1" style="width:13em">
-    <input id="port" type="number" value="1883" style="width:5.5em" aria-label="broker port">
-    <button id="mqttBtn" class="primary">Connect</button>
+  <header class="top">
+    <h1>Robocar dashboard</h1>
+    <div class="chips" id="chips"></div>
+    <button id="estop" class="danger"
+      title="Sends STOP three times. Works in any car state while the broker is connected.">EMERGENCY STOP</button>
+  </header>
+  <div class="sources">
+    <div class="src"><b>Live car</b>
+      <input id="broker" value="127.0.0.1" placeholder="broker IP, e.g. 127.0.0.1" style="width:13em">
+      <input id="port" type="number" value="1883" style="width:5.5em" aria-label="broker port">
+      <button id="mqttBtn" class="primary">Connect</button>
+    </div>
+    <div class="src"><b>USB console</b>
+      <input id="usbMin" type="number" value="30" min="1" max="240" style="width:4.5em" aria-label="capture minutes">
+      min
+      <button id="usbBtn">Start capture</button>
+    </div>
+    <div class="src"><b>Saved log</b>
+      <select id="logSel">
+        <option value="">(choose a log)</option>
+      </select>
+      <label><input type="checkbox" id="follow"> follow</label>
+      <button id="openBtn">Open</button><button id="refreshBtn" title="Refresh the list">&#x21bb;</button>
+    </div>
+    <button id="stopBtn">Stop source</button>
   </div>
-  <div class="src"><b>USB console</b>
-    <input id="usbMin" type="number" value="30" min="1" max="240" style="width:4.5em" aria-label="capture minutes"> min
-    <button id="usbBtn">Start capture</button>
-  </div>
-  <div class="src"><b>Saved log</b>
-    <select id="logSel"><option value="">(choose a log)</option></select>
-    <label><input type="checkbox" id="follow"> follow</label>
-    <button id="openBtn">Open</button><button id="refreshBtn" title="Refresh the list">&#x21bb;</button>
-  </div>
-  <button id="stopBtn">Stop source</button>
-</div>
-<div id="err"></div>
-<div class="shell">
-  <nav class="side" id="side"></nav>
-  <main>
-    <!-- Overview -->
-    <section class="view" id="v-overview">
-      <div id="ovBanner"></div>
-      <h2>Sensors</h2>
-      <div class="grid" id="sensorCards"></div>
-      <h3>Car</h3>
-      <div class="grid" id="carCards"></div>
-    </section>
-
-    <!-- Drive -->
-    <section class="view" id="v-drive">
-      <div class="two">
-        <div class="card">
-          <h2>Remote control</h2>
-          <ul class="checks" id="checks"></ul>
-          <div class="controls">
-            <button id="startBtn" class="primary">START</button>
-            <button id="pauseBtn" disabled title="Not in the car firmware yet">PAUSE</button>
-            <button id="stopCmdBtn" class="danger">STOP</button>
-            <button id="resetBtn">RESET</button>
+  <div id="err"></div>
+  <div class="shell">
+    <nav class="side" id="side"></nav>
+    <main>
+      <!-- Overview -->
+      <section class="view" id="v-overview">
+        <div id="ovBanner"></div>
+        <div class="two" style="margin-bottom:12px">
+          <div class="card">
+            <div class="head-row">
+              <h2 style="margin:0">Drive control</h2>
+              <div class="row" style="margin:0">
+                <span id="ovVcPill" class="chip">VC &#x2014;</span>
+                <button id="ovClearRunBtn"
+                  title="Reset rubric checkmarks and run events for a new test run (keeps MQTT connected)">Clear
+                  run</button>
+              </div>
+            </div>
+            <div class="controls">
+              <button id="ovStartBtn" class="primary">START</button>
+              <button id="ovStopBtn" class="danger">STOP</button>
+              <button id="ovResetBtn">RESET</button>
+            </div>
+            <ul class="ov-checks" id="ovChecks"></ul>
+            <div id="ovLastCmd" class="note"></div>
           </div>
-          <p class="note" id="pauseNote"></p>
-          <p class="note">A command counts as done only when the car's own telemetry shows the result: the broker's
-            acknowledgement means the broker has it, not the car. <b>START drives the car at once</b> and only
-            works from READY_WAITING. RESET clears a safety latch only after the car has been still for 0.5 s.</p>
-        </div>
-        <div class="card">
-          <h2>Commands</h2>
-          <div class="scroll" style="max-height:420px">
-            <table><thead><tr><th>Time</th><th>Command</th><th>Broker</th><th>Car</th><th>Detail</th></tr></thead>
-              <tbody id="cmdRows"></tbody></table>
+          <div class="card">
+            <h2>Live status</h2>
+            <div class="live-grid" id="ovLiveGrid"></div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Recording -->
-    <section class="view" id="v-record">
-      <div class="card">
-        <div class="row">
-          <button id="recBtn" class="primary">&#x25CF; Record</button>
-          <span id="recInfo" class="note"></span>
-          <span style="flex:1"></span>
-          <a id="csvRec" href="/api/export.csv?what=rows&amp;scope=recording"><button>Export recording (CSV)</button></a>
-          <a id="csvAll" href="/api/export.csv?what=rows&amp;scope=all"><button>Export all rows (CSV)</button></a>
+        <div class="ov-main" style="margin-bottom:12px">
+          <div class="card">
+            <div class="head-row">
+              <h2 style="margin:0">Demo rubric</h2>
+              <span id="ovRubricScore" class="chip">0 / 10</span>
+            </div>
+            <table class="rubric-tbl">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Requirement</th>
+                  <th>Status</th>
+                  <th>Live / Observed</th>
+                </tr>
+              </thead>
+              <tbody id="rubricRows"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="head-row">
+              <h2 style="margin:0">Run events</h2>
+              <span class="note">newest first</span>
+            </div>
+            <div class="scroll" style="max-height:430px" id="ovEvents"></div>
+          </div>
         </div>
-        <div class="row" id="rates"></div>
-        <div class="row">
-          <button id="olderBtn">&#x2190; Older</button>
-          <button id="newerBtn">Newer &#x2192;</button>
-          <button id="liveBtn">Back to live</button>
-          <span id="pageInfo" class="note"></span>
-        </div>
-        <div class="scroll">
-          <table class="data"><thead><tr>
-            <th>#</th><th>Time</th><th>Car ms</th><th>IR centre</th><th>IR right</th><th>Pitch &#xB0;</th><th>Roll &#xB0;</th>
-            <th>Speed cm/s</th><th>Distance cm</th><th>Range cm</th><th>VC state</th></tr></thead>
-            <tbody id="tableRows"></tbody></table>
-        </div>
-        <p class="note">One row per telemetry wake (every 200 ms over WiFi; every 1 s on the USB console, which prints every
-          5th frame). Grey = not available, red = invalid, orange = written by a self-test. The table holds the last
-          two hours of the current source; open a saved log above to review an earlier session.</p>
-      </div>
-    </section>
+        <h3>Sensors</h3>
+        <div class="grid" id="sensorCards"></div>
+        <h3>Car</h3>
+        <div class="grid" id="carCards"></div>
+      </section>
 
-    <!-- Data gaps -->
-    <section class="view" id="v-gaps">
-      <div class="card">
-        <div class="row"><h2 style="margin:0">Missing and bad data</h2><span style="flex:1"></span>
-          <a href="/api/export.csv?what=gaps"><button>Export events (CSV)</button></a></div>
-        <p class="note">An event starts when a sensor stops being VALID and ends when it is VALID again.
-          STALE = its frames stopped (or, for the IR raws, the value froze); INVALID = a reading outside what the sensor can
-          give; UNAVAILABLE = the frame carries no value for it (no producer); DISCONNECTED = the whole link is down.
-          Sensors that never reported are listed on the Overview, not here.</p>
-        <div class="scroll"><table><thead><tr><th>#</th><th>Sensor</th><th>State</th><th>From</th><th>To</th><th>Length</th><th>Why</th></tr></thead>
-          <tbody id="gapRows"></tbody></table></div>
-      </div>
-    </section>
+      <!-- Drive -->
+      <section class="view" id="v-drive">
+        <div class="two">
+          <div class="card">
+            <h2>Remote control</h2>
+            <ul class="checks" id="checks"></ul>
+            <div class="controls">
+              <button id="startBtn" class="primary">START</button>
+              <button id="pauseBtn" disabled title="Not in the car firmware yet">PAUSE</button>
+              <button id="stopCmdBtn" class="danger">STOP</button>
+              <button id="resetBtn">RESET</button>
+            </div>
+            <p class="note" id="pauseNote"></p>
+            <p class="note">A command counts as done only when the car's own telemetry shows the result: the broker's
+              acknowledgement means the broker has it, not the car. <b>START drives the car at once</b> and only
+              works from READY_WAITING. RESET clears a safety latch only after the car has been still for 0.5 s.</p>
+          </div>
+          <div class="card">
+            <h2>Commands</h2>
+            <div class="scroll" style="max-height:420px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Command</th>
+                    <th>Broker</th>
+                    <th>Car</th>
+                    <th>Detail</th>
+                  </tr>
+                </thead>
+                <tbody id="cmdRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <!-- Line calibration -->
-    <section class="view" id="v-calib">
-      <div id="calNotes"></div>
-      <div class="two">
+      <!-- Recording -->
+      <section class="view" id="v-record">
         <div class="card">
-          <h2>Guided capture</h2>
-          <ol class="steps">
-            <li>Put the car on the track with <b>both</b> IR sensors over <b>white</b>, keep it still.
-              <div class="row"><button id="capWhite" class="primary">Capture white</button></div></li>
-            <li>Move it so <b>both</b> sensors sit over the <b>black line</b> body, keep it still.
-              <div class="row"><button id="capBlack" class="primary">Capture black</button></div></li>
-            <li>Read the verdicts. Then slide the car across the line and watch the live zones.</li>
-          </ol>
           <div class="row">
-            <label>Capture length <input id="capSec" type="number" value="3" min="0.5" max="30" step="0.5" style="width:5em"> s</label>
-            <button id="capCancel">Cancel</button><button id="capReset">Start over</button>
+            <button id="recBtn" class="primary">&#x25CF; Record</button>
+            <span id="recInfo" class="note"></span>
+            <span style="flex:1"></span>
+            <a id="csvRec" href="/api/export.csv?what=rows&amp;scope=recording"><button>Export recording
+                (CSV)</button></a>
+            <a id="csvAll" href="/api/export.csv?what=rows&amp;scope=all"><button>Export all rows (CSV)</button></a>
           </div>
-          <p id="capState" class="note"></p>
-          <h3>Live</h3>
-          <div id="calLive"></div>
+          <div class="row" id="rates"></div>
+          <div class="row">
+            <button id="olderBtn">&#x2190; Older</button>
+            <button id="newerBtn">Newer &#x2192;</button>
+            <button id="liveBtn">Back to live</button>
+            <span id="pageInfo" class="note"></span>
+          </div>
+          <div class="scroll">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Time</th>
+                  <th>Car ms</th>
+                  <th>IR centre</th>
+                  <th>IR right</th>
+                  <th>Pitch &#xB0;</th>
+                  <th>Roll &#xB0;</th>
+                  <th>Speed cm/s</th>
+                  <th>Distance cm</th>
+                  <th>Range cm</th>
+                  <th>VC state</th>
+                </tr>
+              </thead>
+              <tbody id="tableRows"></tbody>
+            </table>
+          </div>
+          <p class="note">One row per telemetry wake (every 200 ms over WiFi; every 1 s on the USB console, which prints
+            every
+            5th frame). Grey = not available, red = invalid, orange = written by a self-test. The table holds the last
+            two hours of the current source; open a saved log above to review an earlier session.</p>
         </div>
+      </section>
+
+      <!-- Data gaps -->
+      <section class="view" id="v-gaps">
         <div class="card">
-          <h2>Result</h2>
-          <table><thead><tr><th></th><th>CENTRE</th><th>RIGHT</th></tr></thead><tbody id="calRows"></tbody></table>
-          <p class="note" id="calSource"></p>
-          <h3>What the car's boot calibration would do</h3>
-          <p id="bootRule" class="note"></p>
-          <h3>The car's own measurement (USB console)</h3>
-          <div id="carCal" class="note"></div>
-          <div class="row"><button id="useCar">Use the car's measurement</button></div>
-          <h3>Rules (read from the firmware)</h3>
-          <table><tbody id="ruleRows"></tbody></table>
+          <div class="row">
+            <h2 style="margin:0">Missing and bad data</h2><span style="flex:1"></span>
+            <a href="/api/export.csv?what=gaps"><button>Export events (CSV)</button></a>
+          </div>
+          <p class="note">An event starts when a sensor stops being VALID and ends when it is VALID again.
+            STALE = its frames stopped (or, for the IR raws, the value froze); INVALID = a reading outside what the
+            sensor can
+            give; UNAVAILABLE = the frame carries no value for it (no producer); DISCONNECTED = the whole link is down.
+            Sensors that never reported are listed on the Overview, not here.</p>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Sensor</th>
+                  <th>State</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Length</th>
+                  <th>Why</th>
+                </tr>
+              </thead>
+              <tbody id="gapRows"></tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Subsystem tests (the first web UI's views and checks) -->
-    <section class="view" id="v-tests">
-      <div class="tabs" id="testTabs"></div>
-      <div class="legend">
-        <span><span class="badge MEASURED">MEASURED</span> read from a sensor</span>
-        <span><span class="badge DERIVED">DERIVED</span> computed from measurements</span>
-        <span><span class="badge REPORTED">REPORTED</span> state or decision from the firmware</span>
-        <span><span class="badge SIMULATED">SIMULATED</span> written by a self-test</span>
-        <span><span class="badge NA">N/A</span> not available</span>
-      </div>
-      <div class="two">
-        <div class="stack">
-          <div class="card"><h2>Readings</h2><table><thead><tr><th>Reading</th><th>Value</th><th>Source</th><th>Note</th></tr></thead><tbody id="readings"></tbody></table></div>
-          <div class="card" id="testBox"></div>
+      <!-- Line calibration -->
+      <section class="view" id="v-calib">
+        <div id="calNotes"></div>
+        <div class="two">
+          <div class="card">
+            <h2>Guided capture</h2>
+            <ol class="steps">
+              <li>Put the car on the track with <b>both</b> IR sensors over <b>white</b>, keep it still.
+                <div class="row"><button id="capWhite" class="primary">Capture white</button></div>
+              </li>
+              <li>Move it so <b>both</b> sensors sit over the <b>black line</b> body, keep it still.
+                <div class="row"><button id="capBlack" class="primary">Capture black</button></div>
+              </li>
+              <li>Read the verdicts. Then slide the car across the line and watch the live zones.</li>
+            </ol>
+            <div class="row">
+              <label>Capture length <input id="capSec" type="number" value="3" min="0.5" max="30" step="0.5"
+                  style="width:5em"> s</label>
+              <button id="capCancel">Cancel</button><button id="capReset">Start over</button>
+            </div>
+            <p id="capState" class="note"></p>
+            <h3>Live</h3>
+            <div id="calLive"></div>
+          </div>
+          <div class="card">
+            <h2>Result</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>CENTRE</th>
+                  <th>RIGHT</th>
+                </tr>
+              </thead>
+              <tbody id="calRows"></tbody>
+            </table>
+            <p class="note" id="calSource"></p>
+            <h3>What the car's boot calibration would do</h3>
+            <p id="bootRule" class="note"></p>
+            <h3>The car's own measurement (USB console)</h3>
+            <div id="carCal" class="note"></div>
+            <div class="row"><button id="useCar">Use the car's measurement</button></div>
+            <h3>Rules (read from the firmware)</h3>
+            <table>
+              <tbody id="ruleRows"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="card"><h2>Events</h2><pre class="feed" id="feed"></pre></div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Console -->
-    <section class="view" id="v-console">
-      <div class="card"><h2>Console (raw, newest at the bottom)</h2><pre class="feed" id="consoleFeed" style="max-height:640px"></pre></div>
-    </section>
-  </main>
-</div>
-<script>
-"use strict";
-const VIEWS = [["overview", "Overview"], ["drive", "Drive"], ["record", "Recording"], ["gaps", "Data gaps"],
-               ["calib", "Line calibration"], ["tests", "Subsystem tests"], ["console", "Console"]];
-const TEST_TABS = [["imu", "IMU"], ["obstacle", "Obstacle"], ["lf", "Line following"], ["barcode", "Barcode"],
-                   ["vc", "Vehicle Controller"], ["mqtt", "MQTT"]];
-const PROC = {
-  imu: ["Stationary firmware; car flat and still for 30 s after boot.",
+      <!-- Subsystem tests (the first web UI's views and checks) -->
+      <section class="view" id="v-tests">
+        <div class="tabs" id="testTabs"></div>
+        <div class="legend">
+          <span><span class="badge MEASURED">MEASURED</span> read from a sensor</span>
+          <span><span class="badge DERIVED">DERIVED</span> computed from measurements</span>
+          <span><span class="badge REPORTED">REPORTED</span> state or decision from the firmware</span>
+          <span><span class="badge SIMULATED">SIMULATED</span> written by a self-test</span>
+          <span><span class="badge NA">N/A</span> not available</span>
+        </div>
+        <div class="two">
+          <div class="stack">
+            <div class="card">
+              <h2>Readings</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Reading</th>
+                    <th>Value</th>
+                    <th>Source</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody id="readings"></tbody>
+              </table>
+            </div>
+            <div class="card" id="testBox"></div>
+          </div>
+          <div class="card">
+            <h2>Events</h2>
+            <pre class="feed" id="feed"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Console -->
+      <section class="view" id="v-console">
+        <div class="card">
+          <h2>Console (raw, newest at the bottom)</h2>
+          <pre class="feed" id="consoleFeed" style="max-height:640px"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    "use strict";
+    const VIEWS = [["overview", "Overview"], ["drive", "Drive"], ["record", "Recording"], ["gaps", "Data gaps"],
+    ["calib", "Line calibration"], ["tests", "Subsystem tests"], ["console", "Console"]];
+    const TEST_TABS = [["imu", "IMU"], ["obstacle", "Obstacle"], ["lf", "Line following"], ["barcode", "Barcode"],
+    ["vc", "Vehicle Controller"], ["mqtt", "MQTT"]];
+    const PROC = {
+      imu: ["Stationary firmware; car flat and still for 30 s after boot.",
         "Lift the FRONT about 15 deg (front wheels on a 4 cm book), hold 3 s, put it down. Pitch should go positive.",
         "Lift the LEFT side about 15 deg, hold 3 s, put it down. Note the sign of roll.",
         "Last: lift the whole car about 5 cm, hold 1 s, put it down. Expect LIFTED and BRAKE (latched until replug)."],
-  obstacle: ["Stationary firmware; nothing within 60 cm in front or to the sides for 20 s.",
-             "Box straight ahead at 50 cm from the sensor face, 15 s.",
-             "Box at 20 cm, 15 s (inside 25 cm: an obstacle profile).",
-             "Remove the box, 15 s. Enter the tape-measured distances and box width, then run the check."],
-  lf: ["Stationary firmware: move the car over the line by hand; IR CENTRE/RIGHT raw should rise on black.",
+      obstacle: ["Stationary firmware; nothing within 60 cm in front or to the sides for 20 s.",
+        "Box straight ahead at 50 cm from the sensor face, 15 s.",
+        "Box at 20 cm, 15 s (inside 25 cm: an obstacle profile).",
+        "Remove the box, 15 s. Enter the tape-measured distances and box width, then run the check."],
+      lf: ["Stationary firmware: move the car over the line by hand; IR CENTRE/RIGHT raw should rise on black.",
         "Moving: controlled moving firmware (robocar-team-drive...), battery on, 40 cm clear each side of the line.",
         "Pose A, pose B, then each drive starts after CENTRE is steady 3 s and the HANDS OFF warning.",
         "Production line following stops at tight 90 deg tiles (TRACK_LOST): start with 1 m of straight."],
-  vc: ["Moving firmware only: the test starts and stops each drive through the VC (START / STOP / RESET).",
-       "Watch the VC state: NAV_LINE_TRACKING while following, OBSTACLE_AVOIDANCE during a bypass,",
-       "READY_WAITING after STOP or TRACK_LOST, SAFETY_FAULT_LATCHED after a lift (reset when still)."],
-  mqtt: ["WiFi build (-DTEL_BACKEND_WIFI=ON, config/secrets.h) and a broker on this network.",
-         "Connect above; let it run at least 30 s; run the check (heartbeat delivery and gaps)."]
-};
-const FEED_LIMIT = 1500, TABLE_LIMIT = 200;
-let view = "overview", testTab = "imu", seq = 0, gen = -1, st = null;
-let feeds = { console: [] };
-for (const [k] of TEST_TABS) feeds[k] = [];
-let tableMode = "live", tableRows = [], tableBusy = false;
+      vc: ["Moving firmware only: the test starts and stops each drive through the VC (START / STOP / RESET).",
+        "Watch the VC state: NAV_LINE_TRACKING while following, OBSTACLE_AVOIDANCE during a bypass,",
+        "READY_WAITING after STOP or TRACK_LOST, SAFETY_FAULT_LATCHED after a lift (reset when still)."],
+      mqtt: ["WiFi build (-DTEL_BACKEND_WIFI=ON, config/secrets.h) and a broker on this network.",
+        "Connect above; let it run at least 30 s; run the check (heartbeat delivery and gaps)."]
+    };
+    const FEED_LIMIT = 1500, TABLE_LIMIT = 200;
+    let view = "overview", testTab = "imu", seq = 0, gen = -1, st = null;
+    let feeds = { console: [] };
+    for (const [k] of TEST_TABS) feeds[k] = [];
+    let tableMode = "live", tableRows = [], tableBusy = false;
 
-const $ = (id) => document.getElementById(id);
-function el(tag, attrs, ...kids) {
-  const e = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs || {})) {
-    if (k === "class") e.className = v; else if (k === "onclick") e.onclick = v; else e.setAttribute(k, v);
-  }
-  for (const c of kids) if (c !== null && c !== undefined) e.append(c instanceof Node ? c : document.createTextNode(String(c)));
-  return e;
-}
-async function api(path, body) {
-  const opt = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
-  const r = await fetch(path, opt);
-  const j = await r.json().catch(() => ({ error: "bad reply" }));
-  if (!r.ok) { const e = new Error(j.error || r.statusText); e.reply = j; throw e; }
-  return j;
-}
-function showErr(e) { $("err").textContent = e ? String(e.message || e) : ""; }
-const fmt = (v, d) => (v === null || v === undefined || v === "") ? "\u2014" : (d === undefined ? String(v) : Number(v).toFixed(d));
-const ageText = (s) => s === null || s === undefined ? "never" : (s < 1 ? "just now" : s.toFixed(1) + " s ago");
-function stBadge(s) { return el("span", { class: "st " + (s === "NOT CONFIRMED" ? "NOT" : s) }, s); }
-function clear(node) { node.textContent = ""; return node; }
-
-/* ---------- navigation ---------- */
-function renderSide() {
-  const side = clear($("side"));
-  const open = st ? st.gaps.filter((g) => g.open).length : 0;
-  for (const [k, name] of VIEWS) {
-    const b = el("button", { class: k === view ? "on" : "" }, name);
-    if (k === "gaps" && open) b.append(el("span", { class: "count" }, open));
-    b.onclick = () => { view = k; history.replaceState(null, "", "#" + k); renderSide(); showView(); renderView(); };
-    side.append(b);
-  }
-}
-function showView() { for (const [k] of VIEWS) $("v-" + k).classList.toggle("on", k === view); }
-
-/* ---------- top bar ---------- */
-function renderChips() {
-  const c = clear($("chips"));
-  if (!st) { c.append(el("span", { class: "chip bad" }, "dashboard server not reachable")); return; }
-  const s = st.source, ctl = st.ctl;
-  const add = (text, cls) => c.append(el("span", { class: "chip " + (cls || "") }, text));
-  add(s.label + (s.running ? (s.live ? " \u00b7 live" : " \u00b7 reading") : " \u00b7 stopped"), s.running ? "ok" : "");
-  if (s.kind === "mqtt") {
-    add("broker " + (s.mqtt_connected ? "connected" : "NOT connected"), s.mqtt_connected ? "ok" : "bad");
-    add("car " + (s.car_status || "status unknown"), s.car_status === "ONLINE" ? "ok" : s.car_status ? "bad" : "warn");
-  }
-  if (s.live && s.hb_age_s !== undefined) add("heartbeat " + ageText(s.hb_age_s), s.hb_age_s > 3 ? "bad" : "ok");
-  else if (s.live && s.kind === "mqtt") add("no heartbeat yet", "warn");
-  if (s.live && s.data_age_s !== undefined) add("data " + ageText(s.data_age_s), s.data_age_s > 3 ? "bad" : "ok");
-  if (ctl.state) add("VC " + ctl.state, ctl.state === "SAFETY_FAULT_LATCHED" ? "bad" : "");
-  if (st.s1_ran) add("APP_TEST build: S1 self-test values are SIMULATED", "warn");
-  if (s.error) add("error: " + s.error, "bad");
-  $("estop").disabled = !(s.kind === "mqtt" && s.mqtt_connected);
-}
-
-/* ---------- overview ---------- */
-function renderOverview() {
-  const banner = clear($("ovBanner"));
-  if (st.source.kind === "none") banner.append(el("div", { class: "banner" }, "No source yet: connect to the broker for the live car, start a USB capture, or open a saved log above."));
-  const cards = clear($("sensorCards"));
-  for (const h of st.health) {
-    cards.append(el("div", { class: "card sensor" },
-      el("div", { class: "head" }, el("span", { class: "name" }, h.label), stBadge(h.state)),
-      el("div", { class: "big" }, h.value || "\u2014"),
-      el("div", { class: "meta" }, el("span", {}, h.rate_hz ? h.rate_hz.toFixed(1) + " Hz" : "rate \u2014"),
-        el("span", {}, "seen " + ageText(h.age_s)), el("span", {}, h.owner)),
-      h.simulated ? el("div", { class: "note", style: "color:var(--simulated)" }, "written by the S1 self-test, not a sensor") : null,
-      h.reason ? el("div", { class: "note" }, h.reason) : null));
-  }
-  const car = clear($("carCards"));
-  const row = st.table.latest, ctl = st.ctl;
-  const vc = (st.readings.vc || []).find((r) => r.name === "VC state");
-  const kv = (k, v, n) => el("div", { class: "card" }, el("div", { class: "note" }, k), el("div", { class: "sensor" }, el("div", { class: "big" }, v)), n ? el("div", { class: "note" }, n) : null);
-  car.append(kv("Vehicle Controller", (vc && vc.value) || ctl.state || "\u2014", vc ? vc.note : ""));
-  car.append(kv("Speed", row && row.speed !== null ? fmt(row.speed, 1) + " cm/s" : "\u2014", "encoders, newest wake"));
-  car.append(kv("Distance", row && row.distance_cm !== null ? row.distance_cm + " cm" : "\u2014", "only counted while driving"));
-  const last = ctl.history[0];
-  car.append(kv("Last command", last ? last.cmd.toUpperCase() + " \u00b7 " + last.result : "none", last ? last.detail : ""));
-}
-
-/* ---------- drive ---------- */
-function renderDrive() {
-  const ctl = st.ctl, ul = clear($("checks"));
-  for (const c of ctl.checklist) ul.append(el("li", { class: c.ok ? "ok" : "" }, c.text));
-  $("startBtn").disabled = !!ctl.can.start;
-  $("startBtn").title = ctl.can.start || "Drives the motors";
-  $("stopCmdBtn").disabled = !!ctl.can.stop;
-  $("resetBtn").disabled = !!ctl.can.reset;
-  $("pauseNote").textContent = ctl.can.pause;
-  const tb = clear($("cmdRows"));
-  if (!ctl.history.length) tb.append(el("tr", {}, el("td", { colspan: 5, class: "note" }, "No commands sent from this source yet.")));
-  for (const c of ctl.history) {
-    tb.append(el("tr", {}, el("td", { class: "val" }, c.time.slice(0, 12)), el("td", {}, c.cmd.toUpperCase()),
-      el("td", {}, c.broker), el("td", {}, stBadge(c.result), c.took_s !== null && c.result === "CONFIRMED" ? el("span", { class: "note" }, " " + c.took_s + " s") : null),
-      el("td", {}, c.detail, c.warning ? el("div", { style: "color:var(--warn)" }, c.warning) : null)));
-  }
-}
-async function sendCmd(cmd) {
-  try { await api("/api/cmd", { cmd }); showErr(""); } catch (e) { showErr(e); }
-  poll();
-}
-
-/* ---------- recording ---------- */
-function cellClass(status) { return status === "unavailable" ? "na" : status === "invalid" ? "invalid" : status === "simulated" ? "simulated" : ""; }
-function renderTable() {
-  const tb = clear($("tableRows"));
-  if (!tableRows.length) { tb.append(el("tr", {}, el("td", { colspan: 11, class: "note" }, "No telemetry rows yet."))); }
-  const rows = tableMode === "live" ? tableRows.slice().reverse() : tableRows;
-  for (const r of rows) {
-    const s = r.status || {};
-    tb.append(el("tr", {}, el("td", {}, r.seq), el("td", {}, r.time || "\u2014"), el("td", {}, fmt(r.car_ms)),
-      el("td", { class: cellClass(s.ir_c) }, fmt(r.ir_c)), el("td", { class: cellClass(s.ir_r) }, fmt(r.ir_r)),
-      el("td", { class: cellClass(s.imu) }, fmt(r.pitch, 1)), el("td", { class: cellClass(s.imu) }, fmt(r.roll, 1)),
-      el("td", {}, fmt(r.speed, 1)), el("td", {}, fmt(r.distance_cm)),
-      el("td", { class: cellClass(s.ultrasonic) }, r.range_cm === 0 && s.ultrasonic === "valid" ? "no echo" : fmt(r.range_cm)),
-      el("td", {}, r.state || "\u2014")));
-  }
-  const t = st ? st.table : null;
-  const rec = t ? t.recording : { active: false, rows: 0 };
-  $("recBtn").innerHTML = rec.active ? "&#x25A0; Stop recording" : "&#x25CF; Record";
-  $("recBtn").className = rec.active ? "danger" : "primary";
-  $("recInfo").textContent = rec.active ? "recording: " + rec.rows + " rows" : (rec.rows ? "last recording: " + rec.rows + " rows" : "not recording (all rows are kept anyway; Record marks a span to export)");
-  $("csvRec").style.display = rec.rows ? "" : "none";
-  $("pageInfo").textContent = (tableMode === "live" ? "live, newest first" : "history, oldest first") + (t ? " \u00b7 " + t.total + " rows held" : "");
-  const rates = clear($("rates"));
-  if (st) for (const h of st.health) rates.append(el("span", { class: "chip " + (h.state === "VALID" ? "ok" : h.state === "UNAVAILABLE" ? "" : "warn") },
-    h.label + ": " + (h.rate_hz ? h.rate_hz.toFixed(1) + " Hz" : "\u2014")));
-}
-async function loadTable(q) {
-  if (tableBusy) return;
-  tableBusy = true;
-  try { const j = await api("/api/table?limit=" + TABLE_LIMIT + (q || "")); tableRows = j.rows; renderTable(); }
-  catch (e) { showErr(e); } finally { tableBusy = false; }
-}
-
-/* ---------- data gaps ---------- */
-function renderGaps() {
-  const tb = clear($("gapRows"));
-  if (!st.gaps.length) tb.append(el("tr", {}, el("td", { colspan: 7, class: "note" }, "No gaps so far.")));
-  for (const g of st.gaps.slice().reverse()) {
-    tb.append(el("tr", { class: g.open ? "open" : "" }, el("td", {}, g.id), el("td", {}, g.label), el("td", {}, stBadge(g.state)),
-      el("td", { class: "val" }, g.start || "\u2014"), el("td", { class: "val" }, g.open ? "still open" : (g.end || "\u2014")),
-      el("td", { class: "val" }, g.duration_s === null ? "\u2014" : g.duration_s + " s"), el("td", { class: "note" }, g.reason)));
-  }
-}
-
-/* ---------- calibration ---------- */
-function statText(s) { return s ? s.avg + "  (" + s.min + "\u2013" + s.max + ", n " + s.n + ")" : "\u2014"; }
-function verdictCell(v, why) { const cls = v === "OK" ? "OK" : v === "INCOMPLETE" ? "wait" : "bad"; return el("td", {}, el("span", { class: "verdict " + cls }, v), el("div", { class: "note" }, why)); }
-function renderCalib() {
-  const c = st.calib, res = c.result;
-  const notes = clear($("calNotes"));
-  for (const n of c.notes) notes.append(el("div", { class: "banner" }, n));
-  const cap = c.capturing;
-  $("capState").textContent = cap ? "Capturing " + cap.target + ": " + cap.n + " frames, " + fmt(cap.left_s, 1) + " s left"
-    + (cap.ignored_simulated ? " (" + cap.ignored_simulated + " simulated ignored)" : "") : (c.note || "");
-  $("capWhite").disabled = $("capBlack").disabled = !!cap || !st.source.live;
-  const rows = clear($("calRows"));
-  const both = (label, f) => rows.append(el("tr", {}, el("th", {}, label), f(res.c), f(res.r)));
-  both("White", (r) => el("td", { class: "val" }, statText(r.white)));
-  both("Black", (r) => el("td", { class: "val" }, statText(r.black)));
-  both("Span", (r) => el("td", { class: "val" }, fmt(r.span)));
-  both("White below", (r) => el("td", { class: "val" }, fmt(r.light_max_raw)));
-  both("Black above", (r) => el("td", { class: "val" }, fmt(r.dark_min_raw)));
-  rows.append(el("tr", {}, el("th", {}, "Verdict"), verdictCell(res.c.verdict, res.c.reason), verdictCell(res.r.verdict, res.r.reason)));
-  $("calSource").textContent = c.source ? "From: " + c.source : "";
-  const b = res.boot_rule;
-  $("bootRule").textContent = "At boot the car takes black from CENTRE on the line and white from RIGHT on white, and gives both sensors the same pair. "
-    + (b.verdict === "INCOMPLETE" ? b.reason + "." : "With these captures: white " + b.white + ", black " + b.black + " \u2192 " + b.verdict + " (" + b.reason + ")."
-    + (b.verdict === "OK" && (res.c.verdict !== "OK" || res.r.verdict !== "OK") ? " Note: the boot rule would pass even though a sensor failed its own check above." : ""));
-  const live = clear($("calLive")), lv = c.live;
-  if (!lv) live.append(el("p", { class: "note" }, "No sensor frames yet."));
-  else for (const ch of ["c", "r"]) {
-    const e = lv[ch], d = e.darkness_pm;
-    live.append(el("div", { class: "row" }, el("b", { style: "width:5.5em" }, ch === "c" ? "CENTRE" : "RIGHT"),
-      el("span", { class: "zone " + (e.zone || "") }, e.zone ? e.zone.toUpperCase() : (e.raw === null ? "no value" : "uncalibrated")),
-      el("span", { class: "mono" }, "raw " + fmt(e.raw)),
-      el("span", { style: "flex:1;min-width:120px" }, el("div", { class: "bar" }, el("i", { style: "width:" + (d === null ? 0 : d / 10) + "%" }))),
-      el("span", { class: "mono" }, d === null ? "\u2014" : d + " \u2030")));
-  }
-  const car = clear($("carCal")), cc = c.car;
-  const keys = Object.keys(cc.measured || {});
-  if (!keys.length && !cc.boot && !cc.cal) car.append("Nothing yet. A USB capture of a Line-Following build prints its boot calibration ([LF] lines).");
-  if (keys.length) { const t = el("table"); for (const k of keys) t.append(el("tr", {}, el("td", {}, k), el("td", { class: "val" }, statText(cc.measured[k])))); car.append(t); }
-  if (cc.boot) car.append(el("div", {}, "Boot calibration " + cc.boot.verdict + ": CENTRE " + cc.boot.c_avg + ", RIGHT " + cc.boot.r_avg));
-  if (cc.cal) car.append(el("div", {}, "Car uses white " + cc.cal.white + ", black " + cc.cal.black + " for both sensors"));
-  $("useCar").disabled = !keys.length;
-  const rr = clear($("ruleRows"));
-  for (const [k, v] of Object.entries(c.rules)) {
-    const file = v.source.startsWith("default") ? v.source : v.source.split("/").pop();
-    rr.append(el("tr", {}, el("td", { class: "val" }, k), el("td", { class: "val" }, v.value), el("td", { class: "note", title: v.source }, file)));
-  }
-}
-async function calib(body) { try { await api("/api/calib", body); showErr(""); } catch (e) { showErr(e); } poll(); }
-
-/* ---------- subsystem tests ---------- */
-function badge(kind) { return el("span", { class: "badge " + (kind === "N/A" ? "NA" : kind) }, kind); }
-function renderTestTabs() {
-  const t = clear($("testTabs"));
-  for (const [k, name] of TEST_TABS) t.append(el("button", { class: k === testTab ? "on" : "", onclick: () => { testTab = k; renderTestTabs(); renderTests(); renderTestBox(); } }, name));
-}
-function renderTests() {
-  const tb = clear($("readings"));
-  for (const r of (st && st.readings[testTab]) || []) tb.append(el("tr", {}, el("td", {}, r.name), el("td", { class: "val" }, r.value || "\u2014"), el("td", {}, badge(r.kind)), el("td", { class: "note" }, r.note)));
-  renderFeed($("feed"), feeds[testTab]);
-}
-function renderTestBox() {
-  const box = clear($("testBox"));
-  const hasCheck = ["imu", "obstacle", "mqtt"].includes(testTab);
-  if (PROC[testTab]) { box.append(el("h2", {}, "Test procedure")); const ol = el("ol"); for (const s of PROC[testTab]) ol.append(el("li", {}, s)); box.append(ol); }
-  if (!hasCheck) { box.style.display = PROC[testTab] ? "" : "none"; return; }
-  box.style.display = "";
-  const row = el("div", { class: "row" });
-  let cm = null, w = null;
-  if (testTab === "obstacle") {
-    cm = el("input", { placeholder: "box distances cm, e.g. 20,50", style: "width:15em" });
-    w = el("input", { placeholder: "box width mm", type: "number", style: "width:8em" });
-    row.append(cm, w);
-  }
-  const out = el("div");
-  const btn = el("button", { class: "primary" }, "Run check");
-  btn.onclick = async () => {
-    let q = "/api/check?kind=" + testTab;
-    if (cm && cm.value.trim()) q += "&expect_cm=" + encodeURIComponent(cm.value.trim());
-    if (w && w.value.trim()) q += "&expect_width_mm=" + encodeURIComponent(w.value.trim());
-    try {
-      const vs = await api(q), t = el("table");
-      for (const v of vs) {
-        const cls = v.result === "PASS" || v.result === "FAIL" ? v.result : "other";
-        t.append(el("tr", {}, el("td", { class: "res " + cls }, v.result), el("td", {}, el("div", {}, v.name), el("div", { class: "note" }, v.detail))));
+    const $ = (id) => document.getElementById(id);
+    function el(tag, attrs, ...kids) {
+      const e = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs || {})) {
+        if (k === "class") e.className = v; else if (k === "onclick") e.onclick = v; else e.setAttribute(k, v);
       }
-      clear(out).append(t); showErr("");
-    } catch (e) { showErr(e); }
-  };
-  row.append(btn, el("span", { class: "note" }, "PASS only when the data holds the measurement behind it."));
-  box.append(el("h2", { style: "margin-top:10px" }, "Check"), row, out);
-}
-function renderFeed(pre, lines) {
-  const atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;
-  pre.textContent = lines.join("\n") || "(nothing yet)";
-  if (atBottom) pre.scrollTop = pre.scrollHeight;
-}
-
-/* ---------- polling ---------- */
-function renderView() {
-  if (!st) return;
-  if (view === "overview") renderOverview();
-  else if (view === "drive") renderDrive();
-  else if (view === "record") { renderTable(); if (tableMode === "live") loadTable(""); }
-  else if (view === "gaps") renderGaps();
-  else if (view === "calib") renderCalib();
-  else if (view === "tests") renderTests();
-  else if (view === "console") renderFeed($("consoleFeed"), feeds.console);
-}
-async function poll() {
-  try {
-    let s = await api("/api/state?since=" + seq);
-    if (s.gen !== gen) {                    // a new source: start the feeds again from its first line
-      seq = 0; for (const k in feeds) feeds[k] = [];
-      tableMode = "live"; tableRows = [];
-      gen = s.gen;
-      s = await api("/api/state?since=0");
-      if (s.gen !== gen) return;            // restarted again meanwhile: the next poll catches up
+      for (const c of kids) if (c !== null && c !== undefined) e.append(c instanceof Node ? c : document.createTextNode(String(c)));
+      return e;
     }
-    for (const k in s.feed) if (feeds[k]) feeds[k].push(...s.feed[k]);
-    feeds.console.push(...s.console);
-    for (const k in feeds) if (feeds[k].length > FEED_LIMIT) feeds[k] = feeds[k].slice(-FEED_LIMIT);
-    seq = s.seq;
-    st = s;
-  } catch (e) { st = null; }
-  renderChips(); renderSide(); renderView();
-}
-async function loadLogs() {
-  const sel = $("logSel"), keep = sel.value;
-  const logs = await api("/api/logs");
-  clear(sel).append(el("option", { value: "" }, "(choose a log)"));
-  for (const l of logs) sel.append(el("option", { value: l.path }, l.mtime + "  " + l.path));
-  sel.value = keep;
-}
-async function setSource(body) { try { await api("/api/source", body); showErr(""); } catch (e) { showErr(e); } poll(); }
+    async function api(path, body) {
+      const opt = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+      const r = await fetch(path, opt);
+      const j = await r.json().catch(() => ({ error: "bad reply" }));
+      if (!r.ok) { const e = new Error(j.error || r.statusText); e.reply = j; throw e; }
+      return j;
+    }
+    function showErr(e) { $("err").textContent = e ? String(e.message || e) : ""; }
+    const fmt = (v, d) => (v === null || v === undefined || v === "") ? "\u2014" : (d === undefined ? String(v) : Number(v).toFixed(d));
+    const ageText = (s) => s === null || s === undefined ? "never" : (s < 1 ? "just now" : s.toFixed(1) + " s ago");
+    function stBadge(s) { return el("span", { class: "st " + (s === "NOT CONFIRMED" ? "NOT" : s) }, s); }
+    function clear(node) { node.textContent = ""; return node; }
 
-$("openBtn").onclick = () => { if ($("logSel").value) setSource({ type: "file", path: $("logSel").value, follow: $("follow").checked }); };
-$("refreshBtn").onclick = () => loadLogs().catch(showErr);
-$("usbBtn").onclick = () => setSource({ type: "usb", seconds: 60 * (parseInt($("usbMin").value, 10) || 30) });
-$("mqttBtn").onclick = () => { if ($("broker").value.trim()) setSource({ type: "mqtt", broker: $("broker").value.trim(), port: parseInt($("port").value, 10) || 1883 }); };
-$("stopBtn").onclick = () => api("/api/source", { type: "stop" }).then(poll).catch(showErr);
-$("estop").onclick = async () => { try { const j = await api("/api/estop", {}); showErr(j.cmd && j.cmd.warning ? j.cmd.warning : ""); } catch (e) { showErr(e); } view = "drive"; renderSide(); showView(); poll(); };
-$("startBtn").onclick = () => sendCmd("start");
-$("stopCmdBtn").onclick = () => sendCmd("stop");
-$("resetBtn").onclick = () => sendCmd("reset");
-$("recBtn").onclick = async () => { const active = st && st.table.recording.active; try { await api("/api/record", { action: active ? "stop" : "start" }); } catch (e) { showErr(e); } poll(); };
-$("olderBtn").onclick = () => { if (!tableRows.length) return; const first = Math.min(...tableRows.map((r) => r.seq)); tableMode = "history"; loadTable("&before=" + first); };
-$("newerBtn").onclick = () => { if (!tableRows.length) return; const last = Math.max(...tableRows.map((r) => r.seq)); tableMode = "history"; loadTable("&after=" + last); };
-$("liveBtn").onclick = () => { tableMode = "live"; loadTable(""); };
-$("capWhite").onclick = () => calib({ action: "capture", target: "white", seconds: parseFloat($("capSec").value) || 3 });
-$("capBlack").onclick = () => calib({ action: "capture", target: "black", seconds: parseFloat($("capSec").value) || 3 });
-$("capCancel").onclick = () => calib({ action: "cancel" });
-$("capReset").onclick = () => calib({ action: "reset" });
-$("useCar").onclick = () => calib({ action: "use_car" });
+    /* ---------- navigation ---------- */
+    function renderSide() {
+      const side = clear($("side"));
+      const open = st ? st.gaps.filter((g) => g.open).length : 0;
+      for (const [k, name] of VIEWS) {
+        const b = el("button", { class: k === view ? "on" : "" }, name);
+        if (k === "gaps" && open) b.append(el("span", { class: "count" }, open));
+        b.onclick = () => { view = k; history.replaceState(null, "", "#" + k); renderSide(); showView(); renderView(); };
+        side.append(b);
+      }
+    }
+    function showView() { for (const [k] of VIEWS) $("v-" + k).classList.toggle("on", k === view); }
 
-if (VIEWS.some(([k]) => "#" + k === location.hash)) view = location.hash.slice(1);
-window.addEventListener("hashchange", () => {
-  const k = location.hash.slice(1);
-  if (VIEWS.some(([v]) => v === k) && k !== view) { view = k; renderSide(); showView(); renderView(); }
-});
-renderSide(); showView(); renderTestTabs(); renderTestBox(); loadLogs().catch(showErr); poll(); setInterval(poll, 500);
-</script>
+    /* ---------- top bar ---------- */
+    function renderChips() {
+      const c = clear($("chips"));
+      if (!st) { c.append(el("span", { class: "chip bad" }, "dashboard server not reachable")); return; }
+      const s = st.source, ctl = st.ctl;
+      const add = (text, cls) => c.append(el("span", { class: "chip " + (cls || "") }, text));
+      add(s.label + (s.running ? (s.live ? " \u00b7 live" : " \u00b7 reading") : " \u00b7 stopped"), s.running ? "ok" : "");
+      if (s.kind === "mqtt") {
+        add("broker " + (s.mqtt_connected ? "connected" : "NOT connected"), s.mqtt_connected ? "ok" : "bad");
+        add("car " + (s.car_status || "status unknown"), s.car_status === "ONLINE" ? "ok" : s.car_status ? "bad" : "warn");
+      }
+      if (s.live && s.hb_age_s !== undefined) add("heartbeat " + ageText(s.hb_age_s), s.hb_age_s > 3 ? "bad" : "ok");
+      else if (s.live && s.kind === "mqtt") add("no heartbeat yet", "warn");
+      if (s.live && s.data_age_s !== undefined) add("data " + ageText(s.data_age_s), s.data_age_s > 3 ? "bad" : "ok");
+      if (ctl.state) add("VC " + ctl.state, ctl.state === "SAFETY_FAULT_LATCHED" ? "bad" : "");
+      if (st.s1_ran) add("APP_TEST build: S1 self-test values are SIMULATED", "warn");
+      if (s.error) add("error: " + s.error, "bad");
+      $("estop").disabled = !(s.kind === "mqtt" && s.mqtt_connected);
+    }
+
+    /* ---------- overview ---------- */
+    const LIVE_ORDER = [["obstacle", "Obstacle"], ["line", "Line"], ["junction", "Junction"],
+    ["barcode", "Barcode"], ["hump", "Hump"], ["pickup", "Pickup / Safety"]];
+    function renderOverview() {
+      const dm = st.demo || { live: {}, rubric: [], summary: { done: 0, total: 10 }, events: [], alerts: [] };
+      const banner = clear($("ovBanner"));
+      if (st.source.kind === "none") banner.append(el("div", { class: "banner" }, "No source yet: connect to the broker for the live car, start a USB capture, or open a saved log above."));
+      for (const a of dm.alerts || []) {
+        const cls = a.severity === "bad" ? "banner bad" : a.severity === "info" ? "banner info" : "banner";
+        banner.append(el("div", { class: cls }, a.text));
+      }
+
+      const ctl = st.ctl, row = st.table.latest;
+      const vc = (st.readings.vc || []).find((r) => r.name === "VC state");
+      const vcName = ctl.state || (vc && vc.value) || "";
+      $("ovStartBtn").disabled = !!ctl.can.start;
+      $("ovStartBtn").title = ctl.can.start || "Drives the motors";
+      $("ovStopBtn").disabled = !!ctl.can.stop;
+      $("ovResetBtn").disabled = !!ctl.can.reset;
+      const pill = $("ovVcPill");
+      pill.textContent = "VC " + (vcName || "\u2014");
+      pill.className = "chip " + (vcName === "SAFETY_FAULT_LATCHED" ? "bad" : vcName === "OBSTACLE_AVOIDANCE" ? "warn" : vcName.startsWith("NAV_") ? "ok" : "");
+      const chk = clear($("ovChecks"));
+      for (const c of ctl.checklist) chk.append(el("li", { class: c.ok ? "ok" : "" }, c.text));
+      const last = ctl.history[0];
+      const lc = clear($("ovLastCmd"));
+      if (!last) {
+        lc.textContent = "Last command: none";
+      } else {
+        lc.append("Last command: " + last.cmd.toUpperCase() + " ", stBadge(last.result));
+        if (last.detail) lc.append(" \u00b7 " + last.detail);
+        if (last.warning) lc.append(el("div", { style: "color:var(--warn)" }, last.warning));
+      }
+
+      const liveGrid = clear($("ovLiveGrid"));
+      for (const [k, label] of LIVE_ORDER) {
+        const t = (dm.live && dm.live[k]) || { status: "WAITING", tone: "off", value: "\u2014", detail: "" };
+        liveGrid.append(el("div", { class: "live-tile " + (t.tone || "off") },
+          el("div", { class: "head-row", style: "margin-bottom:2px" }, el("span", { class: "k" }, label),
+            el("span", { class: "st tone-" + (t.tone || "off") }, t.status)),
+          el("div", { class: "v" }, t.value || "\u2014"),
+          t.detail ? el("div", { class: "d" }, t.detail) : null));
+      }
+
+      const sum = dm.summary || { done: 0, total: 10 };
+      $("ovRubricScore").textContent = sum.done + " / " + sum.total;
+      $("ovRubricScore").className = "chip " + (sum.done === sum.total ? "ok" : sum.done > 0 ? "warn" : "");
+      const rRows = clear($("rubricRows"));
+      for (const r of dm.rubric || []) {
+        rRows.append(el("tr", {},
+          el("td", {}, r.num),
+          el("td", {}, r.title),
+          el("td", {}, stBadge(r.status)),
+          el("td", {}, el("div", { class: "mono" }, r.value || "\u2014"), r.detail ? el("div", { class: "note" }, r.detail) : null)));
+      }
+
+      const evBox = clear($("ovEvents"));
+      const evs = dm.events || [];
+      if (!evs.length) {
+        evBox.append(el("div", { class: "note", style: "padding:10px" }, "(no run events yet)"));
+      } else {
+        for (const e of evs) {
+          evBox.append(el("div", { class: "ev-row" },
+            el("span", { class: "t" }, (e.time || "").slice(0, 12) || "\u2014"),
+            el("span", { class: "ev-tag " + (e.severity || "info") }, e.tag),
+            el("span", {}, e.text)));
+        }
+      }
+
+      const cards = clear($("sensorCards"));
+      for (const h of st.health) {
+        cards.append(el("div", { class: "card sensor" },
+          el("div", { class: "head" }, el("span", { class: "name" }, h.label), stBadge(h.state)),
+          el("div", { class: "big" }, h.value || "\u2014"),
+          el("div", { class: "meta" }, el("span", {}, h.rate_hz ? h.rate_hz.toFixed(1) + " Hz" : "rate \u2014"),
+            el("span", {}, "seen " + ageText(h.age_s)), el("span", {}, h.owner)),
+          h.simulated ? el("div", { class: "note", style: "color:var(--simulated)" }, "written by the S1 self-test, not a sensor") : null,
+          h.reason ? el("div", { class: "note" }, h.reason) : null));
+      }
+      const car = clear($("carCards"));
+      const kv = (k, v, n) => el("div", { class: "card" }, el("div", { class: "note" }, k), el("div", { class: "sensor" }, el("div", { class: "big" }, v)), n ? el("div", { class: "note" }, n) : null);
+      car.append(kv("Vehicle Controller", (vc && vc.value) || ctl.state || "\u2014", vc ? vc.note : ""));
+      car.append(kv("Speed", row && row.speed !== null ? fmt(row.speed, 1) + " cm/s" : "\u2014", "encoders, newest wake"));
+      car.append(kv("Distance", row && row.distance_cm !== null ? row.distance_cm + " cm" : "\u2014", "only counted while driving"));
+      car.append(kv("Last command", last ? last.cmd.toUpperCase() + " \u00b7 " + last.result : "none", last ? last.detail : ""));
+    }
+
+    /* ---------- drive ---------- */
+    function renderDrive() {
+      const ctl = st.ctl, ul = clear($("checks"));
+      for (const c of ctl.checklist) ul.append(el("li", { class: c.ok ? "ok" : "" }, c.text));
+      $("startBtn").disabled = !!ctl.can.start;
+      $("startBtn").title = ctl.can.start || "Drives the motors";
+      $("stopCmdBtn").disabled = !!ctl.can.stop;
+      $("resetBtn").disabled = !!ctl.can.reset;
+      $("pauseNote").textContent = ctl.can.pause;
+      const tb = clear($("cmdRows"));
+      if (!ctl.history.length) tb.append(el("tr", {}, el("td", { colspan: 5, class: "note" }, "No commands sent from this source yet.")));
+      for (const c of ctl.history) {
+        tb.append(el("tr", {}, el("td", { class: "val" }, c.time.slice(0, 12)), el("td", {}, c.cmd.toUpperCase()),
+          el("td", {}, c.broker), el("td", {}, stBadge(c.result), c.took_s !== null && c.result === "CONFIRMED" ? el("span", { class: "note" }, " " + c.took_s + " s") : null),
+          el("td", {}, c.detail, c.warning ? el("div", { style: "color:var(--warn)" }, c.warning) : null)));
+      }
+    }
+    async function sendCmd(cmd) {
+      try { await api("/api/cmd", { cmd }); showErr(""); } catch (e) { showErr(e); }
+      poll();
+    }
+
+    /* ---------- recording ---------- */
+    function cellClass(status) { return status === "unavailable" ? "na" : status === "invalid" ? "invalid" : status === "simulated" ? "simulated" : ""; }
+    function renderTable() {
+      const tb = clear($("tableRows"));
+      if (!tableRows.length) { tb.append(el("tr", {}, el("td", { colspan: 11, class: "note" }, "No telemetry rows yet."))); }
+      const rows = tableMode === "live" ? tableRows.slice().reverse() : tableRows;
+      for (const r of rows) {
+        const s = r.status || {};
+        tb.append(el("tr", {}, el("td", {}, r.seq), el("td", {}, r.time || "\u2014"), el("td", {}, fmt(r.car_ms)),
+          el("td", { class: cellClass(s.ir_c) }, fmt(r.ir_c)), el("td", { class: cellClass(s.ir_r) }, fmt(r.ir_r)),
+          el("td", { class: cellClass(s.imu) }, fmt(r.pitch, 1)), el("td", { class: cellClass(s.imu) }, fmt(r.roll, 1)),
+          el("td", {}, fmt(r.speed, 1)), el("td", {}, fmt(r.distance_cm)),
+          el("td", { class: cellClass(s.ultrasonic) }, r.range_cm === 0 && s.ultrasonic === "valid" ? "no echo" : fmt(r.range_cm)),
+          el("td", {}, r.state || "\u2014")));
+      }
+      const t = st ? st.table : null;
+      const rec = t ? t.recording : { active: false, rows: 0 };
+      $("recBtn").innerHTML = rec.active ? "&#x25A0; Stop recording" : "&#x25CF; Record";
+      $("recBtn").className = rec.active ? "danger" : "primary";
+      $("recInfo").textContent = rec.active ? "recording: " + rec.rows + " rows" : (rec.rows ? "last recording: " + rec.rows + " rows" : "not recording (all rows are kept anyway; Record marks a span to export)");
+      $("csvRec").style.display = rec.rows ? "" : "none";
+      $("pageInfo").textContent = (tableMode === "live" ? "live, newest first" : "history, oldest first") + (t ? " \u00b7 " + t.total + " rows held" : "");
+      const rates = clear($("rates"));
+      if (st) for (const h of st.health) rates.append(el("span", { class: "chip " + (h.state === "VALID" ? "ok" : h.state === "UNAVAILABLE" ? "" : "warn") },
+        h.label + ": " + (h.rate_hz ? h.rate_hz.toFixed(1) + " Hz" : "\u2014")));
+    }
+    async function loadTable(q) {
+      if (tableBusy) return;
+      tableBusy = true;
+      try { const j = await api("/api/table?limit=" + TABLE_LIMIT + (q || "")); tableRows = j.rows; renderTable(); }
+      catch (e) { showErr(e); } finally { tableBusy = false; }
+    }
+
+    /* ---------- data gaps ---------- */
+    function renderGaps() {
+      const tb = clear($("gapRows"));
+      if (!st.gaps.length) tb.append(el("tr", {}, el("td", { colspan: 7, class: "note" }, "No gaps so far.")));
+      for (const g of st.gaps.slice().reverse()) {
+        tb.append(el("tr", { class: g.open ? "open" : "" }, el("td", {}, g.id), el("td", {}, g.label), el("td", {}, stBadge(g.state)),
+          el("td", { class: "val" }, g.start || "\u2014"), el("td", { class: "val" }, g.open ? "still open" : (g.end || "\u2014")),
+          el("td", { class: "val" }, g.duration_s === null ? "\u2014" : g.duration_s + " s"), el("td", { class: "note" }, g.reason)));
+      }
+    }
+
+    /* ---------- calibration ---------- */
+    function statText(s) { return s ? s.avg + "  (" + s.min + "\u2013" + s.max + ", n " + s.n + ")" : "\u2014"; }
+    function verdictCell(v, why) { const cls = v === "OK" ? "OK" : v === "INCOMPLETE" ? "wait" : "bad"; return el("td", {}, el("span", { class: "verdict " + cls }, v), el("div", { class: "note" }, why)); }
+    function renderCalib() {
+      const c = st.calib, res = c.result;
+      const notes = clear($("calNotes"));
+      for (const n of c.notes) notes.append(el("div", { class: "banner" }, n));
+      const cap = c.capturing;
+      $("capState").textContent = cap ? "Capturing " + cap.target + ": " + cap.n + " frames, " + fmt(cap.left_s, 1) + " s left"
+        + (cap.ignored_simulated ? " (" + cap.ignored_simulated + " simulated ignored)" : "") : (c.note || "");
+      $("capWhite").disabled = $("capBlack").disabled = !!cap || !st.source.live;
+      const rows = clear($("calRows"));
+      const both = (label, f) => rows.append(el("tr", {}, el("th", {}, label), f(res.c), f(res.r)));
+      both("White", (r) => el("td", { class: "val" }, statText(r.white)));
+      both("Black", (r) => el("td", { class: "val" }, statText(r.black)));
+      both("Span", (r) => el("td", { class: "val" }, fmt(r.span)));
+      both("White below", (r) => el("td", { class: "val" }, fmt(r.light_max_raw)));
+      both("Black above", (r) => el("td", { class: "val" }, fmt(r.dark_min_raw)));
+      rows.append(el("tr", {}, el("th", {}, "Verdict"), verdictCell(res.c.verdict, res.c.reason), verdictCell(res.r.verdict, res.r.reason)));
+      $("calSource").textContent = c.source ? "From: " + c.source : "";
+      const b = res.boot_rule;
+      $("bootRule").textContent = "At boot the car takes black from CENTRE on the line and white from RIGHT on white, and gives both sensors the same pair. "
+        + (b.verdict === "INCOMPLETE" ? b.reason + "." : "With these captures: white " + b.white + ", black " + b.black + " \u2192 " + b.verdict + " (" + b.reason + ")."
+          + (b.verdict === "OK" && (res.c.verdict !== "OK" || res.r.verdict !== "OK") ? " Note: the boot rule would pass even though a sensor failed its own check above." : ""));
+      const live = clear($("calLive")), lv = c.live;
+      if (!lv) live.append(el("p", { class: "note" }, "No sensor frames yet."));
+      else for (const ch of ["c", "r"]) {
+        const e = lv[ch], d = e.darkness_pm;
+        live.append(el("div", { class: "row" }, el("b", { style: "width:5.5em" }, ch === "c" ? "CENTRE" : "RIGHT"),
+          el("span", { class: "zone " + (e.zone || "") }, e.zone ? e.zone.toUpperCase() : (e.raw === null ? "no value" : "uncalibrated")),
+          el("span", { class: "mono" }, "raw " + fmt(e.raw)),
+          el("span", { style: "flex:1;min-width:120px" }, el("div", { class: "bar" }, el("i", { style: "width:" + (d === null ? 0 : d / 10) + "%" }))),
+          el("span", { class: "mono" }, d === null ? "\u2014" : d + " \u2030")));
+      }
+      const car = clear($("carCal")), cc = c.car;
+      const keys = Object.keys(cc.measured || {});
+      if (!keys.length && !cc.boot && !cc.cal) car.append("Nothing yet. A USB capture of a Line-Following build prints its boot calibration ([LF] lines).");
+      if (keys.length) { const t = el("table"); for (const k of keys) t.append(el("tr", {}, el("td", {}, k), el("td", { class: "val" }, statText(cc.measured[k])))); car.append(t); }
+      if (cc.boot) car.append(el("div", {}, "Boot calibration " + cc.boot.verdict + ": CENTRE " + cc.boot.c_avg + ", RIGHT " + cc.boot.r_avg));
+      if (cc.cal) car.append(el("div", {}, "Car uses white " + cc.cal.white + ", black " + cc.cal.black + " for both sensors"));
+      $("useCar").disabled = !keys.length;
+      const rr = clear($("ruleRows"));
+      for (const [k, v] of Object.entries(c.rules)) {
+        const file = v.source.startsWith("default") ? v.source : v.source.split("/").pop();
+        rr.append(el("tr", {}, el("td", { class: "val" }, k), el("td", { class: "val" }, v.value), el("td", { class: "note", title: v.source }, file)));
+      }
+    }
+    async function calib(body) { try { await api("/api/calib", body); showErr(""); } catch (e) { showErr(e); } poll(); }
+
+    /* ---------- subsystem tests ---------- */
+    function badge(kind) { return el("span", { class: "badge " + (kind === "N/A" ? "NA" : kind) }, kind); }
+    function renderTestTabs() {
+      const t = clear($("testTabs"));
+      for (const [k, name] of TEST_TABS) t.append(el("button", { class: k === testTab ? "on" : "", onclick: () => { testTab = k; renderTestTabs(); renderTests(); renderTestBox(); } }, name));
+    }
+    function renderTests() {
+      const tb = clear($("readings"));
+      for (const r of (st && st.readings[testTab]) || []) tb.append(el("tr", {}, el("td", {}, r.name), el("td", { class: "val" }, r.value || "\u2014"), el("td", {}, badge(r.kind)), el("td", { class: "note" }, r.note)));
+      renderFeed($("feed"), feeds[testTab]);
+    }
+    function renderTestBox() {
+      const box = clear($("testBox"));
+      const hasCheck = ["imu", "obstacle", "mqtt"].includes(testTab);
+      if (PROC[testTab]) { box.append(el("h2", {}, "Test procedure")); const ol = el("ol"); for (const s of PROC[testTab]) ol.append(el("li", {}, s)); box.append(ol); }
+      if (!hasCheck) { box.style.display = PROC[testTab] ? "" : "none"; return; }
+      box.style.display = "";
+      const row = el("div", { class: "row" });
+      let cm = null, w = null;
+      if (testTab === "obstacle") {
+        cm = el("input", { placeholder: "box distances cm, e.g. 20,50", style: "width:15em" });
+        w = el("input", { placeholder: "box width mm", type: "number", style: "width:8em" });
+        row.append(cm, w);
+      }
+      const out = el("div");
+      const btn = el("button", { class: "primary" }, "Run check");
+      btn.onclick = async () => {
+        let q = "/api/check?kind=" + testTab;
+        if (cm && cm.value.trim()) q += "&expect_cm=" + encodeURIComponent(cm.value.trim());
+        if (w && w.value.trim()) q += "&expect_width_mm=" + encodeURIComponent(w.value.trim());
+        try {
+          const vs = await api(q), t = el("table");
+          for (const v of vs) {
+            const cls = v.result === "PASS" || v.result === "FAIL" ? v.result : "other";
+            t.append(el("tr", {}, el("td", { class: "res " + cls }, v.result), el("td", {}, el("div", {}, v.name), el("div", { class: "note" }, v.detail))));
+          }
+          clear(out).append(t); showErr("");
+        } catch (e) { showErr(e); }
+      };
+      row.append(btn, el("span", { class: "note" }, "PASS only when the data holds the measurement behind it."));
+      box.append(el("h2", { style: "margin-top:10px" }, "Check"), row, out);
+    }
+    function renderFeed(pre, lines) {
+      const atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30;
+      pre.textContent = lines.join("\n") || "(nothing yet)";
+      if (atBottom) pre.scrollTop = pre.scrollHeight;
+    }
+
+    /* ---------- polling ---------- */
+    function renderView() {
+      if (!st) return;
+      if (view === "overview") renderOverview();
+      else if (view === "drive") renderDrive();
+      else if (view === "record") { renderTable(); if (tableMode === "live") loadTable(""); }
+      else if (view === "gaps") renderGaps();
+      else if (view === "calib") renderCalib();
+      else if (view === "tests") renderTests();
+      else if (view === "console") renderFeed($("consoleFeed"), feeds.console);
+    }
+    async function poll() {
+      try {
+        let s = await api("/api/state?since=" + seq);
+        if (s.gen !== gen) {                    // a new source: start the feeds again from its first line
+          seq = 0; for (const k in feeds) feeds[k] = [];
+          tableMode = "live"; tableRows = [];
+          gen = s.gen;
+          s = await api("/api/state?since=0");
+          if (s.gen !== gen) return;            // restarted again meanwhile: the next poll catches up
+        }
+        for (const k in s.feed) if (feeds[k]) feeds[k].push(...s.feed[k]);
+        feeds.console.push(...s.console);
+        for (const k in feeds) if (feeds[k].length > FEED_LIMIT) feeds[k] = feeds[k].slice(-FEED_LIMIT);
+        seq = s.seq;
+        st = s;
+      } catch (e) { st = null; }
+      renderChips(); renderSide(); renderView();
+    }
+    async function loadLogs() {
+      const sel = $("logSel"), keep = sel.value;
+      const logs = await api("/api/logs");
+      clear(sel).append(el("option", { value: "" }, "(choose a log)"));
+      for (const l of logs) sel.append(el("option", { value: l.path }, l.mtime + "  " + l.path));
+      sel.value = keep;
+    }
+    async function setSource(body) { try { await api("/api/source", body); showErr(""); } catch (e) { showErr(e); } poll(); }
+
+    $("openBtn").onclick = () => { if ($("logSel").value) setSource({ type: "file", path: $("logSel").value, follow: $("follow").checked }); };
+    $("refreshBtn").onclick = () => loadLogs().catch(showErr);
+    $("usbBtn").onclick = () => setSource({ type: "usb", seconds: 60 * (parseInt($("usbMin").value, 10) || 30) });
+    $("mqttBtn").onclick = () => { if ($("broker").value.trim()) setSource({ type: "mqtt", broker: $("broker").value.trim(), port: parseInt($("port").value, 10) || 1883 }); };
+    $("stopBtn").onclick = () => api("/api/source", { type: "stop" }).then(poll).catch(showErr);
+    $("estop").onclick = async () => { try { const j = await api("/api/estop", {}); showErr(j.cmd && j.cmd.warning ? j.cmd.warning : ""); } catch (e) { showErr(e); } if (view !== "overview" && view !== "drive") { view = "drive"; renderSide(); showView(); } poll(); };
+    $("ovStartBtn").onclick = () => sendCmd("start");
+    $("ovStopBtn").onclick = () => sendCmd("stop");
+    $("ovResetBtn").onclick = () => sendCmd("reset");
+    $("ovClearRunBtn").onclick = async () => { try { await api("/api/demo/clear", {}); showErr(""); } catch (e) { showErr(e); } poll(); };
+    $("startBtn").onclick = () => sendCmd("start");
+    $("stopCmdBtn").onclick = () => sendCmd("stop");
+    $("resetBtn").onclick = () => sendCmd("reset");
+    $("recBtn").onclick = async () => { const active = st && st.table.recording.active; try { await api("/api/record", { action: active ? "stop" : "start" }); } catch (e) { showErr(e); } poll(); };
+    $("olderBtn").onclick = () => { if (!tableRows.length) return; const first = Math.min(...tableRows.map((r) => r.seq)); tableMode = "history"; loadTable("&before=" + first); };
+    $("newerBtn").onclick = () => { if (!tableRows.length) return; const last = Math.max(...tableRows.map((r) => r.seq)); tableMode = "history"; loadTable("&after=" + last); };
+    $("liveBtn").onclick = () => { tableMode = "live"; loadTable(""); };
+    $("capWhite").onclick = () => calib({ action: "capture", target: "white", seconds: parseFloat($("capSec").value) || 3 });
+    $("capBlack").onclick = () => calib({ action: "capture", target: "black", seconds: parseFloat($("capSec").value) || 3 });
+    $("capCancel").onclick = () => calib({ action: "cancel" });
+    $("capReset").onclick = () => calib({ action: "reset" });
+    $("useCar").onclick = () => calib({ action: "use_car" });
+
+    if (VIEWS.some(([k]) => "#" + k === location.hash)) view = location.hash.slice(1);
+    window.addEventListener("hashchange", () => {
+      const k = location.hash.slice(1);
+      if (VIEWS.some(([v]) => v === k) && k !== view) { view = k; renderSide(); showView(); renderView(); }
+    });
+    renderSide(); showView(); renderTestTabs(); renderTestBox(); loadLogs().catch(showErr); poll(); setInterval(poll, 500);
+  </script>
 </body>
+
 </html>

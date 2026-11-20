@@ -46,6 +46,7 @@ import tel_calib as calib
 import tel_codec as codec
 import tel_control as control
 import tel_dashboard as dash
+import tel_demo as demo
 import tel_record as record
 import tel_views as views
 
@@ -63,6 +64,11 @@ _LF_MOVE = re.compile(r"\[LF\] ([A-Z_]+) -> ([A-Z_]+)\s+c=(\d+) r=(\d+)")
 
 def _r(name: str, value: object, kind: str, note: str = "") -> dict:
     return {"name": name, "value": str(value), "kind": kind, "note": note}
+
+
+# Sub-microsecond monotonic clock on Windows (QPC); time.monotonic() uses
+# GetTickCount64() (15.625 ms quantum), causing hb_at == sent_at ties in ctl.
+_mono = time.perf_counter
 
 
 def _now_sod() -> float:
@@ -111,6 +117,7 @@ class Monitor:
         self.health = record.Health(self.limits)
         self.cal = calib.Calibration(self.rules)
         self.ctl = control.Controller()
+        self.demo = demo.DemoTracker()
         self.last_t: Optional[float] = None     # newest line stamp, seconds of day
 
     @property
@@ -126,7 +133,7 @@ class Monitor:
         body = line[line.find("["):] if "[" in line else line
         with self.lock:
             self.src["lines"] += 1
-            self.last_rx = time.monotonic()
+            self.last_rx = _mono()
             if t is not None:
                 self.last_t = t
             parsed = codec.parse_log_line(body)
@@ -147,27 +154,38 @@ class Monitor:
                     self.seq += 1
                     self.feed[v].append((self.seq, f"{stamp} {out}" if stamp else out))
             if parsed is not None:
-                self._frame_v2(parsed[1])
-            elif not body.startswith("[DASH]"):
-                self.cal.on_console(body)
+                self._frame_v2(parsed[1], stamp)
+            else:
+                self.demo.on_console(body, stamp, t)
+                if not body.startswith("[DASH]"):
+                    self.cal.on_console(body)
 
-    def _frame_v2(self, data: bytes) -> None:
-        """Recording, health, calibration and command confirmation for one frame (lock held)."""
+    def _recent_stop(self, now_mono: float, wall_s: Optional[float]) -> bool:
+        if self.src["kind"] == "mqtt":
+            for c in reversed(self.ctl.history):
+                if c.cmd in ("start", "stop", "estop") and c.result != "REFUSED":
+                    return c.cmd in ("stop", "estop") and (now_mono - c.sent_at) <= demo.LOG_STOP_WINDOW_S
+            return False
+        return self.demo.recent_log_stop(wall_s)
+
+    def _frame_v2(self, data: bytes, stamp: str = "") -> None:
+        """Recording, health, calibration, demo and command confirmation for one frame (lock held)."""
         try:
             fr = codec.decode(data)
         except codec.FrameError:
             return              # tel_views already shows the reject
         sim = bool(self.sessions["imu"].latest.get(fr.name, {}).get("sim"))
         t = self.last_t
+        now = _mono()
         self.rec.add(fr, t, sim)
         self.health.on_frame(fr, t, sim)
         self.cal.on_frame(fr, t, sim)
         if self.src["kind"] == "mqtt":     # only a live car can confirm a command
-            now = time.monotonic()
             if fr.type == codec.FT_HEARTBEAT:
                 self.ctl.on_heartbeat(str(fr.fields["state"]), now)
             elif fr.type == codec.FT_TELEMETRY_MOTION:
                 self.ctl.on_motion(float(fr.fields["speed_cmps"]), now)
+        self.demo.on_frame(fr, t, stamp, sim, self._recent_stop(now, t))
 
     # -- sources --------------------------------------------------------------
 
@@ -250,7 +268,7 @@ class Monitor:
                 return              # a connection that was replaced or stopped
             with self.lock:
                 self.src["mqtt_connected"] = True
-                self.ctl.set_connected(True, time.monotonic())
+                self.ctl.set_connected(True, _mono())
             c.subscribe("car/#", qos=1)
 
         def on_disconnect(c, userdata, *rest):
@@ -258,14 +276,14 @@ class Monitor:
                 return
             with self.lock:
                 self.src["mqtt_connected"] = False
-                self.ctl.set_connected(False, time.monotonic())
+                self.ctl.set_connected(False, _mono())
                 self.health.set_link(False, "the laptop lost the broker connection", _now_sod())
 
         def on_publish(c, userdata, mid, *rest):
             if self._client is not c:
                 return
             with self.lock:         # QoS 1: the broker's PUBACK for one of our commands
-                self.ctl.on_puback(mid, time.monotonic())
+                self.ctl.on_puback(mid, _mono())
 
         def on_message(c, userdata, msg):
             if self._client is not c or msg.topic.startswith("car/cmd/"):
@@ -307,7 +325,7 @@ class Monitor:
 
     def send_cmd(self, cmd: str) -> Tuple[int, str, Optional[dict]]:
         """START / STOP / RESET (and PAUSE, refused).  Returns (HTTP code, message, command entry)."""
-        now = time.monotonic()
+        now = _mono()
         with self.lock:
             if self._client is None and cmd in ("stop", "reset") and self.src["kind"] != "mqtt":
                 return 409, ("STOP/RESET need the MQTT source connected (a USB console build takes no "
@@ -323,11 +341,12 @@ class Monitor:
         mid = self._publish(cmd)
         with self.lock:
             entry = self.ctl.sent(cmd, now, dash._stamp(), [mid], before)
-            return 200, f"sent {cmd}", entry.as_dict(time.monotonic())
+            self.demo.on_command(cmd, "SENT", f"sent {cmd}", entry.wall)
+            return 200, f"sent {cmd}", entry.as_dict(_mono())
 
     def estop(self) -> Tuple[int, str, Optional[dict]]:
         """STOP, several times in a row.  Never blocked by the car's state."""
-        now = time.monotonic()
+        now = _mono()
         with self.lock:
             if self._client is None or not self.src["mqtt_connected"]:
                 entry = self.ctl.refused("estop", "not connected to the broker: STOP cannot be sent. "
@@ -342,7 +361,12 @@ class Monitor:
                 time.sleep(spacing)
         with self.lock:
             entry = self.ctl.sent("estop", now, dash._stamp(), mids, before)
-            return 200, f"emergency STOP sent {repeats} times", entry.as_dict(time.monotonic())
+            self.demo.on_command("estop", "SENT", f"emergency STOP x{repeats}", entry.wall)
+            return 200, f"emergency STOP sent {repeats} times", entry.as_dict(_mono())
+
+    def clear_demo(self) -> None:
+        with self.lock:
+            self.demo.clear()
 
     # -- recording, calibration, export ------------------------------------------
 
@@ -396,7 +420,7 @@ class Monitor:
         """The source as a whole: broker up, car ONLINE, lines still arriving (lock held)."""
         if not self.src["live"]:
             return
-        age = None if self.last_rx is None else time.monotonic() - self.last_rx
+        age = None if self.last_rx is None else _mono() - self.last_rx
         ok, why = True, ""
         if self.src["kind"] == "mqtt" and not self.src["mqtt_connected"]:
             ok, why = False, "the laptop is not connected to the broker"
@@ -477,7 +501,7 @@ class Monitor:
                 for t, p in found[:300]]
 
     def state(self, since: int) -> dict:
-        now = time.monotonic()
+        now = _mono()
         with self.lock:
             src = dict(self.src)
             if src["live"] and self.last_rx is not None:
@@ -502,6 +526,7 @@ class Monitor:
                 "gaps": self.health.gap_rows(clk)[-200:],
                 "ctl": self.ctl.snapshot(now),
                 "calib": self.cal.snapshot(clk),
+                "demo": self.demo.snapshot(src, self.ctl.state),
                 "table": {"total": page["total"], "last_seq": page["last_seq"], "recording": page["recording"],
                           "latest": page["rows"][-1] if page["rows"] else None},
             }
@@ -777,6 +802,9 @@ class Handler(BaseHTTPRequestHandler):
         elif u.path == "/api/estop":
             code, msg, entry = m.estop()
             self._json(code, {"error": msg, "cmd": entry} if code != 200 else {"ok": msg, "cmd": entry})
+        elif u.path == "/api/demo/clear":
+            m.clear_demo()
+            self._json(200, {"ok": True})
         elif u.path == "/api/record":
             err = m.record(str(req.get("action", "")))
             self._json(400 if err else 200, {"error": err} if err else {"ok": True})
