@@ -14,12 +14,13 @@ as done only when the car's telemetry shows the result:
 
 Safety rules, on top of the car's own (the VC and Safety decide; nothing
 here can override them):
-    START   needs "arm motion" first (one START per arming, ARM_S at most),
-            the broker connected, the car ONLINE, a fresh heartbeat and the
-            car waiting in READY_WAITING.
+    START   needs the broker connected, the car ONLINE, a fresh heartbeat and
+            the car waiting in READY_WAITING.  (The "arm motion" step and its
+            confirm dialog were removed on 19 Nov 2026 at the owner's request:
+            one press of START drives the car.)
     STOP    is never blocked while the broker is connected.  If the car is
             silent it still goes out, with a warning that it may not arrive.
-    E-STOP  STOP sent ESTOP_REPEATS times in a row; disarms.
+    E-STOP  STOP sent ESTOP_REPEATS times in a row.
     PAUSE   refused: the firmware has no such command or VC state yet.
 
 Pure logic with injected times (time.monotonic() in tel_web); tel_web does
@@ -36,7 +37,6 @@ import tel_views as views
 
 CONFIRM_S = 2.0             # a heartbeat follows a state change within ~0.2 s
 HB_FRESH_S = 3.0            # tel_dashboard HEARTBEAT_STALE_S
-ARM_S = 60.0                # an arming lasts this long (or until one START)
 ESTOP_REPEATS = 3
 ESTOP_SPACING_S = 0.1
 STILL_CMPS = 1.0            # |speed| at or below this counts as stopped
@@ -46,8 +46,6 @@ SUPPORTED = ("start", "stop", "reset")
 PAUSE_MISSING = ("PAUSE is not in the car firmware yet: there is no pause command (data_repr.h DREP_FT_CMD_*) "
                  "and no PAUSED state in the Vehicle Controller (Buddy 2). Use STOP; the proposal is in "
                  "tools/dashboard/README.md.")
-START_NOT_ARMED = ("START drives the motors: arm motion first (car on the track, area clear, someone ready "
-                   "to catch it). CLI alternative: tel_dashboard.py send start --allow-motion")
 MOVING = tuple(views.MOVING_STATES)
 STOPPED = ("READY_WAITING", "SAFETY_FAULT_LATCHED", "INITIALISING")
 
@@ -84,8 +82,6 @@ class Controller:
         self.hb_at: Optional[float] = None
         self.speed: Optional[float] = None
         self.speed_at: Optional[float] = None
-        self.armed_until: Optional[float] = None
-        self.disarm_reason = ""
         self.history: Deque[Command] = deque(maxlen=HISTORY)
         self._next = 1
         self._early_acks: List[int] = []
@@ -94,13 +90,9 @@ class Controller:
 
     def set_connected(self, ok: bool, now: float) -> None:
         self.connected = ok
-        if not ok:
-            self.disarm("the broker connection is down")
 
     def set_car_status(self, status: str) -> None:
         self.car_status = status
-        if status != "ONLINE":
-            self.disarm("the car went OFFLINE")
 
     def on_heartbeat(self, state: str, now: float) -> None:
         self.state, self.hb_at = state, now
@@ -119,23 +111,6 @@ class Controller:
                 return
         # On a local broker the PUBACK can arrive before sent() has logged the command.
         self._early_acks.append(mid)
-
-    # -- arming --------------------------------------------------------------------
-
-    def armed(self, now: float) -> bool:
-        return self.armed_until is not None and now < self.armed_until
-
-    def arm(self, now: float) -> str:
-        why = self._link_problem(now, need_car=True)
-        if why:
-            return "cannot arm: " + why
-        self.armed_until, self.disarm_reason = now + ARM_S, ""
-        return ""
-
-    def disarm(self, reason: str = "disarmed") -> None:
-        if self.armed_until is not None:
-            self.disarm_reason = reason
-        self.armed_until = None
 
     # -- checks ----------------------------------------------------------------------
 
@@ -166,7 +141,6 @@ class Controller:
              "no heartbeat yet" if age is None else f"last heartbeat {age:.1f} s ago"),
             ("state", self.state in ("READY_WAITING", "INITIALISING"),
              f"VC {self.state or 'unknown'}" + (" (RESET first)" if self.state == "SAFETY_FAULT_LATCHED" else "")),
-            ("armed", self.armed(now), "motion armed" if self.armed(now) else "not armed"),
         ]
         return [{"name": n, "ok": bool(ok), "text": t} for n, ok, t in items]
 
@@ -178,9 +152,6 @@ class Controller:
             return f"unknown command {cmd!r}"
         if cmd in ("stop", "estop", "reset"):
             return self._link_problem(now, need_car=False)
-        # START: arming first, so START is refused even with no car at all.
-        if not self.armed(now):
-            return START_NOT_ARMED
         why = self._link_problem(now, need_car=True)
         if why:
             return why
@@ -218,10 +189,7 @@ class Controller:
         self._early_acks = [m for m in self._early_acks if m not in c.mids]
         for m in early:
             self.on_puback(m, now)
-        if cmd == "start":
-            self.disarm("used by START")       # one START per arming
-        elif cmd in ("stop", "estop"):
-            self.disarm(f"{cmd.upper()} sent")
+        if cmd in ("stop", "estop"):
             why = self._link_problem(now, need_car=True)
             if why:
                 c.warning = f"{why}: STOP may not reach the car. Be ready to stop it by hand."
@@ -252,8 +220,6 @@ class Controller:
         c.result, c.detail, c.done_at = result, detail, now
 
     def tick(self, now: float) -> None:
-        if self.armed_until is not None and now >= self.armed_until:
-            self.disarm(f"arming expired after {ARM_S:.0f} s")
         for c in self.history:
             if c.result != "PENDING" or now - c.sent_at < CONFIRM_S:
                 continue
@@ -262,6 +228,11 @@ class Controller:
                 why = "no heartbeat since the command: the car may be offline or out of range"
             elif c.cmd == "start":
                 why = f"the car stayed in {self.state}"
+                if self.state == "READY_WAITING":
+                    # Seen 19 Nov: a refused boot calibration makes the line follower report
+                    # TRACK_LOST at once, faster than a heartbeat can show NAV_LINE_TRACKING.
+                    why += (" (if this repeats: the line follower may have lost the line at once; power the "
+                            "car up in the start pose, CENTRE on black and RIGHT on white)")
             elif c.cmd in ("stop", "estop"):
                 if self.state not in STOPPED:
                     why = f"the car is still in {self.state}"
@@ -277,13 +248,11 @@ class Controller:
 
     def snapshot(self, now: float) -> dict:
         self.tick(now)
-        left = None if not self.armed(now) else round(self.armed_until - now, 1)
         age = self.hb_age(now)
         return {
             "connected": self.connected, "car_status": self.car_status, "state": self.state,
             "hb_age_s": None if age is None else round(age, 1),
-            "speed": self.speed, "armed": left is not None, "armed_left_s": left,
-            "disarm_reason": self.disarm_reason, "checklist": self.checklist(now),
+            "speed": self.speed, "checklist": self.checklist(now),
             "can": {cmd: self.refuse_reason(cmd, now) for cmd in ("start", "stop", "reset", "pause")},
             "history": [c.as_dict(now) for c in reversed(self.history)],
         }

@@ -1,4 +1,4 @@
-"""Tests for tel_control.py: remote commands, arming and confirmation (S1-H08).
+"""Tests for tel_control.py: remote commands and confirmation (S1-H08).
 
     python -m unittest -v test_tel_control
 
@@ -23,10 +23,14 @@ class Base(unittest.TestCase):
 
 
 class Refusals(unittest.TestCase):
-    def test_start_needs_arming_even_with_no_car(self):
+    def test_start_needs_a_live_car(self):
         c = ctl.Controller()
-        self.assertEqual(c.refuse_reason("start", 1.0), ctl.START_NOT_ARMED)
-        self.assertIn("--allow-motion", ctl.START_NOT_ARMED)
+        self.assertIn("broker", c.refuse_reason("start", 1.0))
+        c.set_connected(True, 1.0)
+        self.assertIn("no heartbeat", c.refuse_reason("start", 1.0))
+        c.on_heartbeat("READY_WAITING", 1.0)
+        c.set_car_status("OFFLINE (last will)")
+        self.assertIn("OFFLINE", c.refuse_reason("start", 1.0))
 
     def test_pause_is_refused_with_the_reason(self):
         self.assertIn("no PAUSED state", ctl.Controller().refuse_reason("pause", 1.0))
@@ -42,56 +46,28 @@ class Refusals(unittest.TestCase):
         self.assertIn("unknown", ctl.Controller().refuse_reason("jump", 1.0))
 
 
-class Arming(Base):
-    def test_arm_needs_a_live_car(self):
-        c = ctl.Controller()
-        self.assertIn("broker", c.arm(1.0))
-        c.set_connected(True, 1.0)
-        self.assertIn("no heartbeat", c.arm(1.0))
-        c.on_heartbeat("READY_WAITING", 1.0)
-        c.set_car_status("OFFLINE (last will)")
-        self.assertIn("OFFLINE", c.arm(1.0))
-
-    def test_one_start_per_arming(self):
+class StartRules(Base):
+    def test_start_allowed_from_ready_with_no_arming(self):
+        # Arming was removed on 19 Nov 2026: one press of START is enough.
         c = self.live()
-        self.assertEqual(c.arm(100.0), "")
         self.assertEqual(c.refuse_reason("start", 100.5), "")
         c.sent("start", 100.5, "t", [7])
-        self.assertFalse(c.armed(100.6))
-        self.assertEqual(c.refuse_reason("start", 100.6), ctl.START_NOT_ARMED)
-
-    def test_arming_expires(self):
-        c = self.live()
-        c.arm(100.0)
-        c.on_heartbeat("READY_WAITING", 100.0 + ctl.ARM_S - 1)
-        self.assertTrue(c.armed(100.0 + ctl.ARM_S - 1))
-        c.tick(100.0 + ctl.ARM_S + 0.1)
-        self.assertFalse(c.armed(100.0 + ctl.ARM_S + 0.1))
-        self.assertIn("expired", c.disarm_reason)
-
-    def test_losing_the_link_disarms(self):
-        c = self.live()
-        c.arm(100.0)
-        c.set_connected(False, 101.0)
-        self.assertFalse(c.armed(101.0))
+        self.assertEqual(c.refuse_reason("start", 100.6), "")      # still READY_WAITING
 
     def test_start_refused_when_latched_or_moving(self):
         c = self.live("SAFETY_FAULT_LATCHED")
-        c.armed_until = 200.0
         self.assertIn("RESET it first", c.refuse_reason("start", 100.5))
         c.on_heartbeat("NAV_LINE_TRACKING", 100.6)
         self.assertIn("only works from READY_WAITING", c.refuse_reason("start", 100.7))
 
     def test_stale_heartbeat_blocks_start(self):
         c = self.live()
-        c.arm(100.0)
         self.assertIn("no heartbeat for", c.refuse_reason("start", 100.0 + ctl.HB_FRESH_S + 1))
 
 
 class Confirmation(Base):
     def test_start_confirmed_by_a_newer_heartbeat_only(self):
         c = self.live()
-        c.arm(100.0)
         cmd = c.sent("start", 101.0, "t", [3])
         c.on_heartbeat("NAV_LINE_TRACKING", 100.9)       # older than the command: no proof
         self.assertEqual(cmd.result, "PENDING")
@@ -101,7 +77,6 @@ class Confirmation(Base):
 
     def test_start_not_confirmed_when_nothing_changes(self):
         c = self.live()
-        c.arm(100.0)
         cmd = c.sent("start", 101.0, "t", [3])
         c.on_heartbeat("READY_WAITING", 101.5)
         c.tick(101.0 + ctl.CONFIRM_S + 0.1)

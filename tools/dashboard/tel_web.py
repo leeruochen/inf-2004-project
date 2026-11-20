@@ -19,10 +19,11 @@ export (tel_record.Recorder), sensor health and the data-gap table
 (tel_record.Health), the line-sensor calibration helper (tel_calib) and
 remote commands with confirmation (tel_control).
 
-Safety: START is sent only after "arm motion" (one START per arming, see
-tel_control); STOP, RESET and the emergency STOP go out over MQTT only.  A
-command is shown as done only when the car's telemetry confirms it.  It
-listens on 127.0.0.1 unless --host says otherwise.
+Safety: START is sent only when the car is online, its heartbeat is fresh and
+it waits in READY_WAITING (tel_control); one press drives the car.  STOP,
+RESET and the emergency STOP go out over MQTT only.  A command is shown as
+done only when the car's telemetry confirms it.  It listens on 127.0.0.1
+unless --host says otherwise.
 """
 
 from __future__ import annotations
@@ -79,6 +80,7 @@ class Monitor:
         self.roots = [os.path.realpath(p) for p in (roots or [repo])]
         self.out_dir = out_dir or os.path.join(repo, "build")
         self.lock = threading.RLock()
+        self._connecting = threading.Lock()     # held while connect_mqtt sets up a client
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._proc: Optional[subprocess.Popen] = None
@@ -211,6 +213,20 @@ class Monitor:
         return ""
 
     def connect_mqtt(self, broker: str, port: int) -> str:
+        """One connection at a time: a second Connect while one is being set up is turned away.
+
+        The HTTP server runs each request in its own thread, so a double click used to
+        start two paho clients; the old one was never stopped and the two kept taking
+        the broker connection off each other (19 Nov 2026).
+        """
+        if not self._connecting.acquire(blocking=False):
+            return "a connection is already being set up: wait a moment"
+        try:
+            return self._connect_mqtt(broker, port)
+        finally:
+            self._connecting.release()
+
+    def _connect_mqtt(self, broker: str, port: int) -> str:
         try:
             import paho.mqtt.client  # noqa: F401  (only to give a clear message)
         except ImportError:
@@ -219,6 +235,7 @@ class Monitor:
         os.makedirs(self.out_dir, exist_ok=True)
         out = os.path.join(self.out_dir, "dash-mqtt-" + time.strftime("%Y%m%d-%H%M%S") + ".txt")
         _, client = dash._new_client("robocar-web")
+        self._client = client               # current before any callback can run (see _current)
         save = open(out, "w", encoding="utf-8", buffering=1)
         header = f"{dash._stamp()}  [DASH] source=mqtt broker={broker}:{port}"
         save.write(header + "\n")
@@ -229,23 +246,29 @@ class Monitor:
         self._save = save
 
         def on_connect(c, userdata, flags, *rest):
+            if self._client is not c:
+                return              # a connection that was replaced or stopped
             with self.lock:
                 self.src["mqtt_connected"] = True
                 self.ctl.set_connected(True, time.monotonic())
             c.subscribe("car/#", qos=1)
 
         def on_disconnect(c, userdata, *rest):
+            if self._client is not c:
+                return
             with self.lock:
                 self.src["mqtt_connected"] = False
                 self.ctl.set_connected(False, time.monotonic())
                 self.health.set_link(False, "the laptop lost the broker connection", _now_sod())
 
         def on_publish(c, userdata, mid, *rest):
+            if self._client is not c:
+                return
             with self.lock:         # QoS 1: the broker's PUBACK for one of our commands
                 self.ctl.on_puback(mid, time.monotonic())
 
         def on_message(c, userdata, msg):
-            if msg.topic.startswith("car/cmd/"):
+            if self._client is not c or msg.topic.startswith("car/cmd/"):
                 return
             if msg.topic == codec.STATUS_TOPIC:
                 state = "ONLINE" if msg.payload == b"1" else "OFFLINE (last will)"
@@ -268,11 +291,11 @@ class Monitor:
         except (OSError, ValueError) as exc:
             save.close()
             self._save = None
+            self._client = None
             with self.lock:
                 self.src.update(running=False, error=f"cannot reach {broker}:{port}: {exc}")
             return self.src["error"]
         client.loop_start()
-        self._client = client
         return ""
 
     def _publish(self, cmd: str) -> Optional[int]:
@@ -294,7 +317,7 @@ class Monitor:
                 reason = "not connected to the broker"
             if reason:
                 entry = self.ctl.refused(cmd, reason, now, dash._stamp())
-                code = 501 if cmd == "pause" else 403 if reason == control.START_NOT_ARMED else 409
+                code = 501 if cmd == "pause" else 409
                 return code, reason, entry.as_dict(now)
             before = self.ctl.state
         mid = self._publish(cmd)
@@ -320,13 +343,6 @@ class Monitor:
         with self.lock:
             entry = self.ctl.sent("estop", now, dash._stamp(), mids, before)
             return 200, f"emergency STOP sent {repeats} times", entry.as_dict(time.monotonic())
-
-    def arm(self, on: bool) -> str:
-        with self.lock:
-            if not on:
-                self.ctl.disarm("disarmed by the user")
-                return ""
-            return self.ctl.arm(time.monotonic())
 
     # -- recording, calibration, export ------------------------------------------
 
@@ -761,9 +777,6 @@ class Handler(BaseHTTPRequestHandler):
         elif u.path == "/api/estop":
             code, msg, entry = m.estop()
             self._json(code, {"error": msg, "cmd": entry} if code != 200 else {"ok": msg, "cmd": entry})
-        elif u.path == "/api/arm":
-            err = m.arm(bool(req.get("armed")))
-            self._json(409 if err else 200, {"error": err} if err else {"ok": True})
         elif u.path == "/api/record":
             err = m.record(str(req.get("action", "")))
             self._json(400 if err else 200, {"error": err} if err else {"ok": True})

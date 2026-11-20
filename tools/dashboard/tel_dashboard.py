@@ -32,6 +32,7 @@ Frame format: app_program/subsystem1/MQTT.md and tel_codec.py.
 from __future__ import annotations
 
 import argparse
+import secrets
 import sys
 import time
 from dataclasses import dataclass, field
@@ -103,11 +104,23 @@ def _print_frame(topic: str, data: bytes, summary: RunSummary, quiet_periodic: b
     print(f"{time.strftime('%H:%M:%S')} {fr.name:<10} {fr.summary()}")
 
 
+def unique_client_id(base: str) -> str:
+    """'<base>-<6 hex>': a fresh MQTT client id for every connection.
+
+    A broker allows one connection per client id and drops the older one when
+    a second connects.  With a fixed id, two dashboards (two windows, two
+    laptops, or one Connect clicked twice) kicked each other off several times
+    a second (19 Nov 2026).
+    """
+    return f"{base}-{secrets.token_hex(3)}"
+
+
 def _new_client(client_id: str):
     try:
         import paho.mqtt.client as mqtt
     except ImportError:
         sys.exit("paho-mqtt is not installed: pip install paho-mqtt")
+    client_id = unique_client_id(client_id)
     try:
         return mqtt, mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
     except AttributeError:      # paho-mqtt 1.x

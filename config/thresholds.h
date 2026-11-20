@@ -69,9 +69,11 @@
 #define OBS_DETECT_CONFIRM_COUNT    (2U)
 /** Side clearance margin beyond the car width. TUNE */
 #define OBS_SIDE_MARGIN_MM          (50U)
-/** Car width. ASSUMPTION.
- *  TODO(owner-to-confirm, buddy 5): measure the car. */
-#define CAR_WIDTH_MM                (120U)
+/** Car width at its widest point, wheels included.
+ *  MEASURED 2026-11-19 (Buddy 5): 130 mm, was an assumed 120 mm.
+ *  Feeds obs_leg_out_mm() (how far the bypass swings sideways) and
+ *  OBS_BYPASS_CLEAR_MIN_MM (the gap a bypass needs). */
+#define CAR_WIDTH_MM                (130U)
 /** Minimum free gap for a bypass: car width + margin. */
 #define OBS_BYPASS_CLEAR_MIN_MM     (CAR_WIDTH_MM + OBS_SIDE_MARGIN_MM)
 /** Ultrasonic minimum valid range. TUNE */
@@ -153,6 +155,14 @@
  * Speeds (Buddy 2). Two sets: nominal and bring-up. All TUNE.
  * ------------------------------------------------------------------------- */
 
+/** 1 = the slow bring-up bypass (5 cm/s) is in use; NFR14 cannot pass
+ *  while it is set.  Defined in both thresholds.h and timing.h with the
+ *  same default so either header can be included alone; timing.h carries
+ *  the full explanation and the list of what to put back. */
+#ifndef OBS_BYPASS_SLOW_BRINGUP
+#define OBS_BYPASS_SLOW_BRINGUP             (1U)
+#endif
+
 /** Nominal cruise speed. TUNE */
 #define MOTION_SPEED_CRUISE_NOMINAL_CMPS    (30U)
 /** Nominal slow speed (junctions, search). TUNE */
@@ -160,18 +170,26 @@
 /** Nominal bypass speed. Closed to 25 cm/s on 2026-11-04 for NFR14. */
 #define MOTION_SPEED_BYPASS_NOMINAL_CMPS    (25U)
 /** Bring-up cruise speed. TUNE
- *  5 cm/s on branch buddy3/lf-straddle (Buddy 3, 20 Nov 2026; 7 until the 13:00
- *  run): a slow car for the collision and obstacle tests, the lowest the slow
- *  speed (5) allows.  main has 15 (Damian, 19 Nov).  Line
- *  following only builds at exactly this speed (lf_core.h LF_CRUISE_*).
+ *  2026-11-19: 15 -> 5 cm/s so the obstacle run can be watched and the car
+ *  caught (Buddy 5 / Buddy 3 agreed).  Line following (lf_core.h LF_CRUISE_*)
+ *  builds only at exactly this speed: a test build passes -DLF_ALLOW_ANY_SPEED=1
+ *  to try another.  LF_T_JCT_MAX_MS (lf_core.h) follows this speed.
  *  Overridable for a test build (-DMOTION_SPEED_CRUISE_BRINGUP_CMPS=...). */
 #ifndef MOTION_SPEED_CRUISE_BRINGUP_CMPS
 #define MOTION_SPEED_CRUISE_BRINGUP_CMPS    (5U)
 #endif
 /** Bring-up slow speed. TUNE */
 #define MOTION_SPEED_SLOW_BRINGUP_CMPS      (5U)
-/** Bring-up bypass speed. Aligned to 25 cm/s for NFR14. */
-#define MOTION_SPEED_BYPASS_BRINGUP_CMPS    (25U)
+/** Bring-up bypass speed.
+ *  2026-11-19: 25 -> 5 cm/s, matching the bring-up cruise speed.
+ *  REASON: at 25 cm/s the car crossed the line and drove past it between
+ *  EVF_NAV_LINE_FOUND being set and Line Following resuming -- measured
+ *  on the car, reacquired=1 followed by REACQUIRING -> IDLE with CENTRE
+ *  back on white (150 raw).  At 5 cm/s there is five times as long for
+ *  the handover to land while the sensor is still over the line.
+ *  BREAKS NFR14: see OBS_BYPASS_SLOW_BRINGUP in timing.h.  Set this back
+ *  to 25 before the NFR14 timing run. */
+#define MOTION_SPEED_BYPASS_BRINGUP_CMPS    (5U)
 
 /** 1 = use the bring-up speed set (default for Phase 1). */
 #ifndef MOTION_BRINGUP_SPEEDS
@@ -196,8 +214,11 @@
 
 /** Hard speed cap (NFR2). */
 #define MOTION_SPEED_MAX_CMPS       (50U)
-/** Minimum bypass speed. */
-#define MOTION_SPEED_BYPASS_MIN_CMPS (15U)
+/** Minimum bypass speed.
+ *  2026-11-19: 15 -> 5 cm/s for the slow bring-up bypass (see
+ *  MOTION_SPEED_BYPASS_BRINGUP_CMPS).  15 cm/s is the floor NFR14 needs;
+ *  restore it with the bypass speed. */
+#define MOTION_SPEED_BYPASS_MIN_CMPS (5U)
 
 /* ---------------------------------------------------------------------------
  * PWM
@@ -250,10 +271,13 @@
 
 #if (MOTION_SPEED_BYPASS_NOMINAL_CMPS < MOTION_SPEED_BYPASS_MIN_CMPS) \
     || (MOTION_SPEED_BYPASS_BRINGUP_CMPS < MOTION_SPEED_BYPASS_MIN_CMPS)
-#error "thresholds.h: bypass speed must be >= 15 cm/s"
+#error "thresholds.h: bypass speed is below MOTION_SPEED_BYPASS_MIN_CMPS"
 #endif
 
-#if MOTION_SPEED_BYPASS_MIN_CMPS < 15U
+/* The 15 cm/s floor is what NFR14's 5.0 s needs.  It is relaxed only for
+ * the slow bring-up bypass; OBS_BYPASS_SLOW_BRINGUP in timing.h is the one
+ * switch that has to be cleared to put both back. */
+#if !OBS_BYPASS_SLOW_BRINGUP && (MOTION_SPEED_BYPASS_MIN_CMPS < 15U)
 #error "thresholds.h: MOTION_SPEED_BYPASS_MIN_CMPS must be >= 15 cm/s"
 #endif
 

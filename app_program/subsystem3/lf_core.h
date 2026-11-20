@@ -257,8 +257,11 @@
 #endif
 /** JUNCTION is posted after this long even if the odometer has not moved
  *  (an encoder fault): the post travel's time at the cruise speed plus
- *  300 ms, so it follows a cruise change (900 ms at 200 mm/s, the value
- *  LF-3 used; 1100 ms at 150; 1500 ms at 100). */
+ *  300 ms, so it follows a cruise change (2700 ms at the 5 cm/s bring-up
+ *  cruise; 900 ms at 200 mm/s, the value LF-3 used).  2026-11-19 main set a
+ *  fixed 3000 ms for 5 cm/s because 900 ms timed the junction out before the
+ *  car had covered LF_D_JCT_POST_MM; this derives the same margin from the
+ *  cruise instead (the assertion in lf_core.c still ties them). */
 #define LF_T_JCT_MAX_MS         (((LF_D_JCT_POST_MM * 100U) / MOTION_SPEED_CRUISE_CMPS) + 300U)
 
 /* Times as sample counts (one lf_core_step() call = LF_SAMPLE_PERIOD_MS). */

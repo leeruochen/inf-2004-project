@@ -1,0 +1,121 @@
+Subsystem 5 full-chain runs on the car -- 2026-11-19
+=====================================================
+
+Three consecutive runs with Subsystem 3's line following live on main
+(PR #17), a 750 ml bottle / ~100 mm obstacle on the line, bring-up speeds
+cruise 5 cm/s and bypass 5 cm/s.
+
+A temporary bring-up harness (NOT committed) stood in for the operator:
+it waited past the boot tests, recalibrated line following in position,
+armed it, abandoned any stale bypass and sent REMOTE_RESET / REMOTE_START.
+There is still no console input path over USB, and the dashboard's
+"send start" needs a WiFi build and an MQTT broker.
+
+WHAT WORKS, verified on the car:
+  - watch-ahead scanning: servo parked at 90 deg, sweeps only on a
+    confirmed return ahead, parks again when the sweep finds nothing
+  - detection at up to 247 mm, near the full OBS_DETECT_MM range
+  - stop-and-rescan: the car HALTS, sweeps again while stationary, and
+    obs_choose_side() picks the clear side from the fresh profile
+    (chose LEFT on clrL=635 vs clrR=17; chose RIGHT on clrL=105 vs 635)
+  - width 86..105 mm measured on a ~90..100 mm obstacle
+  - the full four-turn bypass, every state in order, no aborts
+  - reacquired=1: LEG_BACK cut short on EVF_NAV_LINE_FOUND
+
+WHAT DOES NOT WORK YET:
+  Line following does not HOLD the line after the handover.  It reports
+  SUSPENDED -> REACQUIRING -> IDLE with CENTRE back on white (153..168
+  raw).  Causes found and fixed in this commit, in the order they
+  surfaced:
+    1. the turn dwell did not scale with the bypass speed, so none of the
+       four turns completed -- the path collapsed and the car returned to
+       the obstacle
+    2. OBS_LEG_BACK_MAX_MS was a flat LF_T_SEARCH_MS (2000 ms), only
+       100 mm of travel at 5 cm/s against ~200 mm to come back
+    3. the along-leg used the obstacle's WIDTH as a stand-in for its
+       DEPTH, so the car turned back in before clearing it
+    4. OBS_AV_TURN_STRAIGHT pivoted for a full turn dwell (2750 ms)
+       BEFORE releasing, so the line was already behind the car when
+       Line Following took over
+  The last run in this file still predates fixes 3 (partly) and 4.
+
+OPERATIONAL NOTE, the cause of several dead runs:
+  The car must BOOT in Subsystem 3's start pose -- CENTRE on the middle of
+  the line, RIGHT on white.  lf_cal_from_start_pose() refuses a
+  low-contrast reading and then line following "never steers and reports
+  TRACK_LOST once at run start".  A refused run looks identical to a
+  hung car.  One failure recorded here: C avg 162 vs R avg 154, a
+  contrast of 8 against the ~1000 of a good pose.
+
+NFR14 IS RED IN THIS CONFIGURATION, deliberately.  At 5 cm/s a full
+bypass runs to roughly 40 s against the 5.0 s limit.  See
+OBS_BYPASS_SLOW_BRINGUP in config/timing.h for the one switch and two
+speeds that restore it.
+
+--- extracts ---
+
+### /tmp/d6.txt
+[TEST] subsystem5 SUMMARY 29 passed, 0 failed
+[LF] boot calibration OK: C avg 1118 (1088..1132), R avg 147 (123..170)
+[S5BU] line calibration OK
+[S5] watch hit 244 mm ahead, coarse scan
+[S5] obstacle 203 mm @ 80 deg w=50 clrL=122 clrR=635
+[S5] avoid -> SLOW (3000 ms)
+[TEL] car/telemetry/obstacle 010508b02c00144a81c11f
+[S5] obstacle 187 mm @ 40 deg w=50 clrL=64 clrR=635
+[S5] bypass RIGHT: d=18 cm w=50 mm out=788 ms along=400 ms
+[S5] avoid -> TURN_OUT (550 ms)
+[TEL] car/telemetry/obstacle 010508f433001242c1c81f
+[S5] avoid -> LEG_OUT (788 ms)
+[S5] avoid -> TURN_IN1 (550 ms)
+[S5] avoid -> LEG_ALONG (400 ms)
+[S5] obstacle 221 mm @ 80 deg w=50 clrL=635 clrR=635
+[TEL] car/telemetry/obstacle 010508643c00164af1d71f
+[S5] avoid -> TURN_IN2 (550 ms)
+[S5] avoid -> LEG_BACK (2000 ms)
+[S5] avoid -> TURN_STRAIGHT (550 ms)
+[S5] obstacle 221 mm @ 80 deg w=50 clrL=635 clrR=635
+
+### /tmp/d9.txt
+[TEST] subsystem5 SUMMARY 29 passed, 0 failed
+[LF] boot calibration OK: C avg 1279 (1261..1290), R avg 150 (122..172)
+[S5BU] line calibration OK
+[S5] watch hit 247 mm ahead, coarse scan
+[S5] obstacle 201 mm @ 60 deg w=105 clrL=120 clrR=635
+[S5] avoid -> SLOW (25000 ms)
+[TEL] car/telemetry/obstacle 010508cc2e0014a682c11f
+[S5] obstacle 187 mm @ 60 deg w=97 clrL=635 clrR=635
+[S5] bypass LEFT: d=18 cm w=100 mm out=4660 ms along=3000 ms
+[S5] avoid -> TURN_OUT (2750 ms)
+[TEL] car/telemetry/obstacle 0105081036001286f2cf1f
+[S5] obstacle 191 mm @ 80 deg w=50 clrL=635 clrR=635
+[TEL] car/telemetry/obstacle 010508943e00134af1d71f
+[S5] avoid -> LEG_OUT (4660 ms)
+[TEL] car/telemetry/obstacle 0105080447000000f0df1f
+[S5] avoid -> TURN_IN1 (2750 ms)
+[S5] avoid -> LEG_ALONG (3000 ms)
+[S5] avoid -> TURN_IN2 (2750 ms)
+[S5] avoid -> LEG_BACK (2000 ms)
+[S5] avoid handoff in LEG_BACK, line not found: LEG_BACK dwell elapsed
+
+### /tmp/da.txt
+[TEST] subsystem5 SUMMARY 29 passed, 0 failed
+[LF] boot calibration OK: C avg 1345 (1316..1360), R avg 147 (120..169)
+[S5BU] line calibration OK
+[S5] watch hit 247 mm ahead, coarse scan
+[S5] obstacle 190 mm @ 60 deg w=99 clrL=117 clrR=635
+[S5] avoid -> SLOW (40000 ms)
+[TEL] car/telemetry/obstacle 010508d02a00138672c11f
+[S5] obstacle 186 mm @ 60 deg w=97 clrL=105 clrR=635
+[S5] bypass RIGHT: d=18 cm w=100 mm out=4660 ms along=7000 ms
+[S5] avoid -> TURN_OUT (2750 ms)
+[TEL] car/telemetry/obstacle 0105089c3100128652c91f
+[TEL] car/telemetry/obstacle 010508603b000000f0d71f
+[S5] avoid -> LEG_OUT (4660 ms)
+[S5] avoid -> TURN_IN1 (2750 ms)
+[S5] avoid -> LEG_ALONG (7000 ms)
+[S5] avoid -> TURN_IN2 (2750 ms)
+[S5] avoid -> LEG_BACK (10000 ms)
+[S5] avoid -> TURN_STRAIGHT (2750 ms)
+[S5] avoid -> IDLE (reacquired=1)
+
