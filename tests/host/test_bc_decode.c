@@ -5,6 +5,7 @@
  */
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -149,12 +150,12 @@ static void test_reject_count(void)
     CHECK(ch == NO_CHAR);
 }
 
-/* Test 10: one element below BC_MIN_SPEED_MMPS (50) is a stall, wherever it
- * is (first bar, a gap between characters, last bar); exactly 50 is not. */
+/* Test 10: one element below BC_MIN_SPEED_MMPS (20, 40 % of the 5 cm/s slow speed) is a stall,
+ * wherever it is (first bar, a gap between characters, last bar); exactly the floor is not. */
 static void test_reject_stall(void)
 {
     int const       where[3] = { 0, 9, SYM_ELEMS - 1 };
-    int32_t const   slow[3] = { 0, -100, 49 };
+    int32_t const   slow[3] = { 0, -100, (int32_t)BC_MIN_SPEED_MMPS - 1 };
     bc_cfg_t        cfg;
     fixture_t const fx = fx_symbol("*A*", 5.0, 2.0, 300.0, 300.0, 7.0);
 
@@ -173,16 +174,16 @@ static void test_reject_stall(void)
         }
     }
 
-    /* At exactly the minimum the read stands: every element at 50 mm/s. */
+    /* At exactly the minimum the read stands: every element at BC_MIN_SPEED_MMPS. */
     {
         char            ch = NO_CHAR;
-        fixture_t const fx50 = fx_symbol("*A*", 5.0, 2.0, 50.0, 50.0, 7.0);
+        fixture_t const fx50 = fx_symbol("*A*", 5.0, 2.0, (double)BC_MIN_SPEED_MMPS, (double)BC_MIN_SPEED_MMPS, 7.0);
         bc_element_t    el[SYM_ELEMS];
 
         fx_elements(&fx50, el);
         for (int k = 0; k < SYM_ELEMS; k++)
         {
-            el[k].speed_mmps = 50;
+            el[k].speed_mmps = (int32_t)BC_MIN_SPEED_MMPS;
         }
         CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_OK);
         CHECK(ch == 'A');
@@ -313,6 +314,68 @@ static void test_official_samples(void)
     }
 }
 
+/* ===========================================================================
+ * Test 17: the sensor makes bars thinner (or thicker) than they are.
+ * First desk run on the car (2 Nov 2026, build/s3-bc2a-run.txt captures
+ * #5-#10): narrow bar ~4 ms, wide bar ~30 ms, narrow space ~20 ms, wide
+ * space ~45 ms.  A threshold off the 50 % point moves every bar edge the
+ * same way, so bars and spaces must be judged separately: bars against the
+ * bar median, spaces against the space median.
+ * (a) exactly those measured times, (b) 3 mm / 9 mm bars made 1.5 mm
+ * thinner and thicker, every letter, both directions.
+ * ========================================================================= */
+static void test_bar_width_bias(void)
+{
+    bc_cfg_t cfg;
+
+    bc_cfg_default(&cfg);
+    for (char c = 'A'; c <= 'Z'; c++)
+    {
+        for (int rev = 0; rev < 2; rev++)
+        {
+            char         sym[4];
+            fixture_t    fx;
+            bc_element_t el[SYM_ELEMS];
+            char         ch = NO_CHAR;
+
+            sym_of(c, sym);
+            fx = fx_symbol(sym, 3.0, 3.0, 300.0, 300.0, 0.0);
+            if (rev != 0)
+            {
+                fx = fx_reversed(&fx);
+            }
+
+            /* (a) The measured durations, at a constant 150 mm/s (speed only
+             * scales; the classes are what matter).  Element 0 is a bar. */
+            for (int k = 0; k < SYM_ELEMS; k++)
+            {
+                bool const bar = ((k % 2) == 0);
+                bool const wide = (fx.w_mm[k] > 6.0);
+
+                el[k].gap_us = bar ? (wide ? 30000U : 4000U) : (wide ? 45000U : 20000U);
+                el[k].speed_mmps = 150;
+            }
+            CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_OK);
+            CHECK(ch == c);
+
+            /* (b) Bars 1.5 mm thinner / thicker, spaces the other way. */
+            for (int s = -1; s <= 1; s += 2)
+            {
+                for (int k = 0; k < SYM_ELEMS; k++)
+                {
+                    double const mm = fx.w_mm[k] + ((((k % 2) == 0) ? 1.5 : -1.5) * (double)s);
+
+                    el[k].gap_us = (uint32_t)lround(mm / 300.0 * 1e6);
+                    el[k].speed_mmps = 300;
+                }
+                ch = NO_CHAR;
+                CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_OK);
+                CHECK(ch == c);
+            }
+        }
+    }
+}
+
 int main(void)
 {
     test_gap_to_width();
@@ -327,5 +390,6 @@ int main(void)
     test_reversed();
     test_cfg_ratio();
     test_official_samples();
+    test_bar_width_bias();
     return TEST_RESULT("bc_decode");
 }

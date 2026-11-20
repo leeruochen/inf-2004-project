@@ -655,9 +655,9 @@ static void test_overflow_and_speed(void)
     }
 
     /* A stalled element inside the symbol (window 1 = elements 1..29):
-     * 0, below the 50 mm/s minimum, and INT32_MIN.  Reported as STALL. */
+     * 0, one below BC_MIN_SPEED_MMPS, and INT32_MIN.  Reported as STALL. */
     {
-        int32_t const bad[3] = { 0, 49, INT32_MIN };
+        int32_t const bad[3] = { 0, (int32_t)BC_MIN_SPEED_MMPS - 1, INT32_MIN };
 
         for (int b = 0; b < 3; b++)
         {
@@ -934,6 +934,90 @@ static void test_bar_growth(void)
     }
 }
 
+/* Test 14: the four real captures of the 20 Nov 2026 quick drive (card *A*, the car at its
+ * 5 cm/s cruise, speed 33..54 mm/s, 18:15-18:17 log).  The sensor gave bars and spaces
+ * different widths (narrow space 8 mm, wide bar 15 mm, a 141 mm card measuring 275 mm) and the
+ * old floor BC_MIN_SPEED_MMPS = 50 rejected every one as a stall.  With the floor at 40 % of the
+ * slow speed they decode as A; the same data with a floor of 50 is refused. */
+static const struct { uint32_t gap_us; int32_t speed_mmps; } k_real_slow[4][29] =
+{
+    {
+        { 75437U, 42 }, { 505969U, 37 }, { 70856U, 42 }, { 220258U, 37 },
+        { 359750U, 42 }, { 210933U, 37 }, { 362472U, 37 }, { 219539U, 37 },
+        { 83156U, 42 }, { 209845U, 42 }, { 384489U, 42 }, { 205350U, 42 },
+        { 73769U, 46 }, { 199053U, 42 }, { 72489U, 42 }, { 479603U, 42 },
+        { 77544U, 37 }, { 211849U, 42 }, { 365072U, 42 }, { 195723U, 46 },
+        { 73158U, 42 }, { 508692U, 46 }, { 70024U, 46 }, { 202020U, 42 },
+        { 358746U, 42 }, { 214084U, 37 }, { 395252U, 33 }, { 226826U, 37 },
+        { 81984U, 42 },
+    },
+    {
+        { 127891U, 33 }, { 247811U, 37 }, { 435415U, 33 }, { 241699U, 33 },
+        { 435941U, 37 }, { 210227U, 37 }, { 75483U, 42 }, { 534883U, 37 },
+        { 81441U, 42 }, { 227777U, 37 }, { 406595U, 42 }, { 218825U, 37 },
+        { 84618U, 37 }, { 510195U, 42 }, { 74468U, 37 }, { 211921U, 42 },
+        { 76983U, 37 }, { 222614U, 37 }, { 373967U, 42 }, { 204859U, 42 },
+        { 70301U, 42 }, { 194201U, 50 }, { 320364U, 50 }, { 202118U, 33 },
+        { 428649U, 46 }, { 181995U, 46 }, { 58218U, 46 }, { 451492U, 42 },
+        { 61421U, 46 },
+    },
+    {
+        { 73126U, 42 }, { 496415U, 42 }, { 61359U, 42 }, { 212571U, 42 },
+        { 339015U, 50 }, { 204293U, 42 }, { 392653U, 37 }, { 213271U, 42 },
+        { 81366U, 37 }, { 222657U, 33 }, { 420308U, 37 }, { 222332U, 37 },
+        { 72632U, 42 }, { 202588U, 42 }, { 75176U, 46 }, { 498903U, 37 },
+        { 82257U, 37 }, { 235084U, 37 }, { 379445U, 46 }, { 190261U, 42 },
+        { 75954U, 46 }, { 476456U, 42 }, { 69394U, 46 }, { 196572U, 42 },
+        { 344644U, 42 }, { 204875U, 42 }, { 369116U, 42 }, { 213831U, 42 },
+        { 80569U, 42 },
+    },
+    {
+        { 95916U, 33 }, { 225522U, 37 }, { 400537U, 37 }, { 220735U, 37 },
+        { 394044U, 37 }, { 214107U, 37 }, { 81310U, 37 }, { 505128U, 42 },
+        { 78561U, 37 }, { 216748U, 37 }, { 380786U, 42 }, { 206747U, 42 },
+        { 74675U, 42 }, { 484042U, 42 }, { 70421U, 42 }, { 200534U, 42 },
+        { 71602U, 46 }, { 208183U, 42 }, { 352596U, 46 }, { 185518U, 54 },
+        { 62073U, 50 }, { 171208U, 46 }, { 302332U, 50 }, { 192815U, 46 },
+        { 391205U, 46 }, { 177067U, 46 }, { 66651U, 46 }, { 436681U, 42 },
+        { 67230U, 46 },
+    },
+};
+
+static void test_real_slow_captures(void)
+{
+    for (uint32_t c = 0U; c < 4U; c++)
+    {
+        for (uint32_t pass = 0U; pass < 2U; pass++)
+        {
+            bc_frame_t     fr;
+            bc_cfg_t       cfg;
+            bc_frame_out_t out;
+
+            bc_frame_reset(&fr);
+            bc_cfg_default(&cfg);
+            if (pass == 1U)
+            {
+                cfg.min_speed_mmps = 50U;               /* the old floor */
+            }
+            bc_frame_add(&fr, 1048575U, 40);            /* the start gap, dropped */
+            for (uint32_t i = 0U; i < 29U; i++)
+            {
+                bc_frame_add(&fr, k_real_slow[c][i].gap_us, k_real_slow[c][i].speed_mmps);
+            }
+            if (pass == 0U)
+            {
+                CHECK(bc_frame_finish(&fr, &cfg, &out) == BC_FRAME_OK);
+                CHECK(out.letter == 'A');
+            }
+            else
+            {
+                CHECK(bc_frame_finish(&fr, &cfg, &out) == BC_FRAME_NO_SYMBOL);
+                CHECK(out.detail == BC_ERR_STALL);
+            }
+        }
+    }
+}
+
 int main(void)
 {
     test_end_rule();
@@ -949,5 +1033,6 @@ int main(void)
     test_poll_delay();
     test_timer_wrap();
     test_bar_growth();
+    test_real_slow_captures();
     return TEST_RESULT("bc_frame");
 }

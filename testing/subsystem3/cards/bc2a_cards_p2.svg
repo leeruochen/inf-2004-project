@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 210 297">
+<rect x="0" y="0" width="210" height="297" fill="#fff"/>
+<text x="20" y="14" font-family="Arial" font-size="5">Subsystem 3 BC-2A test cards, page 2 of 2: *W* *X* *Y*, strip and square for S3-U03</text>
+<text x="20" y="21" font-family="Arial" font-size="3.5">Print at 100 % / actual size (no fit-to-page). Check: the scale bar below must measure exactly 100 mm.</text>
+<rect x="20" y="25" width="100" height="3" fill="#000"/>
+<text x="125" y="28" font-family="Arial" font-size="3.5">100 mm</text>
+<rect x="24.5" y="36.0" width="161.0" height="56.0" fill="none" stroke="#999" stroke-width="0.2" stroke-dasharray="2,2"/>
+<rect x="34.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="46.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="52.500" y="40.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="64.500" y="40.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="76.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="82.500" y="40.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="100.500" y="40.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="112.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="118.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="124.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="130.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="142.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="148.500" y="40.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="160.500" y="40.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="172.500" y="40.0" width="3.000" height="40.0" fill="#000"/>
+<text x="105.0" y="87.0" font-family="Arial" font-size="6" text-anchor="middle">*W*   (141 mm from first to last bar)</text>
+<rect x="24.5" y="98.0" width="161.0" height="56.0" fill="none" stroke="#999" stroke-width="0.2" stroke-dasharray="2,2"/>
+<rect x="34.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="46.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="52.500" y="102.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="64.500" y="102.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="76.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="82.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="94.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="100.500" y="102.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="112.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="118.500" y="102.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="130.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="142.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="148.500" y="102.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="160.500" y="102.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="172.500" y="102.0" width="3.000" height="40.0" fill="#000"/>
+<text x="105.0" y="149.0" font-family="Arial" font-size="6" text-anchor="middle">*X*   (141 mm from first to last bar)</text>
+<rect x="24.5" y="160.0" width="161.0" height="56.0" fill="none" stroke="#999" stroke-width="0.2" stroke-dasharray="2,2"/>
+<rect x="34.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="46.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="52.500" y="164.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="64.500" y="164.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="76.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="82.500" y="164.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="100.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="106.500" y="164.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="118.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="124.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="130.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="142.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<rect x="148.500" y="164.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="160.500" y="164.0" width="9.000" height="40.0" fill="#000"/>
+<rect x="172.500" y="164.0" width="3.000" height="40.0" fill="#000"/>
+<text x="105.0" y="211.0" font-family="Arial" font-size="6" text-anchor="middle">*Y*   (141 mm from first to last bar)</text>
+<rect x="24.5" y="222.0" width="20" height="60" fill="#000"/>
+<text x="24.5" y="288.0" font-family="Arial" font-size="3.5">S3-U03 strip: 20 mm wide</text>
+<rect x="70" y="222.0" width="40" height="40" fill="#000"/>
+<text x="70" y="268.0" font-family="Arial" font-size="3.5">S3-U03 black square</text>
+</svg>
