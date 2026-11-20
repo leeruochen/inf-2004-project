@@ -150,12 +150,12 @@ static void test_reject_count(void)
     CHECK(ch == NO_CHAR);
 }
 
-/* Test 10: one element below BC_MIN_SPEED_MMPS (50) is a stall, wherever it
- * is (first bar, a gap between characters, last bar); exactly 50 is not. */
+/* Test 10: one element below BC_MIN_SPEED_MMPS (20, 40 % of the 5 cm/s slow speed) is a stall,
+ * wherever it is (first bar, a gap between characters, last bar); exactly the floor is not. */
 static void test_reject_stall(void)
 {
     int const       where[3] = { 0, 9, SYM_ELEMS - 1 };
-    int32_t const   slow[3] = { 0, -100, 49 };
+    int32_t const   slow[3] = { 0, -100, (int32_t)BC_MIN_SPEED_MMPS - 1 };
     bc_cfg_t        cfg;
     fixture_t const fx = fx_symbol("*A*", 5.0, 2.0, 300.0, 300.0, 7.0);
 
@@ -174,16 +174,16 @@ static void test_reject_stall(void)
         }
     }
 
-    /* At exactly the minimum the read stands: every element at 50 mm/s. */
+    /* At exactly the minimum the read stands: every element at BC_MIN_SPEED_MMPS. */
     {
         char            ch = NO_CHAR;
-        fixture_t const fx50 = fx_symbol("*A*", 5.0, 2.0, 50.0, 50.0, 7.0);
+        fixture_t const fx50 = fx_symbol("*A*", 5.0, 2.0, (double)BC_MIN_SPEED_MMPS, (double)BC_MIN_SPEED_MMPS, 7.0);
         bc_element_t    el[SYM_ELEMS];
 
         fx_elements(&fx50, el);
         for (int k = 0; k < SYM_ELEMS; k++)
         {
-            el[k].speed_mmps = 50;
+            el[k].speed_mmps = (int32_t)BC_MIN_SPEED_MMPS;
         }
         CHECK(bc_decode(el, SYM_ELEMS, &cfg, &ch) == BC_OK);
         CHECK(ch == 'A');

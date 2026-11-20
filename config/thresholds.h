@@ -146,10 +146,12 @@
  *  the worst-case 2:1.  Set from measured hardware ratios. Not in design.md. TUNE */
 #define BC_WIDE_RATIO_X100          (150U)
 /** Slowest speed at which a read is trusted; any element below it makes the
- *  read a stall (design.md 6.2).  Half the slowest drive speed
- *  (MOTION_SPEED_SLOW_BRINGUP_CMPS, 10 cm/s): below it one encoder count is a
- *  large part of Motion's 20 ms speed estimate. Not in design.md. TUNE */
-#define BC_MIN_SPEED_MMPS           (50U)
+ *  read a stall (design.md 6.2).  40 % of the slowest drive speed
+ *  (MOTION_SPEED_SLOW_BRINGUP_CMPS, 5 cm/s now): a stalled car reads 0, and the
+ *  car crawling at its cruise reads 33..54 mm/s (20 Nov 2026, quick drive).  It was
+ *  half of 10 cm/s = 50 mm/s, which rejected every read of the car at 5 cm/s as a stall
+ *  (real captures: tests/host/test_bc_frame.c test 14).  Not in design.md. TUNE */
+#define BC_MIN_SPEED_MMPS           (MOTION_SPEED_SLOW_BRINGUP_CMPS * 4U)
 
 /* ---------------------------------------------------------------------------
  * Speeds (Buddy 2). Two sets: nominal and bring-up. All TUNE.
