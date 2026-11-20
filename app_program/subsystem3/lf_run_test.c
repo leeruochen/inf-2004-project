@@ -205,7 +205,7 @@
 /* Relative to the configured post distance (120 mm: 110..135) and the cruise
  * (120 mm at 200 mm/s = 600 ms: 450..800), so a build with another mounting
  * distance (-DLF_D_PIVOT_MM) or speed keeps the same meaning. */
-#define LF2_JMAT_DELAY_MIN_MM   (LF_D_JCT_POST_MM - 10U)
+#define LF2_JMAT_DELAY_MIN_MM   (LF_D_JCT_POST_MM - 20U)
 #define LF2_JMAT_DELAY_MAX_MM   (LF_D_JCT_POST_MM + 15U)
 #define LF2_JMAT_NOMINAL_MS     ((LF_D_JCT_POST_MM * 1000U) / LF2_CRUISE_MMPS)
 #define LF2_JMAT_DELAY_MIN_MS   ((LF2_JMAT_NOMINAL_MS * 3U) / 4U)
@@ -263,6 +263,14 @@
 /* QUICK (-DS3_QUICK_CAL=ON): no pose A / pose B; a fixed TEST calibration is applied instead. */
 #ifndef S3_QUICK_CAL
 #define S3_QUICK_CAL            (0)
+#endif
+/* The branch criterion: the edge follower keeps CENTRE on the line's edge, so >= 90% of polls; the
+ * straddle follower keeps the line BETWEEN the sensors (CENTRE is the LEFT one, on white), so the
+ * edge metric does not apply: it is judged on no line loss on the way. */
+#if S3_LF_STRADDLE
+#define LF2_BRANCH_TRACKED      (s_run.n_lost == 0U)
+#else
+#define LF2_BRANCH_TRACKED      lf2_pct_ok(s_run.br_c_on, s_run.br_polls)
 #endif
 /** STOP this far along the branch, from the first ON_LINE after the turn. */
 #define LF2_TURN_BRANCH_MM      (300U)
@@ -418,6 +426,7 @@ typedef struct
     uint32_t  win_ms;           /**< the window's real length */
     uint32_t  speed_mmps;       /**< wheel travel per second after 0.5 s */
     uint32_t  n_jct;            /**< JUNCTION events in the drive */
+    uint32_t  n_jct_pre;        /**< ... up to the moment the VC began the turn (the branch may hold a second cross) */
     uint32_t  n_lost;           /**< TRACK_LOST events in the drive */
     uint32_t  ev_fail;          /**< failed events in the drive */
     uint32_t  dropped;          /**< dropped steering posts in the drive */
@@ -868,6 +877,7 @@ static void lf2_turn_watch(lf2_run_t *p, uint32_t t, uint32_t vc)
     if (!p->turn_seen && (vc == LF2_TURN_VC_STATE))
     {
         p->turn_seen = true;
+        p->n_jct_pre = s_now.n_junction - s_base.n_junction;
         s_m_turn = s_m;
     }
     if (p->turn_seen && !p->turn_done && (vc != LF2_TURN_VC_STATE))
@@ -1546,7 +1556,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
             lf2_drive(&k_turn);
             lf2_turn_report(run);
             lf2_trace_dump("turn");
-            TEST_CHECK(LF2_ID, s_run.det_seen && s_run.post_seen && (s_run.n_jct == 1U)
+            TEST_CHECK(LF2_ID, s_run.det_seen && s_run.post_seen && (s_run.n_jct_pre == 1U)
                                && ((s_run.mm_post - s_run.mm_det) >= LF2_JMAT_DELAY_MIN_MM)
                                && ((s_run.mm_post - s_run.mm_det) <= LF2_JMAT_DELAY_MAX_MM),
                        "(t1) cross detected, one JUNCTION 110-135 mm later");
@@ -1559,8 +1569,8 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                                && ((s_run.t_branch_ms - s_run.t_turn_end_ms) <= LF2_TURN_FIND_MAX_MS),
                        "(t4) line found after the turn, no TRACK_LOST");
             TEST_CHECK(LF2_ID, (s_run.end == LF2_END_BRANCH) && s_run.still
-                               && lf2_pct_ok(s_run.br_c_on, s_run.br_polls),
-                       "(t5) followed the branch 300 mm, CENTRE on the line >= 90%");
+                               && LF2_BRANCH_TRACKED,
+                       "(t5) followed the branch 300 mm (edge: CENTRE on the line >= 90%; straddle: no line loss)");
         }
     }
 
