@@ -341,7 +341,11 @@ static void s3_u06_bench(uint32_t *p_pass, uint32_t *p_fail)
 }
 
 #if S3_BC_QUICK
-/* Quick drive test: card *A*, 3 x (40 cm forward, 40 cm back).  Each read prints a [BC] line. */
+/* Quick drive test, blind: ANY card (the tester does not say which), 2 x (40 cm forward, 40 cm
+ * back) = 4 passes.  Every read prints a [BC] line; the result names the letter read most often.
+ * Pass: that letter was read at least 3 times and no other letter was read at all.  The tester
+ * then compares it with the card.  (The car is not following a line, so its start drifts a little
+ * every cycle: more than 4 passes just miss the card.) */
 static void s3_quick(uint32_t *p_pass, uint32_t *p_fail)
 {
     uint32_t   test_pass_ = *p_pass;
@@ -350,28 +354,39 @@ static void s3_quick(uint32_t *p_pass, uint32_t *p_fail)
     bc_stats_t b;
     uint32_t   ovf_a;
     bool       drove = true;
+    uint32_t   top = 0U;
+    uint32_t   top_n = 0U;
+    uint32_t   reads = 0U;
 
     bc_task_set_speed_override(0);
-    dbg_puts("[S3] QUICK barcode drive: the car drives 40 cm forward and 40 cm back over the card, 3 times.");
+    dbg_puts("[S3] QUICK barcode drive (blind): the car drives 40 cm forward and 40 cm back over the card, twice.");
     dbg_puts("[S3] Watch the [BC] #n OK <letter> lines: that is each read.");
-    s3_countdown("QUICK prep", "card *A* flat on the floor, 15 cm ahead of the sensor, bars across, 1 m clear", 45U);
+    s3_countdown("QUICK prep", "ANY card flat on the floor, 15 cm ahead of the sensor, bars across, 1 m clear", 45U);
     s3_snap(&a);
     ovf_a = drv_bc_overflow_count();
-    for (uint32_t k = 0U; k < 3U; k++)
+    for (uint32_t k = 0U; k < 2U; k++)
     {
         drove = s3_drive(true, S3_PASS_CM) && drove;
         drove = s3_drive(false, S3_PASS_CM) && drove;
     }
     s3_snap(&b);
 
+    for (uint32_t i = 0U; i < 26U; i++)
     {
-        s3_tally_t const t = s3_tally(&a, &b, 'A', ovf_a, drv_bc_overflow_count());
+        uint32_t const n = b.letters[i] - a.letters[i];
 
-        dbg_printf("[S3] quick result: 6 passes over *A*: %lu read A, %lu read another letter, %lu refused",
-                   (unsigned long)t.correct, (unsigned long)t.wrong, (unsigned long)t.refused);
-        TEST_CHECK("S3-U05", drove && (t.correct >= 5U) && (t.wrong == 0U) && (t.ovf == 0U),
-                   "quick: 6 passes over *A*, >=5 read A, 0 wrong letters");
+        reads += n;
+        if (n > top_n)
+        {
+            top_n = n;
+            top = i;
+        }
     }
+    dbg_printf("[S3] blind result: letter %c read %lu times, %lu other reads, %lu refused",
+               (char)('A' + (char)top), (unsigned long)top_n, (unsigned long)(reads - top_n),
+               (unsigned long)s3_fail_total(&b) - (unsigned long)s3_fail_total(&a));
+    TEST_CHECK("S3-U05", drove && (top_n >= 3U) && (reads == top_n) && (drv_bc_overflow_count() == ovf_a),
+               "quick blind: one letter read >= 3 of 4 passes, no other letter");
     *p_pass = test_pass_;
     *p_fail = test_fail_;
 }
