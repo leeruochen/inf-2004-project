@@ -374,8 +374,8 @@ static void test_turn_side(void)
     (void)run(&sd, 100U, 0U, 0U);
     g_in.manoeuvre = LF_MAN_NONE;
     r = run(&sd, 2U, 23U, 76U);
-    CHECK(sd.bw == LF_SD_BW_PROBE);
-    CHECK(r.max_steer == LF_SD_PROBE_Q7);
+    CHECK(sd.state == LF_ST_REACQUIRING);              /* only an edge in view: the search, not the probe */
+    CHECK(r.max_steer == LF_SEARCH_Q7);
 
     /* faintly darker LEFT: probe LEFT */
     start_centred(&sd);
@@ -383,7 +383,18 @@ static void test_turn_side(void)
     (void)run(&sd, 100U, 0U, 0U);
     g_in.manoeuvre = LF_MAN_NONE;
     r = run(&sd, 2U, 76U, 23U);
-    CHECK(r.min_steer == -LF_SD_PROBE_Q7);
+    CHECK(r.min_steer == -LF_SEARCH_Q7);
+
+    /* the 20 Nov U-turn: a clear LEFT contact mid-pivot, a faint RIGHT reading at the end: RIGHT */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_UTURN;
+    (void)run(&sd, 50U, 0U, 0U);
+    (void)run(&sd, 3U, 600U, 0U);                           /* LEFT crosses the line mid-pivot */
+    (void)run(&sd, 50U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 5U, 66U);                              /* the end: RIGHT faint, LEFT quiet */
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    CHECK(r.max_steer == LF_SEARCH_Q7);
 
     /* nothing at all at the end: the turn's own direction (yaw_cnt grows turning right) */
     start_centred(&sd);

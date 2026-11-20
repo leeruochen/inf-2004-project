@@ -341,19 +341,22 @@ static bool sd_st_junction(lf_sd_t *p_sd, lf_in_t const *p_in, sd_view_t const *
     }
     else if (p_sd->man_seen != LF_MAN_NONE)
     {
-        /* The turn ended: the side to probe first.  The darker sensor if it is clearly darker, else
-         * the turn's own direction (a U-turn keeps the remembered side). */
-        if (p_sd->turn_contact)
-        {
-            /* a clear contact during the turn already set the side */
-        }
-        else if (p_v->dl >= (p_v->dr + LF_SD_TURN_SIDE_PM))
+        /* The turn ended.  The side to go to first, freshest evidence first: the sensor that is clearly
+         * darker NOW (20 Nov U-turn: the LEFT sensor crossed the line mid-pivot, 511-731, and the
+         * RIGHT one read 63-70 at the end; the old mid-pivot contact sent the car left, away from
+         * the line); else the side of a clear contact during the pivot; else the turn's own direction
+         * from the yaw (a U-turn keeps the remembered side). */
+        if (p_v->dl >= (p_v->dr + LF_SD_TURN_SIDE_PM))
         {
             p_sd->side = LF_SIDE_LEFT;
         }
         else if (p_v->dr >= (p_v->dl + LF_SD_TURN_SIDE_PM))
         {
             p_sd->side = LF_SIDE_RIGHT;
+        }
+        else if (p_sd->turn_contact)
+        {
+            /* a clear contact during the turn already set the side */
         }
         else if (p_sd->man_seen == LF_MAN_TURN)
         {
@@ -366,7 +369,16 @@ static bool sd_st_junction(lf_sd_t *p_sd, lf_in_t const *p_in, sd_view_t const *
         {
             /* U-turn: keep the remembered side */
         }
-        sd_enter_on_line(p_sd, true);       /* the turn ended */
+        if (!p_v->contact && ((p_v->dl >= LF_SD_SEEK_PM) || (p_v->dr >= LF_SD_SEEK_PM)))
+        {
+            /* Only the line's edge is in view: search (it steers towards the edge and ends on a clear
+             * contact), not a weak 60 mm probe that gives up. */
+            sd_enter_search(p_sd, false);
+        }
+        else
+        {
+            sd_enter_on_line(p_sd, true);       /* the turn ended */
+        }
         may_post = true;
     }
     else if (p_sd->jct_pending)
