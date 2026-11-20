@@ -396,6 +396,21 @@ static void test_turn_side(void)
     CHECK(sd.state == LF_ST_REACQUIRING);
     CHECK(r.max_steer == LF_SEARCH_Q7);
 
+    /* the 20 Nov U-turn, the later runs: both sensors quiet at the end, a clear LEFT contact mid-pivot,
+     * the pivot turned right (yaw_cnt grows): keep rotating RIGHT, in the search, not a probe left */
+    start_centred(&sd);
+    g_in.manoeuvre = LF_MAN_UTURN;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.yaw_cnt += 1500;
+    (void)run(&sd, 3U, 600U, 0U);                           /* LEFT crosses the line mid-pivot */
+    g_in.yaw_cnt += 1500;
+    (void)run(&sd, 3U, 0U, 0U);
+    g_in.manoeuvre = LF_MAN_NONE;
+    r = run(&sd, 2U, 0U, 0U);
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    CHECK(r.max_steer == LF_SEARCH_Q7);
+    CHECK(r.min_steer > -LF_SEARCH_Q7);
+
     /* nothing at all at the end: the turn's own direction (yaw_cnt grows turning right) */
     start_centred(&sd);
     g_in.manoeuvre = LF_MAN_TURN;

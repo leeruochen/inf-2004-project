@@ -341,11 +341,16 @@ static bool sd_st_junction(lf_sd_t *p_sd, lf_in_t const *p_in, sd_view_t const *
     }
     else if (p_sd->man_seen != LF_MAN_NONE)
     {
-        /* The turn ended.  The side to go to first, freshest evidence first: the sensor that is clearly
-         * darker NOW (20 Nov U-turn: the LEFT sensor crossed the line mid-pivot, 511-731, and the
-         * RIGHT one read 63-70 at the end; the old mid-pivot contact sent the car left, away from
-         * the line); else the side of a clear contact during the pivot; else the turn's own direction
-         * from the yaw (a U-turn keeps the remembered side). */
+        /* The turn ended.  The side to go to first.  A U-turn leaves the sensors' sweep across the line
+         * halfway round, so a contact DURING it says nothing, and the pivot stops short of the line
+         * (20 Nov, U-turn at 5 cm/s, 6 of 6 runs: at the end both sensors white, the line just outside
+         * the RIGHT one): it keeps rotating the turn's own way, from the sign of the yaw (grows turning
+         * right).  Order: the sensor clearly darker NOW (LF_SD_TURN_SIDE_PM); then, for a U-turn, the turn's
+         * direction; for a 90-degree turn the side of a clear contact during the pivot, else its direction. */
+        bool const uturn = (p_sd->man_seen == LF_MAN_UTURN);
+        int32_t const yaw_d = (int32_t)((uint32_t)p_in->yaw_cnt - (uint32_t)p_sd->turn_yaw0);
+        lf_side_t const dir_side = (yaw_d > 0) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
+
         if (p_v->dl >= (p_v->dr + LF_SD_TURN_SIDE_PM))
         {
             p_sd->side = LF_SIDE_LEFT;
@@ -354,25 +359,23 @@ static bool sd_st_junction(lf_sd_t *p_sd, lf_in_t const *p_in, sd_view_t const *
         {
             p_sd->side = LF_SIDE_RIGHT;
         }
+        else if (uturn)
+        {
+            p_sd->side = dir_side;
+        }
         else if (p_sd->turn_contact)
         {
             /* a clear contact during the turn already set the side */
         }
-        else if (p_sd->man_seen == LF_MAN_TURN)
-        {
-            /* yaw_cnt grows turning right (the same convention as the hold) */
-            int32_t const d = (int32_t)((uint32_t)p_in->yaw_cnt - (uint32_t)p_sd->turn_yaw0);
-
-            p_sd->side = (d > 0) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
-        }
         else
         {
-            /* U-turn: keep the remembered side */
+            p_sd->side = dir_side;
         }
-        if (!p_v->contact && ((p_v->dl >= LF_SD_SEEK_PM) || (p_v->dr >= LF_SD_SEEK_PM)))
+        if (!p_v->contact && (uturn || (p_v->dl >= LF_SD_SEEK_PM) || (p_v->dr >= LF_SD_SEEK_PM)))
         {
-            /* Only the line's edge is in view: search (it steers towards the edge and ends on a clear
-             * contact), not a weak 60 mm probe that gives up. */
+            /* The line is not under a sensor (always so after a U-turn: it stops short): search, arcing
+             * towards that side at LF_SEARCH_Q7, steering to an edge and ending on a clear contact, not a
+             * weak 60 mm probe that gives up. */
             sd_enter_search(p_sd, false);
         }
         else
