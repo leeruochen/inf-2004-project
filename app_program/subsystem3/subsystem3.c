@@ -55,6 +55,13 @@ int32_t subsystem3_init(void)
     s3_ir_boot_check("[S3] IR_C (GP28/ADC2) ADC sanity OK", "[S3] IR_C (GP28/ADC2) ADC sanity FAULT:",
                      IR_C_ADC_CH);
 
+    /* Barcode (GP27): the input and the edge handler.  Edges are buffered from here on. */
+    {
+        int32_t const er = drv_bc_init();
+
+        APP_CHECK(er, "s3 drv_bc_init");
+    }
+
     /* The Line-Following task paces itself with app_period_wait()
      * (ARCHITECTURE.md T8): no cyclic handler to create here. */
     return (int32_t)E_OK;
@@ -65,12 +72,18 @@ int32_t subsystem3_start(void)
     /* Line-Following: calibrates at once (the car must be in the start
      * pose at power-up), then samples every 5 ms. */
     int32_t const lf_id = lf_task_start();
+    int32_t       bc_id;
 
     if (lf_id < 0)
     {
         return lf_id;
     }
-    /* TODO(BC-2A.2, buddy 3): app_start_task(BC task, TASK_PRI_BC,
-     * TASK_STACK_BC_BYTES, "bc"), on branch buddy3/bc2a-hw (PR #13). */
+    /* Barcode Decode (BC-2A.2), then hand its ID to the edge handler. */
+    bc_id = app_start_task(bc_task_entry, TASK_PRI_BC, TASK_STACK_BC_BYTES, "bc");
+    if (bc_id < (int32_t)E_OK)
+    {
+        return bc_id;
+    }
+    drv_bc_set_wake_task(bc_id);
     return (int32_t)E_OK;
 }
