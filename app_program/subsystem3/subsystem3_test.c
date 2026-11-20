@@ -49,6 +49,11 @@
 #ifndef S3_BC_TEST
 #define S3_BC_TEST          (0)
 #endif
+/* The quick barcode drive test instead: one card, the car drives over it 6 times and the
+ * log shows every letter read: -DS3_BC_QUICK=ON.  No desk tests, no line-following test. */
+#ifndef S3_BC_QUICK
+#define S3_BC_QUICK         (0)
+#endif
 /* S3-U18, the turning radius diagnostic on the mat: -DS3_TURN_DIAG=ON. */
 #ifndef S3_TURN_DIAG
 #define S3_TURN_DIAG        (0)
@@ -335,6 +340,43 @@ static void s3_u06_bench(uint32_t *p_pass, uint32_t *p_fail)
     *p_fail = test_fail_;
 }
 
+#if S3_BC_QUICK
+/* Quick drive test: card *A*, 3 x (40 cm forward, 40 cm back).  Each read prints a [BC] line. */
+static void s3_quick(uint32_t *p_pass, uint32_t *p_fail)
+{
+    uint32_t   test_pass_ = *p_pass;
+    uint32_t   test_fail_ = *p_fail;
+    bc_stats_t a;
+    bc_stats_t b;
+    uint32_t   ovf_a;
+    bool       drove = true;
+
+    bc_task_set_speed_override(0);
+    dbg_puts("[S3] QUICK barcode drive: the car drives 40 cm forward and 40 cm back over the card, 3 times.");
+    dbg_puts("[S3] Watch the [BC] #n OK <letter> lines: that is each read.");
+    s3_countdown("QUICK prep", "card *A* flat on the floor, 15 cm ahead of the sensor, bars across, 1 m clear", 45U);
+    s3_snap(&a);
+    ovf_a = drv_bc_overflow_count();
+    for (uint32_t k = 0U; k < 3U; k++)
+    {
+        drove = s3_drive(true, S3_PASS_CM) && drove;
+        drove = s3_drive(false, S3_PASS_CM) && drove;
+    }
+    s3_snap(&b);
+
+    {
+        s3_tally_t const t = s3_tally(&a, &b, 'A', ovf_a, drv_bc_overflow_count());
+
+        dbg_printf("[S3] quick result: 6 passes over *A*: %lu read A, %lu read another letter, %lu refused",
+                   (unsigned long)t.correct, (unsigned long)t.wrong, (unsigned long)t.refused);
+        TEST_CHECK("S3-U05", drove && (t.correct >= 5U) && (t.wrong == 0U) && (t.ovf == 0U),
+                   "quick: 6 passes over *A*, >=5 read A, 0 wrong letters");
+    }
+    *p_pass = test_pass_;
+    *p_fail = test_fail_;
+}
+#endif
+
 /* S3-U05: driving over cards with Motion's real speed, both directions. */
 static void s3_u05(uint32_t *p_pass, uint32_t *p_fail)
 {
@@ -423,7 +465,7 @@ void subsystem3_test(void)
     lf_hw_test(&test_pass_, &test_fail_);
 #endif
 
-#if S3_BC_TEST
+#if S3_BC_TEST || S3_BC_QUICK
     /* Barcode tests only: the line-following track test is skipped. */
 #elif S3_STEP_DIAG
     /* S3-U16: what the wheels do after a strong steering command (operator-guided). */
@@ -435,6 +477,15 @@ void subsystem3_test(void)
     /* S3-U12: LF-3.2 Line-Following task on the track, motors live (operator-guided). */
     lf_run_test(&test_pass_, &test_fail_);
 #endif
+#if S3_BC_QUICK
+    /* The full desk and floor tests stay built (and rule-checked) but are not run. */
+    (void)s3_u03;
+    (void)s3_u04;
+    (void)s3_u05;
+    (void)s3_u06_bench;
+    (void)s3_u06_floor;
+    s3_quick(&test_pass_, &test_fail_);
+#else
     dbg_puts("[S3] BC-2A hardware tests: follow the [S3] >>> prompts (.agents/tasks/s3-bc2a-test.md)");
     s3_u03(&test_pass_, &test_fail_);
     s3_u04(&test_pass_, &test_fail_);
@@ -442,6 +493,7 @@ void subsystem3_test(void)
     s3_countdown("FLOOR prep", "move the car OFF the stand onto the floor now", 60U);
     s3_u05(&test_pass_, &test_fail_);
     s3_u06_floor(&test_pass_, &test_fail_);
+#endif
 
     s3_snap(&s);
     dbg_printf("[S3] totals: captures=%lu ok=%lu overflow=%lu too_long=%lu incomplete=%lu",
