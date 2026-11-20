@@ -426,6 +426,7 @@ typedef struct
     uint32_t  win_ms;           /**< the window's real length */
     uint32_t  speed_mmps;       /**< wheel travel per second after 0.5 s */
     uint32_t  n_jct;            /**< JUNCTION events in the drive */
+    uint32_t  n_jct_pre;        /**< ... up to the moment the VC began the turn (the branch may hold a second cross) */
     uint32_t  n_lost;           /**< TRACK_LOST events in the drive */
     uint32_t  ev_fail;          /**< failed events in the drive */
     uint32_t  dropped;          /**< dropped steering posts in the drive */
@@ -876,6 +877,7 @@ static void lf2_turn_watch(lf2_run_t *p, uint32_t t, uint32_t vc)
     if (!p->turn_seen && (vc == LF2_TURN_VC_STATE))
     {
         p->turn_seen = true;
+        p->n_jct_pre = s_now.n_junction - s_base.n_junction;
         s_m_turn = s_m;
     }
     if (p->turn_seen && !p->turn_done && (vc != LF2_TURN_VC_STATE))
@@ -1554,7 +1556,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
             lf2_drive(&k_turn);
             lf2_turn_report(run);
             lf2_trace_dump("turn");
-            TEST_CHECK(LF2_ID, s_run.det_seen && s_run.post_seen && (s_run.n_jct == 1U)
+            TEST_CHECK(LF2_ID, s_run.det_seen && s_run.post_seen && (s_run.n_jct_pre == 1U)
                                && ((s_run.mm_post - s_run.mm_det) >= LF2_JMAT_DELAY_MIN_MM)
                                && ((s_run.mm_post - s_run.mm_det) <= LF2_JMAT_DELAY_MAX_MM),
                        "(t1) cross detected, one JUNCTION 110-135 mm later");
