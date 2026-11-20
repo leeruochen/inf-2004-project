@@ -135,6 +135,22 @@
  *  own direction does (a left turn leaves the line to the left, a right turn to the right). */
 #define LF_SD_TURN_SIDE_PM      (40U)
 #endif
+#ifndef LF_SD_SEEK_PM
+/** While SEARCHING, a sensor reading at least this darkness (per mille, well below the 250 of a clear
+ *  contact) is the line's edge.  20 Nov, U-turn at 5 cm/s: the search arced past the line and both
+ *  sensors read 95 and 77 (the line between them, 26 mm apart on an 18 mm line: each sees an edge
+ *  4 mm away) without ever reaching a clear contact; the car carried on and lost it.  Both at
+ *  least this and within LF_SD_SEEK_DB_PM of each other: the line is between the sensors, go straight
+ *  on (ON_LINE, centred).  Only one, or clearly unequal: steer towards the darker one at
+ *  LF_SD_SEEK_Q7, still searching until a clear contact. TUNE */
+#define LF_SD_SEEK_PM           (50U)
+#endif
+#ifndef LF_SD_SEEK_DB_PM
+#define LF_SD_SEEK_DB_PM        (40U)
+#endif
+#ifndef LF_SD_SEEK_Q7
+#define LF_SD_SEEK_Q7           (64)
+#endif
 #ifndef LF_SD_SEARCH_MM
 /** How far a search (after a turn, or at the start) may drive before TRACK_LOST, and how far
  *  it arcs one way before swapping.  lf_core's T_search (2 s) and swap (700 ms) are times

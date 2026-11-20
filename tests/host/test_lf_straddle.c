@@ -405,6 +405,43 @@ static void test_turn_side(void)
     CHECK(r.min_steer == -LF_SD_PROBE_Q7);
 }
 
+/* Test 5c: the search uses faint edge readings (20 Nov, U-turn at 5 cm/s: 95 and 77 per mille, the
+ * line between the sensors, never a clear contact).  Both faint and equal: ON_LINE, straight.
+ * One side faint: steer towards it, still searching. */
+static void test_search_seek(void)
+{
+    lf_sd_t sd;
+    run_t r;
+    uint32_t n = 0U;
+
+    start_centred(&sd);
+    while ((sd.state != LF_ST_REACQUIRING) && (n < 4000U))
+    {
+        (void)feed(&sd, 0U, 0U);
+        n++;
+    }
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    r = run(&sd, 2U, 95U, 77U);                           /* both faint, nearly equal */
+    CHECK(r.last.state == LF_ST_ON_LINE);
+    CHECK(r.last.steer_q7 == 0);
+
+    start_centred(&sd);
+    n = 0U;
+    while ((sd.state != LF_ST_REACQUIRING) && (n < 4000U))
+    {
+        (void)feed(&sd, 0U, 0U);
+        n++;
+    }
+    r = run(&sd, 2U, 0U, 80U);                            /* only RIGHT faint: towards it */
+    CHECK(r.last.state == LF_ST_REACQUIRING);
+    CHECK(r.last.steer_q7 == LF_SD_SEEK_Q7);
+    r = run(&sd, 2U, 85U, 0U);                            /* only LEFT faint */
+    CHECK(r.last.steer_q7 == -LF_SD_SEEK_Q7);
+    r = run(&sd, 2U, 20U, 20U);                           /* nothing faint enough: the arc continues */
+    CHECK(r.last.state == LF_ST_REACQUIRING);
+    CHECK((r.last.steer_q7 == LF_SEARCH_Q7) || (r.last.steer_q7 == -LF_SEARCH_Q7));
+}
+
 /* Test 6: avoidance hand-back and a sensor fault. */
 static void test_suspended_and_fault(void)
 {
@@ -856,6 +893,7 @@ int main(void)
     test_junction();
     test_suspended_and_fault();
     test_turn_side();
+    test_search_seek();
     test_floor();
     test_slow_search();
     test_both_dark();

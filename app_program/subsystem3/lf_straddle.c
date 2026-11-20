@@ -449,6 +449,23 @@ static bool sd_st_search(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt, lf_
         p_sd->steer_q7 = 0;
         may_post = false;
     }
+    else if ((p_v->dl >= LF_SD_SEEK_PM) || (p_v->dr >= LF_SD_SEEK_PM))
+    {
+        int32_t const diff = (int32_t)p_v->dr - (int32_t)p_v->dl;
+        bool const both = (p_v->dl >= LF_SD_SEEK_PM) && (p_v->dr >= LF_SD_SEEK_PM);
+
+        if (both && (diff < (int32_t)LF_SD_SEEK_DB_PM) && (diff > -(int32_t)LF_SD_SEEK_DB_PM))
+        {
+            sd_enter_on_line(p_sd, false);      /* the line is between the sensors: straight on */
+            p_sd->steer_q7 = 0;
+        }
+        else
+        {
+            /* an edge: towards the darker sensor, and remember that side */
+            p_sd->side = (diff > 0) ? LF_SIDE_RIGHT : LF_SIDE_LEFT;
+            p_sd->steer_q7 = sd_side_steer(p_sd->side, LF_SD_SEEK_Q7);
+        }
+    }
     else
     {
         lf_side_t const s = (p_sd->srch_cnt > LF_SD_SWAP_CNT) ? sd_other_side(p_sd->side) : p_sd->side;
