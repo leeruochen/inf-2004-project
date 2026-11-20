@@ -93,6 +93,17 @@ bool obs_choose_side(obstacle_profile_t prof, uint32_t *p_side);
  */
 uint32_t obs_leg_out_mm(uint32_t width_mm);
 
+/*
+ * Pure: how far the car must travel alongside the hardcoded 10 cm
+ * obstacle (OBS_OBSTACLE_DEPTH_MM = 100 mm) before turning back toward the
+ * line, accounting for stand-off distance dist_mm, chassis rear overhang,
+ * and forward progress already made on the 45 degree out-leg.
+ */
+uint32_t obs_leg_along_mm(uint32_t dist_mm, uint32_t width_mm);
+
+/** Pure: quadrature encoder counts corresponding to distance_mm. */
+uint32_t obs_mm_to_counts(uint32_t distance_mm);
+
 /** Pure: milliseconds to cover distance_mm at MOTION_SPEED_BYPASS_CMPS. */
 uint32_t obs_mm_to_ms(uint32_t distance_mm);
 

@@ -231,10 +231,10 @@
 #define MOTOR_DUTY_MAX_PCT          (95U)
 /** Servo PWM frequency. */
 #define SERVO_PWM_FREQ_HZ           (50U)
-/** Servo minimum pulse width. TUNE */
-#define SERVO_PULSE_MIN_US          (1000U)
-/** Servo maximum pulse width. TUNE */
-#define SERVO_PULSE_MAX_US          (2000U)
+/** Servo minimum pulse width (0 deg full right; standard 500..2500 us SG90/MG90S). TUNE */
+#define SERVO_PULSE_MIN_US          (500U)
+/** Servo maximum pulse width (180 deg full left; standard 500..2500 us SG90/MG90S). TUNE */
+#define SERVO_PULSE_MAX_US          (2500U)
 
 /* ---------------------------------------------------------------------------
  * Power notes. The power bank supplies the motor driver and the Pico W.

@@ -7,44 +7,31 @@
  *
  *  Responsibilities (specs.md FR6/FR7, design.md 3.1/3.3, TEAM.md IF-03/05):
  *    - Drift-free OBS_SERVO_STEP_PERIOD_MS (60 ms) grid via app_period_wait().
- *    - Sweeps the servo coarsely (OBS_COARSE_BEARING_COUNT bearings,
- *      OBS_COARSE_STEP_DEG apart, 30..150 degrees), ping-ponging so the horn
- *      never has to cross the whole span between sweeps.
- *    - Pings up to OBS_PINGS_PER_BEARING times per bearing and keeps the
- *      median, which rejects a single spurious echo.
- *    - After OBS_DETECT_CONFIRM_COUNT consecutive coarse sweeps that see
- *      something inside OBS_D_DETECT_CM, runs a fine sweep of
- *      OBS_FINE_STEP_DEG steps over +-OBS_FINE_HALF_SPAN_DEG around the
- *      detection bearing, then profiles the obstacle.
+ *    - Watch ahead at 90 deg while driving; on OBS_DETECT_CONFIRM_COUNT
+ *      consecutive detections inside OBS_D_DETECT_CM, immediately signal
+ *      Obstacle Avoidance (halt profile) so the car stops before sweeping.
+ *    - Once encoders confirm standstill, confirm distance over
+ *      OBS_CONFIRM_SAMPLES pings at 90 deg, then slew smoothly to 50 deg
+ *      and sweep slowly across 50..130 deg in 5-degree steps with dedicated
+ *      settle periods for accurate width and side-clearance measurement.
  *    - Publishes obstacle_profile_t on MBF_OBSTACLE (IF-03) newest-wins,
  *      which needs drain-then-send (docs/DATA_REPRESENTATION.md 2.3).
  *    - Single setter AND clearer of EVF_SAFETY_STATUS_NO_ECHO
  *      (docs/DATA_REPRESENTATION.md section 3): informational, not a fault.
- *
- *  RESOLVED: "settle time vs 60 ms step" (HANDOVER.md section 3, Buddy 5's
- *  open decisions).  OBS_SERVO_SETTLE_MS (50 ms) plus three 30 ms echo
- *  timeouts cannot fit in one 60 ms period, so settling and pinging are
- *  separate passes over the grid: a period either settles or pings, never
- *  both.  The settle allowance is scaled by how far the horn actually has to
- *  travel (OBS_SETTLE_PER_STEP_MS per OBS_COARSE_STEP_DEG), so a 10 degree
- *  fine step settles in about 17 ms and still leaves its period free to
- *  ping, while a 30 degree coarse step takes a period of its own.  Pinging is
- *  additionally capped at OBS_PING_BUDGET_MS so a no-echo bearing (one 30 ms
- *  timeout) cannot overrun its period.
- *  Measured sweep times to record in testing/subsystem5/TEST_LOG.md:
- *  coarse about 10 periods (600 ms), fine about 7 periods (420 ms).
  */
 
 #include "task_obs_scan.h"
 
 #include <string.h>
 
+#include "../subsystem1/subsystem1.h"   /* tel_set_range_cm, tel_post_obstacle (IF-12, dashboard integration) */
+#include "../subsystem2/subsystem2.h"   /* motion_get_state, vc_get_system_state */
 #include "config/thresholds.h"
 #include "config/timing.h"
 #include "drv_servo.h"
 #include "drv_ultrasonic.h"
 #include "src/debug/dbg.h"
-#include "../subsystem1/subsystem1.h"   /* tel_set_range_cm, tel_post_obstacle (IF-12, dashboard integration) */
+#include "task_obs_avoid.h"
 
 /* ---------------------------------------------------------------------------
  * Compile-time checks on the tuning constants this task depends on.
@@ -53,14 +40,8 @@
 #if OBS_SERVO_STEP_PERIOD_MS == 0U
 #error "task_obs_scan.c: OBS_SERVO_STEP_PERIOD_MS must not be 0"
 #endif
-#if (OBS_FINE_STEP_DEG == 0U) || ((OBS_FINE_STEP_DEG % 10U) != 0U)
-#error "task_obs_scan.c: OBS_FINE_STEP_DEG must be a non-zero multiple of 10"
-#endif
-#if (OBS_COARSE_STEP_DEG == 0U) || ((OBS_COARSE_STEP_DEG % 10U) != 0U)
-#error "task_obs_scan.c: OBS_COARSE_STEP_DEG must be a non-zero multiple of 10"
-#endif
-#if ((OBS_FINE_HALF_SPAN_DEG % OBS_FINE_STEP_DEG) != 0U)
-#error "task_obs_scan.c: OBS_FINE_HALF_SPAN_DEG must be a whole number of fine steps"
+#if OBS_FINE_STEP_DEG == 0U
+#error "task_obs_scan.c: OBS_FINE_STEP_DEG must not be 0"
 #endif
 #if OBS_PINGS_PER_BEARING == 0U
 #error "task_obs_scan.c: OBS_PINGS_PER_BEARING must be at least 1"
@@ -73,22 +54,38 @@
 #endif
 
 /** Detection range in millimetres. */
-#define OBS_DETECT_MM           ((uint32_t)OBS_D_DETECT_CM * 10U)
+#define OBS_DETECT_MM               ((uint32_t)OBS_D_DETECT_CM * 10U)
+
+/** Hysteresis added after stopping so threshold-edge targets stay valid. */
+#define OBS_DETECT_HYST_MM          (30U)
 
 /** Largest range the IF-03 distance field can carry, in millimetres. */
-#define OBS_MAX_RANGE_MM        ((uint32_t)DREP_OBS_DIST_MAX_CM * 10U)
-
-/** Servo settle allowance per OBS_COARSE_STEP_DEG of travel.  TUNE:
- *  promote to config/thresholds.h once measured (S5-U13). */
-#define OBS_SETTLE_PER_STEP_MS  ((uint32_t)OBS_SERVO_SETTLE_MS)
-
-/** Floor and ceiling on the scaled settle allowance. */
-#define OBS_SETTLE_MIN_MS       (8U)
-#define OBS_SETTLE_MAX_MS       (250U)
+#define OBS_MAX_RANGE_MM            ((uint32_t)DREP_OBS_DIST_MAX_CM * 10U)
 
 /** Time allowed for all the pings at one bearing.  Keeps a bearing inside
  *  its 60 ms period: one 30 ms timeout fits, a second one does not.  TUNE. */
-#define OBS_PING_BUDGET_MS      (45U)
+#define OBS_PING_BUDGET_MS          (45U)
+
+/** Standstill confirmation ticks (3 x 60 ms = 180 ms) before confirming range. */
+#define OBS_CONFIRM_STILL_TICKS     (3U)
+
+/** Maximum wait for standstill confirmation (ms). */
+#define OBS_CONFIRM_MAX_WAIT_MS     (600U)
+
+/** Stationary 3-ping median samples collected to confirm distance at 90 deg. */
+#define OBS_CONFIRM_SAMPLES         (3U)
+
+/** Smooth servo slew step (deg per 60 ms tick) to sweep start and home. */
+#define OBS_SLEW_STEP_DEG           (5U)
+
+/** Bench/idle cooldown between scans when VC is not navigating (ms). */
+#define OBS_IDLE_RESCAN_COOLDOWN_MS (2000U)
+
+/** Stationary 5-degree width-sweep bounds (50..130 deg, +/-40 deg around 90 deg). */
+#define OBS_SWEEP_DEG_MIN           (50U)
+#define OBS_SWEEP_DEG_MAX           (130U)
+#define OBS_FINE5_LO_SLOT           OBS_FINE5_DEG_TO_SLOT(OBS_SWEEP_DEG_MIN)
+#define OBS_FINE5_HI_SLOT           OBS_FINE5_DEG_TO_SLOT(OBS_SWEEP_DEG_MAX)
 
 /** A bearing belongs to the same obstacle as the nearest return if it is
  *  within this much of it.  TUNE: promote to thresholds.h after S5-U14.
@@ -134,6 +131,10 @@
  *  report that object as 190 mm wide. */
 #define OBS_BEAM_DEG            (40U)
 
+/** Calibrated physical HC-SR04 beam width used by the 5-degree stationary scan
+ *  with full 500..2500 us servo range (deduced from 86 mm box at 240 mm). */
+#define OBS_FINE5_BEAM_DEG      (35U)
+
 /** Smallest width an obstacle is ever reported with.  Anything the sensor
  *  returns at all is a real object, and planning a bypass around a 13 mm
  *  obstacle would clip it.  MEASURED 2026-11-04: narrow objects resolve to
@@ -143,11 +144,22 @@
 /** Radians per degree, scaled by 100000 (pi / 180 = 0.0174533). */
 #define OBS_RAD_PER_DEG_M100K   (1745U)
 
-/** Fine sweep bearings: +-half span in whole steps, plus the centre. */
-#define OBS_FINE_SLOT_SPAN      (OBS_FINE_HALF_SPAN_DEG / 10U)
+/** Bearing the servo holds while watching ahead: straight on. */
+#define OBS_WATCH_AHEAD_DEG     (90U)
+
+typedef enum
+{
+    SCAN_WATCH = 0,
+    SCAN_CONFIRM,
+    SCAN_SLEW_START,
+    SCAN_SWEEP,
+    SCAN_SLEW_HOME,
+    SCAN_BYPASS_PARK
+} scan_phase_t;
 
 static bool               s_running = false;
 static obs_scan_t         s_scan;
+static obs_scan5_t        s_fine5;
 static obs_scan_t         s_last_sweep;
 static obstacle_profile_t s_last_profile;
 static uint32_t           s_profile_count = 0U;
@@ -155,31 +167,17 @@ static uint32_t           s_sweep_count = 0U;
 static uint32_t           s_seq = 0U;
 static bool               s_no_echo_set = false;  /* last state written; diagnostics only */
 
-/* Sweep cursor. */
-/** Bearing the servo holds while watching ahead: straight on.
- *
- *  WATCH MODE (2026-11-19).  Stage 1 of specs.md used to ping-pong the
- *  coarse span continuously, so the servo swept for the whole run even on
- *  empty track.  The sensor now parks here and only pings, and the coarse
- *  sweep starts when something answers ahead.  The beam is OBS_BEAM_DEG
- *  (40 degrees) wide, so parked at 90 it already covers 70..110 degrees --
- *  everything in the car's own path.
- *
- *  What this costs: an obstacle that is beside the car but not in front of
- *  it is no longer seen until the car faces it.  For a line follower the
- *  obstacles are on the path ahead, so that is an acceptable trade, but it
- *  is a real reduction in what the subsystem notices. */
-#define OBS_WATCH_AHEAD_DEG     (90U)
-
-/** True while the servo is parked at OBS_WATCH_AHEAD_DEG, pinging only. */
-static bool     s_watch_mode = true;
-static bool     s_fine_mode = false;
-static uint32_t s_slot = OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN);
-static int32_t  s_dir = 1;                  /* +1 towards the left, -1 right */
-static uint32_t s_fine_lo_slot = 0U;
-static uint32_t s_fine_hi_slot = 0U;
-static uint32_t s_confirm = 0U;
-static uint32_t s_settle_until_ms = 0U;
+static scan_phase_t       s_phase = SCAN_WATCH;
+static uint32_t           s_confirm = 0U;
+static uint32_t           s_confirm_still_ticks = 0U;
+static uint32_t           s_confirm_n = 0U;
+static uint32_t           s_confirm_start_ms = 0U;
+static int32_t            s_confirm_prev_enc[2];
+static uint16_t           s_confirm_buf[OBS_CONFIRM_SAMPLES];
+static uint32_t           s_fine5_slot = OBS_FINE5_LO_SLOT;
+static bool               s_slew_settled = false;
+static bool               s_sweep_settling = false;
+static uint32_t           s_watch_cooldown_until_ms = 0U;
 
 /* ---------------------------------------------------------------------------
  * Pure geometry
@@ -197,6 +195,15 @@ static int16_t const k_sin_m1000[OBS_BEARING_SLOTS] =
 {
        0,  174,  342,  500,  643,  766,  866,  940,  985, 1000,
      985,  940,  866,  766,  643,  500,  342,  174,     0
+};
+
+/* cos x 1000 for 0, 5, ... 180 degrees (37 slots). */
+static int16_t const k_cos5_m1000[OBS_FINE5_SLOTS] =
+{
+    1000,  996,  985,  966,  940,  906,  866,  819,  766,  707,
+     643,  574,  500,  423,  342,  259,  174,   87,    0,  -87,
+    -174, -259, -342, -423, -500, -574, -643, -707, -766, -819,
+    -866, -906, -940, -966, -985, -996, -1000
 };
 
 int32_t obs_cos_m1000(uint32_t deg)
@@ -272,26 +279,18 @@ uint16_t obs_median3_mm(uint16_t a, uint16_t b, uint16_t c)
     return v[1];
 }
 
-/** True if slot i of the sweep is part of the obstacle run (within thresh). */
-static bool slot_is_obstacle(obs_scan_t const *p_scan, uint32_t i, uint32_t thresh_mm)
-{
-    uint32_t const d = (uint32_t)p_scan->dist_mm[i];
-
-    return (d != 0U) && (d <= thresh_mm);
-}
-
-/** True if bearing i continues the run that bearing prev_mm is already in.
+/** True if slot i continues the run that bearing prev_mm is already in.
  *
  *  Both tests have to hold: within OBS_EDGE_TOL_MM of the nearest return
  *  (the obstacle cannot be unboundedly deep) AND within OBS_EDGE_STEP_MM of
  *  the neighbour already in the run (no step change to another surface). */
-static bool slot_joins_run(obs_scan_t const *p_scan, uint32_t i,
+static bool slot_joins_run(uint16_t const *p_dist, uint32_t i,
                            uint32_t thresh_mm, uint32_t prev_mm)
 {
-    uint32_t const d = (uint32_t)p_scan->dist_mm[i];
+    uint32_t const d = (uint32_t)p_dist[i];
     uint32_t       step_mm;
 
-    if (!slot_is_obstacle(p_scan, i, thresh_mm))
+    if ((d == 0U) || (d > thresh_mm))
     {
         return false;
     }
@@ -300,17 +299,25 @@ static bool slot_joins_run(obs_scan_t const *p_scan, uint32_t i,
     return step_mm <= (uint32_t)OBS_EDGE_STEP_MM;
 }
 
-bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
+static bool analyse_sweep_common(uint16_t const *p_dist,
+                                 uint32_t        slot_count,
+                                 uint32_t        lo_in,
+                                 uint32_t        hi_in,
+                                 uint32_t        step_deg,
+                                 uint32_t        beam_deg,
+                                 uint32_t        detect_cap_mm,
+                                 int16_t const  *p_cos_m1000,
+                                 obs_result_t   *p_out)
 {
-    if ((p_scan == NULL) || (p_out == NULL))
+    if ((p_dist == NULL) || (p_cos_m1000 == NULL) || (p_out == NULL) || (slot_count == 0U))
     {
         return false;
     }
     (void)memset(p_out, 0, sizeof(*p_out));
 
-    uint32_t const lo = (p_scan->lo_slot < OBS_BEARING_SLOTS) ? p_scan->lo_slot : 0U;
-    uint32_t const hi = (p_scan->hi_slot < OBS_BEARING_SLOTS) ? p_scan->hi_slot
-                                                              : (OBS_BEARING_SLOTS - 1U);
+    uint32_t const lo = (lo_in < slot_count) ? lo_in : 0U;
+    uint32_t const hi = (hi_in < slot_count) ? hi_in : (slot_count - 1U);
+
     if (lo > hi)
     {
         return false;
@@ -322,9 +329,9 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
 
     for (uint32_t i = lo; i <= hi; i++)
     {
-        uint32_t const d = (uint32_t)p_scan->dist_mm[i];
+        uint32_t const d = (uint32_t)p_dist[i];
 
-        if ((d == 0U) || (d > OBS_DETECT_MM))
+        if ((d == 0U) || (d > detect_cap_mm))
         {
             continue;
         }
@@ -340,24 +347,23 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
     }
 
     /* 2. Contiguous run of bearings that belong to the same obstacle. */
-    uint32_t const thresh_mm = near_mm + OBS_EDGE_TOL_MM;
+    uint32_t const thresh_mm = near_mm + (uint32_t)OBS_EDGE_TOL_MM;
     uint32_t       right_slot = near_slot;
     uint32_t       left_slot = near_slot;
-
     uint32_t       prev_mm = near_mm;
 
     while ((right_slot > lo)
-           && slot_joins_run(p_scan, right_slot - 1U, thresh_mm, prev_mm))
+           && slot_joins_run(p_dist, right_slot - 1U, thresh_mm, prev_mm))
     {
         right_slot--;
-        prev_mm = (uint32_t)p_scan->dist_mm[right_slot];
+        prev_mm = (uint32_t)p_dist[right_slot];
     }
     prev_mm = near_mm;
     while ((left_slot < hi)
-           && slot_joins_run(p_scan, left_slot + 1U, thresh_mm, prev_mm))
+           && slot_joins_run(p_dist, left_slot + 1U, thresh_mm, prev_mm))
     {
         left_slot++;
-        prev_mm = (uint32_t)p_scan->dist_mm[left_slot];
+        prev_mm = (uint32_t)p_dist[left_slot];
     }
 
     /* 3. Lateral extent of the run.  Positive x is to the car's right, so
@@ -367,12 +373,14 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
 
     for (uint32_t i = right_slot; i <= left_slot; i++)
     {
-        if (!slot_is_obstacle(p_scan, i, thresh_mm))
+        uint32_t const d = (uint32_t)p_dist[i];
+
+        if ((d == 0U) || (d > thresh_mm))
         {
             continue;
         }
 
-        int32_t const x = obs_lateral_mm((uint32_t)p_scan->dist_mm[i], OBS_SLOT_TO_DEG(i));
+        int32_t const x = ((int32_t)d * (int32_t)p_cos_m1000[i]) / 1000;
 
         if (x < x_min)
         {
@@ -393,38 +401,19 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
      *    (never report a smaller obstacle than was measured).
      *      a) angular span x range, with the sensor beam width removed
      *      b) the lateral extent of the run */
-    /* One extra fine step covers the sample at each end of the run.  Only a
-     * fine sweep is ever packed into a profile, so the fine step is the right
-     * sample pitch to add here. */
-    uint32_t const span_deg = ((left_slot - right_slot) * 10U) + OBS_FINE_STEP_DEG;
-    /* A run no wider than the beam cannot be resolved any finer than the
-     * beam itself, so the beam width is the floor.  Flooring at the (smaller)
-     * sample pitch instead would under-report a one-bearing hit, and
-     * docs/DATA_REPRESENTATION.md 2.3 requires the width to err wide. */
-    uint32_t const eff_deg = (span_deg > OBS_BEAM_DEG)
-                                 ? (span_deg - OBS_BEAM_DEG)
-                                 : OBS_FINE_STEP_DEG;
+    uint32_t const span_deg = ((left_slot - right_slot) * step_deg) + step_deg;
+    uint32_t const eff_deg = (span_deg > beam_deg)
+                                 ? (span_deg - beam_deg)
+                                 : step_deg;
     uint32_t const w_angle = (uint32_t)(((uint64_t)near_mm * (uint64_t)eff_deg
                                          * (uint64_t)OBS_RAD_PER_DEG_M100K) / 100000ULL);
 
-    /* The lateral extent is smeared by the same beam: the run's end bearings
-     * are the ones where the object was still inside the cone, not where it
-     * really ends.  Subtract the arc the beam spans at this range before
-     * comparing, or the extent always wins the max() below and every object
-     * is reported about a beam-width too wide. */
-    uint32_t const beam_mm = (uint32_t)(((uint64_t)near_mm * (uint64_t)OBS_BEAM_DEG
+    uint32_t const beam_mm = (uint32_t)(((uint64_t)near_mm * (uint64_t)beam_deg
                                          * (uint64_t)OBS_RAD_PER_DEG_M100K) / 100000ULL);
     uint32_t const raw_extent = (uint32_t)(x_max - x_min);
     uint32_t const w_extent = (raw_extent > beam_mm) ? (raw_extent - beam_mm) : 0U;
     uint32_t       width_mm = (w_angle > w_extent) ? w_angle : w_extent;
 
-    /* Floor.  When the run is a single bearing the angular estimate collapses
-     * to one sample pitch (about 13 mm at 76 mm range), and the beam
-     * subtraction above can take the extent estimate to nearly zero.  Either
-     * way the obstacle would be reported far narrower than anything the car
-     * can actually see, obs_leg_out_mm() would plan a turn too short to clear
-     * it, and the car would clip it.  docs/DATA_REPRESENTATION.md 2.3
-     * requires width to err wide, so hold a floor instead. */
     if (width_mm < (uint32_t)OBS_WIDTH_MIN_MM)
     {
         width_mm = (uint32_t)OBS_WIDTH_MIN_MM;
@@ -442,7 +431,7 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
 
     for (uint32_t i = lo; i <= hi; i++)
     {
-        uint32_t const d = (uint32_t)p_scan->dist_mm[i];
+        uint32_t const d = (uint32_t)p_dist[i];
 
         if ((i >= right_slot) && (i <= left_slot))
         {
@@ -453,7 +442,7 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
             continue;                   /* open space on this bearing */
         }
 
-        int32_t const x = obs_lateral_mm(d, OBS_SLOT_TO_DEG(i));
+        int32_t const x = ((int32_t)d * (int32_t)p_cos_m1000[i]) / 1000;
 
         if (x > x_max)
         {
@@ -480,20 +469,78 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
         }
     }
 
+    /* 6. Representative bearing: centre of the run.  For 5-degree scans, round
+     *    symmetrically away from 90 deg to whole 10-degree IF-03 steps so
+     *    neither left nor right side choice is biased. */
+    uint32_t bearing_deg;
+
+    if (step_deg == (uint32_t)OBS_FINE5_STEP_DEG)
+    {
+        uint32_t const mid_deg = ((right_slot + left_slot) * step_deg) / 2U;
+
+        if (mid_deg == 90U)
+        {
+            bearing_deg = 90U;
+        }
+        else if (mid_deg < 90U)
+        {
+            bearing_deg = (mid_deg / 10U) * 10U;
+        }
+        else
+        {
+            bearing_deg = ((mid_deg + 9U) / 10U) * 10U;
+        }
+    }
+    else
+    {
+        bearing_deg = ((right_slot + left_slot) / 2U) * step_deg;
+    }
+
     p_out->near_mm = (uint16_t)near_mm;
     p_out->width_mm = (uint16_t)width_mm;
     p_out->clear_l_mm = (uint16_t)clear_l;
     p_out->clear_r_mm = (uint16_t)clear_r;
     p_out->centre_x_mm = (int16_t)((x_min + x_max) / 2);
-    /* Report the centre of the run, not near_slot: with several bearings at
-     * the same range near_slot is just the first one scanned, which would put
-     * a centred obstacle off to one side and mislead obs_choose_side(). */
-    p_out->bearing_deg = (uint8_t)OBS_SLOT_TO_DEG((right_slot + left_slot) / 2U);
-    p_out->left_deg = (uint8_t)OBS_SLOT_TO_DEG(left_slot);
-    p_out->right_deg = (uint8_t)OBS_SLOT_TO_DEG(right_slot);
+    p_out->bearing_deg = (uint8_t)bearing_deg;
+    p_out->left_deg = (uint8_t)(left_slot * step_deg);
+    p_out->right_deg = (uint8_t)(right_slot * step_deg);
     p_out->valid = true;
 
     return true;
+}
+
+bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
+{
+    if (p_scan == NULL)
+    {
+        return false;
+    }
+    return analyse_sweep_common(p_scan->dist_mm,
+                                OBS_BEARING_SLOTS,
+                                p_scan->lo_slot,
+                                p_scan->hi_slot,
+                                (uint32_t)OBS_FINE_STEP_DEG,
+                                (uint32_t)OBS_BEAM_DEG,
+                                OBS_DETECT_MM,
+                                k_cos_m1000,
+                                p_out);
+}
+
+bool obs_analyse_fine5(obs_scan5_t const *p_scan, obs_result_t *p_out)
+{
+    if (p_scan == NULL)
+    {
+        return false;
+    }
+    return analyse_sweep_common(p_scan->dist_mm,
+                                OBS_FINE5_SLOTS,
+                                p_scan->lo_slot,
+                                p_scan->hi_slot,
+                                (uint32_t)OBS_FINE5_STEP_DEG,
+                                (uint32_t)OBS_FINE5_BEAM_DEG,
+                                OBS_DETECT_MM + OBS_DETECT_HYST_MM,
+                                k_cos5_m1000,
+                                p_out);
 }
 
 obstacle_profile_t obs_result_to_profile(obs_result_t const *p_res, uint32_t seq)
@@ -654,7 +701,7 @@ static void publish_no_echo(bool no_echo)
  * send on a full buffer returns E_TMOUT instead of overwriting, so the
  * sender must drain first (docs/DATA_REPRESENTATION.md 2.3).
  */
-static void send_profile(obstacle_profile_t prof)
+static void send_profile(obstacle_profile_t prof, bool publish_tel)
 {
     obstacle_profile_t drop;
 
@@ -669,7 +716,10 @@ static void send_profile(obstacle_profile_t prof)
     {
         s_last_profile = prof;
         s_profile_count++;
-        tel_post_obstacle(prof);        /* dashboard integration (IF-12): newest wins, never waits */
+        if (publish_tel)
+        {
+            tel_post_obstacle(prof);    /* dashboard integration (IF-12): newest wins, never waits */
+        }
         s_seq = (s_seq + 1U) & DREP_MASK(DREP_OBS_SEQ_BITS);
     }
     else
@@ -679,200 +729,116 @@ static void send_profile(obstacle_profile_t prof)
 }
 
 /* ---------------------------------------------------------------------------
- * Sweep cursor
+ * Scan state machine:
+ *   WATCH -> CONFIRM (stop & confirm range) -> SLEW_START -> SWEEP (5 deg)
+ *   -> SLEW_HOME -> BYPASS_PARK / WATCH
  * ------------------------------------------------------------------------- */
 
-/** Command the horn to a slot and charge the settle allowance for the move. */
-static void move_to_slot(uint32_t slot, uint32_t now_ms)
+static bool scan_vc_is_navigating(uint32_t vc_state)
 {
-    uint32_t const from_deg = servo_get_deg();
-    uint32_t const to_deg = OBS_SLOT_TO_DEG(slot);
-    uint32_t const travel = (to_deg > from_deg) ? (to_deg - from_deg) : (from_deg - to_deg);
-    uint32_t       settle = ((travel * OBS_SETTLE_PER_STEP_MS) + (OBS_COARSE_STEP_DEG - 1U))
-                           / OBS_COARSE_STEP_DEG;
-
-    if (settle < OBS_SETTLE_MIN_MS)
-    {
-        settle = OBS_SETTLE_MIN_MS;
-    }
-    if (settle > OBS_SETTLE_MAX_MS)
-    {
-        settle = OBS_SETTLE_MAX_MS;
-    }
-
-    s_slot = slot;
-    servo_set_deg(to_deg);
-    s_settle_until_ms = now_ms + settle;
+    return ((vc_state >= VC_SYS_NAV_LINE_TRACKING) && (vc_state <= VC_SYS_NAV_TURN_RIGHT))
+           || (vc_state == VC_SYS_OBSTACLE_AVOIDANCE);
 }
 
-/*
- * True if slot lo is the nearer end of [lo, hi] from the horn's present
- * bearing.  Signed on purpose: the horn can sit outside [lo, hi] (a fine
- * window near one extreme, or the coarse span after a fine sweep), and
- * unsigned arithmetic would wrap and pick the far end.
- */
-static bool lo_end_is_nearer(uint32_t lo, uint32_t hi)
+static bool avoid_is_manoeuvring(uint32_t av_state)
 {
-    int32_t const here = (int32_t)OBS_DEG_TO_SLOT(servo_get_deg());
-    int32_t const d_lo = (here > (int32_t)lo) ? (here - (int32_t)lo) : ((int32_t)lo - here);
-    int32_t const d_hi = (here > (int32_t)hi) ? (here - (int32_t)hi) : ((int32_t)hi - here);
-
-    return d_lo <= d_hi;
+    return (av_state != OBS_AV_IDLE) && (av_state != OBS_AV_SLOW);
 }
 
-/** Widen the analysis window to the coarse span plus whatever the fine sweep
- *  covered, so clearances can use the context either side of the obstacle. */
-static void set_analysis_window(uint32_t lo_slot, uint32_t hi_slot)
+static bool slew_step_toward(uint32_t target_deg)
 {
-    uint32_t const coarse_lo = OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN);
-    uint32_t const coarse_hi = OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX);
+    uint32_t const cur = servo_get_deg();
 
-    s_scan.lo_slot = (uint8_t)((lo_slot < coarse_lo) ? lo_slot : coarse_lo);
-    s_scan.hi_slot = (uint8_t)((hi_slot > coarse_hi) ? hi_slot : coarse_hi);
-}
-
-/** Enter the fine sweep centred on a coarse detection bearing. */
-static void enter_fine(uint32_t centre_deg, uint32_t now_ms)
-{
-    uint32_t const centre_slot = OBS_DEG_TO_SLOT(centre_deg);
-    uint32_t       lo = (centre_slot > OBS_FINE_SLOT_SPAN) ? (centre_slot - OBS_FINE_SLOT_SPAN) : 0U;
-    uint32_t       hi = centre_slot + OBS_FINE_SLOT_SPAN;
-
-    if (hi > (OBS_BEARING_SLOTS - 1U))
+    if (cur == target_deg)
     {
-        hi = OBS_BEARING_SLOTS - 1U;
+        return true;
     }
 
-    s_fine_mode = true;
-    s_fine_lo_slot = lo;
-    s_fine_hi_slot = hi;
+    uint32_t next;
 
-    /* Start the fine sweep from whichever end the horn is already nearest. */
-    if (lo_end_is_nearer(lo, hi))
+    if (cur > target_deg)
     {
-        s_dir = 1;
-        move_to_slot(lo, now_ms);
+        uint32_t const diff = cur - target_deg;
+
+        next = (diff > (uint32_t)OBS_SLEW_STEP_DEG)
+                   ? (cur - (uint32_t)OBS_SLEW_STEP_DEG) : target_deg;
     }
     else
     {
-        s_dir = -1;
-        move_to_slot(hi, now_ms);
+        uint32_t const diff = target_deg - cur;
+
+        next = (diff > (uint32_t)OBS_SLEW_STEP_DEG)
+                   ? (cur + (uint32_t)OBS_SLEW_STEP_DEG) : target_deg;
     }
+    servo_set_deg(next);
+    return false;
 }
 
-/** Leave the fine sweep and resume coarse ping-ponging. */
-static void enter_coarse(uint32_t now_ms)
+static void enter_watch(uint32_t cooldown_until_ms)
 {
-    s_fine_mode = false;
+    s_phase = SCAN_WATCH;
     s_confirm = 0U;
-
-    uint32_t const lo = OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN);
-    uint32_t const hi = OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX);
-
-    /* Resume at the nearer end of the coarse span, sweeping inwards. */
-    if (lo_end_is_nearer(lo, hi))
+    s_watch_cooldown_until_ms = cooldown_until_ms;
+    if (servo_get_deg() != (uint32_t)OBS_WATCH_AHEAD_DEG)
     {
-        s_dir = 1;
-        move_to_slot(lo, now_ms);
-    }
-    else
-    {
-        s_dir = -1;
-        move_to_slot(hi, now_ms);
+        servo_set_deg((uint32_t)OBS_WATCH_AHEAD_DEG);
     }
 }
 
-/** Park the servo ahead and stop sweeping until something answers. */
-static void enter_watch(uint32_t now_ms)
+static void enter_confirm(uint32_t now_ms)
 {
-    if (!s_watch_mode)
+    motion_state_t ms;
+
+    s_phase = SCAN_CONFIRM;
+    s_confirm_still_ticks = 0U;
+    s_confirm_n = 0U;
+    s_confirm_start_ms = now_ms;
+    s_confirm_prev_enc[0] = 0;
+    s_confirm_prev_enc[1] = 0;
+    if (motion_get_state(&ms) == E_OK)
     {
-        dbg_puts("[S5] nothing ahead, watching");
+        s_confirm_prev_enc[0] = ms.enc_count[0];
+        s_confirm_prev_enc[1] = ms.enc_count[1];
     }
-    s_watch_mode = true;
-    s_fine_mode = false;
+    if (servo_get_deg() != (uint32_t)OBS_WATCH_AHEAD_DEG)
+    {
+        servo_set_deg((uint32_t)OBS_WATCH_AHEAD_DEG);
+    }
+}
+
+static void enter_bypass_park(void)
+{
+    s_phase = SCAN_BYPASS_PARK;
     s_confirm = 0U;
-    set_analysis_window(OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN),
-                        OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX));
-    move_to_slot(OBS_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG), now_ms);
-}
-
-/** Watching ahead: the servo is parked, so only the range matters.  A
- *  confirmed return inside OBS_DETECT_MM starts the Stage 1 coarse sweep,
- *  which then locates the obstacle properly. */
-static void watch_step(uint16_t mm, uint32_t now_ms)
-{
-    if ((mm != 0U) && (mm <= (uint16_t)OBS_DETECT_MM))
+    if (servo_get_deg() != (uint32_t)OBS_WATCH_AHEAD_DEG)
     {
-        s_confirm++;
-        if (s_confirm >= (uint32_t)OBS_DETECT_CONFIRM_COUNT)
-        {
-            dbg_printf("[S5] watch hit %lu mm ahead, coarse scan",
-                       (unsigned long)mm);
-            s_watch_mode = false;
-            enter_coarse(now_ms);   /* clears s_confirm, picks a sweep end */
-        }
-    }
-    else
-    {
-        s_confirm = 0U;
+        servo_set_deg((uint32_t)OBS_WATCH_AHEAD_DEG);
     }
 }
 
-/** A coarse sweep has just finished: decide whether to profile it. */
-static void finish_coarse_sweep(uint32_t now_ms)
+static void enter_slew_start(void)
 {
-    obs_result_t res;
-
-    set_analysis_window(OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN),
-                        OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX));
-    s_last_sweep = s_scan;
-    s_sweep_count++;
-
-    if (obs_analyse(&s_scan, &res) && (res.near_mm <= OBS_DETECT_MM))
-    {
-        s_confirm++;
-        if (s_confirm >= (uint32_t)OBS_DETECT_CONFIRM_COUNT)
-        {
-            dbg_printf("[S5] coarse hit %lu mm @ %lu deg, fine scan",
-                       (unsigned long)res.near_mm, (unsigned long)res.bearing_deg);
-            enter_fine(res.bearing_deg, now_ms);
-            return;
-        }
-    }
-    else
-    {
-        s_confirm = 0U;
-    }
-
-    /* Nothing in range anywhere in the span: park ahead instead of
-     * sweeping an empty track.  A partial confirmation keeps sweeping, so
-     * a real obstacle still gets its OBS_DETECT_CONFIRM_COUNT sweeps. */
-    if (s_confirm == 0U)
-    {
-        enter_watch(now_ms);
-        return;
-    }
-
-    /* Partly confirmed: sweep again to confirm it or clear it. */
-    s_dir = -s_dir;
-    move_to_slot((s_dir > 0) ? OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN)
-                             : OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX),
-                 now_ms);
+    (void)memset(&s_fine5, 0, sizeof(s_fine5));
+    (void)memset(&s_scan, 0, sizeof(s_scan));
+    s_fine5.lo_slot = (uint8_t)OBS_FINE5_LO_SLOT;
+    s_fine5.hi_slot = (uint8_t)OBS_FINE5_HI_SLOT;
+    s_scan.lo_slot = (uint8_t)((OBS_FINE5_LO_SLOT + 1U) / 2U);
+    s_scan.hi_slot = (uint8_t)(OBS_FINE5_HI_SLOT / 2U);
+    s_slew_settled = false;
+    s_phase = SCAN_SLEW_START;
 }
 
-/* Bring-up only: print every bearing of the sweep that was just analysed,
- * so the width figure can be checked against the raw samples. */
-static void dump_sweep(obs_result_t const *p_res)
+/* Bring-up only: print every 5-degree bearing of the sweep that was just analysed. */
+static void dump_sweep5(obs_result_t const *p_res)
 {
-    for (uint32_t i = 0U; i < OBS_BEARING_SLOTS; i++)
+    for (uint32_t i = OBS_FINE5_LO_SLOT; i <= OBS_FINE5_HI_SLOT; i++)
     {
-        uint32_t const d = (uint32_t)s_scan.dist_mm[i];
+        uint32_t const d = (uint32_t)s_fine5.dist_mm[i];
 
         if (d != 0U)
         {
             dbg_printf("[S5RAW]   %lu deg = %lu mm",
-                       (unsigned long)OBS_SLOT_TO_DEG(i), (unsigned long)d);
+                       (unsigned long)OBS_FINE5_SLOT_TO_DEG(i), (unsigned long)d);
         }
     }
     dbg_printf("[S5RAW] near=%lu edges %lu..%lu deg width=%lu",
@@ -882,66 +848,181 @@ static void dump_sweep(obs_result_t const *p_res)
                (unsigned long)p_res->width_mm);
 }
 
-/** A fine sweep has just finished: profile it and publish. */
-static void finish_fine_sweep(uint32_t now_ms)
+static void record_ping_health(uint16_t mm, bool is_ahead, uint32_t *p_echo_missed)
+{
+    if (is_ahead)
+    {
+        tel_set_range_cm((uint32_t)mm / 10U);   /* dashboard integration (IF-12): forward range, 0 = no echo */
+    }
+
+    if (mm != 0U)
+    {
+        *p_echo_missed = 0U;
+        publish_no_echo(false);
+    }
+    else
+    {
+        (*p_echo_missed)++;
+        if (*p_echo_missed >= (uint32_t)OBS_COARSE_BEARING_COUNT)
+        {
+            publish_no_echo(true);
+        }
+    }
+}
+
+static void watch_step(uint16_t mm, uint32_t now_ms)
+{
+    bool const nav = scan_vc_is_navigating(vc_get_system_state());
+
+    if (!nav && ((int32_t)(now_ms - s_watch_cooldown_until_ms) < 0))
+    {
+        s_confirm = 0U;
+        return;
+    }
+
+    if ((mm != 0U) && (mm <= (uint16_t)OBS_DETECT_MM))
+    {
+        s_confirm++;
+        if (s_confirm >= (uint32_t)OBS_DETECT_CONFIRM_COUNT)
+        {
+            int32_t dist_cm = (int32_t)((uint32_t)mm / 10U);
+
+            if (dist_cm < 1)
+            {
+                dist_cm = 1;
+            }
+            dbg_printf("[S5] watch hit %lu mm ahead, halting to confirm",
+                       (unsigned long)mm);
+
+            /* Preliminary halt profile (width = 0): stops the car immediately
+             * while leaving telemetry clean until the width sweep finishes. */
+            obstacle_profile_t const halt_prof = drep_obs_pack(
+                dist_cm,
+                ((int32_t)OBS_WATCH_AHEAD_DEG - 30) / 10,
+                0,
+                (int32_t)DREP_OBS_CLR_MAX_MM,
+                (int32_t)DREP_OBS_CLR_MAX_MM,
+                s_seq);
+
+            send_profile(halt_prof, false);
+            enter_confirm(now_ms);
+        }
+    }
+    else
+    {
+        s_confirm = 0U;
+    }
+}
+
+static void confirm_step(uint16_t mm, uint32_t now_ms)
+{
+    motion_state_t ms;
+    bool           is_still = false;
+
+    if (motion_get_state(&ms) == E_OK)
+    {
+        int32_t const spd = drep_ms_speed_x10(ms.w);
+
+        is_still = (spd == 0)
+                   && (ms.enc_count[0] == s_confirm_prev_enc[0])
+                   && (ms.enc_count[1] == s_confirm_prev_enc[1]);
+        s_confirm_prev_enc[0] = ms.enc_count[0];
+        s_confirm_prev_enc[1] = ms.enc_count[1];
+    }
+
+    if (s_confirm_still_ticks < (uint32_t)OBS_CONFIRM_STILL_TICKS)
+    {
+        if (is_still)
+        {
+            s_confirm_still_ticks++;
+        }
+        else
+        {
+            s_confirm_still_ticks = 0U;
+        }
+        if ((s_confirm_still_ticks < (uint32_t)OBS_CONFIRM_STILL_TICKS)
+            && ((now_ms - s_confirm_start_ms) < (uint32_t)OBS_CONFIRM_MAX_WAIT_MS))
+        {
+            return;
+        }
+        s_confirm_still_ticks = (uint32_t)OBS_CONFIRM_STILL_TICKS;
+        return;
+    }
+
+    if (s_confirm_n < (uint32_t)OBS_CONFIRM_SAMPLES)
+    {
+        s_confirm_buf[s_confirm_n] = mm;
+        s_confirm_n++;
+    }
+    if (s_confirm_n < (uint32_t)OBS_CONFIRM_SAMPLES)
+    {
+        return;
+    }
+
+    uint16_t const d_conf = obs_median3_mm(s_confirm_buf[0],
+                                           s_confirm_buf[1],
+                                           s_confirm_buf[2]);
+
+    if ((d_conf == 0U) || (d_conf > (uint16_t)(OBS_DETECT_MM + OBS_DETECT_HYST_MM)))
+    {
+        dbg_printf("[S5] confirm clear (%lu mm), resuming", (unsigned long)d_conf);
+        send_profile(obs_result_to_profile(NULL, s_seq), false);
+        enter_watch(0U);
+        return;
+    }
+
+    tel_set_range_cm((uint32_t)d_conf / 10U);
+    dbg_printf("[S5] stopped, confirmed d=%lu mm -> slow width scan",
+               (unsigned long)d_conf);
+    enter_slew_start();
+}
+
+static void finish_fine5_sweep(void)
 {
     obs_result_t res;
 
-    set_analysis_window(s_fine_lo_slot, s_fine_hi_slot);
+    s_fine5.lo_slot = (uint8_t)OBS_FINE5_LO_SLOT;
+    s_fine5.hi_slot = (uint8_t)OBS_FINE5_HI_SLOT;
+    s_scan.lo_slot = (uint8_t)((OBS_FINE5_LO_SLOT + 1U) / 2U);
+    s_scan.hi_slot = (uint8_t)(OBS_FINE5_HI_SLOT / 2U);
     s_last_sweep = s_scan;
     s_sweep_count++;
 
-    if (obs_analyse(&s_scan, &res))
+    if (obs_analyse_fine5(&s_fine5, &res))
     {
         dbg_printf("[S5] obstacle %lu mm @ %lu deg w=%lu clrL=%lu clrR=%lu",
                    (unsigned long)res.near_mm, (unsigned long)res.bearing_deg,
                    (unsigned long)res.width_mm, (unsigned long)res.clear_l_mm,
                    (unsigned long)res.clear_r_mm);
-        dump_sweep(&res);
-        send_profile(obs_result_to_profile(&res, s_seq));
+        dump_sweep5(&res);
+        send_profile(obs_result_to_profile(&res, s_seq), true);
     }
     else
     {
-        /* The obstacle went away between the coarse hit and the fine sweep:
-         * tell Avoidance so it can release, rather than leaving it waiting. */
-        send_profile(obs_result_to_profile(NULL, s_seq));
+        send_profile(obs_result_to_profile(NULL, s_seq), false);
     }
 
-    enter_coarse(now_ms);
+    s_slew_settled = false;
+    s_phase = SCAN_SLEW_HOME;
 }
 
-/** Step the cursor after a bearing has been measured. */
-static void advance_cursor(uint32_t now_ms)
+static void sweep_step(uint16_t mm)
 {
-    uint32_t const lo = s_fine_mode ? s_fine_lo_slot : OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN);
-    uint32_t const hi = s_fine_mode ? s_fine_hi_slot : OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX);
-    uint32_t const step = s_fine_mode ? (OBS_FINE_STEP_DEG / 10U) : (OBS_COARSE_STEP_DEG / 10U);
-
-    if (s_dir > 0)
+    s_fine5.dist_mm[s_fine5_slot] = mm;
+    if ((s_fine5_slot & 1U) == 0U)
     {
-        if ((s_slot + step) <= hi)
-        {
-            move_to_slot(s_slot + step, now_ms);
-            return;
-        }
+        s_scan.dist_mm[s_fine5_slot / 2U] = mm;
+    }
+
+    if (s_fine5_slot < (uint32_t)OBS_FINE5_HI_SLOT)
+    {
+        s_fine5_slot++;
+        servo_set_deg(OBS_FINE5_SLOT_TO_DEG(s_fine5_slot));
+        s_sweep_settling = true;
     }
     else
     {
-        if (s_slot >= (lo + step))
-        {
-            move_to_slot(s_slot - step, now_ms);
-            return;
-        }
-    }
-
-    /* Reached the far end: the sweep is complete. */
-    if (s_fine_mode)
-    {
-        finish_fine_sweep(now_ms);
-    }
-    else
-    {
-        finish_coarse_sweep(now_ms);
+        finish_fine5_sweep();
     }
 }
 
@@ -958,17 +1039,14 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
     uint32_t     echo_missed = 0U;
 
     (void)memset(&s_scan, 0, sizeof(s_scan));
+    (void)memset(&s_fine5, 0, sizeof(s_fine5));
     (void)memset(&s_last_sweep, 0, sizeof(s_last_sweep));
-    set_analysis_window(OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MIN),
-                        OBS_DEG_TO_SLOT(OBS_COARSE_DEG_MAX));
+    s_scan.lo_slot = (uint8_t)((OBS_FINE5_LO_SLOT + 1U) / 2U);
+    s_scan.hi_slot = (uint8_t)(OBS_FINE5_HI_SLOT / 2U);
 
     s_running = true;
-    s_dir = 1;
-
     app_period_init(&per, (uint32_t)OBS_SERVO_STEP_PERIOD_MS);
-    /* Start parked ahead: the sweep begins when something answers. */
-    s_watch_mode = true;
-    move_to_slot(OBS_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG), app_period_now_ms());
+    enter_watch(0U);
 
     for (;;)
     {
@@ -980,51 +1058,137 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
         }
 
         uint32_t const now_ms = app_period_now_ms();
+        uint32_t const av_state = obs_avoid_get_state();
 
-        /* A period either settles or pings, never both (file header). */
-        if ((int32_t)(now_ms - s_settle_until_ms) < 0)
+        switch (s_phase)
         {
-            continue;
-        }
-
-        uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
-
-        s_scan.dist_mm[s_slot] = mm;
-        if (s_slot == OBS_DEG_TO_SLOT(90U))
-        {
-            tel_set_range_cm((uint32_t)mm / 10U);   /* dashboard integration (IF-12): forward range, 0 = no echo */
-        }
-
-        if (mm != 0U)
-        {
-            echo_missed = 0U;
-            publish_no_echo(false);
-        }
-        else
-        {
-            echo_missed++;
-            /* A whole sweep with nothing in range is the documented
-             * "no echo" status, not a fault (IF-06 b7). */
-            if (echo_missed >= (uint32_t)OBS_COARSE_BEARING_COUNT)
+            case SCAN_WATCH:
             {
-                publish_no_echo(true);
-            }
-        }
+                if (av_state == OBS_AV_SLOW)
+                {
+                    enter_confirm(now_ms);
+                    break;
+                }
+                if (avoid_is_manoeuvring(av_state))
+                {
+                    enter_bypass_park();
+                    break;
+                }
 
-        if (s_watch_mode)
-        {
-            watch_step(mm, app_period_now_ms());
-        }
-        else
-        {
-            advance_cursor(app_period_now_ms());
+                uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
+
+                record_ping_health(mm, true, &echo_missed);
+                watch_step(mm, app_period_now_ms());
+                break;
+            }
+
+            case SCAN_CONFIRM:
+            {
+                if (avoid_is_manoeuvring(av_state))
+                {
+                    enter_bypass_park();
+                    break;
+                }
+
+                uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
+
+                record_ping_health(mm, true, &echo_missed);
+                confirm_step(mm, app_period_now_ms());
+                break;
+            }
+
+            case SCAN_SLEW_START:
+            {
+                if (slew_step_toward((uint32_t)OBS_SWEEP_DEG_MIN))
+                {
+                    if (!s_slew_settled)
+                    {
+                        s_slew_settled = true;
+                    }
+                    else
+                    {
+                        s_fine5_slot = (uint32_t)OBS_FINE5_LO_SLOT;
+                        s_sweep_settling = false;
+                        s_phase = SCAN_SWEEP;
+
+                        uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
+
+                        record_ping_health(mm, false, &echo_missed);
+                        sweep_step(mm);
+                    }
+                }
+                break;
+            }
+
+            case SCAN_SWEEP:
+            {
+                if (s_sweep_settling)
+                {
+                    s_sweep_settling = false;
+                    break;
+                }
+
+                bool const     is_ahead = (s_fine5_slot == OBS_FINE5_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG));
+                uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
+
+                record_ping_health(mm, is_ahead, &echo_missed);
+                sweep_step(mm);
+                break;
+            }
+
+            case SCAN_SLEW_HOME:
+            {
+                if (slew_step_toward((uint32_t)OBS_WATCH_AHEAD_DEG))
+                {
+                    if (!s_slew_settled)
+                    {
+                        s_slew_settled = true;
+                    }
+                    else if (avoid_is_manoeuvring(av_state))
+                    {
+                        enter_bypass_park();
+                    }
+                    else
+                    {
+                        uint32_t const cooldown = scan_vc_is_navigating(vc_get_system_state())
+                                                  ? 0U
+                                                  : (now_ms + (uint32_t)OBS_IDLE_RESCAN_COOLDOWN_MS);
+                        enter_watch(cooldown);
+                    }
+                }
+                break;
+            }
+
+            case SCAN_BYPASS_PARK:
+            default:
+            {
+                if (av_state == OBS_AV_IDLE)
+                {
+                    enter_watch(0U);
+                    break;
+                }
+                if (av_state == OBS_AV_SLOW)
+                {
+                    enter_confirm(now_ms);
+                    break;
+                }
+                if (servo_get_deg() != (uint32_t)OBS_WATCH_AHEAD_DEG)
+                {
+                    servo_set_deg((uint32_t)OBS_WATCH_AHEAD_DEG);
+                }
+
+                uint16_t const mm = ping_bearing_mm(OBS_PING_BUDGET_MS);
+
+                record_ping_health(mm, true, &echo_missed);
+                break;
+            }
         }
     }
 }
 
 bool obs_scan_is_watching(void)
 {
-    return s_watch_mode;
+    return s_phase == SCAN_WATCH;
 }
 
 bool obs_scan_is_running(void)

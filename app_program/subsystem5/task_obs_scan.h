@@ -30,6 +30,12 @@
 #define OBS_SLOT_TO_DEG(i)      ((uint32_t)(i) * 10U)
 #define OBS_DEG_TO_SLOT(d)      ((uint32_t)(d) / 10U)
 
+/** Fine 5-degree stationary sweep constants and slots: 0, 5, ... 180 degrees. */
+#define OBS_FINE5_STEP_DEG      (5U)
+#define OBS_FINE5_SLOTS         (37U)
+#define OBS_FINE5_SLOT_TO_DEG(i) ((uint32_t)(i) * 5U)
+#define OBS_FINE5_DEG_TO_SLOT(d) ((uint32_t)(d) / 5U)
+
 /** Coarse sweep limits: the 5 x 30 degree sweep of design.md runs 30..150. */
 #define OBS_COARSE_DEG_MIN      (30U)
 #define OBS_COARSE_DEG_MAX      (150U)
@@ -42,6 +48,14 @@ typedef struct
     uint8_t  lo_slot;
     uint8_t  hi_slot;
 } obs_scan_t;
+
+/** Fine 5-degree stationary sweep's readings: 0, 5, ... 180 degrees. */
+typedef struct
+{
+    uint16_t dist_mm[OBS_FINE5_SLOTS];
+    uint8_t  lo_slot;
+    uint8_t  hi_slot;
+} obs_scan5_t;
 
 /** What a sweep says about the obstacle in front of the car.
  *  Lateral sign convention: positive is to the car's RIGHT. */
@@ -99,6 +113,13 @@ uint16_t obs_median3_mm(uint16_t a, uint16_t b, uint16_t c);
  * range; p_out is never read on entry.
  */
 bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out);
+
+/*
+ * Turn a 5-degree stationary sweep (0..180 deg in 5 deg steps) into an
+ * obstacle description.  Applies hysteresis above OBS_D_DETECT_CM so an
+ * obstacle at the threshold boundary stays valid after stopping.
+ */
+bool obs_analyse_fine5(obs_scan5_t const *p_scan, obs_result_t *p_out);
 
 /** Pack an analysed sweep into the IF-03 wire format (seq wraps, 0..3). */
 obstacle_profile_t obs_result_to_profile(obs_result_t const *p_res, uint32_t seq);

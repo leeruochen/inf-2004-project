@@ -273,8 +273,11 @@ static void stop_internal(bool coast)
 /* Poll MBF_MOTION_CMD and apply the newest valid command, or advance T_hold. */
 static void poll_command_queue(int32_t const cnt[ENC_WHEEL_COUNT])
 {
-    motion_cmd_t cmd;
-    bool         got_valid = false;
+    motion_cmd_t   cmd;
+    bool           got_valid = false;
+    uint8_t const  prev_type = s_mot.cmd_type;
+    int16_t const  prev_arg = s_mot.cmd_arg;
+    bool const     was_active = (s_mot.flags & MOT_FLG_CMD_ACTIVE) != 0U;
 
     for (;;)
     {
@@ -313,9 +316,18 @@ static void poll_command_queue(int32_t const cnt[ENC_WHEEL_COUNT])
 
     if (got_valid)
     {
+        bool const keep_heading_ref =
+            was_active
+            && (s_mot.cmd_type == prev_type)
+            && ((s_mot.cmd_type == DREP_MC_FWD) || (s_mot.cmd_type == DREP_MC_BACK))
+            && (s_mot.cmd_arg == 0) && (prev_arg == 0);
+
         s_mot.hold_elapsed_ms = 0U;
-        s_mot.manoeuvre_start_cnt[ENC_WHEEL_LEFT] = cnt[ENC_WHEEL_LEFT];
-        s_mot.manoeuvre_start_cnt[ENC_WHEEL_RIGHT] = cnt[ENC_WHEEL_RIGHT];
+        if (!keep_heading_ref)
+        {
+            s_mot.manoeuvre_start_cnt[ENC_WHEEL_LEFT] = cnt[ENC_WHEEL_LEFT];
+            s_mot.manoeuvre_start_cnt[ENC_WHEEL_RIGHT] = cnt[ENC_WHEEL_RIGHT];
+        }
 
         if ((s_mot.cmd_type == DREP_MC_STOP) || (s_mot.cmd_type == DREP_MC_BRAKE)
             || (s_mot.setpoint_cmps == 0U))
