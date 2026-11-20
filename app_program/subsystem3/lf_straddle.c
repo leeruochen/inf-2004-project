@@ -128,7 +128,7 @@ static void sd_contact_steer(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt)
     if ((near_pm >= LF_SD_DEEP_PM) && (far_pm < LF_LIGHT_MAX_PM))
     {
         p_sd->deep_cnt += dcnt;             /* the line's body under one sensor only */
-        if (p_sd->deep_cnt >= LF_SD_DEEP_CNT)
+        if ((p_sd->deep_cnt >= LF_SD_DEEP_CNT) && (LF_SD_SIMPLE == 0))
         {
             p_sd->deep = true;
         }
@@ -155,7 +155,7 @@ static bool sd_both_white(lf_sd_t *p_sd, lf_in_t const *p_in, uint32_t dcnt)
     if (p_sd->bw == LF_SD_BW_NONE)
     {
         int32_t const lim = (int32_t)LF_SD_MEM_Q7 * 256;
-        bool const turning = (p_sd->mem_q15 >= lim) || (p_sd->mem_q15 <= -lim);
+        bool const turning = (LF_SD_SIMPLE == 0) && ((p_sd->mem_q15 >= lim) || (p_sd->mem_q15 <= -lim));
 
         if (turning && !p_sd->deep)
         {

@@ -102,6 +102,14 @@
  *  well inside this. TUNE */
 #define LF_SD_HOLD_DEG          (120U)
 #endif
+#ifndef LF_SD_SIMPLE
+/** 1: the simple follower: steering follows what the two sensors see, and
+ *  nothing else.  No deep-contact hold, no bend memory: with both sensors white
+ *  the car goes straight (then the short probe, then LINE_LOST), so it never
+ *  swings blind.  Everything else (floor stop, both-dark limit, junction,
+ *  suspend, faults, calibration) is unchanged.  0 = the full core. */
+#define LF_SD_SIMPLE            (0)
+#endif
 #ifndef LF_SD_FLIP
 /** 0 (off; no gain in the host model fitted to the car, below).  1: when the hold ends without finding the line, steer the OTHER way for
  *  the probe distance before declaring the line lost.  At the end of a bend
