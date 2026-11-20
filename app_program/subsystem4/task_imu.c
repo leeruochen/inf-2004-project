@@ -52,8 +52,13 @@
  * +-13 deg; the slowdown on the 10 mm hump itself is ~12 mm/s (S4-U26
  * traces, 19 Nov 2026).  Held for 200 ms: the 80 ms filter still shows
  * the acceleration after it ends. TUNE */
-#define IMU_SPEED_STEP_MMPS         (20)
+#define IMU_SPEED_STEP_MMPS         (80)
 #define IMU_SPEED_HOLD_SAMPLES      (20U)       /* 200 ms */
+/* Minimum forward wheel travel (15 mm) and minimum height (9 mm) required
+ * during an active hump in normal navigation so stationary hand-tilts and
+ * flat-track seam ripples are never reported as humps. */
+#define IMU_HUMP_MIN_TRAVEL_UM      (15000)
+#define IMU_HUMP_MIN_HEIGHT_MM      (9)
 
 /* Hump trace for tuning (debug console): the last IMU_TRACE_LEN samples of
  * pitch (half-deg) and wheel travel (0.25 mm), printed after every hump,
@@ -108,6 +113,7 @@ static uint32_t   s_turn_hold;
 static uint32_t   s_speed_hold;
 static uint32_t   s_prev_tick;
 static int32_t    s_prev_v_mmps;
+static int32_t    s_hump_travel_um;
 static int8_t     s_tr_pitch[IMU_TRACE_LEN];
 static int8_t     s_tr_ds[IMU_TRACE_LEN];
 static uint32_t   s_tr_head;        /* next write index */
@@ -242,6 +248,7 @@ bool imu_task_init(void)
     s_speed_hold       = 0U;
     s_prev_tick        = 0U;
     s_prev_v_mmps      = 0;
+    s_hump_travel_um   = 0;
     s_tr_head          = 0U;
     s_tr_since         = 0U;
     s_tr_out_left      = 0U;
@@ -431,14 +438,16 @@ static int32_t wheel_travel_um(void)
     /* Speed over this Motion period (um per ms = mm/s), compared with the
      * last period's.  Once a hump is already active, gradual climb speed
      * assist must not blank out the hump's pitch measurement. */
-    int32_t const  um    = imu_hump_counts_to_um((dl + dr) / 2);
-    uint32_t const dt_ms = st.tick_ms - s_prev_tick;
-    int32_t const  v     = (dt_ms > 0U) ? (um / (int32_t)dt_ms) : 0;
-    int32_t const  dv    = v - s_prev_v_mmps;
+    int32_t const  um        = imu_hump_counts_to_um((dl + dr) / 2);
+    uint32_t const dt_ms     = st.tick_ms - s_prev_tick;
+    int32_t const  v         = (dt_ms > 0U) ? (um / (int32_t)dt_ms) : 0;
+    int32_t const  dv        = v - s_prev_v_mmps;
+    bool const     start_stop = (v == 0) || (s_prev_v_mmps == 0);
 
     s_prev_tick   = st.tick_ms;
     s_prev_v_mmps = v;
-    if (!s_hump.active && ((dv > IMU_SPEED_STEP_MMPS) || (dv < -IMU_SPEED_STEP_MMPS)))
+    if (!s_hump.active && start_stop
+        && ((dv > IMU_SPEED_STEP_MMPS) || (dv < -IMU_SPEED_STEP_MMPS)))
     {
         s_speed_hold = IMU_SPEED_HOLD_SAMPLES;
     }
@@ -503,13 +512,25 @@ static void trace_dump_line(void)
 static void check_hump(int32_t pitch)
 {
     int32_t const          ds_um   = wheel_travel_um();
-    /* Not trustworthy while turning, or while the car is (or was just)
-     * lifted: a hump in progress is then dropped, so carrying the car
-     * (e.g. the end-of-run pick-up) never reports a hump. */
-    bool const             turning = (s_turn_hold > 0U) || !s_lift.armed;
+#if APP_TEST
+    bool const             nav_driving = true;
+#else
+    uint32_t const         vc_st = vc_get_system_state();
+    bool const             nav_driving = (vc_st >= VC_SYS_NAV_LINE_TRACKING)
+                                         && (vc_st <= VC_SYS_NAV_TURN_RIGHT);
+#endif
+    /* Not trustworthy while turning, while not actively navigating the line,
+     * or while the car is (or was just) lifted: a hump in progress is then
+     * dropped, so carrying or tilting the car while stopped never reports a hump. */
+    bool const             turning = (s_turn_hold > 0U) || !s_lift.armed || !nav_driving;
     imu_hump_report_t      rep;
     bool const             speed_change = (s_speed_hold > 0U);
     imu_hump_event_t const ev    = imu_hump_step(&s_hump, pitch, ds_um, turning, speed_change, &rep);
+
+    if (s_hump.active && (ds_um > 0))
+    {
+        s_hump_travel_um += ds_um;
+    }
 
     s_turn_hold  = (s_turn_hold > 0U) ? (s_turn_hold - 1U) : 0U;
     s_speed_hold = (s_speed_hold > 0U) ? (s_speed_hold - 1U) : 0U;
@@ -525,10 +546,20 @@ static void check_hump(int32_t pitch)
 
     if (ev == IMU_HUMP_START)
     {
+        s_hump_travel_um = (ds_um > 0) ? ds_um : 0;
         dbg_printf("[IMU] hump start pitch=%ld half-deg", (long)pitch);
     }
     else if (ev == IMU_HUMP_END)
     {
+#if !APP_TEST
+        if ((s_hump_travel_um < IMU_HUMP_MIN_TRAVEL_UM)
+            || (rep.height_mm < IMU_HUMP_MIN_HEIGHT_MM))
+        {
+            s_hump_travel_um = 0;
+            return;
+        }
+#endif
+        s_hump_travel_um      = 0;
         s_last_hump_pitch     = rep.pitch_half_deg;
         s_last_hump_height_mm = rep.height_mm;
         if (rep.height_mm > s_max_hump_height_mm)
@@ -544,6 +575,7 @@ static void check_hump(int32_t pitch)
     }
     else if (ev == IMU_HUMP_DROPPED)
     {
+        s_hump_travel_um = 0;
         s_hump_dropped_count++;
         dbg_puts("[IMU] hump dropped: the car turned or was lifted during it");
         trace_dump_start();

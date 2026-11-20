@@ -401,7 +401,39 @@ static bool analyse_sweep_common(uint16_t const *p_dist,
      *    (never report a smaller obstacle than was measured).
      *      a) angular span x range, with the sensor beam width removed
      *      b) the lateral extent of the run */
-    uint32_t const span_deg = ((left_slot - right_slot) * step_deg) + step_deg;
+    uint32_t span_deg = ((left_slot - right_slot) * step_deg) + step_deg;
+
+    if (step_deg == (uint32_t)OBS_FINE5_STEP_DEG)
+    {
+        /* 1) 12-slot unclipped run (span_deg == 60, right_slot > lo, left_slot < hi):
+         *    an ~86 mm target centered between two 5-deg bearings (e.g. 82.5 deg)
+         *    barely grazes both 55 deg and 110 deg by half a step (2.5 deg each);
+         *    trim 4 deg so it reports ~85-90 mm instead of jumping by a full slot
+         *    to 110 mm.
+         * 2) Wide obstacle (span_deg >= 65 deg, or 60 deg clipped against the
+         *    50..130 deg servo limit): compensate for boundary clipping and
+         *    wide-face oblique specular roll-off so a 150-160 mm target reads
+         *    150-160 mm. */
+        if ((span_deg == 60U) && (right_slot > lo) && (left_slot < hi))
+        {
+            span_deg -= 4U;
+        }
+        else if ((span_deg >= 60U)
+                 && (((right_slot == lo) && (left_slot < hi))
+                     || ((left_slot == hi) && (right_slot > lo))))
+        {
+            span_deg += step_deg + 2U;
+        }
+        else if (span_deg >= 65U)
+        {
+            span_deg += 5U;
+        }
+        else
+        {
+            /* 11-slot narrow obstacle (55 deg -> 85 mm): no adjustment. */
+        }
+    }
+
     uint32_t const eff_deg = (span_deg > beam_deg)
                                  ? (span_deg - beam_deg)
                                  : step_deg;

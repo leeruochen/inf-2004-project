@@ -155,20 +155,20 @@
 
 /* ---------------------------------------------------------------------------
  * Gradual IMU-triggered hump climb speed & torque assist (TUNE).
- * When the IMU detects pitch >= 2.0 deg (4 half-deg) while driving forward,
- * target speed and climb torque ramp up gradually every 20 ms cycle so the
- * car climbs smoothly without stalling and without shooting over too fast.
+ * When the IMU detects pitch >= 3.0 deg (6 half-deg) while driving straight
+ * or bogged down on a hump, target speed and climb torque ramp up gradually
+ * every 20 ms cycle without ever clamping curve steering.
  * ------------------------------------------------------------------------- */
-#define MOTION_HUMP_PITCH_ON_HD     (4U)    /* 2.0 deg entry/active threshold */
-#define MOTION_HUMP_PITCH_STEEP_HD  (6U)    /* 3.0 deg steeper ramp threshold */
+#define MOTION_HUMP_PITCH_ON_HD     (6U)    /* 3.0 deg entry/active threshold */
+#define MOTION_HUMP_PITCH_STEEP_HD  (8U)    /* 4.0 deg steeper ramp threshold */
 #define MOTION_HUMP_RAMP_UP_MMPS    (3U)    /* +3 mm/s per 20 ms (+1.5 cm/s per 100 ms) */
-#define MOTION_HUMP_RAMP_BOG_MMPS   (5U)    /* +5 mm/s per 20 ms when pitch >= 3 deg & bogged */
-#define MOTION_HUMP_RAMP_DOWN_MMPS  (4U)    /* -4 mm/s per 20 ms decay on level ground */
-#define MOTION_HUMP_BOOST_MAX_MMPS  (60U)   /* max +6.0 cm/s boost (5.0 -> 11.0 cm/s) */
-#define MOTION_HUMP_FAST_CAP_MMPS   (90)    /* stop growing boost once actual >= 9.0 cm/s */
-#define MOTION_HUMP_HOLD_TICKS      (12U)   /* 240 ms hold bridging front-to-rear wheels */
+#define MOTION_HUMP_RAMP_BOG_MMPS   (5U)    /* +5 mm/s per 20 ms when pitch >= 4 deg & bogged */
+#define MOTION_HUMP_RAMP_DOWN_MMPS  (6U)    /* -6 mm/s per 20 ms fast decay on level/curve */
+#define MOTION_HUMP_BOOST_MAX_MMPS  (45U)   /* max +4.5 cm/s boost (5.0 -> 9.5 cm/s) */
+#define MOTION_HUMP_FAST_CAP_MMPS   (70)    /* stop growing boost once actual >= 7.0 cm/s */
+#define MOTION_HUMP_BOG_SPEED_MMPS  (35)    /* speed below which curve-turn gate allows boost */
+#define MOTION_HUMP_HOLD_TICKS      (6U)    /* 120 ms hold bridging front-to-rear wheels */
 #define MOTION_HUMP_CLIMB_MAX_PM    (180)   /* max +18% load-sensitive climb duty assist */
-#define MOTION_HUMP_STEER_MAX_Q8    (64)    /* cap steering diff to 25% on hump incline */
 
 /* Shared motion state (IF-08), guarded by MTX_MOTION. */
 motion_state_t g_motion_state = { 0U, { 0, 0 }, 0U };
@@ -535,12 +535,17 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
              || ((cmd_type == DREP_MC_FWD) && (s_mot.cmd_arg == 0)))
             && (vc_get_system_state() != VC_SYS_OBSTACLE_AVOIDANCE);
 
+        bool const     is_curving = (cmd_type == DREP_MC_STEER) && (s_mot.cmd_arg != 0);
+        bool const     on_hump_incline =
+            (abs_pitch_hd >= MOTION_HUMP_PITCH_ON_HD)
+            && ((!is_curving) || (actual_mmps < MOTION_HUMP_BOG_SPEED_MMPS));
+
         if (!can_hump_boost)
         {
             s_mot.hump_boost_mmps = 0U;
             s_mot.hump_hold_ticks = 0U;
         }
-        else if (abs_pitch_hd >= MOTION_HUMP_PITCH_ON_HD)
+        else if (on_hump_incline)
         {
             s_mot.hump_hold_ticks = MOTION_HUMP_HOLD_TICKS;
             if (actual_mmps >= MOTION_HUMP_FAST_CAP_MMPS)
@@ -567,18 +572,24 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
                                                   ? MOTION_HUMP_BOOST_MAX_MMPS : next);
             }
         }
-        else if ((s_mot.hump_hold_ticks > 0U) && (actual_mmps < MOTION_HUMP_FAST_CAP_MMPS))
+        else if ((!is_curving)
+                 && (s_mot.hump_hold_ticks > 0U)
+                 && (actual_mmps < MOTION_HUMP_FAST_CAP_MMPS))
         {
             s_mot.hump_hold_ticks--;
         }
-        else if (s_mot.hump_boost_mmps > MOTION_HUMP_RAMP_DOWN_MMPS)
-        {
-            s_mot.hump_boost_mmps = (uint8_t)(s_mot.hump_boost_mmps
-                                              - MOTION_HUMP_RAMP_DOWN_MMPS);
-        }
         else
         {
-            s_mot.hump_boost_mmps = 0U;
+            s_mot.hump_hold_ticks = 0U;
+            if (s_mot.hump_boost_mmps > MOTION_HUMP_RAMP_DOWN_MMPS)
+            {
+                s_mot.hump_boost_mmps = (uint8_t)(s_mot.hump_boost_mmps
+                                                  - MOTION_HUMP_RAMP_DOWN_MMPS);
+            }
+            else
+            {
+                s_mot.hump_boost_mmps = 0U;
+            }
         }
 
         eff_speed_mmps = (setpoint_cmps * 10U) + (uint32_t)s_mot.hump_boost_mmps;
@@ -620,16 +631,7 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
         case DREP_MC_STEER:
         {
             /* cmd_arg in -256..+255: > 0 steers right (left faster, right slower). */
-            int32_t steer_arg = (int32_t)s_mot.cmd_arg;
-#if MOTION_HAS_GEOMETRY
-            if (s_mot.hump_boost_mmps > 0U)
-            {
-                steer_arg = clamp_i32(steer_arg,
-                                      -MOTION_HUMP_STEER_MAX_Q8,
-                                      MOTION_HUMP_STEER_MAX_Q8);
-            }
-#endif
-            int32_t const diff_pm = (base_pm * steer_arg) / 256;
+            int32_t const diff_pm = (base_pm * (int32_t)s_mot.cmd_arg) / 256;
 
             duty_l = base_pm + climb_pm + diff_pm;
             duty_r = base_pm + climb_pm - diff_pm;
@@ -670,11 +672,9 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
             ((int32_t)eff_speed_mmps * MOTION_COUNTS_PER_REV * (int32_t)MOTION_PERIOD_MS)
             / ((int32_t)MOTION_EFF_WHEEL_CIRC * 1000);
 #if MOTION_STEER_TARGETS
-        int32_t const  st_lim = (s_mot.hump_boost_mmps > 0U)
-                                ? MOTION_HUMP_STEER_MAX_Q8 : 256;
         int32_t const  st_g = (cmd_type == DREP_MC_STEER)
                               ? clamp_i32(((int32_t)s_mot.cmd_arg * (int32_t)MOTION_STEER_TGT_GAIN_PCT) / 100,
-                                          -st_lim, st_lim)
+                                          -256, 256)
                               : 0;
         int32_t const  tgt_l = ((((duty_l >= 0) ? mag_counts : -mag_counts) * (256 + st_g)) / 256);
         int32_t const  tgt_r = ((((duty_r >= 0) ? mag_counts : -mag_counts) * (256 - st_g)) / 256);

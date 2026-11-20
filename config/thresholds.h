@@ -21,14 +21,11 @@
  *  the car's cruise noise is within ~+-2 deg.  TUNE */
 #define IMU_HUMP_PITCH_DEG          (3U)
 /** Distance between the car's two ground contacts along its length (driven
- *  wheel axle to the front contact), for the hump height (imu_hump.h):
+ *  wheel axle to the front caster contact), for the hump height (imu_hump.h):
  *  height = wheelbase x sin(pitch) while one end is on the hump.
- *  PROVISIONAL: 120 mm is the line sensors' distance in front of the axle
- *  (Buddy 3, ruler, 4 Nov 2026, lf_core.h LF_D_PIVOT_MM), the closest value
- *  on record.  TODO(owner-to-confirm, buddy 4): measure axle centre to the
- *  front contact with a ruler, or calibrate with S4-U25 (wheelbase =
- *  object height / sin(pitch)). */
-#define IMU_HUMP_WHEELBASE_MM       (120U)
+ *  Calibrated on track (20 Nov 2026): 14-15 mm hump gives 8.5-9.0 deg pitch
+ *  -> wheelbase = 14.5 / sin(8.75 deg) = 95 mm. */
+#define IMU_HUMP_WHEELBASE_MM       (95U)
 /* Lift / overturn detection (replaces g_collision; requirement change of
  * 11 Nov 2026, app_program/subsystem4/imu_lift.h).  Either one, held for
  * 50 ms, brakes the motors and latches the fault. */
