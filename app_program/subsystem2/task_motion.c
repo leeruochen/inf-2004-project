@@ -126,6 +126,19 @@
 #ifndef MOTION_STEER_OPENLOOP
 #define MOTION_STEER_OPENLOOP       (0)
 #endif
+/* MOTION_STEER_TARGETS (default 0): during STEER the two wheels get DIFFERENT target
+ * speeds, mag x (1 +/- cmd_arg x MOTION_STEER_TGT_GAIN_PCT / 25600), so the PID works WITH the
+ * turn.  Without it both wheels chase the same target and the PID fights every turn: it winds up
+ * against the steering and, when the steering returns to 0, the car rebounds the opposite way
+ * (20 Nov, 5 cm/s: before any turn R/L was 0.93, after a left turn 0.53, after a right bend 1.55,
+ * a drift of 0.2-0.4 deg/mm for 100 mm); at full lock the wheels managed only 2.4:1 at 0.41
+ * deg/mm.  Off: this file is as before. */
+#ifndef MOTION_STEER_TARGETS
+#define MOTION_STEER_TARGETS        (0)
+#endif
+#ifndef MOTION_STEER_TGT_GAIN_PCT
+#define MOTION_STEER_TGT_GAIN_PCT   (100)
+#endif
 #ifndef MOTION_STEER_OL_GAIN_PCT
 #define MOTION_STEER_OL_GAIN_PCT    (100)   /* % of the commanded differential applied */
 #endif
@@ -531,8 +544,17 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
         int32_t const  mag_counts =
             ((int32_t)setpoint_cmps * 10 * MOTION_COUNTS_PER_REV * (int32_t)MOTION_PERIOD_MS)
             / ((int32_t)MOTION_EFF_WHEEL_CIRC * 1000);
+#if MOTION_STEER_TARGETS
+        int32_t const  st_g = (cmd_type == DREP_MC_STEER)
+                              ? clamp_i32(((int32_t)s_mot.cmd_arg * (int32_t)MOTION_STEER_TGT_GAIN_PCT) / 100,
+                                          -256, 256)
+                              : 0;
+        int32_t const  tgt_l = ((((duty_l >= 0) ? mag_counts : -mag_counts) * (256 + st_g)) / 256);
+        int32_t const  tgt_r = ((((duty_r >= 0) ? mag_counts : -mag_counts) * (256 - st_g)) / 256);
+#else
         int32_t const  tgt_l = (duty_l >= 0) ? mag_counts : -mag_counts;
         int32_t const  tgt_r = (duty_r >= 0) ? mag_counts : -mag_counts;
+#endif
         int32_t const  mean_d = (dl + dr) / 2;
 
 #if MOTION_STEER_OPENLOOP

@@ -65,6 +65,9 @@
 #include "lf_core.h"                    /* lf_norm, LF_DARK_MIN_PM, LF_LIGHT_MAX_PM */
 #include "lf_run_test.h"
 #include "task_lf.h"
+#if S3_LF_STRADDLE
+#include "lf_straddle.h"                /* LF_SD_SIMPLE, LF_SD_BANG, ... for the variant line */
+#endif
 
 #define LF2_SECOND_MS           (1000U)
 #define LF2_POLL_MS             (10U)
@@ -1295,6 +1298,29 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     dbg_printf("[LF] line following: %s", LF2_MODE_TEXT);
     dbg_printf("[LF] build: sensors %lu mm ahead of the axle (LF_D_PIVOT_MM), cruise %lu mm/s",
                (unsigned long)LF_D_PIVOT_MM, (unsigned long)LF2_CRUISE_MMPS);
+    /* The Motion options are defaulted inside task_motion.c: seen here only when the build passes them. */
+#ifdef MOTION_STEER_OPENLOOP
+#define LF2_V_OL    (MOTION_STEER_OPENLOOP)
+#else
+#define LF2_V_OL    (0)
+#endif
+#ifdef MOTION_STEER_TARGETS
+#define LF2_V_TGT   (MOTION_STEER_TARGETS)
+#else
+#define LF2_V_TGT   (0)
+#endif
+#ifdef MOTION_INTEGRAL_MAX
+#define LF2_V_INT   (MOTION_INTEGRAL_MAX)
+#else
+#define LF2_V_INT   (400)
+#endif
+#if S3_LF_STRADDLE
+    dbg_printf("[LF] variant: simple=%d bang=%d | motion: openloop=%d steer_targets=%d integral_max=%d",
+               (int)LF_SD_SIMPLE, (int)LF_SD_BANG, (int)LF2_V_OL, (int)LF2_V_TGT, (int)LF2_V_INT);
+#else
+    dbg_printf("[LF] variant: edge core | motion: openloop=%d steer_targets=%d integral_max=%d",
+               (int)LF2_V_OL, (int)LF2_V_TGT, (int)LF2_V_INT);
+#endif
     dbg_puts("[LF] guide: .agents/tasks/s3-u14-test.md; follow the [LF] >>> prompts");
 
     /* (a) The task runs every 5 ms.  First let the boot calibration end. */
