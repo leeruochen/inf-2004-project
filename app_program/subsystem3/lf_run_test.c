@@ -239,19 +239,46 @@
 #define LF2_TURN_ONLY           (1U)
 #endif
 #define LF2_TURN_RUNS           (3U)
+/* Which turn: -DS3_TURN=LEFT|RIGHT|UTURN (sources.cmake); default the U-turn.  The 90 degree
+ * window is the one left and right passed in on 5 Nov. */
+#ifndef S3_TURN_LEFT
+#define S3_TURN_LEFT            (0)
+#endif
+#ifndef S3_TURN_RIGHT
+#define S3_TURN_RIGHT           (0)
+#endif
+#if S3_TURN_LEFT
+#define LF2_TURN_CMD            DREP_BC_CMD_LEFT
+#define LF2_TURN_VC_STATE       VC_SYS_NAV_TURN_LEFT
+#define LF2_TURN_NAME           "Left turn:"
+#elif S3_TURN_RIGHT
+#define LF2_TURN_CMD            DREP_BC_CMD_RIGHT
+#define LF2_TURN_VC_STATE       VC_SYS_NAV_TURN_RIGHT
+#define LF2_TURN_NAME           "Right turn:"
+#else
 #define LF2_TURN_CMD            DREP_BC_CMD_UTURN
 #define LF2_TURN_VC_STATE       VC_SYS_NAV_U_TURN
 #define LF2_TURN_NAME           "U-turn:"
+#endif
+/* QUICK (-DS3_QUICK_CAL=ON): no pose A / pose B; a fixed TEST calibration is applied instead. */
+#ifndef S3_QUICK_CAL
+#define S3_QUICK_CAL            (0)
+#endif
 /** STOP this far along the branch, from the first ON_LINE after the turn. */
 #define LF2_TURN_BRANCH_MM      (300U)
 /** No cross by this much wheel travel: STOP.  The start is 300 mm before it. */
 #define LF2_TURN_NO_CROSS_MM    (420U)
 /** Whole drive limit: approach, pivot, search and branch, with room. */
-#define LF2_TURN_MS             (9000U)
+#define LF2_TURN_MS             (LF2_MS_FOR(LF2_TURN_NO_CROSS_MM + LF2_TURN_BRANCH_MM) + 6000U)
 /** The turn as the encoders saw it: a wide sanity window, the real angle is
  *  printed and judged by eye and against NFR4 (+-5 degrees). */
+#if S3_TURN_LEFT || S3_TURN_RIGHT
+#define LF2_TURN_DEG_MIN        (75U)
+#define LF2_TURN_DEG_MAX        (115U)
+#else
 #define LF2_TURN_DEG_MIN        (165U)
 #define LF2_TURN_DEG_MAX        (200U)
+#endif
 /** The core must be tracking within T_uturn + the stop + T_search. */
 #define LF2_TURN_FIND_MAX_MS    (LF_T_UTURN_MS + LF_T_STOP_MS + LF_T_SEARCH_MS)
 /** The branch is judged from this far along it, once the car has settled. */
@@ -1340,6 +1367,20 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                          && (s_now.missed == 0U),
                "(a) samples every 5 ms (195-205/s), none missed");
 
+#if S3_QUICK_CAL
+    /* QUICK TEST ONLY, no poses: a fixed calibration, the middle of the 20 Nov two-pose results
+     * (white 145-206, black 1250-2160 raw, both sensors).  Darkness = (raw - white) / (black -
+     * white): a different real black shifts it by a fraction, and the contact threshold (250 per
+     * mille) is well inside that.  The production boot calibration is unchanged. */
+    {
+        lf_cal_t const quick = { { 165U, 1500U }, { 165U, 1500U } };
+
+        lf_task_test_set_cal(&quick);
+        lf_task_get_status(&s_now);
+        dbg_puts("[LF] QUICK: fixed TEST calibration white 165 black 1500 on both sensors, no poses");
+    }
+#endif
+
     /* (b) Boot calibration in the start pose. */
     dbg_printf("[LF] boot cal: status %u, C avg %u, R avg %u -> white %u black %u",
                (unsigned)s_now.cal_status, s_now.cal_c_avg, s_now.cal_r_avg,
@@ -1369,6 +1410,13 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                          && (s_now.state == LF_ST_IDLE) && !lf2_line_found_flag(),
                "(c) VC READY: no posts, no events, IDLE, flag clear");
 
+#if S3_QUICK_CAL
+    /* No poses: the fixed calibration above stands. */
+    pose_a_ok = true;
+    (void)lf2_static;
+    (void)a_c; (void)a_r; (void)b_c; (void)b_r; (void)cal2;
+    (void)dc; (void)dr; (void)rmin; (void)rmax;
+#else
     /* (g) Static levels at ride height, motors stopped.  Pose A gives
      * RIGHT's resting noise over white; pose B RIGHT's black level (the
      * residual risk of the S3-U09 waiver). */
@@ -1429,6 +1477,7 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
     {
         dbg_puts("[LF] >>> STOP: no drives.  Pose A never read CENTRE on black and RIGHT on white.");
     }
+#endif
 
     /* (d) + (n) Straight line from the start pose. */
     for (uint32_t run = 1U; run <= straight_runs; run++)
