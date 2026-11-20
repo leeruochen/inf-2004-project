@@ -66,6 +66,10 @@ bool tel_post_hump(int32_t height_mm, int32_t pitch_half_deg);
 /** Buddy 3: a validated barcode command (DREP_BC_CMD_LEFT .. DREP_BC_CMD_UTURN). */
 bool tel_post_barcode(uint32_t bc_cmd);
 
+/** Buddy 3: any decoded barcode letter ('A'..'Z'), its mapped command
+ *  (DREP_BC_CMD_LEFT .. DREP_BC_CMD_UTURN), and whether it is mapped. */
+bool tel_post_barcode_letter(char letter, uint32_t bc_cmd, bool mapped);
+
 /** Buddy 4 / anyone: EVF_SAFETY bits at the moment a fault was raised. */
 bool tel_post_fault(uint32_t evf_safety_bits);
 

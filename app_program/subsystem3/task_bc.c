@@ -53,6 +53,7 @@ static char const *const k_bc1_name[6] =
 static bc_frame_t        s_frame;               /* one capture; this task only */
 static bc_stats_t        s_stats;               /* this task writes; others copy */
 static volatile bool     s_running = false;
+static volatile char     s_cmd_map[DREP_BC_CMD_COUNT] = { 'A', 'B', 'C', 'D' };
 #if APP_TEST
 static volatile int32_t  s_speed_override = 0;  /* test task writes, one word */
 #endif
@@ -94,16 +95,36 @@ static void bc_log(bc_frame_result_t res, bc_frame_out_t const *p_out, uint32_t 
 
     if (res == BC_FRAME_OK)
     {
+        uint32_t bc_cmd = 0U;
+        bool     mapped = false;
+        uint32_t c;
+
+        for (c = 0U; c < DREP_BC_CMD_COUNT; c++)
+        {
+            if (s_cmd_map[c] == p_out->letter)
+            {
+                bc_cmd = c;
+                mapped = true;
+                break;
+            }
+        }
+
         dbg_printf("[BC] #%lu OK %c win=%lu n=%lu v=%ld..%ld q=%lums lvl=%u",
                    (unsigned long)n, p_out->letter, (unsigned long)p_out->window,
                    (unsigned long)s_frame.seen, (long)v_min, (long)v_max,
                    (unsigned long)(quiet_us / 1000U), drv_bc_level() ? 1U : 0U);
-        /* A, B, C, D are navigation commands (FR9: left, right, straight, U-turn = DREP_BC_CMD_* 0..3):
-         * tell telemetry (dashboard Barcode view, MQTT).  Other letters are valid reads but no
-         * command.  Never waits; a full queue is counted there. */
-        if ((p_out->letter >= 'A') && (p_out->letter <= 'D'))
+        /* Every decoded letter A..Z is sent to telemetry (dashboard Barcode view, MQTT).
+         * If the letter matches one of the 4 mapped navigation actions (LEFT, RIGHT,
+         * STRAIGHT, UTURN), also post the command to MBF_NAV_IN for the next junction. */
+        if ((p_out->letter >= 'A') && (p_out->letter <= 'Z'))
         {
-            (void)tel_post_barcode((uint32_t)(p_out->letter - 'A'));
+            (void)tel_post_barcode_letter(p_out->letter, bc_cmd, mapped);
+            if (mapped)
+            {
+                nav_input_t const nav = drep_nav_barcode(bc_cmd);
+
+                (void)tk_snd_mbf(MBF_NAV_IN, &nav, (INT)sizeof(nav), TMO_POL);
+            }
         }
     }
     else
@@ -275,6 +296,43 @@ void bc_task_get_stats(bc_stats_t *p_out)
     {
         (void)tk_dis_dsp();
         *p_out = s_stats;
+        (void)tk_ena_dsp();
+    }
+}
+
+void bc_task_set_map(char left, char right, char straight, char uturn)
+{
+    (void)tk_dis_dsp();
+    if ((left >= 'A') && (left <= 'Z'))
+    {
+        s_cmd_map[DREP_BC_CMD_LEFT] = left;
+    }
+    if ((right >= 'A') && (right <= 'Z'))
+    {
+        s_cmd_map[DREP_BC_CMD_RIGHT] = right;
+    }
+    if ((straight >= 'A') && (straight <= 'Z'))
+    {
+        s_cmd_map[DREP_BC_CMD_STRAIGHT] = straight;
+    }
+    if ((uturn >= 'A') && (uturn <= 'Z'))
+    {
+        s_cmd_map[DREP_BC_CMD_UTURN] = uturn;
+    }
+    (void)tk_ena_dsp();
+}
+
+void bc_task_get_map(char out_map[DREP_BC_CMD_COUNT])
+{
+    uint32_t i;
+
+    if (out_map != NULL)
+    {
+        (void)tk_dis_dsp();
+        for (i = 0U; i < DREP_BC_CMD_COUNT; i++)
+        {
+            out_map[i] = s_cmd_map[i];
+        }
         (void)tk_ena_dsp();
     }
 }

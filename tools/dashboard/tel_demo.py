@@ -34,8 +34,22 @@ BC_TO_VC = {
     "STRAIGHT (C)": "NAV_GO_STRAIGHT",
     "U-TURN (D)": "NAV_U_TURN",
 }
+ACTION_TO_VC = {
+    "LEFT": "NAV_TURN_LEFT",
+    "RIGHT": "NAV_TURN_RIGHT",
+    "STRAIGHT": "NAV_GO_STRAIGHT",
+    "UTURN": "NAV_U_TURN",
+    "U-TURN": "NAV_U_TURN",
+}
+ACTION_LABEL = {
+    "LEFT": "LEFT",
+    "RIGHT": "RIGHT",
+    "STRAIGHT": "STRAIGHT",
+    "UTURN": "U-TURN",
+}
 
 _LF_MOVE = re.compile(r"\[LF\] ([A-Z_]+) -> ([A-Z_]+)")
+_BC_OK = re.compile(r"\[BC\]\s+#\d+\s+OK\s+([A-Z])\b")
 _S5_OBS = views._S5_OBSTACLE
 _S5_REACQ = re.compile(r"\[S5\] avoid -> IDLE \(reacquired=(\d)\)")
 
@@ -67,6 +81,7 @@ class DemoTracker:
         self.lf_state: str = ""
         self.last_dash_stop_t: Optional[float] = None
         self.last_dash_start_t: Optional[float] = None
+        self.bc_map: Dict[str, str] = {"LEFT": "A", "RIGHT": "B", "STRAIGHT": "C", "UTURN": "D"}
         self._reset_run()
 
     def _reset_run(self) -> None:
@@ -104,10 +119,15 @@ class DemoTracker:
         self.bc_detect_count: int = 0
         self.bc_sim_count: int = 0
         self.bc_console_seen: bool = False
+        self.bc_console_letter: str = ""
         self.bc_decoded: List[str] = []
         self.last_barcode: str = ""
+        self.last_barcode_letter: str = ""
+        self.last_barcode_action: str = ""
+        self.last_barcode_vc: str = ""
         self.last_barcode_time: str = ""
         self.bc_followed: Optional[dict] = None
+        self.bc_history: Deque[dict] = deque(maxlen=40)
 
         self.hump_count: int = 0
         self.hump_sim_count: int = 0
@@ -136,6 +156,41 @@ class DemoTracker:
     def _add_event(self, stamp: str, tag: str, severity: str, text: str) -> None:
         t = stamp or (f"up {self.last_uptime_s:.1f}s" if self.last_uptime_s is not None else "")
         self.events.append({"time": t, "tag": tag, "severity": severity, "text": text})
+
+    def _resolve_letter(self, letter: str, fallback_action: str = "") -> Tuple[str, str, str]:
+        """Return (action_label, command_display, vc_target) for a decoded letter A-Z."""
+        ltr = (letter or "").strip().upper()[:1]
+        for key in ("LEFT", "RIGHT", "STRAIGHT", "UTURN"):
+            if self.bc_map.get(key) == ltr:
+                act_lbl = ACTION_LABEL[key]
+                return act_lbl, f"{act_lbl} ({ltr})", ACTION_TO_VC[key]
+        if fallback_action and fallback_action != "UNMAPPED" and fallback_action in ACTION_TO_VC:
+            act_lbl = "U-TURN" if fallback_action in ("UTURN", "U-TURN") else fallback_action
+            return act_lbl, f"{act_lbl} ({ltr})" if ltr else act_lbl, ACTION_TO_VC[fallback_action]
+        return "UNMAPPED", (f"LETTER {ltr}" if ltr else "UNMAPPED"), ""
+
+    def set_barcode_map(self, mapping: Dict[str, str], stamp: str = "") -> Dict[str, str]:
+        """Validate and update the 4-action barcode letter mapping (A-Z)."""
+        norm: Dict[str, str] = {}
+        for key in ("LEFT", "RIGHT", "STRAIGHT", "UTURN"):
+            raw = mapping.get(key) or (mapping.get("U-TURN") if key == "UTURN" else None) or self.bc_map[key]
+            ltr = str(raw).strip().upper()
+            if len(ltr) != 1 or not ("A" <= ltr <= "Z"):
+                raise ValueError(f"{key} must be a single letter A-Z")
+            norm[key] = ltr
+        if len(set(norm.values())) != 4:
+            raise ValueError("Each event must be assigned to a distinct letter A-Z")
+        self.bc_map = norm
+        if self.last_barcode_letter:
+            act, cmd, vc = self._resolve_letter(self.last_barcode_letter)
+            self.last_barcode_action = act
+            self.last_barcode = cmd
+            self.last_barcode_vc = vc
+        self._add_event(
+            stamp, "BARCODE", "info",
+            f"map updated: L={norm['LEFT']} R={norm['RIGHT']} S={norm['STRAIGHT']} U={norm['UTURN']}",
+        )
+        return dict(self.bc_map)
 
     def recent_log_stop(self, wall_s: Optional[float]) -> bool:
         """True if a replayed/console log saw '[DASH] sent stop:' shortly before wall_s."""
@@ -232,6 +287,9 @@ class DemoTracker:
             low = body.lower()
             if "stub" not in low and "init" not in low and "sanity" not in low:
                 self.bc_console_seen = True
+                m_bc = _BC_OK.search(body)
+                if m_bc:
+                    self.bc_console_letter = m_bc.group(1)
                 self._add_event(stamp, "BARCODE", "info", body)
             return
 
@@ -278,11 +336,30 @@ class DemoTracker:
             if sim:
                 self.bc_sim_count += 1
                 return
-            cmd = str(f["command"])
+            letter = str(f.get("letter") or "")
+            raw_action = str(f.get("action") or "")
+            if letter:
+                act, cmd, vc_target = self._resolve_letter(letter, "" if not f.get("mapped", True) else raw_action)
+            else:
+                cmd = str(f["command"])
+                act = raw_action or cmd.split(" ")[0]
+                vc_target = BC_TO_VC.get(cmd, "")
             self.bc_detect_count += 1
             self.bc_decoded.append(cmd)
             self.last_barcode = cmd
+            self.last_barcode_letter = letter
+            self.last_barcode_action = act
+            self.last_barcode_vc = vc_target
             self.last_barcode_time = stamp
+            self.bc_history.append({
+                "seq": self.bc_detect_count,
+                "time": stamp,
+                "letter": letter or "?",
+                "action": act,
+                "command": cmd,
+                "vc_target": vc_target,
+                "source": "MQTT",
+            })
             self._add_event(stamp, "BARCODE", "info", f"decoded {cmd}")
         elif fr.type == codec.FT_EVENT_HUMP:
             if sim:
@@ -401,8 +478,15 @@ class DemoTracker:
             self.junction_count += 1
             self.line_lost_active = False
             self.last_junction = {"state": state, "time": stamp, "source": "VC heartbeat"}
-            if self.last_barcode and BC_TO_VC.get(self.last_barcode) == state:
-                self.bc_followed = {"barcode": self.last_barcode, "vc_state": state, "time": stamp}
+            expected_vc = self.last_barcode_vc or BC_TO_VC.get(self.last_barcode, "")
+            if self.last_barcode and expected_vc == state:
+                self.bc_followed = {
+                    "barcode": self.last_barcode,
+                    "letter": self.last_barcode_letter,
+                    "action": self.last_barcode_action,
+                    "vc_state": state,
+                    "time": stamp,
+                }
                 self._add_event(stamp, "JUNCTION", "ok", f"junction -> {state} (followed barcode {self.last_barcode})")
             else:
                 self._add_event(stamp, "JUNCTION", "info", f"junction detected -> {state}")
@@ -711,9 +795,10 @@ class DemoTracker:
                 f"{self.bc_followed['barcode']} -> {self.bc_followed['vc_state']}",
                 f"executed at {self.bc_followed['time'] or 'junction'}")
         elif self.bc_detect_count > 0:
+            exp_vc = self.last_barcode_vc or BC_TO_VC.get(self.last_barcode, self.last_barcode)
             add("bc_follow", 5, "Follow the instruction from the barcode", "ACTIVE",
                 f"pending: {self.last_barcode}",
-                f"waiting for junction to execute {BC_TO_VC.get(self.last_barcode, self.last_barcode)}")
+                f"waiting for junction to execute {exp_vc}" if exp_vc else f"letter {self.last_barcode_letter} is not assigned to a turn event")
         elif self.bc_sim_count > 0:
             add("bc_follow", 5, "Follow the instruction from the barcode", "SIMULATED", "S1 self-test",
                 "APP_TEST simulation only")
@@ -844,4 +929,17 @@ class DemoTracker:
             "summary": {"done": done, "total": len(rubric)},
             "events": list(reversed(self.events)),
             "alerts": self._alerts(obs),
+            "barcode": {
+                "detected": self.bc_detect_count > 0 or self.bc_console_seen,
+                "decoded": self.bc_detect_count > 0,
+                "count": self.bc_detect_count,
+                "last_letter": self.last_barcode_letter or self.bc_console_letter,
+                "last_action": self.last_barcode_action,
+                "last_command": self.last_barcode,
+                "last_time": self.last_barcode_time,
+                "expected_vc": self.last_barcode_vc,
+                "followed": self.bc_followed,
+                "mapping": dict(self.bc_map),
+                "history": list(reversed(self.bc_history)),
+            },
         }

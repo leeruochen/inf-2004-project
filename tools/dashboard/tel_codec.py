@@ -63,6 +63,7 @@ SAFETY_BITS = [
 ]
 
 BARCODE_CMD = ["LEFT (A)", "RIGHT (B)", "STRAIGHT (C)", "U-TURN (D)"]
+BARCODE_ACTION = ["LEFT", "RIGHT", "STRAIGHT", "U-TURN"]
 
 # Obstacle layout (data_repr.h DREP_OBS_*).
 OBS_MM_PER_UNIT = 5
@@ -180,7 +181,13 @@ def decode(data: bytes) -> Frame:
     elif t == FT_EVENT_BARCODE:
         f["ts_ms"] = b.u(24)
         f["cmd"] = b.u(2)
-        f["command"] = BARCODE_CMD[f["cmd"]]
+        letter_off = b.u(5)
+        unmapped = bool(b.u(1))
+        letter = chr(ord("A") + letter_off - 1) if 1 <= letter_off <= 26 else chr(ord("A") + f["cmd"])
+        f["letter"] = letter
+        f["mapped"] = not unmapped
+        f["action"] = "UNMAPPED" if unmapped else BARCODE_ACTION[f["cmd"]]
+        f["command"] = f"LETTER {letter}" if unmapped else f"{BARCODE_ACTION[f['cmd']]} ({letter})"
     elif t == FT_EVENT_HUMP:
         f["ts_ms"] = b.u(24)
         f["height_mm"] = b.u(7)

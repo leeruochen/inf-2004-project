@@ -15,8 +15,10 @@ def _decode_log(line: str) -> codec.Frame:
     return codec.decode(parsed[1])
 
 
-def _barcode(ts: int, cmd_idx: int) -> codec.Frame:
-    w = tv._W(codec.FT_EVENT_BARCODE).put(ts, 24).put(cmd_idx, 2)
+def _barcode(ts: int, cmd_idx: int, letter: str = "", mapped: bool = True) -> codec.Frame:
+    letter_off = (ord(letter) - ord("A") + 1) if letter else 0
+    unmapped = 0 if mapped else 1
+    w = tv._W(codec.FT_EVENT_BARCODE).put(ts, 24).put(cmd_idx, 2).put(letter_off, 5).put(unmapped, 1)
     return codec.decode(bytes.fromhex(w.hex()))
 
 
@@ -154,6 +156,18 @@ class DemoRubricTests(unittest.TestCase):
         self.assertEqual(rm["bc_decode"]["value"], "LEFT (A)")
         self.assertEqual(rm["bc_follow"]["status"], "DONE")
         self.assertIn("NAV_TURN_LEFT", rm["bc_follow"]["value"])
+
+        # Custom letter mapping (A-Z): assign RIGHT to letter 'M'
+        tr.set_barcode_map({"LEFT": "K", "RIGHT": "M", "STRAIGHT": "P", "UTURN": "Z"})
+        tr.on_frame(_decode_log(tv.heartbeat(5000, "NAV_LINE_TRACKING")), 14.0, "12:00:05.000")
+        tr.on_frame(_barcode(5500, 1, letter="M", mapped=True), 14.5, "12:00:05.500")
+        snap_m = tr.snapshot(self._mqtt_src())
+        self.assertEqual(snap_m["barcode"]["last_letter"], "M")
+        self.assertEqual(snap_m["barcode"]["last_action"], "RIGHT")
+        self.assertEqual(snap_m["barcode"]["last_command"], "RIGHT (M)")
+        tr.on_frame(_decode_log(tv.heartbeat(6000, "NAV_TURN_RIGHT")), 15.0, "12:00:06.000")
+        snap_m2 = tr.snapshot(self._mqtt_src())
+        self.assertEqual(snap_m2["barcode"]["followed"]["barcode"], "RIGHT (M)")
 
     def test_hump_and_pickup_and_simulated_and_clear(self):
         tr = demo.DemoTracker()

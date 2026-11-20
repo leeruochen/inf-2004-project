@@ -269,7 +269,11 @@ class Monitor:
             with self.lock:
                 self.src["mqtt_connected"] = True
                 self.ctl.set_connected(True, _mono())
+                bc_map = dict(self.demo.bc_map)
             c.subscribe("car/#", qos=1)
+            if bc_map != {"LEFT": "A", "RIGHT": "B", "STRAIGHT": "C", "UTURN": "D"}:
+                payload = (bc_map["LEFT"] + bc_map["RIGHT"] + bc_map["STRAIGHT"] + bc_map["UTURN"]).encode("ascii")
+                c.publish("car/cmd/bc_map", payload, qos=1, retain=True)
 
         def on_disconnect(c, userdata, *rest):
             if self._client is not c:
@@ -367,6 +371,23 @@ class Monitor:
     def clear_demo(self) -> None:
         with self.lock:
             self.demo.clear()
+
+    def set_barcode_map(self, req: dict) -> Tuple[int, dict]:
+        """Update the 4-event barcode letter mapping (A-Z) and publish to car/cmd/bc_map if connected."""
+        stamp = dash._stamp()
+        with self.lock:
+            try:
+                mapping = self.demo.set_barcode_map(req, stamp)
+            except ValueError as exc:
+                return 400, {"error": str(exc)}
+            client = self._client if self.src.get("mqtt_connected") else None
+        sent_mqtt = False
+        if client is not None:
+            payload = (mapping["LEFT"] + mapping["RIGHT"] + mapping["STRAIGHT"] + mapping["UTURN"]).encode("ascii")
+            client.publish("car/cmd/bc_map", payload, qos=1, retain=True)
+            self.feed_line(f"{stamp}  [DASH] sent bc_map: car/cmd/bc_map {payload.decode('ascii')}")
+            sent_mqtt = True
+        return 200, {"ok": True, "mapping": mapping, "sent_mqtt": sent_mqtt}
 
     # -- recording, calibration, export ------------------------------------------
 
@@ -646,11 +667,14 @@ class Monitor:
         bc = []
         lb = latest.get("barcode")
         if lb:
+            bc.append(_r("decoded letter", lb["f"].get("letter", ""), "SIMULATED" if lb["sim"] else "MEASURED",
+                         "S1 self-test" if lb["sim"] else "Code 39 letter A-Z"))
             bc.append(_r("last command", lb["f"]["command"], "SIMULATED" if lb["sim"] else "REPORTED",
                          "S1 self-test" if lb["sim"] else "decoded barcode"))
             bc.append(_r("barcodes", len(ev.barcodes), "REPORTED", f"{ev.barcodes_simulated} simulated not counted"))
         else:
-            bc.append(_r("last command", "", "N/A", "no barcode task in this firmware yet"))
+            bc.append(_r("decoded letter", "", "N/A", "no barcode frame yet"))
+            bc.append(_r("last command", "", "N/A", "no barcode frame yet"))
         bc.append(_r("last BC log line", self.last_line.get("[BC]", ""), "REPORTED" if "[BC]" in self.last_line
                      else "N/A", "" if "[BC]" in self.last_line else "no [BC] lines"))
         out["barcode"] = bc
@@ -805,6 +829,9 @@ class Handler(BaseHTTPRequestHandler):
         elif u.path == "/api/demo/clear":
             m.clear_demo()
             self._json(200, {"ok": True})
+        elif u.path == "/api/barcode_map":
+            code, body = m.set_barcode_map(req if isinstance(req, dict) else {})
+            self._json(code, body)
         elif u.path == "/api/record":
             err = m.record(str(req.get("action", "")))
             self._json(400 if err else 200, {"error": err} if err else {"ok": True})

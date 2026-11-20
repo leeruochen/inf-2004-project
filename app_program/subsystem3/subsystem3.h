@@ -29,4 +29,10 @@
 
 #include "../app.h"
 
+/** Set the 4-letter barcode action map (LEFT, RIGHT, STRAIGHT, UTURN -> 'A'..'Z'). */
+void bc_task_set_map(char left, char right, char straight, char uturn);
+
+/** Copy the current 4-letter barcode action map (LEFT, RIGHT, STRAIGHT, UTURN). */
+void bc_task_get_map(char out_map[DREP_BC_CMD_COUNT]);
+
 #endif /* SUBSYSTEM3_H */

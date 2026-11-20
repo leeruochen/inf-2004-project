@@ -25,6 +25,7 @@
 #include "task_tel.h"
 
 #include "../subsystem2/subsystem2.h"   /* motion_get_state(), vc_get_system_state() */
+#include "../subsystem3/subsystem3.h"   /* bc_task_set_map() */
 #include "../subsystem4/subsystem4.h"   /* status line: IMU getters (dashboard integration) */
 #include "../subsystem5/subsystem5.h"   /* status line: obstacle getters (dashboard integration) */
 #include "config/timing.h"
@@ -105,6 +106,17 @@ bool tel_post_hump(int32_t height_mm, int32_t pitch_half_deg)
 bool tel_post_barcode(uint32_t bc_cmd)
 {
     return tel_post_event(DREP_TEL_BARCODE, bc_cmd & DREP_MASK(DREP_BC_CMD_BITS), bc_cmd > DREP_BC_CMD_UTURN);
+}
+
+bool tel_post_barcode_letter(char letter, uint32_t bc_cmd, bool mapped)
+{
+    uint32_t const letter_off = ((letter >= 'A') && (letter <= 'Z')) ? ((uint32_t)(letter - 'A') + 1U) : 0U;
+    uint32_t const cmd_bits = bc_cmd & DREP_MASK(DREP_BC_CMD_BITS);
+    uint32_t const payload = cmd_bits
+                             | ((letter_off & DREP_MASK(DREP_BC_LETTER_BITS)) << DREP_BC_LETTER_SHIFT)
+                             | (mapped ? 0U : (1UL << DREP_BC_UNMAPPED_SHIFT));
+
+    return tel_post_event(DREP_TEL_BARCODE, payload, (letter_off == 0U) || (bc_cmd > DREP_BC_CMD_UTURN));
 }
 
 bool tel_post_fault(uint32_t evf_safety_bits)
@@ -274,11 +286,44 @@ static void backend_actions(uint32_t act)
  * Receive path for commands
  * ========================================================================= */
 
+static bool topic_equal(char const *p_a, char const *p_b)
+{
+    if ((p_a == NULL) || (p_b == NULL))
+    {
+        return false;
+    }
+    while ((*p_a != '\0') && (*p_a == *p_b))
+    {
+        p_a++;
+        p_b++;
+    }
+    return *p_a == *p_b;
+}
+
 int32_t tel_cmd_receive(char const *p_topic, uint8_t const *p_buf, uint32_t n)
 {
     nav_input_t nav;
     int32_t     rc;
     ER          er;
+
+    if (topic_equal(p_topic, "car/cmd/bc_map") && (p_buf != NULL))
+    {
+        if ((n == DREP_BC_CMD_COUNT)
+            && (p_buf[0] >= (uint8_t)'A') && (p_buf[0] <= (uint8_t)'Z')
+            && (p_buf[1] >= (uint8_t)'A') && (p_buf[1] <= (uint8_t)'Z')
+            && (p_buf[2] >= (uint8_t)'A') && (p_buf[2] <= (uint8_t)'Z')
+            && (p_buf[3] >= (uint8_t)'A') && (p_buf[3] <= (uint8_t)'Z'))
+        {
+            bc_task_set_map((char)p_buf[0], (char)p_buf[1], (char)p_buf[2], (char)p_buf[3]);
+            s_stats.cmd_accepted++;
+            dbg_printf("[TEL] bc_map L=%c R=%c S=%c U=%c",
+                       (char)p_buf[0], (char)p_buf[1], (char)p_buf[2], (char)p_buf[3]);
+            return DREP_FRAME_OK;
+        }
+        s_stats.cmd_rejected++;
+        dbg_printf("[TEL] cmd rejected: bc_map (%lu B)", (unsigned long)n);
+        return DREP_FRAME_BAD_LENGTH;
+    }
 
     nav.w = 0U;
     rc = tel_wire_cmd(p_topic, p_buf, n, &nav);
@@ -350,7 +395,7 @@ static void handle_event(tel_evt_t e)
             len = drep_frame_hump(frame, ts, e.payload & DREP_MASK(16U));
             break;
         case DREP_TEL_BARCODE:
-            len = drep_frame_barcode(frame, ts, e.payload & DREP_MASK(DREP_BC_CMD_BITS));
+            len = drep_frame_barcode(frame, ts, e.payload & DREP_MASK(DREP_BC_PAYLOAD_BITS));
             break;
         case DREP_TEL_FAULT:
             len = drep_frame_fault(frame, ts, e.payload & EVF_SAFETY_ALL_MASK);

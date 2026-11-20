@@ -136,6 +136,7 @@ static inline int32_t drep_clamp(int32_t v, int32_t lo, int32_t hi, bool *p_oor)
 #define DREP_BC_CMD_STRAIGHT        (2U)    /**< C */
 #define DREP_BC_CMD_UTURN           (3U)    /**< D */
 #define DREP_BC_CMD_BITS            (2U)
+#define DREP_BC_CMD_COUNT           (4U)
 
 /* Bypass commands, with AVOID/BYPASS.  TODO(owner-to-confirm, buddy 5). */
 #define DREP_BYPASS_STOP            (0U)
@@ -840,6 +841,17 @@ static inline uint32_t drep_frame_sensor(uint8_t *p_buf, uint32_t ts_ms, uint32_
  *  what they were.  The payload length (10 bytes) does not change. */
 #define DREP_SENSOR_VALID_POS   ((DREP_FRAME_HDR_BYTES * 8U) + 73U)
 
+/** Barcode event payload byte layout (byte 6 of DREP_FT_EVENT_BARCODE):
+ *    bits [1:0]  cmd (DREP_BC_CMD_LEFT .. DREP_BC_CMD_UTURN)
+ *    bits [6:2]  letter offset: 0 = legacy ('A' + cmd), 1..26 = 'A'..'Z'
+ *    bit  [7]    unmapped flag: 0 = letter mapped to cmd, 1 = unmapped letter
+ *  When bits [7:2] are 0 (legacy tel_post_barcode(cmd)), the wire byte is
+ *  identical to the 2-bit command encoding. */
+#define DREP_BC_LETTER_SHIFT    (2U)
+#define DREP_BC_LETTER_BITS     (5U)
+#define DREP_BC_UNMAPPED_SHIFT  (7U)
+#define DREP_BC_PAYLOAD_BITS    (8U)
+
 static inline void drep_frame_sensor_valid(uint8_t *p_buf, bool ir_ok, bool range_ok, bool att_ok)
 {
     uint32_t pos = DREP_SENSOR_VALID_POS;
@@ -854,7 +866,7 @@ static inline uint32_t drep_frame_barcode(uint8_t *p_buf, uint32_t ts_ms, uint32
     uint32_t pos = drep_frame_begin(p_buf, DREP_FT_EVENT_BARCODE);
 
     drep_bits_put(p_buf, &pos, ts_ms, 24U);
-    drep_bits_put(p_buf, &pos, cmd, DREP_BC_CMD_BITS);
+    drep_bits_put(p_buf, &pos, cmd, DREP_BC_PAYLOAD_BITS);
     return DREP_FRAME_HDR_BYTES + drep_frame_len(DREP_FT_EVENT_BARCODE);
 }
 

@@ -46,6 +46,19 @@ class GoldenFrames(unittest.TestCase):
         self.assertEqual(codec.encode_cmd("stop"), ("car/cmd/stop", bytes.fromhex("010900")))
         self.assertEqual(codec.encode_cmd("reset"), ("car/cmd/reset", bytes.fromhex("010a00")))
 
+    def test_barcode_letter_a_to_z(self):
+        # Mapped letter 'M' (offset 13) -> LEFT (cmd 0): byte6 = 0 | (13 << 2) = 0x34
+        fr_m = codec.decode(bytes.fromhex("01030409030034"))
+        self.assertEqual(fr_m.fields["letter"], "M")
+        self.assertEqual(fr_m.fields["mapped"], True)
+        self.assertEqual(fr_m.fields["command"], "LEFT (M)")
+
+        # Unmapped letter 'Z' (offset 26): byte6 = 0 | (26 << 2) | 0x80 = 0xE8
+        fr_z = codec.decode(bytes.fromhex("010304090300e8"))
+        self.assertEqual(fr_z.fields["letter"], "Z")
+        self.assertEqual(fr_z.fields["mapped"], False)
+        self.assertEqual(fr_z.fields["command"], "LETTER Z")
+
 
 class Rejects(unittest.TestCase):
     """Same reject rules as drep_frame_check()."""
