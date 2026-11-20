@@ -23,8 +23,11 @@
 
 /* Sample counts (5 ms each), from the same times as lf_core. */
 #define LF_SD_N_STOP     LF_SAMPLES(LF_T_STOP_MS)        /* 24  = 120 ms */
-#define LF_SD_N_SEARCH   LF_SAMPLES(LF_T_SEARCH_MS)      /* 400 = 2 s    */
-#define LF_SD_N_SWAP     LF_SAMPLES(LF_SEARCH_SWAP_MS)   /* 140 = 700 ms */
+/* Time safety for a search (a stopped car): three times the search distance at the cruise, never
+ * shorter than lf_core's T_search.  The search itself ends on distance (LF_SD_SEARCH_MM). */
+#define LF_SD_SEARCH_MAX_MS_RAW  ((LF_SD_SEARCH_MM * 3000U) / (MOTION_SPEED_CRUISE_CMPS * 10U))
+#define LF_SD_SEARCH_MAX_MS      ((LF_SD_SEARCH_MAX_MS_RAW > LF_T_SEARCH_MS) ? LF_SD_SEARCH_MAX_MS_RAW : LF_T_SEARCH_MS)
+#define LF_SD_N_SEARCH   LF_SAMPLES(LF_SD_SEARCH_MAX_MS)
 #define LF_SD_N_JCT_MAX  LF_SAMPLES(LF_T_JCT_MAX_MS)
 
 _Static_assert((LF_SD_KP_Q7 > 0) && (LF_SD_KP_Q7 <= LF_STEER_FULL_Q7), "Kp fits full steering");
@@ -401,17 +404,14 @@ static bool sd_st_search(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt, lf_
     bool may_post = true;
 
     p_sd->timer_n++;
-    if (p_sd->srch_capped)
-    {
-        p_sd->srch_cnt += dcnt;
-    }
+    p_sd->srch_cnt += dcnt;
     if ((p_v->zl != LF_ZONE_LIGHT) || (p_v->zr != LF_ZONE_LIGHT))
     {
         sd_enter_on_line(p_sd, false);
         sd_contact_steer(p_sd, p_v, dcnt);
     }
     else if ((p_sd->timer_n >= LF_SD_N_SEARCH)
-             || (p_sd->srch_capped && (p_sd->srch_cnt >= LF_D_SEARCH_MAX_CNT)))
+             || (p_sd->srch_cnt >= (p_sd->srch_capped ? LF_D_SEARCH_MAX_CNT : LF_SD_SEARCH_CNT)))
     {
         p_out->event = LF_EV_TRACK_LOST;        /* once: then IDLE until a new run */
         sd_enter(p_sd, LF_ST_IDLE);
@@ -420,7 +420,7 @@ static bool sd_st_search(lf_sd_t *p_sd, sd_view_t const *p_v, uint32_t dcnt, lf_
     }
     else
     {
-        lf_side_t const s = (p_sd->timer_n > LF_SD_N_SWAP) ? sd_other_side(p_sd->side) : p_sd->side;
+        lf_side_t const s = (p_sd->srch_cnt > LF_SD_SWAP_CNT) ? sd_other_side(p_sd->side) : p_sd->side;
 
         p_sd->steer_q7 = sd_side_steer(s, LF_SEARCH_Q7);
     }

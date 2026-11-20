@@ -126,6 +126,18 @@
 /** Below this difference between the two sensors' darkness (per mille) steer 0. */
 #define LF_SD_BANG_DB_PM        (100)
 #endif
+#ifndef LF_SD_SEARCH_MM
+/** How far a search (after a turn, or at the start) may drive before TRACK_LOST, and how far
+ *  it arcs one way before swapping.  lf_core's T_search (2 s) and swap (700 ms) are times
+ *  tuned at 200 mm/s: 400 mm and 140 mm of travel.  At 5 cm/s they were 70 mm and 35 mm:
+ *  20 Nov, left junction turn, run 2: the pivot ended with both sensors white, the
+ *  search ran 2.0 s (47 mm), found nothing, TRACK_LOST.  A loss while driving keeps its own
+ *  150 mm cap.  The old time stays as a safety (never shorter than T_search). TUNE */
+#define LF_SD_SEARCH_MM         (400U)
+#endif
+#ifndef LF_SD_SWAP_MM
+#define LF_SD_SWAP_MM           (140U)
+#endif
 #ifndef LF_SD_FLIP
 /** 0 (off; no gain in the host model fitted to the car, below).  1: when the hold ends without finding the line, steer the OTHER way for
  *  the probe distance before declaring the line lost.  At the end of a bend
@@ -220,6 +232,8 @@
 #define LF_SD_CONF_CNT          ((LF_SD_CONF_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_PROBE_CNT         ((LF_SD_PROBE_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_DEEP_CNT          ((LF_SD_DEEP_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+#define LF_SD_SEARCH_CNT        ((LF_SD_SEARCH_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
+#define LF_SD_SWAP_CNT          ((LF_SD_SWAP_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_BOTHDARK_CNT      ((LF_SD_BOTHDARK_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 #define LF_SD_MEM_CNT           ((LF_SD_MEM_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 /** LF_SD_HOLD_DEG as left-minus-right counts, as LF_PIVOT_HALF_CNT is 45 deg:

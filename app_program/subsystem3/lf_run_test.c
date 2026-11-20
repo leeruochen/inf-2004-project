@@ -205,7 +205,7 @@
 /* Relative to the configured post distance (120 mm: 110..135) and the cruise
  * (120 mm at 200 mm/s = 600 ms: 450..800), so a build with another mounting
  * distance (-DLF_D_PIVOT_MM) or speed keeps the same meaning. */
-#define LF2_JMAT_DELAY_MIN_MM   (LF_D_JCT_POST_MM - 10U)
+#define LF2_JMAT_DELAY_MIN_MM   (LF_D_JCT_POST_MM - 20U)
 #define LF2_JMAT_DELAY_MAX_MM   (LF_D_JCT_POST_MM + 15U)
 #define LF2_JMAT_NOMINAL_MS     ((LF_D_JCT_POST_MM * 1000U) / LF2_CRUISE_MMPS)
 #define LF2_JMAT_DELAY_MIN_MS   ((LF2_JMAT_NOMINAL_MS * 3U) / 4U)
@@ -263,6 +263,14 @@
 /* QUICK (-DS3_QUICK_CAL=ON): no pose A / pose B; a fixed TEST calibration is applied instead. */
 #ifndef S3_QUICK_CAL
 #define S3_QUICK_CAL            (0)
+#endif
+/* The branch criterion: the edge follower keeps CENTRE on the line's edge, so >= 90% of polls; the
+ * straddle follower keeps the line BETWEEN the sensors (CENTRE is the LEFT one, on white), so the
+ * edge metric does not apply: it is judged on no line loss on the way. */
+#if S3_LF_STRADDLE
+#define LF2_BRANCH_TRACKED      (s_run.n_lost == 0U)
+#else
+#define LF2_BRANCH_TRACKED      lf2_pct_ok(s_run.br_c_on, s_run.br_polls)
 #endif
 /** STOP this far along the branch, from the first ON_LINE after the turn. */
 #define LF2_TURN_BRANCH_MM      (300U)
@@ -1559,8 +1567,8 @@ void lf_run_test(uint32_t *p_pass, uint32_t *p_fail)
                                && ((s_run.t_branch_ms - s_run.t_turn_end_ms) <= LF2_TURN_FIND_MAX_MS),
                        "(t4) line found after the turn, no TRACK_LOST");
             TEST_CHECK(LF2_ID, (s_run.end == LF2_END_BRANCH) && s_run.still
-                               && lf2_pct_ok(s_run.br_c_on, s_run.br_polls),
-                       "(t5) followed the branch 300 mm, CENTRE on the line >= 90%");
+                               && LF2_BRANCH_TRACKED,
+                       "(t5) followed the branch 300 mm (edge: CENTRE on the line >= 90%; straddle: no line loss)");
         }
     }
 

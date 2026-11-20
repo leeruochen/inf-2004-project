@@ -468,6 +468,41 @@ static void test_floor(void)
     }
 }
 
+/* Test 11: the search ends on DISTANCE, not on lf_core's 2 s.  20 Nov, left junction turn at
+ * 5 cm/s: the search ran 2.0 s = 47 mm of travel and gave up.  A car at ~3 counts per 5 ms sample
+ * (50 mm/s) must search the whole capped distance before TRACK_LOST. */
+static void test_slow_search(void)
+{
+    lf_sd_t sd;
+    uint32_t n = 0U;
+    uint32_t t0 = 0U;
+    bool lost = false;
+    uint32_t const fwd0 = 0U;
+
+    (void)fwd0;
+    start_centred(&sd);
+    g_fwd_step = 3U;                                    /* ~50 mm/s */
+    while ((sd.state != LF_ST_REACQUIRING) && (n < 4000U))
+    {
+        (void)feed(&sd, 0U, 0U);                        /* both white: loss, then the search */
+        n++;
+    }
+    CHECK(sd.state == LF_ST_REACQUIRING);
+    t0 = g_in.fwd_cnt;
+    n = 0U;
+    while (!lost && (n < 6000U))
+    {
+        lost = (feed(&sd, 0U, 0U).event == LF_EV_TRACK_LOST);
+        n++;
+    }
+    CHECK(lost);
+    /* at least 90% of the capped distance (the sample the car was in when it began is not counted) */
+    CHECK((g_in.fwd_cnt - t0) >= ((LF_D_SEARCH_MAX_CNT * 9U) / 10U));
+    CHECK((g_in.fwd_cnt - t0) <= (LF_D_SEARCH_MAX_CNT + 24U));
+    CHECK(n > 400U);                                    /* longer than the old 2 s */
+    g_fwd_step = 12U;
+}
+
 /* Test 8: both sensors DARK outside a junction is not a line.  After a
  * cross line the junction travel covers 120 mm; both DARK for another 60 mm
  * (714 counts = 60 samples at 12) in ON_LINE is LINE_LOST, not steering 0
@@ -777,6 +812,7 @@ int main(void)
     test_junction();
     test_suspended_and_fault();
     test_floor();
+    test_slow_search();
     test_both_dark();
     test_bend_memory();
     test_sim_bends();
