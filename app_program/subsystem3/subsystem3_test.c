@@ -44,6 +44,11 @@
 #ifndef S3_STEP_DIAG
 #define S3_STEP_DIAG        (0)
 #endif
+/* S3-U03..U06, the barcode tests only (no line-following track test first):
+ * -DS3_BC_TEST=ON (sources.cmake).  0 = the line-following test, then these. */
+#ifndef S3_BC_TEST
+#define S3_BC_TEST          (0)
+#endif
 /* S3-U18, the turning radius diagnostic on the mat: -DS3_TURN_DIAG=ON. */
 #ifndef S3_TURN_DIAG
 #define S3_TURN_DIAG        (0)
@@ -63,8 +68,9 @@
 #define S3_PASS_CM              (40)
 /** Floor stop with the sensor over the middle of the card. */
 #define S3_HALF_PASS_CM         (22)
-/** Longest wait for one drive (40 cm at 15 cm/s backwards is 2.7 s). */
-#define S3_DRIVE_TIMEOUT_MS     (8000U)
+/** Longest wait for one drive: 40 cm at the 5 cm/s bring-up cruise is 8 s, so 16 s
+ *  (it was 8 s for the 15 cm/s cruise: 2.7 s). */
+#define S3_DRIVE_TIMEOUT_MS     (16000U)
 /** Distance reached when within this of the target (Motion counts whole cm). */
 #define S3_DRIVE_TOL_CM         (2U)
 /** Passes per card: forward + backward each. */
@@ -417,7 +423,9 @@ void subsystem3_test(void)
     lf_hw_test(&test_pass_, &test_fail_);
 #endif
 
-#if S3_STEP_DIAG
+#if S3_BC_TEST
+    /* Barcode tests only: the line-following track test is skipped. */
+#elif S3_STEP_DIAG
     /* S3-U16: what the wheels do after a strong steering command (operator-guided). */
     lf_step_test(&test_pass_, &test_fail_);
 #elif S3_TURN_DIAG
