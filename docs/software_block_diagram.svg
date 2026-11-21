@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 1060" width="1420" height="1060"
+     font-family="Segoe UI, Arial, Helvetica, sans-serif">
+  <defs>
+    <!-- Arrowheads: command/control (blue), safety (red), data/telemetry (grey) -->
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1.2 L 9 5 L 0 8.8 z" fill="#355C8C"/>
+    </marker>
+    <marker id="arr-blue-start" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 10 1.2 L 1 5 L 10 8.8 z" fill="#355C8C"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1.2 L 9 5 L 0 8.8 z" fill="#C43B3B"/>
+    </marker>
+    <marker id="arr-red-start" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 10 1.2 L 1 5 L 10 8.8 z" fill="#C43B3B"/>
+    </marker>
+    <marker id="arr-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M 0 1.4 L 9 5 L 0 8.6 z" fill="#5B6573"/>
+    </marker>
+    <marker id="arr-grey-start" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M 10 1.4 L 1 5 L 10 8.6 z" fill="#5B6573"/>
+    </marker>
+
+    <style>
+      .title       { font-size: 21px; font-weight: 700; fill: #182230; }
+      .subtitle    { font-size: 13px; fill: #4B5563; }
+      .box-task    { fill: #EBF3FC; stroke: #4A7BB7; stroke-width: 1.6; }
+      .box-safety  { fill: #FDECEC; stroke: #C44D4D; stroke-width: 1.8; }
+      .box-ipc     { fill: #FDF5DF; stroke: #C69B3B; stroke-width: 1.6; }
+      .box-ext     { fill: #E7F6EC; stroke: #439660; stroke-width: 1.6; }
+      .box-hw      { fill: #EFEFF1; stroke: #80868F; stroke-width: 1.5; }
+      .t-task      { font-size: 14px; font-weight: 700; fill: #1E477A; text-anchor: middle; }
+      .t-safety    { font-size: 14px; font-weight: 700; fill: #9E2222; text-anchor: middle; }
+      .t-ipc       { font-size: 13.5px; font-weight: 700; fill: #7D5B10; text-anchor: middle; }
+      .t-ext       { font-size: 14px; font-weight: 700; fill: #1E6639; text-anchor: middle; }
+      .t-hw        { font-size: 13px; font-weight: 700; fill: #2C313A; text-anchor: middle; }
+      .b-txt       { font-size: 11.5px; fill: #2D3748; text-anchor: middle; }
+      .b-sub       { font-size: 11px; fill: #4A5568; text-anchor: middle; }
+      .w-blue      { fill: none; stroke: #355C8C; stroke-width: 1.8; stroke-linejoin: round; }
+      .w-red       { fill: none; stroke: #C43B3B; stroke-width: 2.0; stroke-linejoin: round; }
+      .w-grey      { fill: none; stroke: #5B6573; stroke-width: 1.5; stroke-dasharray: 5 3.5; stroke-linejoin: round; }
+      .lbl-blue    { font-size: 11px; font-weight: 600; fill: #254872; }
+      .lbl-red     { font-size: 11px; font-weight: 600; fill: #A62626; }
+      .lbl-grey    { font-size: 11px; fill: #4B5563; }
+      .halo        { fill: #FFFFFF; fill-opacity: 0.92; }
+      .sec-hdr     { font-size: 12.5px; font-weight: 700; fill: #374151; }
+      .foot        { font-size: 11.5px; fill: #4B5563; font-style: italic; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1420" height="1060" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <text x="30" y="38" class="title">IS16 Robot Car: Software Block Diagram (micro T-Kernel 3.0 on Pico W)</text>
+  <text x="30" y="57" class="subtitle">P = task priority (1 = highest), B1..B5 = owner (Buddy). Every autonomous motor command goes through the Vehicle Controller; only Safety may brake directly.</text>
+
+  <!-- ==================== EXTERNAL SYSTEM (Top Right) ==================== -->
+  <rect x="960" y="72" width="380" height="62" rx="7" class="box-ext"/>
+  <text x="1150" y="93" class="t-ext">Operator dashboard (laptop)</text>
+  <text x="1150" y="109" class="b-txt">CLI + web UI: live telemetry, START / STOP / RESET / bc_map</text>
+  <text x="1150" y="124" class="b-sub">via MQTT broker over Wi-Fi (binary frames v1, car/status LWT)</text>
+
+  <!-- ==================== COLUMN 1: SENSORS & AVOIDANCE ==================== -->
+  <!-- P4 Line Following -->
+  <rect x="72" y="180" width="320" height="92" rx="7" class="box-task"/>
+  <text x="232" y="201" class="t-task">P4 Line Following</text>
+  <text x="232" y="220" class="b-txt">B3 · 5 ms ADC (straddle L+R; edge fallback)</text>
+  <text x="232" y="237" class="b-txt">posts steer (20 ms), JUNCTION, TRACK_LOST</text>
+  <text x="232" y="254" class="b-sub">bounded line-loss detection &amp; search · IR_SENSOR fault</text>
+
+  <!-- P5 Barcode Decode -->
+  <rect x="72" y="298" width="320" height="92" rx="7" class="box-task"/>
+  <text x="232" y="319" class="t-task">P5 Barcode Decode</text>
+  <text x="232" y="338" class="b-txt">B3 · polls edge ring every 2 ms (2 ms glitch filter)</text>
+  <text x="232" y="355" class="b-txt">Code 39 A–Z, bidirectional, speed-normalised</text>
+  <text x="232" y="372" class="b-sub">configurable map (default A/B/C/D → L/R/S/U)</text>
+
+  <!-- P6 Obstacle Scanning -->
+  <rect x="72" y="416" width="320" height="92" rx="7" class="box-task"/>
+  <text x="232" y="437" class="t-task">P6 Obstacle Scanning</text>
+  <text x="232" y="456" class="b-txt">B5 · 60 ms grid · watch ahead 90° (&lt; 25 cm ×2 → halt)</text>
+  <text x="232" y="473" class="b-txt">stationary 5° sweep (50°–130°), 3-echo median</text>
+  <text x="232" y="490" class="b-sub">beam-compensated width + L/R side clearances</text>
+
+  <!-- MBF_OBSTACLE -->
+  <rect x="72" y="532" width="320" height="48" rx="6" class="box-ipc"/>
+  <text x="232" y="552" class="t-ipc">MBF_OBSTACLE</text>
+  <text x="232" y="569" class="b-sub">2 × obstacle_profile_t · newest-wins (drain-then-send)</text>
+
+  <!-- P7 Obstacle Avoidance -->
+  <rect x="72" y="604" width="320" height="94" rx="7" class="box-task"/>
+  <text x="232" y="625" class="t-task">P7 Obstacle Avoidance</text>
+  <text x="232" y="644" class="b-txt">B5 · choose side (clearance ≥ 180 mm), 4-turn 45°</text>
+  <text x="232" y="661" class="b-txt">encoder-closed bypass, directional rejoin search</text>
+  <text x="232" y="678" class="b-sub">RELEASE → hand back to Line Following; abort on fault</text>
+
+  <!-- EVF_NAV -->
+  <rect x="72" y="724" width="320" height="54" rx="6" class="box-ipc"/>
+  <text x="232" y="744" class="t-ipc">EVF_NAV</text>
+  <text x="232" y="760" class="b-sub">AVOID_ACTIVE · LINE_FOUND · LINE_REACQUIRED</text>
+  <text x="232" y="772" class="b-sub">(P4 sets LINE_FOUND; P7 sets AVOID_ACTIVE / REACQUIRED)</text>
+
+  <!-- ==================== COLUMN 2: ARBITRATION & MOTION ==================== -->
+  <!-- MBF_NAV_IN -->
+  <rect x="502" y="180" width="340" height="58" rx="6" class="box-ipc"/>
+  <text x="672" y="201" class="t-ipc">MBF_NAV_IN</text>
+  <text x="672" y="218" class="b-sub">8 × nav_input_t (sole autonomous path to VC)</text>
+  <text x="672" y="231" class="b-sub">steer, JUNCTION, TRACK_LOST, barcode, bypass, remote</text>
+
+  <!-- P2 Vehicle Controller -->
+  <rect x="502" y="268" width="340" height="104" rx="7" class="box-task"/>
+  <text x="672" y="289" class="t-task">P2 Vehicle Controller</text>
+  <text x="672" y="308" class="b-txt">B2 · single arbitration point (10-state System FSM)</text>
+  <text x="672" y="325" class="b-txt">Safety / Remote &gt; Avoid &gt; Barcode (60 cm) &gt; Line</text>
+  <text x="672" y="342" class="b-sub">clears FAULT_LATCHED on RESET after 500 ms still</text>
+  <text x="672" y="358" class="b-sub">posts FSM transitions to MBF_TELEMETRY</text>
+
+  <!-- MBF_MOTION_CMD -->
+  <rect x="502" y="402" width="340" height="50" rx="6" class="box-ipc"/>
+  <text x="672" y="423" class="t-ipc">MBF_MOTION_CMD</text>
+  <text x="672" y="440" class="b-sub">4 × motion_cmd_t · polled every 20 ms (100 ms hold)</text>
+
+  <!-- P3 Motion Control -->
+  <rect x="502" y="484" width="340" height="112" rx="7" class="box-task"/>
+  <text x="672" y="505" class="t-task">P3 Motion Control</text>
+  <text x="672" y="524" class="b-txt">B2 · 20 ms · per-wheel PID + sync (cap 50 cm/s)</text>
+  <text x="672" y="541" class="b-txt">move / turn / U-turn / steer targets / stop (subsystem2.h)</text>
+  <text x="672" y="558" class="b-sub">gradual IMU-pitch climb boost on humps</text>
+  <text x="672" y="575" class="b-sub">speed + distance from encoders; stall / enc fault bits</text>
+
+  <!-- MTX_MOTION -->
+  <rect x="502" y="630" width="340" height="82" rx="6" class="box-ipc"/>
+  <text x="672" y="651" class="t-ipc">MTX_MOTION : motion_state_t</text>
+  <text x="672" y="669" class="b-sub">speed (0.1 cm/s), distance (cm), enc_count[2], tick_ms</text>
+  <text x="672" y="685" class="b-sub">priority-inheritance mutex (TA_INHERIT), updated 20 ms</text>
+  <text x="672" y="701" class="b-sub">read by P2 VC, P4 LF, P5 BC, P6/P7 Obs, P8 IMU, P9 Tel</text>
+
+  <!-- ==================== COLUMN 3: TELEMETRY, IMU & SAFETY ==================== -->
+  <!-- P9 Telemetry / MQTT -->
+  <rect x="960" y="180" width="348" height="112" rx="7" class="box-task"/>
+  <text x="1134" y="201" class="t-task">P9 Telemetry / MQTT</text>
+  <text x="1134" y="220" class="b-txt">B1 · 20 ms wake · pub 200 ms · HB 1 s + state change</text>
+  <text x="1134" y="237" class="b-txt">16-slot drop-oldest outbox · 5 s KA, 1–30 s backoff</text>
+  <text x="1134" y="254" class="b-sub">binary cmd check: start/stop/reset → VC; bc_map → P5</text>
+  <text x="1134" y="271" class="b-sub">reads IF-12 snapshots (IR, range, att, obs) &amp; MTX_MOTION</text>
+
+  <!-- MBF_TELEMETRY -->
+  <rect x="960" y="322" width="348" height="56" rx="6" class="box-ipc"/>
+  <text x="1134" y="343" class="t-ipc">MBF_TELEMETRY</text>
+  <text x="1134" y="360" class="b-sub">32 × tel_evt_t · all producers TMO_POL (never blocks)</text>
+  <text x="1134" y="372" class="b-sub">events: barcode (A–Z), hump, fault, VC state change</text>
+
+  <!-- P8 IMU Processing -->
+  <rect x="960" y="410" width="348" height="104" rx="7" class="box-task"/>
+  <text x="1134" y="431" class="t-task">P8 IMU Processing</text>
+  <text x="1134" y="450" class="b-txt">B4 · 10 ms · LSM303 accel via I2C1 (80 ms LPF)</text>
+  <text x="1134" y="467" class="b-txt">hump height (max tilt/climb, 95 mm wb, ≥ 3° / 2.5°)</text>
+  <text x="1134" y="484" class="b-sub">lift / overturn (&gt; 30° or &gt; 0.10 m/s for 50 ms)</text>
+  <text x="1134" y="500" class="b-sub">publishes pitch/roll (IF-12 &amp; hump boost to P3)</text>
+
+  <!-- EVF_SAFETY -->
+  <rect x="960" y="544" width="348" height="70" rx="6" class="box-ipc"/>
+  <text x="1134" y="564" class="t-ipc">EVF_SAFETY</text>
+  <text x="1134" y="581" class="b-sub">LIFTED · IMU_ALIVE · FAULT_LATCHED</text>
+  <text x="1134" y="596" class="b-sub">+ STALL, ENCODER, IMU_I2C, IMU_WDOG,</text>
+  <text x="1134" y="608" class="b-sub">NO_ECHO (P6), WIFI_LOSS (P9), IR_SENSOR (P4)</text>
+
+  <!-- P1 Safety / Lift Response -->
+  <rect x="960" y="644" width="348" height="104" rx="7" class="box-safety"/>
+  <text x="1134" y="665" class="t-safety">P1 Safety / Lift Response</text>
+  <text x="1134" y="684" class="b-txt">B4 / B2 · highest priority · waits on EVF_SAFETY</text>
+  <text x="1134" y="701" class="b-txt">brakes on LIFTED or 50 ms IMU_ALIVE timeout</text>
+  <text x="1134" y="718" class="b-sub">sets FAULT_LATCHED (+ IMU_WDOG); posts fault event</text>
+  <text x="1134" y="734" class="b-sub">never takes MTX_MOTION; brakes via IF-11 only</text>
+
+  <!-- ==================== HARDWARE + DRIVERS (Bottom Row) ==================== -->
+  <rect x="30" y="830" width="182" height="70" rx="6" class="box-hw"/>
+  <text x="121" y="852" class="t-hw">IR line sensors</text>
+  <text x="121" y="870" class="b-sub">GP28 (L/C), GP26 (R)</text>
+  <text x="121" y="885" class="b-sub">ADC0 / ADC2 · 5 ms poll</text>
+
+  <rect x="226" y="830" width="182" height="70" rx="6" class="box-hw"/>
+  <text x="317" y="852" class="t-hw">Barcode IR</text>
+  <text x="317" y="870" class="b-sub">GP27 digital edge ISR</text>
+  <text x="317" y="885" class="b-sub">64-entry ring (20-bit µs)</text>
+
+  <rect x="422" y="830" width="182" height="70" rx="6" class="box-hw"/>
+  <text x="513" y="852" class="t-hw">Ultrasonic + servo</text>
+  <text x="513" y="870" class="b-sub">HC-SR04 GP4/GP5 → SEM_ECHO</text>
+  <text x="513" y="885" class="b-sub">servo PWM GP15 (50 Hz)</text>
+
+  <rect x="618" y="830" width="182" height="70" rx="6" class="box-hw"/>
+  <text x="709" y="852" class="t-hw">Wheel encoders</text>
+  <text x="709" y="870" class="b-sub">PIO0 X4 quadrature</text>
+  <text x="709" y="885" class="b-sub">GP0/1 (R), GP16/17 (L)</text>
+
+  <rect x="814" y="830" width="182" height="70" rx="6" class="box-hw"/>
+  <text x="905" y="852" class="t-hw">Motors (ROBO PICO)</text>
+  <text x="905" y="870" class="b-sub">PWM GP8–GP11 (20 kHz)</text>
+  <text x="905" y="885" class="b-sub">brake = all 4 LOW</text>
+
+  <rect x="1010" y="830" width="182" height="70" rx="6" class="box-hw"/>
+  <text x="1101" y="852" class="t-hw">IMU GY-511</text>
+  <text x="1101" y="870" class="b-sub">LSM303DLHC/D accel</text>
+  <text x="1101" y="885" class="b-sub">I2C1 GP2 (SDA) / GP3 (SCL)</text>
+
+  <rect x="1206" y="830" width="182" height="70" rx="6" class="box-hw"/>
+  <text x="1297" y="852" class="t-hw">Wi-Fi CYW43</text>
+  <text x="1297" y="870" class="b-sub">CYW43 + lwIP MQTT (poll)</text>
+  <text x="1297" y="885" class="b-sub">PIO1 · used by P9 only</text>
+
+  <!-- ==================== WIRES & LABELS ==================== -->
+
+  <!-- Top IF-12 snapshots bus -->
+  <path d="M 232 180 L 232 146 L 980 146 L 980 180" class="w-grey" marker-end="url(#arr-grey)"/>
+
+  <!-- Top car/cmd/bc_map P9 -> P5 -->
+  <path d="M 1012 180 L 1012 163 L 428 163 L 428 314 L 392 314" class="w-blue" marker-end="url(#arr-blue)"/>
+
+  <!-- Operator dashboard <-> P9 -->
+  <path d="M 1175 134 L 1175 180" class="w-blue" marker-end="url(#arr-blue)"/>
+  <path d="M 1225 180 L 1225 134" class="w-grey" marker-end="url(#arr-grey)"/>
+
+  <!-- P9 -> MBF_NAV_IN -->
+  <path d="M 960 209 L 842 209" class="w-blue" marker-end="url(#arr-blue)"/>
+
+  <!-- Col 1 -> MBF_NAV_IN (P4, P5, P7) -->
+  <path d="M 392 198 L 502 198" class="w-blue" marker-end="url(#arr-blue)"/>
+  <path d="M 392 346 L 456 346 L 456 214 L 502 214" class="w-blue" marker-end="url(#arr-blue)"/>
+  <path d="M 392 636 L 474 636 L 474 228 L 502 228" class="w-blue" marker-end="url(#arr-blue)"/>
+
+  <!-- P5 -> MBF_TELEMETRY -->
+  <path d="M 392 378 L 444 378 L 444 393 L 932 393 L 932 362 L 960 362" class="w-grey" marker-end="url(#arr-grey)"/>
+
+  <!-- Col 1 vertical flows -->
+  <path d="M 232 508 L 232 532" class="w-blue" marker-end="url(#arr-blue)"/>
+  <path d="M 232 580 L 232 604" class="w-blue" marker-end="url(#arr-blue)"/>
+
+  <!-- P7 <-> EVF_NAV -->
+  <path d="M 232 698 L 232 724" class="w-blue" marker-start="url(#arr-blue-start)" marker-end="url(#arr-blue)"/>
+
+  <!-- P4 <-> EVF_NAV (left gutter x=48) -->
+  <path d="M 104 272 L 104 285 L 48 285 L 48 751 L 72 751" class="w-blue"
+        marker-start="url(#arr-blue-start)" marker-end="url(#arr-blue)"/>
+
+  <!-- Col 2 vertical chain -->
+  <path d="M 672 238 L 672 268" class="w-blue" marker-end="url(#arr-blue)"/>
+  <path d="M 672 372 L 672 402" class="w-blue" marker-end="url(#arr-blue)"/>
+  <path d="M 672 452 L 672 484" class="w-blue" marker-end="url(#arr-blue)"/>
+  <path d="M 672 596 L 672 630" class="w-blue" marker-end="url(#arr-blue)"/>
+
+  <!-- P2 -> MBF_TELEMETRY -->
+  <path d="M 842 344 L 960 344" class="w-grey" marker-end="url(#arr-grey)"/>
+
+  <!-- P3 -> Motors (PWM) -->
+  <path d="M 842 574 L 858 574 L 858 830" class="w-blue" marker-end="url(#arr-blue)"/>
+
+  <!-- P8 -> P3 (hump pitch for boost) -->
+  <path d="M 960 492 L 882 492 L 882 514 L 842 514" class="w-grey" marker-end="url(#arr-grey)"/>
+
+  <!-- EVF_SAFETY <-> P3 & P2 (FAULT_LATCHED + fault bits) -->
+  <path d="M 960 572 L 908 572 L 908 304 L 842 304" class="w-red"
+        marker-start="url(#arr-red-start)" marker-end="url(#arr-red)"/>
+  <path d="M 908 544 L 842 544" class="w-red"
+        marker-start="url(#arr-red-start)" marker-end="url(#arr-red)"/>
+
+  <!-- Col 3 vertical chain -->
+  <path d="M 1134 322 L 1134 292" class="w-grey" marker-end="url(#arr-grey)"/>
+  <path d="M 1134 410 L 1134 378" class="w-grey" marker-end="url(#arr-grey)"/>
+  <path d="M 1134 514 L 1134 544" class="w-red" marker-end="url(#arr-red)"/>
+  <path d="M 1134 614 L 1134 644" class="w-red"
+        marker-start="url(#arr-red-start)" marker-end="url(#arr-red)"/>
+
+  <!-- P1 -> MBF_TELEMETRY (fault events, right gutter x=1332) -->
+  <path d="M 1308 674 L 1332 674 L 1332 350 L 1308 350" class="w-grey" marker-end="url(#arr-grey)"/>
+
+  <!-- P1 -> Motors (emergency brake, red) -->
+  <path d="M 1080 748 L 1080 770 L 942 770 L 942 830" class="w-red" marker-end="url(#arr-red)"/>
+
+  <!-- Hardware <-> Tasks connections -->
+  <path d="M 121 830 L 121 808 L 24 808 L 24 222 L 72 222" class="w-grey" marker-end="url(#arr-grey)"/>
+  <path d="M 317 830 L 317 808 L 410 808 L 410 368 L 392 368" class="w-grey" marker-end="url(#arr-grey)"/>
+  <path d="M 513 830 L 513 808 L 428 808 L 428 462 L 392 462" class="w-blue"
+        marker-start="url(#arr-blue-start)" marker-end="url(#arr-blue)"/>
+  <path d="M 709 830 L 709 789 L 490 789 L 490 558 L 502 558" class="w-grey" marker-end="url(#arr-grey)"/>
+  <path d="M 1148 830 L 1148 806 L 1358 806 L 1358 462 L 1308 462" class="w-grey" marker-end="url(#arr-grey)"/>
+  <path d="M 1378 830 L 1378 236 L 1308 236" class="w-blue"
+        marker-start="url(#arr-blue-start)" marker-end="url(#arr-blue)"/>
+
+  <!-- ==================== LABELS LAYER (ABOVE ALL WIRES) ==================== -->
+  <g id="wire-labels">
+    <rect x="368" y="128" width="440" height="16" class="halo"/>
+    <text x="588" y="140" class="lbl-grey" text-anchor="middle">IF-12 lock-free snapshots: IR raws (P4), range + obs profile (P6), pitch/roll (P8)</text>
+
+    <rect x="615" y="151" width="136" height="15" class="halo"/>
+    <text x="683" y="162" class="lbl-blue" text-anchor="middle">bc_map (A–Z → L/R/S/U)</text>
+
+    <text x="1167" y="153" class="lbl-blue" text-anchor="end">START / STOP / RESET</text>
+    <text x="1167" y="167" class="lbl-blue" text-anchor="end">&amp; bc_map</text>
+    <text x="1233" y="161" class="lbl-grey">telemetry + status</text>
+
+    <rect x="854" y="191" width="94" height="14" class="halo"/>
+    <text x="901" y="202" class="lbl-blue" text-anchor="middle">start / stop / reset</text>
+
+    <rect x="398" y="182" width="98" height="13" class="halo"/>
+    <text x="447" y="192" class="lbl-blue" text-anchor="middle">steer / JCT / LOST</text>
+
+    <rect x="394" y="328" width="58" height="13" class="halo"/>
+    <text x="423" y="338" class="lbl-blue" text-anchor="middle">mapped cmd</text>
+
+    <rect x="396" y="616" width="88" height="13" class="halo"/>
+    <text x="440" y="626" class="lbl-blue" text-anchor="middle">bypass / RELEASE</text>
+
+    <rect x="536" y="381" width="68" height="14" class="halo"/>
+    <text x="570" y="391" class="lbl-grey" text-anchor="middle">barcode A–Z</text>
+
+    <text x="240" y="523" class="lbl-blue">profile</text>
+    <text x="242" y="715" class="lbl-blue">AVOID_ACTIVE · LINE_REACQUIRED</text>
+
+    <rect x="14" y="502" width="66" height="15" class="halo"/>
+    <text x="47" y="513" class="lbl-blue" text-anchor="middle">LINE_FOUND</text>
+
+    <rect x="680" y="375" width="128" height="13" class="halo"/>
+    <text x="682" y="385" class="lbl-blue">one resolved command</text>
+    <text x="680" y="616" class="lbl-blue">writes</text>
+
+    <rect x="870" y="330" width="54" height="13" class="halo"/>
+    <text x="897" y="340" class="lbl-grey" text-anchor="middle">VC state</text>
+
+    <rect x="840" y="726" width="38" height="14" class="halo"/>
+    <text x="859" y="737" class="lbl-blue" text-anchor="middle">PWM</text>
+
+    <rect x="868" y="476" width="62" height="14" class="halo"/>
+    <text x="899" y="487" class="lbl-grey" text-anchor="middle">hump pitch</text>
+
+    <rect x="848" y="410" width="110" height="28" class="halo"/>
+    <text x="903" y="422" class="lbl-red" text-anchor="middle">FAULT_LATCHED</text>
+    <text x="903" y="434" class="lbl-red" text-anchor="middle">blocks / RESET clr</text>
+
+    <text x="1142" y="398" class="lbl-grey">hump height</text>
+    <text x="1142" y="533" class="lbl-red">LIFTED, IMU_ALIVE</text>
+    <text x="1142" y="627" class="lbl-red">LIFTED / 50 ms wdog</text>
+    <text x="1142" y="639" class="lbl-red">↕ FAULT_LATCHED</text>
+
+    <rect x="1313" y="502" width="38" height="14" class="halo"/>
+    <text x="1332" y="513" class="lbl-grey" text-anchor="middle">faults</text>
+
+    <rect x="954" y="777" width="218" height="15" class="halo"/>
+    <text x="1063" y="788" class="lbl-red" text-anchor="middle">motion_emergency_brake() (IF-11, all 4 LOW)</text>
+
+    <rect x="4" y="620" width="44" height="14" class="halo"/>
+    <text x="26" y="631" class="lbl-grey" text-anchor="middle">ADC 5ms</text>
+
+    <rect x="334" y="794" width="54" height="13" class="halo"/>
+    <text x="361" y="804" class="lbl-grey" text-anchor="middle">edge ring</text>
+
+    <rect x="434" y="794" width="90" height="13" class="halo"/>
+    <text x="479" y="804" class="lbl-blue" text-anchor="middle">PWM / SEM_ECHO</text>
+
+    <rect x="545" y="776" width="92" height="14" class="halo"/>
+    <text x="591" y="787" class="lbl-grey" text-anchor="middle">enc_get_count()</text>
+
+    <rect x="1340" y="620" width="36" height="14" class="halo"/>
+    <text x="1358" y="631" class="lbl-grey" text-anchor="middle">I2C1</text>
+
+    <rect x="1344" y="542" width="66" height="14" class="halo"/>
+    <text x="1377" y="553" class="lbl-blue" text-anchor="middle">lwIP / MQTT</text>
+  </g>
+
+  <!-- ==================== HARDWARE BANNER & LEGEND ==================== -->
+  <text x="30" y="922" class="sec-hdr">Hardware drivers (SDK side, kernel-free drv_*.c; isolated by check_rules.cmake); interrupts hand off through counters, rings or SEM_ECHO.</text>
+
+  <text x="30" y="950" class="sec-hdr">Legend</text>
+
+  <!-- Legend Row 1 (Boxes) -->
+  <rect x="30" y="960" width="24" height="16" rx="3" class="box-task"/>
+  <text x="62" y="972" class="lbl-grey">RTOS task (priority, owner, period)</text>
+
+  <rect x="290" y="960" width="24" height="16" rx="3" class="box-safety"/>
+  <text x="322" y="972" class="lbl-grey">Safety task (highest priority)</text>
+
+  <rect x="520" y="960" width="24" height="16" rx="3" class="box-ipc"/>
+  <text x="552" y="972" class="lbl-grey">Shared resource / IPC object</text>
+
+  <rect x="770" y="960" width="24" height="16" rx="3" class="box-hw"/>
+  <text x="802" y="972" class="lbl-grey">Hardware + driver</text>
+
+  <rect x="960" y="960" width="24" height="16" rx="3" class="box-ext"/>
+  <text x="992" y="972" class="lbl-grey">External system</text>
+
+  <!-- Legend Row 2 (Arrows) -->
+  <path d="M 30 996 L 76 996" class="w-blue" marker-end="url(#arr-blue)"/>
+  <text x="86" y="1000" class="lbl-grey">command / control flow</text>
+
+  <path d="M 290 996 L 336 996" class="w-red" marker-end="url(#arr-red)"/>
+  <text x="346" y="1000" class="lbl-grey">safety path (lift / wdog → brake &amp; latch)</text>
+
+  <path d="M 620 996 L 666 996" class="w-grey" marker-end="url(#arr-grey)"/>
+  <text x="676" y="1000" class="lbl-grey">sensor read / telemetry</text>
+
+  <!-- Footer Note -->
+  <text x="30" y="1026" class="foot">Notes: Debug Drain (P10, debug builds only) is the sole caller of USB CDC stdio; every task logs via a lock-free dbg_ ring so no control task blocks on console I/O.</text>
+  <text x="30" y="1043" class="foot">On-target self-test task runs at P11 when APP_TEST=ON. P6 sets/clears EVF_SAFETY NO_ECHO (info); P9 sets/clears WIFI_LOSS.</text>
+</svg>
