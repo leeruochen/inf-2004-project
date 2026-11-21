@@ -99,8 +99,8 @@ side never writes to stdio. Its output goes to two separate places in RAM
   output when no host is connected, so the record waits until you open the
   terminal. If the magic or CRC does not match, RAM holds random data
   (power-on, or after flashing), and the record is silently re-initialised.
-- TODO(phase 1 batch B, buddy 2): implementation of the ring and the record
-  (port layer and drain).
+  Implemented in `src/rtos/port/port_boot.c`, `src/rtos/port/port_fault.c`, and
+  `src/debug/dbg_drain.c` (verified in Batch B stages B4a/B4b and `SYS-01`).
 
 ## Platform self-test (`PLATFORM_SELFTEST`)
 
@@ -120,8 +120,18 @@ The backend is a configure-time option. Only `USB` is accepted.
 | `DBG_DEFAULT` | `USB` | `USB` |
 | `DBG_ENABLE` | `ON` (debug), `OFF` (release) | `OFF` for `Release`/`MinSizeRel`, `ON` otherwise |
 | `APP_TEST` | `ON`, `OFF` | `OFF` |
+| `APP_TEST_ONLY` | `0` (all subsystems), `1..5` (single subsystem) | `0` |
+| `TEL_BACKEND_WIFI` | `ON` (CYW43 + lwIP MQTT, needs `config/secrets.h`), `OFF` (console hex) | `OFF` |
+| `TEL_STATUS_PERIOD_MS` | `""` (`60000 ms`) or integer `>= 200` (e.g. `1000`) | `""` |
+| `S3_LF_STRADDLE` | `ON` (straddle core `lf_straddle.c`), `OFF` (edge core `lf_core.c`) | `OFF` |
+| `S4_MANUAL_TESTS` / `S4_HUMP_ONLY` | `ON`, `OFF` (Subsystem 4 guided `APP_TEST` steps) | `OFF` |
 | `PLATFORM_SELFTEST` | `ON` (Debug only, not with `APP_TEST`), `OFF` | `OFF` |
 | `PLATFORM_BRINGUP` | `ON` (Debug only, not with `APP_TEST` or `PLATFORM_SELFTEST`), `OFF` | `OFF` |
+
+See `START_GUIDE.md` section 2 and `CMakeLists.txt` for the full active Wi-Fi +
+straddle build flags (`-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1`)
+and additional Subsystem 3 test options (`S3_STEP_DIAG`, `S3_TURN_DIAG`,
+`S3_CURVE_TEST`, `S3_BC_TEST`, `S3_BC_QUICK`, `S3_DRIVE_MM`, `S3_TURN`, `S3_QUICK_CAL`).
 
 `-DDBG_BACKEND=UART0` stops configure with "DBG_BACKEND=UART0 was removed
 (Week 8 pin map v2): GP0/GP1 are ENC_R_A/ENC_R_B in config/pins.h". As a

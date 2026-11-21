@@ -40,14 +40,18 @@ Test IDs never change and are never reused, even if a test is dropped.
    & $CM -S . -B build/test @common -DDBG_BACKEND=USB -DAPP_TEST=ON
    & $CM --build build/test
    ```
-   Test builds compile from Batch B on (TODO(phase 1 batch B, buddy 2): dbg_
-   ring). `APP_TEST=ON` needs `DBG_ENABLE=ON`, so a Release build with
+   `APP_TEST=ON` needs `DBG_ENABLE=ON`, so a Release build with
    `APP_TEST=ON` fails at configure. The test image runs every subsystem's
    tests in a dedicated lowest-priority test task (priority 11) and prints one
-   `[TEST] <ID> PASS|FAIL` line per check on the USB CDC console. (A normal
-   build leaves the tests out.) Add `-DAPP_TEST_ONLY=N` (1..5) to run only
+   `[TEST] <ID> PASS|FAIL` line per check on the USB CDC console through the `dbg_` ring.
+   (A normal build leaves the tests out.) Add `-DAPP_TEST_ONLY=N` (1..5) to run only
    subsystem N's tests, for a faster run of your own tests (default 0 = all).
-   Flash it as in `README.md` section 3.
+   Flash it as in `START_GUIDE.md` section 2.
+   For host unit tests (`14` C tests) and dashboard unit tests (`7` Python files, no Pico needed):
+   ```powershell
+   & $CM -S tests -B build/host -G Ninja; & $CM --build build/host; ctest --test-dir build/host --output-on-failure
+   python -m unittest discover -s tools/dashboard -p "test_*.py" -v
+   ```
 4. **Save the console output** to `logs/`, named `YYYY-MM-DD_<what>.txt`.
    The console is USB CDC on the Pico W's own USB port. Its COM port (Device
    Manager > Ports (COM & LPT)) appears only after the firmware boots, and it

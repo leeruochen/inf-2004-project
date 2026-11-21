@@ -6,48 +6,47 @@
 
 ---
 
-## 0. Current Execution Roadmap (Tests $\rightarrow$ Practice Track $\rightarrow$ Optimizations)
+## 0. Current Execution Roadmap (Track Validation $\rightarrow$ Final Logs $\rightarrow$ Nominal Speeds / Optimizations)
 
-As of **14 Nov 2026**, follow this four-stage order so tuning and integration issues are never confused with optimization side effects:
+As of **22 Nov 2026**, **all five subsystems are implemented, merged on `main`, and running together on the car** over Wi-Fi/MQTT and the browser dashboard (`tools/dashboard/tel_web.py`):
 
-1. **Stage 1 — Finish Remaining Subsystem On-Car Tests (`APP_TEST=ON`)**
-   - **S2 (Buddy 2 — Done):** `S2-U01`..`S2-U28` PASS (`testing/subsystem2/TEST_LOG.md`). Safe bit-identical optimizations (`OPT-01`..`OPT-04` in `docs/EMBEDDED_OPTIMIZATIONS.md`) are already applied and build clean.
-   - **S4 (Buddy 4 — Mostly Done):** `S4-U01..U12`, `S4-U15` (hump), `S4-U17..U20` (lift/tilt), and `S4-U23` (lift while driving stops wheels in 134 ms) PASS (`testing/subsystem4/TEST_LOG.md`). `S4-U22` (no false lift over humps) runs on the practice track.
-   - **S5 (Buddy 5 — Mostly Done):** `S5-U01..U26` (25/26 PASS), `S5-U32` (550 ms turn dwell), and `INT-S5-01` (12 obstacle bypasses) PASS (`testing/subsystem5/TEST_LOG.md`). Re-run `-DAPP_TEST_ONLY=5` to log `S5-U29..U31` (width filter fix) and measure `CAR_WIDTH_MM`.
-   - **S3 (Buddy 3 — Critical Blocker):** Host/desk tests (`S3-U01`, `S3-U08`, `S3-U09`, `S3-U10`) pass, but `app_program/subsystem3/subsystem3.c` still has `TODO` stubs in `subsystem3_start()`. Merge GP27 barcode (`buddy3/bc2a-hw`) and wire `task_lf` (`LF-3`, starting `task_lf` in `subsystem3_start()` and setting `EVF_NAV_LINE_FOUND`).
-   - **S1 (Buddy 1):** Host tests `S1-H01..H05` PASS (`testing/subsystem1/TEST_LOG.md`). Flash `-DAPP_TEST=ON -DAPP_TEST_ONLY=1` to log `S1-U01..U10`, then flash `-DTEL_BACKEND_WIFI=ON` for `S1-M01..M02` (`start` / `stop` / `reset`).
-2. **Stage 2 — Run Pairwise Integration Tests (`INT-01`..`INT-05`, Section 4)**
-   - Run **`INT-04`** (S4 Safety $\rightarrow$ S2 Brake/Reset) and **`INT-05`** (S1 MQTT $\leftrightarrow$ S2 VC/Motion) immediately (both sides are already merged on `main`).
-   - As soon as Buddy 3 starts `task_lf` and `task_bc`, run **`INT-01`** (line steering), **`INT-03` / `INT-S5-02`** (obstacle bypass + line reacquisition), and **`INT-02`** (barcode junction turns).
-3. **Stage 3 — Actual Runs on the Practice Track (`SYS-02`..`SYS-06`, Section 5)**
-   - Flash production firmware (`APP_TEST=OFF`, `-DTEL_BACKEND_WIFI=ON`) at `MOTION_BRINGUP_SPEEDS = 1U` (`20 cm/s` cruise).
-   - Complete **`SYS-02`** (full lap), **`SYS-03`** (barcode turns), **`SYS-04`** (hump + `S4-U22`), **`SYS-05`** (obstacle bypass), and **`SYS-06`** (lift stop + stationary reset), logging console output and unlisted YouTube clips (Section 6), then step up to nominal speeds (`MOTION_BRINGUP_SPEEDS = 0U`, `30 cm/s` cruise).
-4. **Stage 4 — Adopt Remaining Optimizations (`docs/EMBEDDED_OPTIMIZATIONS.md`, Post-Track)**
-   - After baseline `SYS-02`..`SYS-06` runs are recorded: adopt **Tier 1** (`OPT-05..07`, `OPT-09..13`, `OPT-19` — zero behavioral impact, bit-identical math/SWAR/context structs), then **Tier 2** (`OPT-08`, `OPT-17` — ISR jitter reduction if WiFi causes ultrasonic/barcode edge jitter), and optionally **Tier 3** (`OPT-14..16`, `OPT-18`, `OPT-20` — SIO interpolator, DMA ADC, PIO0 SM2/SM3 hardware offload, `--gc-sections`).
+1. **Current State of All 5 Subsystems (Integrated on `main`)**:
+   - **S1 (Buddy 1 — Done & Live):** Telemetry task (`tel`), console and Wi-Fi/MQTT backends (`-DTEL_BACKEND_WIFI=ON`), IF-12 snapshots (`tel_set_ir_raw`, `tel_set_range_cm`, `tel_set_attitude`, `tel_post_obstacle`), decoded `A–Z` barcode events (`tel_post_barcode_letter`), framed non-retained `car/cmd/bc_map` (`DREP_FT_CMD_BC_MAP = 11`), single buffered state-change heartbeats, `test_tel` (`S1-H01..H04`), and all 7 dashboard test files (`test_tel_*.py`) PASS.
+   - **S2 (Buddy 2 — Done):** `S2-U01..U28` PASS, safe optimizations `OPT-01..04` applied, `S2-U24/U25` fault-latch reset fix applied, `BC_D_CMD_CM` updated to `60 cm`, `-DMOTION_STEER_TARGETS=1` differential wheel targets, and gradual IMU-pitch hump climb speed/torque assist (`MOTION_HUMP_*`) active.
+   - **S3 (Buddy 3 — Done & Merged):** Line-Following (`task_lf`, `drv_ir.c`, `lf_core.c`, plus straddle mode `-DS3_LF_STRADDLE=ON -DLF_SD_SIMPLE=1 -DLF_SD_BANG=1`) and Code 39 Barcode (`task_bc`, `drv_bc.c`, `bc_edge.c`, `bc_frame.c`, `bc_decode.c`, `BC_MIN_SPEED_MMPS = 20 mm/s`, runtime 4-letter `bc_task_set_map()`) are live; all 7 S3 host tests PASS.
+   - **S4 (Buddy 4 — Done & Calibrated):** `drv_imu.c` auto-detects LSM303D (`0x1D`) or LSM303DLHC (`0x19`/`0x1E`); lift/overturn (`imu_lift.c`, `> 30°` or `> 0.10 m/s` for `50 ms`) verified in `S4-U23` (`134 ms` brake); hump height estimator (`imu_hump.c`) calibrated to `IMU_HUMP_WHEELBASE_MM = 95 mm`, `3°` entry / `2.5°` exit, `15 mm` min travel, `9 mm` min height; `imu_lift` and `imu_hump` host tests PASS.
+   - **S5 (Buddy 5 — Done & Track-Tuned):** `CAR_WIDTH_MM = 130 mm`; `90°` watch-ahead + halt + standstill confirm + stationary `5°` sweep (`50°–130°`, 4 pings / `12 ms` / `400 mm` cap -> 3-echo median + oblique dropout bridging + `40°` beam removal) + encoder-closed 4-turn `45°` bypass (`OBS_OBSTACLE_DEPTH_MM = 100 mm`) + directional rejoin search. Currently `OBS_BYPASS_SLOW_BRINGUP = 1U` (`5 cm/s`, `60 s` budget).
+2. **Active Car Build Configuration (`build/wifi`)**:
+   - The current on-car bring-up firmware uses `-DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=ON` with `-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1` and bring-up speed `5 / 5 / 5 cm/s` (`OBS_BYPASS_SLOW_BRINGUP = 1U`).
+3. **Final Verification & Recording Remaining**:
+   - Capture and commit formal saved console logs (`testing/integration/logs/`, `testing/system/logs/`) and unlisted YouTube links (`videos/README.md`) for `INT-01..05`, `SYS-02..06`, `S1-M03/M04/M05`, `S4-U22` / `S4-U26`, and `S5-U33` / `INT-S5-02..04`.
+   - For the nominal `NFR14` (`<= 5.0 s`) bypass timing run: clear `OBS_BYPASS_SLOW_BRINGUP` to `0U` and restore `MOTION_SPEED_BYPASS_BRINGUP_CMPS` to `25U` and `MOTION_SPEED_BYPASS_MIN_CMPS` to `15U` (`config/thresholds.h`, `config/timing.h`), or set `MOTION_BRINGUP_SPEEDS = 0U` for full nominal speeds (`30 / 15 / 25 cm/s`).
+4. **Post-Track Optimizations (`docs/EMBEDDED_OPTIMIZATIONS.md`)**:
+   - After final baseline logs are saved: optionally adopt **Tier 1** (`OPT-05..07`, `OPT-09..13`, `OPT-19`), **Tier 2** (`OPT-08`, `OPT-17`), and **Tier 3** (`OPT-14..16`, `OPT-18`, `OPT-20`) with team agreement.
 
 ---
 
 ## 1. How All 5 Subsystems Wire Together (`app_program/app_main.c`)
 
-No custom "glue file" is required when merging subsystem branches into `main`. The platform two-phase startup in `usermain()` (`app_program/app_main.c`) already initializes and starts all five subsystems in deterministic order:
+No custom "glue file" is required: the platform two-phase startup in `usermain()` (`app_program/app_main.c`) initializes and starts all five subsystems in deterministic order:
 
 1. **`ipc_init()` (`src/common/ipc.c`)**: Creates all 8 shared kernel IPC objects (`MBF_NAV_IN`, `MBF_MOTION_CMD`, `MBF_OBSTACLE`, `MBF_TELEMETRY`, `SEM_ECHO`, `EVF_SAFETY`, `EVF_NAV`, `MTX_MOTION`) before any subsystem code runs.
-2. **`subsystem1_init()` .. `subsystem5_init()`**: Each subsystem initializes its hardware drivers in a safe state (for example, `subsystem2_init()` calls `motion_emergency_brake()` so all four motor channels `GP8`–`GP11` are LOW before tasks start).
+2. **`subsystem1_init()` .. `subsystem5_init()`**: Each subsystem initializes its hardware drivers in a safe state (for example, `subsystem2_init()` calls `motion_emergency_brake()` so all four motor channels `GP8`–`GP11` are LOW before tasks start, and `subsystem3_init()` checks both line-sensor ADC channels and initializes GP27 edge capture).
 3. **`subsystem1_start()` .. `subsystem5_start()`**: Each subsystem spawns its real-time tasks via `app_start_task()` at the fixed priorities in `config/priorities.h`:
 
 | Priority | Task Name | Subsystem | Owner | Period / Trigger |
 |---|---|---|---|---|
 | **1 (Highest)** | `safety` | Subsystem 4 | Buddy 4 (Vincent) | Event-driven (`tk_wai_flg` on `EVF_SAFETY` with `SAFETY_IMU_WDOG_MS = 50 ms` timeout) |
-| **2** | `vc` | Subsystem 2 | Buddy 2 (Ruo Chen) | Message-driven (`tk_rcv_mbf` on `MBF_NAV_IN`, `20 ms` timeout poll) — **DONE on `main`** |
-| **3** | `motion` | Subsystem 2 | Buddy 2 (Ruo Chen) | Periodic **`20 ms`** (`app_period_wait`, `MOTION_PERIOD_MS`) — **DONE on `main`** |
-| **4** | `line` | Subsystem 3 | Buddy 3 (Jin Yong) | Periodic **`5 ms`** (`app_period_wait`, `LINE_PERIOD_MS`) |
-| **5** | `barcode` | Subsystem 3 | Buddy 3 (Jin Yong) | Periodic **`2 ms`** while capturing (`BC_POLL_PERIOD_MS`, D3) |
-| **6** | `obs_scan` | Subsystem 5 | Buddy 5 (Chay Han) | Periodic **`60 ms`** (`OBS_SCAN_PERIOD_MS`) + `SEM_ECHO` (`30 ms` timeout) |
-| **7** | `obs_avoid` | Subsystem 5 | Buddy 5 (Chay Han) | Message-driven (`MBF_OBSTACLE`) / periodic during bypass |
-| **8** | `imu` | Subsystem 4 | Buddy 4 (Vincent) | Periodic **`10 ms`** (`IMU_PERIOD_MS`) |
-| **9 (Lowest app)** | `telemetry` | Subsystem 1 | Buddy 1 (Damian) | Periodic **`200 ms`** (`TEL_PERIOD_MS`) + `MBF_TELEMETRY` drain |
-| **10** | `dbg_drain` | Platform | Platform (Batch B) | Periodic `20 ms` USB CDC non-blocking drain (`DBG_ENABLE` builds) |
-| **11** | `test` | Platform | Team (`APP_TEST=ON`) | Runs `subsystem1_test()..subsystem5_test()` once (`APP_TEST` builds only) |
+| **2** | `vc` | Subsystem 2 | Buddy 2 (Ruo Chen) | Message-driven (`tk_rcv_mbf` on `MBF_NAV_IN`, `20 ms` timeout poll) |
+| **3** | `motion` | Subsystem 2 | Buddy 2 (Ruo Chen) | Periodic **`20 ms`** (`app_period_wait`, `MOTION_PERIOD_MS`) |
+| **4** | `lf` | Subsystem 3 | Buddy 3 (Jin Yong) | Periodic **`5 ms`** (`app_period_wait`, `LF_SAMPLE_PERIOD_MS`), posts steering every `20 ms` (`LF_STEER_POST_PERIOD_MS`) |
+| **5** | `bc` | Subsystem 3 | Buddy 3 (Jin Yong) | ISR-woken on GP27 edge, then **`2 ms`** capture poll (`BC_POLL_PERIOD_MS`, D3) |
+| **6** | `obs_scan` | Subsystem 5 | Buddy 5 (Chay Han) | Periodic **`60 ms`** (`app_period_wait`, `OBS_SERVO_STEP_PERIOD_MS`) + `SEM_ECHO` (`30 ms` watch / `12 ms` sweep timeout) |
+| **7** | `obs_avoid` | Subsystem 5 | Buddy 5 (Chay Han) | `50 ms` idle poll / `MBF_OBSTACLE` receive -> `20/40 ms` closed-loop bypass poll |
+| **8** | `imu` | Subsystem 4 | Buddy 4 (Vincent) | Periodic **`10 ms`** (`app_period_wait`, `IMU_SAMPLE_PERIOD_MS`) |
+| **9 (Lowest app)** | `tel` | Subsystem 1 | Buddy 1 (Damian) | Periodic **`20 ms`** wake (`TEL_WAKE_PERIOD_MS`), publishes telemetry every **`200 ms`** (`TEL_PUBLISH_PERIOD_MS`), heartbeat every **`1 s`** (`TEL_HEARTBEAT_PERIOD_MS`) + `MBF_TELEMETRY` drain |
+| **10** | `dbg_drain` | Platform | Platform | Periodic **`10 ms`** (`DBG_DRAIN_PERIOD_MS`) USB CDC non-blocking drain (`DBG_ENABLE` builds) |
+| **11** | `app_test` | Platform | Team (`APP_TEST=ON`) | Runs `subsystem1_test()..subsystem5_test()` once (`APP_TEST` builds only) |
 
 ---
 
@@ -77,37 +76,38 @@ Include `#include "../subsystem2/subsystem2.h"` and `#include "src/common/data_r
    {
        int32_t  speed_x10 = drep_ms_speed_x10(st.w);      /* 0.1 cm/s */
        uint32_t dist_cm   = drep_ms_distance_cm(st.w);    /* cumulative cm */
-       int32_t  enc_l     = st.enc_count[ENC_WHEEL_LEFT];
-       int32_t  enc_r     = st.enc_count[ENC_WHEEL_RIGHT];
+       int32_t  enc_l     = st.enc_count[0];              /* [0] left, [1] right */
+       int32_t  enc_r     = st.enc_count[1];
    }
    uint32_t sys_fsm = vc_get_system_state(); /* 4-bit state: VC_SYS_INITIALISING (0) .. VC_SYS_NAV_TURN_RIGHT (9) */
    ```
-3. **Receiving State-Transition Events on `IF-04` (`MBF_TELEMETRY`)**:
-   - Every time the 10-state System FSM changes state, `task_vc` posts `drep_tel_state(now_ms, new_state)` (`DREP_TEL_STATE = 4U`) to `MBF_TELEMETRY` with `TMO_POL`.
+3. **Receiving Events (`IF-04` `MBF_TELEMETRY`) & Applying Runtime Barcode Maps (`car/cmd/bc_map`)**:
+   - Every time the 10-state System FSM changes state, `task_vc` posts `drep_tel_make(DREP_TEL_STATE, now_ms, state, false)` (`DREP_TEL_STATE = 4U`) to `MBF_TELEMETRY` with `TMO_POL`. `task_tel` pushes state-change heartbeats straight into `s_outbox` alongside event frames (`DREP_TEL_HUMP`, `DREP_TEL_BARCODE` with A–Z letter bits, `DREP_TEL_FAULT`) and IF-12 obstacle profiles (`tel_post_obstacle()`).
+   - A validated `car/cmd/bc_map` frame (`DREP_FT_CMD_BC_MAP = 11`, non-retained) calls `bc_task_set_map(L, R, S, U)` in `../subsystem3/subsystem3.h`.
 
 ---
 
 ### 2.2 Subsystem 3 (Buddy 3 — Line-Following & Barcode Decode)
 Include `#include "../subsystem2/subsystem2.h"` and `#include "src/common/data_repr.h"`:
 
-1. **Line-Following Steering (`IF-01`, `MBF_NAV_IN`, every `5 ms`)**:
-   - **Hold-Window Rule (`MOTION_T_HOLD_MS = 100 ms`)**: Motion Control holds a continuous `DREP_MC_STEER` command for at most `100 ms` (`5` motion periods). Because `task_line` runs every `5 ms`, it refreshes the steering command `20` times per `100 ms` window. If `task_line` stops sending commands for `> 100 ms`, the car automatically stops.
-   - **Steering Sign (`D11`)**: `steer_err_q7` is in Q0.7 (`-128 .. +127`, representing `-1.0 .. +0.992`). In `task_motion.c`, **positive `steer_err_q7 > 0` steers RIGHT** (`left_duty += steer_pm`, `right_duty -= steer_pm`).
+1. **Line-Following Steering (`IF-01`, `MBF_NAV_IN`, sample `5 ms` / steer `20 ms`)**:
+   - **Hold-Window Rule (`MOTION_T_HOLD_MS = 100 ms`)**: Motion Control holds a continuous `DREP_MC_STEER` command for at most `100 ms` (`5` motion periods). `task_lf` samples at `5 ms` and posts steering every `20 ms` aligned to Motion's poll slot (`lf_link_post_slot()`). If `task_lf` stops sending commands for `> 100 ms`, the car automatically stops.
+   - **Steering Sign (`D11`)**: `steer_err_q7` is in Q0.7 (`-128 .. +127`, representing `-1.0 .. +0.992`). In `task_motion.c`, **positive `steer_err_q7 > 0` steers RIGHT** (`MOTION_STEER_TARGETS=1` adjusts left/right target speeds symmetrically; open-loop fallback scales duty directly).
    ```c
    /* Continuous steering while on the line: */
-   nav_input_t steer_msg = drep_nav_steer(steer_err_q7);
+   nav_input_t steer_msg = drep_nav_line_steer(steer_err_q7);
    (void)tk_snd_mbf(MBF_NAV_IN, &steer_msg, (INT)sizeof(steer_msg), TMO_POL);
 
-   /* If the line is completely lost after recovery timeout: */
-   nav_input_t lost_msg = drep_nav_line_Simple(DREP_NAV_LINE_TRACK_LOST);
-   (void)tk_snd_mbf(MBF_NAV_IN, &lost_msg, (INT)sizeof(lost_msg), (TMO)NAV_CRITICAL_SEND_TMO_MS);
+   /* Junction or track-lost events (DREP_NAV_LINE_JUNCTION / DREP_NAV_LINE_TRACK_LOST): */
+   nav_input_t evt_msg = drep_nav_line_event(DREP_NAV_LINE_TRACK_LOST);
+   (void)tk_snd_mbf(MBF_NAV_IN, &evt_msg, (INT)sizeof(evt_msg), (TMO)NAV_MBF_SEND_TMO_MS);
    ```
 2. **Barcode Commands (`IF-01`, `MBF_NAV_IN`, `5 ms` send timeout) & Distance Reading (`IF-08`)**:
-   - Use `motion_get_state(&st)` and `drep_ms_distance_cm(st.w)` to check `BC_D_CMD_CM` (`30 cm` expiry) and `BC_REPEAT_IGNORE_CM` (`10 cm` de-dup).
-   - When triggering a barcode action (`DREP_BC_STOP = 0`, `DREP_BC_LEFT = 1`, `DREP_BC_RIGHT = 2`, `DREP_BC_UTURN = 3`):
+   - `task_bc` decodes Code 39 letters `'A'..'Z'` using speed from `motion_get_state(&st)` (`BC_MIN_SPEED_MMPS = 20 mm/s`), reports every decoded letter via `tel_post_barcode_letter(letter, bc_cmd, mapped)`, and maps letters via `bc_task_set_map()` (`A=LEFT`, `B=RIGHT`, `C=STRAIGHT`, `D=UTURN` by default; `BC_D_CMD_CM = 60 cm` expiry inside `task_vc.c`, `BC_REPEAT_IGNORE_CM = 10 cm`).
+   - When sending a mapped action (`DREP_BC_CMD_LEFT = 0`, `DREP_BC_CMD_RIGHT = 1`, `DREP_BC_CMD_STRAIGHT = 2`, `DREP_BC_CMD_UTURN = 3`):
    ```c
-   nav_input_t bc_msg = drep_nav_barcode(DREP_BC_LEFT, false);
-   (void)tk_snd_mbf(MBF_NAV_IN, &bc_msg, (INT)sizeof(bc_msg), (TMO)NAV_CRITICAL_SEND_TMO_MS);
+   nav_input_t bc_msg = drep_nav_barcode(DREP_BC_CMD_LEFT);
+   (void)tk_snd_mbf(MBF_NAV_IN, &bc_msg, (INT)sizeof(bc_msg), (TMO)NAV_MBF_SEND_TMO_MS);
    ```
 
 ---
@@ -116,7 +116,7 @@ Include `#include "../subsystem2/subsystem2.h"` and `#include "src/common/data_r
 Include `#include "../subsystem2/subsystem2.h"`:
 
 1. **Emergency Brake (`IF-11`) & Fault Latch (`IF-06`, `EVF_SAFETY`)**:
-   - When `task_safety` (Priority 1) detects `EVF_SAFETY_LIFTED` (robot lifted or overturned) or a `SAFETY_IMU_WDOG_MS` (`50 ms`) timeout on `EVF_SAFETY_IMU_ALIVE`:
+   - When `task_safety` (Priority 1) detects `EVF_SAFETY_LIFTED` (robot lifted `> 0.10 m/s` or tilted `> 30°` for `50 ms`) or a `SAFETY_IMU_WDOG_MS` (`50 ms`) timeout on `EVF_SAFETY_IMU_ALIVE`:
    ```c
    /* 1. Drive all 4 motor PWM channels LOW immediately in hardware (< 10 us): */
    motion_emergency_brake();
@@ -132,21 +132,24 @@ Include `#include "../subsystem2/subsystem2.h"`:
 Include `#include "src/common/ipc.h"` and `#include "src/common/data_repr.h"`:
 
 1. **Taking Avoidance Authority (`IF-07` `EVF_NAV` + `IF-01` `MBF_NAV_IN`)**:
-   - When an obstacle is confirmed within `OBS_D_DETECT_CM` (`25 cm`), set `EVF_NAV_AVOID_ACTIVE` and send bypass commands (`DREP_BYPASS_STOP = 0`, `DREP_BYPASS_LEFT = 1`, `DREP_BYPASS_RIGHT = 2`, `DREP_BYPASS_STRAIGHT = 3`, `DREP_BYPASS_RELEASE = 4`) to `MBF_NAV_IN`:
+   - When an obstacle is confirmed within `OBS_D_DETECT_CM` (`25 cm`), set `EVF_NAV_AVOID_ACTIVE` and send bypass commands (`DREP_BYPASS_STOP = 0`, `DREP_BYPASS_CONTINUE = 1`, `DREP_BYPASS_LEFT = 2`, `DREP_BYPASS_RIGHT = 3`, `DREP_BYPASS_REVERSE = 4`) via `drep_nav_avoid(type, bypass_cmd)` (where `type` is `DREP_NAV_AVOID_SLOW`, `DREP_NAV_AVOID_BYPASS`, `DREP_NAV_AVOID_RELEASE`, or `DREP_NAV_AVOID_BLOCKED`):
    ```c
    (void)tk_set_flg(EVF_NAV, EVF_NAV_AVOID_ACTIVE);
 
-   nav_input_t avoid_msg = drep_nav_avoid(DREP_BYPASS_LEFT, seq_2bit, false);
-   (void)tk_snd_mbf(MBF_NAV_IN, &avoid_msg, (INT)sizeof(avoid_msg), (TMO)NAV_CRITICAL_SEND_TMO_MS);
+   nav_input_t slow_msg  = drep_nav_avoid(DREP_NAV_AVOID_SLOW, DREP_BYPASS_STOP);
+   (void)tk_snd_mbf(MBF_NAV_IN, &slow_msg, (INT)sizeof(slow_msg), (TMO)NAV_MBF_SEND_TMO_MS);
+
+   nav_input_t avoid_msg = drep_nav_avoid(DREP_NAV_AVOID_BYPASS, DREP_BYPASS_LEFT);
+   (void)tk_snd_mbf(MBF_NAV_IN, &avoid_msg, (INT)sizeof(avoid_msg), (TMO)NAV_MBF_SEND_TMO_MS);
    ```
-2. **Releasing Authority Back to Line-Following (`DREP_BYPASS_RELEASE`)**:
+2. **Releasing Authority Back to Line-Following (`DREP_NAV_AVOID_RELEASE`)**:
    - Once the line is reacquired during return-to-line:
    ```c
-   (void)tk_clr_flg(EVF_NAV, ~EVF_NAV_AVOID_ACTIVE);
    (void)tk_set_flg(EVF_NAV, EVF_NAV_LINE_REACQUIRED);
+   (void)tk_clr_flg(EVF_NAV, ~(UINT)EVF_NAV_AVOID_ACTIVE);
 
-   nav_input_t rel_msg = drep_nav_avoid(DREP_BYPASS_RELEASE, seq_2bit, false);
-   (void)tk_snd_mbf(MBF_NAV_IN, &rel_msg, (INT)sizeof(rel_msg), (TMO)NAV_CRITICAL_SEND_TMO_MS);
+   nav_input_t rel_msg = drep_nav_avoid(DREP_NAV_AVOID_RELEASE, DREP_BYPASS_STOP);
+   (void)tk_snd_mbf(MBF_NAV_IN, &rel_msg, (INT)sizeof(rel_msg), (TMO)NAV_MBF_SEND_TMO_MS);
    ```
 
 ---
@@ -155,69 +158,64 @@ Include `#include "src/common/ipc.h"` and `#include "src/common/data_repr.h"`:
 
 Before running pairwise or lab-course tests after teammates merge their branches:
 
-1. **Pull `main` and Run the Compile + Rule Gate**:
+1. **Pull `main` and Run the Compile + Rule + Host Tests**:
    ```powershell
    git pull origin main
-   cmake -P cmake/check_rules.cmake
+   cmake -DRULES_ROOT=. -P cmake/check_rules.cmake
+   cmake --build build/wifi --parallel 8
    cmake --build build/test --parallel 8
-   cmake --build build/s0b --parallel 8
+   ctest --test-dir build/host --output-on-failure
    ```
-   Verify **0 compiler warnings** (`-Wall -Wextra -Werror`) and `-- check_rules: PASS`.
+   Verify **0 compiler warnings** (`-Wall -Wextra -Werror`), `check_rules: PASS`, and `14/14` host tests passing.
 2. **Verify All Physical Wiring Against `TEAM.md` Section 2**:
-   - [x] **Motors (`GP8`–`GP11`) & Encoders (`GP0`/`GP1`, `GP16`/`GP17`)**: Verified on 3.3 V Grove 1 & Grove 4; polarities and geometry (`ENC_CPR = 616U`, `WHEEL_CIRC_MM = 207U`, `MOTION_EFF_TRACK_MM = 114U`) set in `config/pins.h` and `config/thresholds.h`.
+   - [x] **Motors (`GP8`–`GP11`) & Encoders (`GP0`/`GP1`, `GP16`/`GP17`)**: Verified on 3.3 V Grove 1 & Grove 4; polarities and geometry (`ENC_CPR = 616U`, `WHEEL_CIRC_MM = 207U`, `MOTION_EFF_TRACK_MM = 114U`, `CAR_WIDTH_MM = 130U`) set in `config/pins.h` and `config/thresholds.h`.
    - [ ] **Grove 6 `GP26` Lead Taped/Capped**: Grove 6 shares `GP26` with Grove 5 (`IR_R` line sensor `ADC0`); ensure the unused lead on Grove 6 cannot short.
-   - [ ] **`GP28` `VBAT` Jumper OPEN**: So `ADC2` (`GP28`) reads the centre line sensor (`IR_C`) instead of the battery divider.
+   - [ ] **`GP28` `VBAT` Jumper OPEN**: So `ADC2` (`GP28`) reads the line sensor (`IR_C`) instead of the battery divider.
    - [ ] **Grove 2 Unused**: Because `GP2`/`GP3` (`I2C1`) are used by the GY-511 IMU on the Maker/Qwiic port.
-   - [ ] **Ultrasonic (`GP4`/`GP5`, Grove 3) & Servo (`GP15`, PWM Slice 7B)**: `GP5` echo is 3.3 V-safe; servo signal is on `GP15` (never `GP12`).
+   - [x] **Ultrasonic (`GP4`/`GP5`, Grove 3) & Servo (`GP15`, PWM Slice 7B)**: `GP5` echo is 3.3 V-safe; servo signal is on `GP15` (never `GP12`).
 
 ---
 
 ## 4. Phase 1: Pairwise Integration Testing (`testing/integration/TEST_LOG.md`)
 
-Run these five pairwise tests in order as each buddy finishes their subsystem. Record every run in `testing/integration/TEST_LOG.md` with its saved log in `testing/integration/logs/`.
+Run these five pairwise tests in order and record every run in `testing/integration/TEST_LOG.md` with its saved log in `testing/integration/logs/`.
 
 | Test ID | Subsystems | Step-by-Step Procedure | Pass Criteria |
 |---|---|---|---|
-| **`INT-01`** | **S3 (Line) $\rightarrow$ S2 (VC + Motion)** | 1. Elevate wheels on the bench; transition VC to `NAV_LINE_TRACKING`.<br>2. Move a black tape strip under `IR_C` (`GP28`) and `IR_R` (`GP26`).<br>3. Place car on a 1 m floor line and run at `MOTION_SPEED_CRUISE_BRINGUP_CMPS` (`20 cm/s`). | - Positive `steer_err_q7` (line to the right) speeds up left wheel and slows right wheel.<br>- Car tracks the 1 m line smoothly.<br>- Lifting the car off the line (`TRACK_LOST`) stops both wheels and returns VC to `READY_WAITING`. |
-| **`INT-02`** | **S3 (Barcode) $\leftrightarrow$ S2 (VC + Motion)** | 1. Drive over (or slide under `GP27`) a valid barcode card (`LEFT`, `RIGHT`, `U_TURN`, `STOP`).<br>2. Trigger junction detection (`DREP_NAV_LINE_JUNCTION`). | - S3 reads `motion_get_state()` under `MTX_MOTION` without blocking.<br>- VC transitions to `VC_SYS_NAV_TURN_LEFT` / `RIGHT` / `U_TURN` / `READY_WAITING` and executes the calibrated `90°` / `180°` turn. |
-| **`INT-03`** | **S5 (Obstacle) $\rightarrow$ S2 (VC + Motion)** | 1. While driving in `NAV_LINE_TRACKING`, place a box `< 25 cm` ahead of `GP4`/`GP5`.<br>2. Observe servo scan (`GP15`) and bypass sequence.<br>3. Trigger line reacquisition (`EVF_NAV_LINE_REACQUIRED` + `DREP_BYPASS_RELEASE`). | - VC switches authority to `VC_AUTH_AVOID` (`VC_SYS_OBSTACLE_AVOIDANCE`) and ignores S3 line steering.<br>- Upon release, VC restores `VC_AUTH_LINE` (`VC_SYS_NAV_LINE_TRACKING`). |
-| **`INT-04`** | **S4 (IMU/Safety) $\rightarrow$ S2 (Brake + VC)** | 1. With wheels spinning in `NAV_LINE_TRACKING`, tap the chassis (`> 2.5 g`) or disconnect IMU I2C to trip the `50 ms` watchdog.<br>2. Send remote `RESET` while wheels are spun by hand, then send `RESET` after `500 ms` stationary. | - `motion_emergency_brake()` drives `GP8`–`GP11` LOW immediately.<br>- VC enters `VC_SYS_SAFETY_FAULT_LATCHED` and rejects drive commands.<br>- First `RESET` (moving) is ignored; second `RESET` (`>= 500 ms` stationary) clears `EVF_SAFETY_FAULT_LATCHED` and returns to `READY_WAITING`. |
-| **`INT-05`** | **S1 (Telemetry) $\leftrightarrow$ S2 (VC + Motion)** | 1. Boot car (`READY_WAITING`).<br>2. Send MQTT `cmd_start`, drive 1 m, send `cmd_stop`.<br>3. Inspect dashboard / MQTT `telemetry_motion`, `event_fault`, and `heartbeat` frames. | - `cmd_start` starts navigation; `cmd_stop` halts the car and returns to `READY_WAITING`.<br>- `heartbeat` reports `vc_get_system_state()` (`0..9`), and `telemetry_motion` matches `motion_get_state()`. |
-
-> **How to start the car on the lab course before Buddy 1's WiFi/MQTT is merged:**  
-> Because `vc_task_entry()` waits in `VC_SYS_READY_WAITING` until a `DREP_NAV_REMOTE_START` message arrives on `MBF_NAV_IN`, you can temporarily post `drep_nav_remote(DREP_NAV_REMOTE_START)` after a 5-second boot delay in `subsystem1.c` (or on pressing Robo Pico button `GP20`) when running untethered track tests without WiFi.
+| **`INT-01`** | **S3 (Line) $\rightarrow$ S2 (VC + Motion)** | 1. Elevate wheels on the bench; transition VC to `NAV_LINE_TRACKING`.<br>2. Move a black tape strip under `IR_C` (`GP28`) and `IR_R` (`GP26`).<br>3. Place car on a 1 m floor line and run at `MOTION_SPEED_CRUISE_CMPS` (`5 cm/s` bring-up). | - Positive `steer_err_q7` steers right (`MOTION_STEER_TARGETS=1` adjusts left/right speed targets smoothly).<br>- Car tracks the 1 m line without false `LINE_LOST`.<br>- Removing the car from the line (`TRACK_LOST`) stops both wheels and returns VC to `READY_WAITING`. |
+| **`INT-02`** | **S3 (Barcode) $\leftrightarrow$ S2 (VC + Motion)** | 1. Configure mapping via `car/cmd/bc_map` (default `A=L, B=R, C=S, D=U`) or use printable cards.<br>2. Drive over a Code 39 barcode card (`GP27`), then cross a junction within `BC_D_CMD_CM` (`60 cm`). | - S3 reads `motion_get_state()` under `MTX_MOTION` without blocking (`BC_MIN_SPEED_MMPS = 20 mm/s`).<br>- S1 telemetry receives `event_barcode` with decoded `A–Z` letter; VC transitions to `VC_SYS_NAV_TURN_LEFT` / `RIGHT` / `GO_STRAIGHT` / `U_TURN` and executes the junction manoeuvre. |
+| **`INT-03`** | **S5 (Obstacle) $\rightarrow$ S2 (VC + Motion) & S3 (Line)** | 1. While driving in `NAV_LINE_TRACKING`, place a box `< 25 cm` ahead of `GP4`/`GP5`.<br>2. Observe halt, stationary `5°` sweep (`50°–130°`), and encoder-closed 4-turn bypass.<br>3. Observe `EVF_NAV_LINE_FOUND` -> `EVF_NAV_LINE_REACQUIRED` handoff. | - VC switches authority to `VC_AUTH_AVOID` (`VC_SYS_OBSTACLE_AVOIDANCE`) and ignores S3 line steering during bypass.<br>- Upon release (`DREP_NAV_AVOID_RELEASE`), VC restores `VC_AUTH_LINE` (`VC_SYS_NAV_LINE_TRACKING`). |
+| **`INT-04`** | **S4 (IMU/Safety) $\rightarrow$ S2 (Brake + VC)** | 1. With wheels spinning in `NAV_LINE_TRACKING`, lift/tilt the car (`> 30°` or `> 0.10 m/s` for `50 ms`) or disconnect IMU I2C (`50 ms` watchdog).<br>2. Send remote `RESET` while wheels are spun by hand, then send `RESET` after `500 ms` stationary. | - `motion_emergency_brake()` drives `GP8`–`GP11` LOW immediately (`<= 200 ms`, NFR10).<br>- VC enters `VC_SYS_SAFETY_FAULT_LATCHED` and rejects drive commands.<br>- First `RESET` (moving) is ignored; second `RESET` (`>= 500 ms` stationary) clears `EVF_SAFETY_FAULT_LATCHED` and returns to `READY_WAITING`. |
+| **`INT-05`** | **S1 (Telemetry) $\leftrightarrow$ S2 / S3 / S4 / S5** | 1. Boot Wi-Fi build (`build/wifi`), connect web dashboard (`tel_web.py`).<br>2. Send `cmd_start` (`START`), optional `car/cmd/bc_map`, drive over barcode/hump/obstacle, send `cmd_stop`. | - `START`/`STOP` change `VC` state cleanly; `car/cmd/bc_map` updates S3 map (`[TEL] bc_map ...`); heartbeat reports `0..9`; `telemetry_motion`/`sensor`, `event_barcode` (`A–Z`), `event_hump`, `event_obstacle`, and `event_fault` match car behaviour. |
 
 ---
 
 ## 5. Phase 2: Full System & Lab Course Testing (`testing/system/TEST_LOG.md`)
 
-Once `INT-01`..`INT-05` pass, test the complete car on the **lab course** using the production firmware (`build/s0b/robocar.uf2`, where `APP_TEST=OFF`).
+Flash the active Wi-Fi car build (`build/wifi/robocar.uf2`) or USB console build (`build/usb/robocar.uf2`) with `APP_TEST=OFF`.
 
 ### 5.1 Building & Flashing the Production Firmware
 ```powershell
-cmake --build build/s0b --parallel 8
+& $CM --build build/wifi --parallel 8
 $v = Get-Volume | Where-Object { $_.FileSystemLabel -eq 'RPI-RP2' }
-Copy-Item build/s0b/robocar.uf2 "$($v.DriveLetter):\"
+Copy-Item build/wifi/robocar.uf2 "$($v.DriveLetter):\"
 ```
 
-### 5.2 Speed Progression on the Lab Course (`config/thresholds.h`)
-- **Initial Lab Course Runs (`MOTION_BRINGUP_SPEEDS = 1U`, current default)**:
-  - Cruise = `20 cm/s`, Slow/Turn = `10 cm/s`, Bypass = `25 cm/s` (`MOTION_SPEED_*_BRINGUP_CMPS`).
-  - Keep `MOTION_BRINGUP_SPEEDS = 1U` while tuning S3's line-following gain and S5's obstacle bypass timings on the physical lab track.
-- **Nominal Lab Course Runs (`MOTION_BRINGUP_SPEEDS = 0U`)**:
-  - Cruise = `30 cm/s`, Slow/Turn = `15 cm/s`, Bypass = `25 cm/s` (`MOTION_SPEED_*_NOMINAL_CMPS`).
-  - Flip `#define MOTION_BRINGUP_SPEEDS (0U)` in `config/thresholds.h` once the car completes a full lap reliably at bring-up speeds.
+### 5.2 Speed Progression on the Lab Course (`config/thresholds.h`, `config/timing.h`)
+- **Current Bring-Up Demo Speeds (`MOTION_BRINGUP_SPEEDS = 1U`, `OBS_BYPASS_SLOW_BRINGUP = 1U`)**:
+  - Cruise = `5 cm/s`, Slow/Turn = `5 cm/s`, Bypass = `5 cm/s` (`OBS_BYPASS_BUDGET_MS = 60000U` so obstacle bypass + `LINE_FOUND` handoff completes reliably; IMU hump climb boost ramps gradually up to `~9.5 cm/s` on steep inclines).
+- **Nominal NFR14 Speeds (`OBS_BYPASS_SLOW_BRINGUP = 0U` or `MOTION_BRINGUP_SPEEDS = 0U`)**:
+  - Restoring bypass speed to `25 cm/s` (`MOTION_SPEED_BYPASS_MIN_CMPS = 15U`) re-enables the compile-time `NFR14` (`<= 5.0 s`) guards; full nominal set (`MOTION_BRINGUP_SPEEDS = 0U`) uses Cruise = `30 cm/s`, Slow = `15 cm/s`, Bypass = `25 cm/s`.
 
-### 5.3 Planned System Test Cases (`SYS-02`..`SYS-06`)
-Add these rows to `testing/system/TEST_LOG.md` before running them on the lab course:
+### 5.3 System Test Cases (`SYS-02`..`SYS-06`)
 
 | ID | Lab Course Test | Requirement | Method | Steps on the Lab Course | Expected Result |
 |---|---|---|---|---|---|
-| **`SYS-02`** | End-to-end line-following lap | FR2, FR5, FR6, NFR1 | manual + log + video | Place car at course start; send remote `START` via MQTT; run a full lap of straights and curves; send remote `STOP` at finish | Car stays on the line for the entire lap, reports live speed/distance over MQTT (`telemetry_motion`), and stops cleanly at finish |
-| **`SYS-03`** | Barcode-guided junction turns | FR3, FR4 | manual + log + video | Place barcode cards (`LEFT`, `RIGHT`, `U_TURN`, `STOP`) before course junctions; run car along the line | Car decodes each barcode within `BC_D_CMD_CM` (`30 cm`), executes the commanded `90°`/`180°` turn or stop at the junction, and sends `event_barcode` to MQTT |
-| **`SYS-04`** | Hump traversal & pitch detection | FR7, FR8 | manual + log + video | Drive car over the lab course hump/ramp during autonomous line tracking | IMU detects pitch $\ge 5^\circ$ (`IMU_HUMP_PITCH_DEG`); VC enters `VC_SYS_NAV_HUMP_SENSING` (slow speed), traverses hump without losing the line, and sends `event_hump` |
-| **`SYS-05`** | Obstacle detection, scan & bypass | FR9, FR10, FR11 | manual + log + video | Place an obstacle box on the track line; run car toward the obstacle | Car stops at `< 25 cm`, sweeps servo (`GP15`), sends `event_obstacle`, steers around the clearer side (`VC_AUTH_AVOID`), reacquires the black line, and resumes `NAV_LINE_TRACKING` |
-| **`SYS-06`** | Lift/overturn fault latch & stationary reset | FR12, IF-06, IF-11 | manual + log + video | Lift the robot off the track mid-run (end-of-run signal), tip it over, or run off-track (`TRACK_LOST`); attempt remote `RESET` while moving, then after `500 ms` stationary | Motors brake immediately (`motion_emergency_brake()`); `event_fault` sent; moving `RESET` rejected; stationary `RESET` clears latch and returns to `READY_WAITING` |
+| **`SYS-02`** | End-to-end line-following lap | FR1, FR4–FR8, NFR1 | manual + log + video | Place car at course start; send remote `START` via MQTT; run a full lap of straights and curves; send remote `STOP` at finish | Car stays on the line for the entire lap, reports live speed/distance over MQTT (`telemetry_motion`), and stops cleanly at finish |
+| **`SYS-03`** | Barcode-guided junction turns | FR9, NFR8, NFR9 | manual + log + video | Set letter map via `car/cmd/bc_map` (default `A/B/C/D`); place Code 39 barcode cards before junctions; run car along the line | Car decodes each `A–Z` barcode, sends `event_barcode` to MQTT, and executes the mapped LEFT/RIGHT/STRAIGHT/UTURN at the junction within `BC_D_CMD_CM` (`60 cm`) |
+| **`SYS-04`** | Hump traversal & pitch detection | FR11, NFR11, NFR12 | manual + log + video | Drive car over the lab course hump/ramp during autonomous line tracking | IMU detects pitch `>= 3°` (`IMU_HUMP_PITCH_DEG`, calibrated `95 mm` wheelbase), Motion applies hump climb assist without losing the line, no false lift fires, and `event_hump` reports height within NFR11 (`±20%` or `±5 mm`) |
+| **`SYS-05`** | Obstacle detection, scan & bypass | FR13, FR14, NFR14, NFR15 | manual + log + video | Place an obstacle box on the track line; run car toward the obstacle | Car halts at `< 25 cm`, runs `5°` sweep (`50°–130°`), sends `event_obstacle` with width and clearances, bypasses on the clearer side (`VC_AUTH_AVOID`), reacquires the line (`LINE_FOUND`), and resumes `NAV_LINE_TRACKING` |
+| **`SYS-06`** | Lift/overturn fault latch & stationary reset | FR12, NFR10, IF-06, IF-11 | manual + log + video | Lift the robot (`> 30°` or `> 0.10 m/s`) off the track mid-run (end-of-run signal) or tip it over; attempt remote `RESET` while moving, then after `500 ms` stationary | Motors brake within `200 ms` (`motion_emergency_brake()`); `event_fault` sent; moving `RESET` rejected; stationary `RESET` clears `FAULT_LATCHED` and returns to `READY_WAITING` |
 
 ---
 

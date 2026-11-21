@@ -51,7 +51,8 @@ All calls work from any task, never from an ISR, and **never wait** (NFR1).
 |---|---|---|
 | `tel_post(evt)` / `tel_post_event(type, payload, oor)` | anyone | Queue a `tel_evt_t` (`TMO_POL`). Returns `false` and counts a drop if the queue is full |
 | `tel_post_hump(height_mm, pitch_half_deg)` | Buddy 4 | Hump event (0-100 mm, ±45° in 0.5° steps, clamped with OOR) |
-| `tel_post_barcode(DREP_BC_CMD_*)` | Buddy 3 | A validated barcode command |
+| `tel_post_barcode(DREP_BC_CMD_*)` | Buddy 3 | A validated barcode command (`0..3`) |
+| `tel_post_barcode_letter(letter, bc_cmd, mapped)` | Buddy 3 | Decoded Code 39 letter `'A'..'Z'` with its mapped action (`bc_cmd`) and `mapped` flag |
 | `tel_post_fault(evf_bits)` | Buddy 4 / anyone | `EVF_SAFETY` bits at the moment a fault was raised |
 | `tel_set_ir_raw(ir_r, ir_c)` | Buddy 3, Line-Following | Latest raw ADC values (12 bit) for the 200 ms sensor frame |
 | `tel_set_range_cm(cm)` | Buddy 5, Scanning | Latest forward range, 0-400 cm (0 = no echo) |
@@ -59,11 +60,12 @@ All calls work from any task, never from an ISR, and **never wait** (NFR1).
 | `tel_post_obstacle(prof)` | Buddy 5, one task | Newest obstacle profile, all 37 bits; published once |
 | `tel_get_stats(&st)`, `tel_is_running()` | anyone | Counters (section 7) |
 
-The Vehicle Controller already sends `DREP_TEL_STATE` events. The Telemetry
-task turns each one into an immediate heartbeat, which carries the 4-bit
-system state.
+The Vehicle Controller sends `DREP_TEL_STATE` events into `MBF_TELEMETRY` on every
+System FSM state transition. `task_tel` drains them and pushes an immediate
+heartbeat frame into `s_outbox` (so state changes are delivered without sending a
+duplicate periodic heartbeat).
 
-**Proposed interface IF-12 (needs the team's OK in `TEAM.md` section 5).**
+**Interface IF-12 (merged on `main`, `TEAM.md` section 5).**
 The `tel_set_*()` snapshot replaces "post every sample into MBF_TELEMETRY".
 That would push 200 IR samples a second into a 32-slot queue. Each setter
 does one aligned 32-bit store (atomic on the M0+, one writer per word), and the
@@ -86,6 +88,9 @@ event.
 | `car/telemetry/heartbeat` | car → | 7 | every 1 s, and at once on a system state change | 0 | no |
 | `car/status` | car → | 1 byte: `'1'` online, `'0'` offline | on connect; `'0'` is the MQTT last will | 1 | yes |
 | `car/cmd/start`, `/stop`, `/reset` | → car | 8, 9, 10 (3 bytes) | operator | 1 (subscription) | no |
+| `car/cmd/bc_map` | → car | 11 (7 bytes: hdr + 4 distinct `'A'..'Z'` `[L,R,S,U]`) | operator updates barcode letter map | 1 (subscription) | **no** |
+
+> **Why `car/cmd/bc_map` is non-retained:** Sending it non-retained ensures an old session's mapping does not silently override the car's defaults (`A/B/C/D`) every time the car connects cleanly; re-apply from the Barcode dashboard tab whenever needed.
 
 **Why QoS 0 for telemetry.** A periodic frame is stale 200 ms later, and the
 broker is on the same LAN. QoS 1 would hold a request slot per message until
@@ -93,8 +98,8 @@ PUBACK. QoS 2 was already rejected in Week 8 (extra handshakes). Events are
 protected against outages by the outbox (section 4), not by MQTT
 acknowledgements.
 
-**Why QoS 1 for commands.** At-least-once delivery. A duplicate START, STOP
-or RESET is harmless.
+**Why QoS 1 for commands.** At-least-once delivery. A duplicate START, STOP,
+RESET, or `bc_map` is harmless.
 
 **Payloads** are the binary frames of `docs/DATA_REPRESENTATION.md` section 8
 (ARCHITECTURE.md D10): `ver u8 | type u8 | len u8 | payload`. Fields are
@@ -104,26 +109,27 @@ packed LSB-first and little-endian, with masks and shifts only.
 |---|---|---|
 | 1 motion | ts 24, speed 10 (signed, 0.1 cm/s), distance 16 (cm), enc_l 32, enc_r 32 (signed) | 18 |
 | 2 sensor | ts 24, IR_R 12, IR_C 12, range 9 (cm), pitch 8, roll 8 (signed, 0.5°), valid 3 (bits 73..75: IR, range, attitude; 1 = a producer wrote it, 0 = not available) | 13 |
-| 3 barcode | ts 24, command 2 (0 L, 1 R, 2 straight, 3 U-turn) | 7 |
+| 3 barcode | ts 24, byte 6 = `cmd[1:0]` (0 L, 1 R, 2 straight, 3 U-turn) \| `letter[6:2]` (`0 = legacy 'A'+cmd`, `1..26 = 'A'..'Z'`) \| `unmapped[7]` (`0 = mapped`, `1 = unmapped`) | 7 |
 | 4 hump | ts 24, height 7 (mm), pitch 8 (signed, 0.5°), OOR 1 | 8 |
 | 5 obstacle | ts 24, distance 9, bearing index 4 (30° + 10° × i), width 7, clear_L 7 (×5 mm), seq 2, OOR 1, clear_R 7 (×5 mm) | 11 |
 | 6 fault | ts 24, EVF_SAFETY b0-b9 | 8 |
 | 7 heartbeat | uptime 32 (ms), system state 4, EVF_SAFETY b0-b9 | 9 |
 | 8/9/10 command | none | 3 |
+| 11 `cmd_bc_map` | 4 distinct uppercase ASCII bytes `[L, R, S, U]` in `'A'..'Z'` | 7 |
 
 `ts` is the kernel time in ms, 24 bits (it wraps every 4.66 h; the dashboard
 handles that).
 
-**Receive check (FR2, D10).** A message on `car/cmd/...` reaches the Vehicle
-Controller only if **all** of these hold:
+**Receive check (FR2, D10).** A message on `car/cmd/...` is accepted only if **all** of these hold:
 
-- the version byte is 1;
-- the type is known and is a command;
-- the `len` field and the received length match;
-- the topic matches the command (a STOP frame on `car/cmd/start` is rejected).
+- the version byte is `1` (`DREP_WIRE_VER`);
+- the type is known and is a valid command (`8..10` for motion, `11` for `car/cmd/bc_map`);
+- the `len` field and the received length match (`3 + len`);
+- the topic matches the command (e.g. a STOP frame on `car/cmd/start` is rejected);
+- for `car/cmd/bc_map`, all 4 bytes are distinct uppercase `'A'..'Z'` characters (`tel_wire_bc_map()`).
 
 Anything else is logged (`[TEL] cmd rejected: BAD_VERSION ...`), counted, and
-never posted. The check is `tel_wire_cmd()`, built on `drep_cmd_to_nav()`.
+never posted to `MBF_NAV_IN` or `bc_task_set_map()`. Checks live in `tel_wire.c` (`tel_wire_cmd()` and `tel_wire_bc_map()`).
 
 **Bytes per second.** One MQTT PUBLISH costs 2 bytes of fixed header, 2 bytes
 of topic length, the topic, then the frame.
@@ -231,22 +237,26 @@ python tools/dashboard/tel_dashboard.py decode-log saved_log.txt
    with a `mosquitto.conf` containing `listener 1883 0.0.0.0` and
    `allow_anonymous true`, run as `mosquitto -c mosquitto.conf -v`. Allow port
    1883 through the laptop firewall.
-3. Build in a fresh directory and flash `build/wifi/robocar.uf2`:
+3. Build in a fresh directory and flash `build/wifi/robocar.uf2` (active car build adds straddle LF & steer targets):
 
    ```powershell
-   & $CM -S . -B build/wifi @common -DDBG_BACKEND=USB -DTEL_BACKEND_WIFI=ON
+   & $CM -S . -B build/wifi @common -DDBG_BACKEND=USB -DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=ON '-DCMAKE_C_FLAGS=-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1'
    & $CM --build build/wifi
    ```
 
-4. Run the dashboard (needs `pip install paho-mqtt`):
+4. Run the dashboard (needs `pip install paho-mqtt` for live MQTT):
 
-   ```
+   ```powershell
+   # Browser web dashboard (Overview Demo Rubric, Barcode A-Z tab, Drive, Recording, Calibration):
+   python tools/dashboard/tel_web.py
+   # Or CLI:
    python tools/dashboard/tel_dashboard.py listen --broker <laptop IP> [--quiet]
-   python tools/dashboard/tel_dashboard.py send start --broker <laptop IP>
+   python tools/dashboard/tel_dashboard.py send start --broker <laptop IP> --allow-motion
    ```
 
-   Ctrl+C prints the run summary, including the **peak hump** (mission
-   requirement 5).
+   CLI Ctrl+C prints the run summary, including the **peak hump** (mission
+   requirement 5); the web UI's Overview tab tracks the live **10-item Demo Rubric**
+   and **Barcode** tab lets you assign letters `A–Z` to `LEFT / RIGHT / STRAIGHT / U-TURN`.
 
 Console lines to expect from the WiFi build:
 
@@ -291,10 +301,10 @@ the 60 s report on the first WiFi run.**
 
 | # | Item | Status |
 |---|---|---|
-| D2 | 20 ms wake with a non-blocking poll (instead of a 200 ms blocking receive) | **Implemented. Recommend approving it.** Poll-mode lwIP must be serviced every few tens of ms, so a 200 ms blocking receive would delay TCP ACKs and keep-alives. FR1 rates are unchanged. Buddy 1's call: record it in ARCHITECTURE.md D2 |
-| IF-12 | `tel_set_*()` snapshot and `tel_post_obstacle()` | Proposed; needs a row in TEAM.md section 5 and an OK from Buddies 3, 4 and 5 |
-| A9 | micro T-Kernel + CYW43/lwIP coexistence | Designed for it (section 5), and both builds compile with 0 warnings. **Needs the 30-minute soak on the car (S1-M04).** |
-| A3 | Recovery after a WiFi drop without control jitter | Needs S1-M03 on the car |
-| R-SDK | SDK error paths can still `printf`: `cyw43_read_bytes error`, `F2 not ready` (SPI bus faults) and lwIP assertions (`panic`) | Only on a hardware fault or a bug. If one fires, Telemetry and the debug drain can stall; control tasks P1-P8 keep running. The soak test watches for it |
-| Topics | Topic strings are more than half of the wire bytes | Optional shortening (section 3) |
-| Budget | TEAM.md section 6 budgets 1 cyclic handler for S1 | Not needed (`app_period_wait`); can be released |
+| D2 | 20 ms wake with a non-blocking poll (instead of a 200 ms blocking receive) | **Implemented & active on `main`.** Poll-mode lwIP must be serviced every few tens of ms, so a 200 ms blocking receive would delay TCP ACKs and keep-alives. FR1 rates are unchanged (`ARCHITECTURE.md` D2). |
+| IF-12 | `tel_set_*()` snapshot and `tel_post_obstacle()` | **Merged & active on `main` (`TEAM.md` section 5):** called by S3, S4, and S5. |
+| A9 | micro T-Kernel + CYW43/lwIP coexistence | Working cleanly during track runs; **formal 30-minute soak log (`S1-M04`) pending.** |
+| A3 | Recovery after a WiFi drop without control jitter | **Needs formal `S1-M03` / `S1-M05` logs** after AP/broker drop tests. |
+| R-SDK | SDK error paths can still `printf`: `cyw43_read_bytes error`, `F2 not ready` (SPI bus faults) and lwIP assertions (`panic`) | Only on a hardware fault or a bug. If one fires, Telemetry and the debug drain can stall; control tasks P1-P8 keep running. |
+| Topics | Topic strings are more than half of the wire bytes | Optional shortening (section 3); current `car/*` topics retained for readability. |
+| Budget | `TEAM.md` section 6 cyclic handler budget | **Updated to 0 (`app_period_wait`).** |

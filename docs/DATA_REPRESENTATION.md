@@ -1,14 +1,11 @@
 # Data representation (minimum-bit, Week 8)
 
 Agreed field table for every inter-task message, shared word, state machine,
-eventflag bit and the MQTT wire format (ARCHITECTURE.md D8, D9, D10). It is
-**language-neutral**: the dashboard language is not decided, and no decoder
-exists. Implemented in Batch B: the unpacked Week 6 types were measured and
-tagged (stage B6, `docs/measurements/week6-baseline.txt`, tag
-`baseline/week6-unpacked`); stage B7 implements these tables in
-`src/common/data_repr.h` and switches `src/common/ipc_types.h` to them, with
-host tests (`tests/host/test_data_repr.c`) and the re-measurement
-(`docs/measurements/week8-packed.txt`). Section 10 lists what B7 decided.
+eventflag bit and the MQTT wire format (ARCHITECTURE.md D8, D9, D10). Implemented
+in `src/common/data_repr.h` and `src/common/ipc_types.h` (Batch B stages B6/B7:
+`docs/measurements/week6-baseline.txt` -> `docs/measurements/week8-packed.txt`),
+with the matching Python codec and laptop dashboard in `tools/dashboard/tel_codec.py`.
+Section 10 summarises the final implementation state.
 
 ## 1. General rules
 
@@ -152,8 +149,8 @@ sends. Notes:
 
 Wrap bound (`config/thresholds.h`): counts = `ENC_QUAD_MULT × ENC_CPR ×
 distance_mm / WHEEL_CIRC_MM`, so a count wraps after
-`(2^31 − 1) × WHEEL_CIRC_MM / (4 × ENC_CPR)` mm of one-way driving. `ENC_CPR`
-and `WHEEL_CIRC_MM` are not measured yet (TODO(owner-to-confirm, buddy 2)).
+`(2^31 − 1) × WHEEL_CIRC_MM / (4 × ENC_CPR)` mm of one-way driving (~180.4 km
+using the measured `ENC_CPR = 616U` and `WHEEL_CIRC_MM = 207U`).
 CPR-independent bound: the PIO decoder counts at most 12.5 Msteps/s, so a wrap
 takes at least 171.8 s even at the decoder limit; per-period deltas stay exact.
 
@@ -213,19 +210,19 @@ exact wording. Obstacle states span two tasks (Scanning P6, Avoidance P7): each
 task keeps its own state private, and Avoidance composes the 4-bit reported
 state (single writer).
 
-## 5. RAM fault record (Batch B)
+## 5. RAM fault record (Implemented, `src/rtos/port/port_fault.c`)
 
 | Field | Bits | Notes |
 |---|---|---|
-| magic | 32 | first word; fixed constant chosen in Batch B |
-| payload | n × 32 | fault type, PC/LR/xPSR at the fault, kernel error code, boot count; layout fixed in Batch B |
-| crc32 | 32 | CRC-32 over the payload |
+| magic | 32 | `HAL_FAULT_MAGIC = 0x464C5452UL` (`"FLTR"`; bytes `"RTLF"` in memory) |
+| payload | 7 × 32 | `hal_fault_payload_t` (`src/rtos/port/hal.h`): version, fault type, PC, LR, xPSR, kernel error code, boot count |
+| crc32 | 32 | IEEE CRC-32 (`src/common/crc32.h`) over the payload |
 
 Kept in the SDK's `.uninitialized_data` (`__uninitialized_ram()`, NOLOAD,
 never zeroed by crt0; not `.noinit`). Read over SWD at any time. On the next
 boot the debug drain prints it over USB CDC and clears it **only if the magic
 and the CRC both match**; otherwise RAM is random (power-on, flashing) and the
-record is silently re-initialised (docs/DEBUG.md, ARCHITECTURE.md D6).
+record is silently re-initialised (`docs/DEBUG.md`, `ARCHITECTURE.md` D6).
 
 ## 6. RAM: what bit-packing changes (Week 13)
 
@@ -257,28 +254,29 @@ visible in the map once subsystem 3 creates it.
    ring wrap and overflow; frame byte order and reject rules), then re-measure
    with the same commands and fill in the "packed" columns.
 
-## 8. MQTT binary frames (D10)
+## 8. MQTT binary frames (`DREP_WIRE_VER = 1`, `DREP_FT_COUNT = 12U`, D10)
 
 Frame: `ver u8 | type u8 | len u8 | payload[len]`, little-endian, masks and
 shifts. A received command is accepted only if `ver` equals the wire version,
 `type` is known, `len` equals the expected length for that type and the MQTT
-payload length equals `3 + len`. Anything else is logged through `dbg_`,
-counted, and never posted to MBF_NAV_IN, so it never reaches the Vehicle
-Controller.
+payload length equals `3 + len` (plus topic/payload checks in `tel_wire.c`).
+Anything else is logged through `dbg_`, counted, and never forwarded to VC or
+Barcode (`D10`).
 
-Planned payloads (each starts with a 24-bit millisecond timestamp, except the
-heartbeat and the commands):
+Implemented payloads (each starts with a 24-bit millisecond timestamp, except
+the heartbeat and the commands):
 
 | Type | Binary payload (bits → bytes) | Fields |
 |---|---|---|
-| telemetry_motion | 24 + 10 + 16 + 2 × 32 = 114 → 15 | ts, speed, distance, enc_l, enc_r |
-| telemetry_sensor | 24 + 12 + 12 + 9 + 8 + 8 + 3 = 76 → 10 | ts, IR_R raw, IR_C raw, ultrasonic cm, pitch, roll (roll uses the pitch format: ASSUMPTION), then 3 validity flags in the spare bits 73..75 (IR, ultrasonic, attitude; 1 = written by its producer since boot, 0 = not available; dashboard integration, 19 Nov) |
-| event_barcode | 24 + 2 = 26 → 4 | ts, command |
-| event_hump | 24 + 7 + 8 + 1 = 40 → 5 | ts, height, pitch, OOR |
-| event_obstacle | 24 + 37 = 61 → 8 | ts, obstacle_profile_t fields incl. the 2-bit sequence and OOR |
-| event_fault | 24 + 10 = 34 → 5 | ts, EVF_SAFETY bits b0-b9 |
-| heartbeat | 32 + 4 + 10 = 46 → 6 | uptime ms, system state, fault bits |
-| cmd_start, cmd_stop, cmd_reset | 0 | type only |
+| telemetry_motion (`1`) | 24 + 10 + 16 + 2 × 32 = 114 → 15 | ts, speed, distance, enc_l, enc_r |
+| telemetry_sensor (`2`) | 24 + 12 + 12 + 9 + 8 + 8 + 3 = 76 → 10 | ts, IR_R raw, IR_C raw, ultrasonic cm, pitch, roll (roll uses pitch format), then 3 validity flags in bits 73..75 (IR, ultrasonic, attitude; 1 = written by producer since boot) |
+| event_barcode (`3`) | 24 + 8 = 32 → 4 | ts, then byte 6 = `cmd[1:0]` (LEFT/RIGHT/STRAIGHT/UTURN) \| `letter[6:2]` (`0 = legacy 'A'+cmd`, `1..26 = 'A'..'Z'`) \| `unmapped[7]` (`0 = mapped`, `1 = unmapped`) |
+| event_hump (`4`) | 24 + 7 + 8 + 1 = 40 → 5 | ts, height, pitch, OOR |
+| event_obstacle (`5`) | 24 + 37 = 61 → 8 | ts, obstacle_profile_t fields incl. the 2-bit sequence and OOR |
+| event_fault (`6`) | 24 + 10 = 34 → 5 | ts, EVF_SAFETY bits b0-b9 |
+| heartbeat (`7`) | 32 + 4 + 10 = 46 → 6 | uptime ms, system state, fault bits |
+| cmd_start (`8`), cmd_stop (`9`), cmd_reset (`10`) | 0 | type only (`3` B frame on `car/cmd/start\|stop\|reset`) |
+| cmd_bc_map (`11`) | 4 × 8 = 32 → 4 | 4 distinct uppercase ASCII letters `[L, R, S, U]` in `'A'..'Z'` on `car/cmd/bc_map` (`7` B frame, QoS 1, non-retained) |
 
 ### Reference JSON baseline
 
@@ -305,32 +303,33 @@ of `cmake -P tools/json_sizes.cmake`:
 
 ## 9. Dashboard
 
-The dashboard language is not decided. This document is the field table it
-must follow (sections 2 and 8); no decoder is written. Risk R3 (dashboard and
-firmware drifting apart) is handled by generating or checking the dashboard
-against the shared header once both exist.
+Implemented in Python 3 (`tools/dashboard/tel_codec.py`, web UI `tel_web.py`,
+CLI `tel_dashboard.py`), following sections 2 and 8 bit-for-bit. Cross-language
+drift (risk R3) is guarded by shared golden frame tests in `tests/host/test_tel.c`
+and `tools/dashboard/test_tel_decode.py`.
 
 ## 10. Status
 
 Baseline measured (stage B6). Packed formats implemented and host-tested
-(stage B7, `src/common/data_repr.h`). Decisions taken in B7 (beyond the tables):
+(stage B7, `src/common/data_repr.h`). All protocol details are now settled on `main`:
 
 - Containers: `nav_input_t` and `motion_cmd_t` one word; `obstacle_profile_t`
   two words (`lo` = 30 bits, `hi` = clear_R, so no field straddles a word;
   5 B on the wire); `tel_evt_t` header word + payload word; `motion_state_t`
   packed word + the unpacked encoder words + tick.
-- `nav_input_t` from REMOTE: the type is the command (START, STOP, RESET); the
-  payload is 0.
+- `nav_input_t` from REMOTE: the type is the command (`START`, `STOP`, `RESET`);
+  the payload is 0.
 - Obstacle rounding is conservative: the width rounds UP and the clearances
   round DOWN to 5 mm, so a profile never shows a smaller obstacle or a wider
   gap than measured.
-- MQTT frame type numbers: telemetry_motion 1, telemetry_sensor 2,
-  event_barcode 3, event_hump 4, event_obstacle 5, event_fault 6, heartbeat 7,
-  cmd_start 8, cmd_stop 9, cmd_reset 10; wire version 1.
-- `tel_evt_t` types (provisional, TODO(owner-to-confirm, buddy 1)): HUMP 1,
-  BARCODE 2, FAULT 3, STATE 4. An obstacle profile (37 bits) does not fit the
-  32-bit telemetry payload: open for buddy 1 and buddy 5 (send the 30-bit `lo`
-  word only, or a second event).
-
-Still open, used as placeholders until the owner confirms: the steering sign
-(buddy 3), the bypass command values and the 2-bit sequence (buddy 5).
+- MQTT frame type numbers (`DREP_FT_COUNT = 12U`): telemetry_motion `1`,
+  telemetry_sensor `2`, event_barcode `3`, event_hump `4`, event_obstacle `5`,
+  event_fault `6`, heartbeat `7`, cmd_start `8`, cmd_stop `9`, cmd_reset `10`,
+  cmd_bc_map `11`; wire version `1`.
+- `tel_evt_t` types (`DREP_TEL_*`): HUMP `1`, BARCODE `2`, FAULT `3`, STATE `4`.
+  Full 37-bit `obstacle_profile_t` values travel via the seq-locked IF-12 slot
+  (`tel_post_obstacle()`) and are framed as `DREP_FT_EVENT_OBSTACLE` (type `5`),
+  keeping all 37 bits intact (`TEAM.md` section 5).
+- Previously open placeholders are confirmed and active: steering sign
+  (`> 0` = steer right, Buddy 3), `DREP_BYPASS_*` values and 2-bit obstacle
+  sequence (Buddy 5).

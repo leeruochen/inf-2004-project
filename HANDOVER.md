@@ -4,40 +4,22 @@ Read this first (or start at **`START_GUIDE.md`** for a full index of all import
 own subsystem). Section 0 is for whoever continues on another device or with an
 AI agent. The detailed evidence is in `.agents/tasks/` (index in section 9).
 
-Last updated: 13 Nov 2026, Subsystem 2 safe ARMv6-M codegen & RAM compaction (`OPT-01`..`OPT-04`) applied and cross-subsystem optimization guide added at `docs/EMBEDDED_OPTIMIZATIONS.md`, by Buddy 2 (Ruo Chen). Previous updates: 2 Nov 2026, status of Subsystems 1, 3, 4 and 5, by Buddy 4 (Vincent); 31 Oct 2026, Subsystem 2 complete and merged on main, by Buddy 2 (Ruo Chen).
+Last updated: 22 Nov 2026 — All 5 subsystems integrated on `main` (`APP_TEST=OFF`, Wi-Fi/MQTT + browser dashboard live); host tests 14/14 PASS, dashboard tests 7/7 PASS, `check_rules: PASS`, software block diagram updated at `docs/software_block_diagram.svg`. Previous updates: 13 Nov 2026 (`OPT-01`..`OPT-04` and `docs/EMBEDDED_OPTIMIZATIONS.md` by Buddy 2 Ruo Chen); 2 Nov 2026 (S1/S3/S4/S5 update by Buddy 4 Vincent); 31 Oct 2026 (Batch B & S2 complete by Buddy 2 Ruo Chen).
 
 ---
 
 ## 0. Quick start for the next device or agent
 
-1. **Repo root** = the folder that holds this file. Older reports in `.agents/tasks/` use the
-   path `C:/Users/Admin/Downloads/Projects/inf-2004-project/...`; substitute your root.
-2. **Set up** as in section 5 (SDK 1.5.1 at the default path, submodule at `15ed232`). If
-   `git submodule status` starts with `-`, run `git submodule update --init`.
+1. **Repo root** = the folder that holds this file. Older reports in `.agents/tasks/` use historical local paths; substitute your root.
+2. **Set up** as in section 5 (SDK 1.5.1 at the default path, submodule at `15ed232`). If `git submodule status` starts with `-`, run `git submodule update --init`.
 3. **Check the state:**
-   - `git log --oneline -n 3`. The template merge + Week 8 work is committed on `main`
-     (`559f479`, `8d083ca`; section 1, "Commit status"). If `app_program/` is missing, pull first.
-   - Sanity build (section 5, step 4) must pass: 0 warnings, `check_rules: PASS`.
-4. **What is next for the platform** is Batch B (section 4). It is owned by Buddy 2. Buddy 2
-   has approved Buddy 3 (Jin Yong) as the Batch B helper (decision C1, section 7). Batch B
-   follows `.agents/tasks/batchB-plan.md`. The helper writes each stage and runs the official
-   compile gates on the same SDK 1.5.1 installer (section 5); Buddy 2 reviews and merges, and
-   runs every hardware stage (flash, USB tests, measurements). **A stage passes only with
-   official-toolchain evidence, and a hardware stage only with Buddy 2's run** (C7, section 7).
-   SDK 1.5.1 + GCC 10.3.1 is the only toolchain (C8). Nobody else starts Batch B work.
-5. **Do not write another member's subsystem code.** Each member writes and tests their own
-   folder (section 3). An agent working for one member only edits that member's folder, plus
-   shared files when the team has agreed.
-   - **Exception: Subsystem 2 is open to everyone (owner permission, Buddy 2 Ruo Chen, 4 Nov 2026).**
-     Any member, or an agent working for one, may edit `app_program/subsystem2/` (Motion and
-     Vehicle Controller) and `testing/subsystem2/` when integration needs it, without asking first.
-     For every such change: add a row to the "Changes by other members" table in
-     `app_program/subsystem2/subsystem2_roadmap.md` (date, who, files, what changed, why), say why
-     in the commit message, and keep the section 5 checks passing (0 warnings, `check_rules: PASS`).
-     Shared files (`config/*.h`, `CMakeLists.txt`, `TEAM.md`) still need team agreement.
+   - `git log --oneline -n 5`. Platform (Batch B) and all five subsystems (`subsystem1..5`) are merged on `main`.
+   - Builds and checks in section 5 must pass: `0` warnings, `check_rules: PASS`, `14/14` host C tests, and `7/7` dashboard Python test files.
+4. **Platform status (Batch B):** **COMPLETE** (`src/app/main.c`, port layer in `src/rtos/port/`, `src/common/`, `src/debug/`). All platform milestones (`M1-lite`, `M1` / `SYS-01`, `M2`) are closed on `main`.
+5. **Do not write another member's subsystem code.** Each member owns their own `app_program/subsystemN/` and `testing/subsystemN/` folders (section 3).
+   - **Exception: Subsystem 2 is open to everyone (owner permission, Buddy 2 Ruo Chen, 4 Nov 2026).** Any member, or an agent working for one, may edit `app_program/subsystem2/` and `testing/subsystem2/` when integration needs it, without asking first — log the change in `app_program/subsystem2/subsystem2_roadmap.md` ("Changes by other members"), explain why in the commit message, and keep section 5 checks passing. Shared files (`config/*.h`, `CMakeLists.txt`, `TEAM.md`) still need team agreement.
 6. **Rules in section 6 are binding.** Owner decisions in section 7 are binding.
-7. When you finish a piece of work: run the checks in section 5, update section 1 and your
-   own row in section 3 of this file, and record test results in `testing/`.
+7. When you finish a piece of work: run the checks in section 5, update section 1 and your own row in section 3 of this file, and record test results in `testing/`.
 
 ---
 
@@ -45,41 +27,16 @@ Last updated: 13 Nov 2026, Subsystem 2 safe ARMv6-M codegen & RAM compaction (`O
 
 | Item | Status |
 |---|---|
-| Kernel integration analysis | Done (`.agents/tasks/mtk3-rp2040-integration-report.md`) |
-| Batch A: build system, config headers, rule checks | Done, committed (`56826c7`) |
-| Course template | Committed as `ProjectTemplate/` (`79bc417`). Reference only, never edited |
-| Template merge (Option C): `app_program/`, `TEAM.md`, `testing/`, `videos/` | Done, verified (`merge-verify.md`) |
-| Week 8 change request: pin map v2, USB-only console, docs | Done, verified (`week8-verify.md`) |
-| Final verification from a clean `build/` | Done (`merge-week8-summary.md`) |
-| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **Complete (31 Oct 2026): milestones M1 (Phase 1 USB CDC bring-up test, SYS-01) and M2 (message formats final, `src/common/data_repr.h`).** B0-B7 merged on `main` (PRs #1-#7); every hardware stage passed on Buddy 2's board; Week 6 baseline tagged `baseline/week6-unpacked`. Members build their subsystems on it (section 3). Open owner items: the placeholders in `docs/DATA_REPRESENTATION.md` section 10 Owner: Buddy 2; helper: Buddy 3 (C1). Plan: `.agents/tasks/batchB-plan.md`; section 4 |
-| Subsystem 5 code | **Written, desk-verified only (1 Nov 2026):** servo + ultrasonic drivers, Obstacle Scanning and Obstacle Avoidance tasks, 26 on-target tests defined and 33 test cases logged. Compiles clean with `-Wall -Wextra -Werror`, 0 rule violations, 16/16 host logic tests pass. **Never run on hardware** — see section 3, Buddy 5 |
-| Subsystem code (all five buddies) | **Buddy 2 (Subsystem 2) COMPLETE (merged on main, 31 Oct 2026):** S0-S7 code, all 28/28 hardware tests (`S2-U01`..`S2-U28`) PASS on board and floor; PID tuning and motion accuracy reports complete. Motion library (`moveForward`, `turnLeft`, etc.), Vehicle Controller (`MBF_NAV_IN`), emergency brake (`motion_emergency_brake()`), and telemetry publisher (`MTX_MOTION`) are operational and ready for team integration. **As of 2 Nov 2026 no other subsystem has run on the car yet:** **Buddy 1 (Subsystem 1)**: Telemetry task, binary MQTT over CYW43/lwIP (poll mode) and dashboard merged (PR #12); host tests S1-H01..H05 PASS. **Buddy 3 (Subsystem 3)**: barcode decoder (BC-1, PR #9) and capture framing (BC-2A.1, PR #11) merged, host tests S3-U01/U02; the GP27 capture driver and Barcode task (BC-2A.2) are on branch `buddy3/bc2a-hw`, not merged; Line-Following not started. **Buddy 4 (Subsystem 4)**: IMU driver, IMU Processing and Safety tasks merged on `main`, 15 tests defined. **Buddy 5 (Subsystem 5)**: code written (row above). Details in section 3 |
-| Hardware runs | B4a (boot, 150 s, replug) and B4b (self-test: forced fault, fault record, power cycle) passed, 30-31 Oct 2026; B5 bring-up test (SYS-01, 13 min with stress, replug) passed, 31 Oct 2026. Buddy 2's Pico W; logs on PRs #3-#5 and in `testing/system/logs/` |
-| **Embedded optimizations (`docs/EMBEDDED_OPTIMIZATIONS.md`)** | **Tier 1 safe optimizations applied in Subsystem 2 (`OPT-01`..`OPT-04`, 13 Nov 2026)** by Buddy 2 (Ruo Chen): single base-pointer context structs (`s_mot`, `s_vc` with 10-bit packed `state_bits`), branchless Thumb-1 `abs_i32` & sign inversion, 32-bit hardware division in `motor_get_pwm_freq_hz`, `.rodata` compaction. **Optimizations for Platform (`src/`) and Subsystems 1, 3, 4, 5 (`OPT-05`..`OPT-20`) are documented in `docs/EMBEDDED_OPTIMIZATIONS.md`** with Car Behavioral Impact ratings so Buddies 1, 3, 4, and 5 can adopt them after baseline car testing |
+| Batch A & Template merge + Week 8 pin map v2 | **Done & verified on `main`** (`56826c7`, `559f479`, `8d083ca`). Reference template stays untouched in `ProjectTemplate/`. |
+| **Batch B: platform (boot, kernel port, debug console, IPC objects)** | **COMPLETE (`main`, M1 & M2 closed):** SDK `main()` (`src/app/main.c`), port layer (`src/rtos/port/`), system-message ring + `.uninitialized_data` RAM fault record + `dbg_` drain, `app_period_wait()`, stack high-water painting, packed `src/common/data_repr.h` (Week 8 formats), `SYS-01` PASS (`testing/system/TEST_LOG.md`), and host tests passing (`tests/host/`). |
+| **Buddy 1 (Subsystem 1 — Telemetry & Dashboard)** | **Integrated on `main`:** Console and Wi-Fi/MQTT (`-DTEL_BACKEND_WIFI=ON`, CYW43 + lwIP poll mode) backends, non-blocking `MBF_TELEMETRY` + IF-12 snapshots (`tel_set_*`, `tel_post_obstacle`, `tel_post_barcode_letter`), single buffered state-change heartbeats, framed non-retained `car/cmd/bc_map` (`DREP_FT_CMD_BC_MAP = 11`), web dashboard (`tools/dashboard/tel_web.py`, Overview Demo Rubric, Barcode `A–Z` tab, Recording/Gaps, Calibration, Drive, Subsystem checks). Host `test_tel` + `7/7` dashboard Python test files PASS; `S1-U01..U10` PASS; `S1-M01` partial & `S1-M02` PASS (`testing/subsystem1/TEST_LOG.md`). Remaining: `S1-M01` driving portion, `S1-M03..M06` soak/drop/hump logs. |
+| **Buddy 2 (Subsystem 2 — Motion & Vehicle Controller)** | **Integrated on `main`:** All `28/28` HW tests (`S2-U01..U28`) PASS (`MOTOR_L_DIR_INVERT=1U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U`, `ENC_CPR=616U`, `MOTION_EFF_TRACK_MM=114U`); PID tuning & motion accuracy reports complete; `OPT-01..04` (`docs/EMBEDDED_OPTIMIZATIONS.md`), `S2-U24/U25` fault-latch reset fix, `BC_D_CMD_CM=60U`, `-DMOTION_STEER_TARGETS=1` differential steering targets, and gradual IMU-pitch hump climb speed/torque assist (`MOTION_HUMP_*`) applied. |
+| **Buddy 3 (Subsystem 3 — Line Following & Barcode)** | **Integrated on `main`:** `drv_ir.c`, `lf_core.c` (edge follower), `lf_straddle.c` (`-DS3_LF_STRADDLE=ON`, `-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1`), `lf_link.c`, `task_lf.c` (5 ms sampling, 20 ms aligned steering, `tel_set_ir_raw()`, `EVF_NAV_LINE_FOUND`), and `drv_bc.c` / `bc_edge.c` / `bc_frame.c` / `bc_decode.c` / `task_bc.c` (`A–Z` Code 39 decode, `BC_MIN_SPEED_MMPS = 20 mm/s`, runtime 4-letter map `bc_task_set_map()`, `tel_post_barcode_letter()`). All `7` S3 host tests PASS (`test_bc_decode`, `test_bc_edge`, `test_bc_frame`, `test_lf_sanity`, `test_lf_core`, `test_lf_link`, `test_lf_straddle`). |
+| **Buddy 4 (Subsystem 4 — IMU & Safety)** | **Integrated on `main`:** `drv_imu.c` auto-detects LSM303D (`0x1D`) or LSM303DLHC (`0x19`/`0x1E`); lift/overturn (`imu_lift.c`, `> 30°` tilt or `> 0.10 m/s` vertical speed for `50 ms`, replacing collision on 11 Nov per `docs/REQ_CHANGE_LIFT.md`) verified stopping wheels in `134 ms` (`S4-U23`); hump detector & estimator (`imu_hump.c`, `IMU_HUMP_WHEELBASE_MM = 95 mm` calibrated 20 Nov, `3°` entry / `2.5°` exit, `120 mm` level-end, `15 mm` min travel, `9 mm` min height, `max(tilt, climb)`), `tel_set_attitude()`, `tel_post_hump()`, `50 ms` Safety watchdog. Both host tests (`imu_lift`, `imu_hump`) PASS. |
+| **Buddy 5 (Subsystem 5 — Obstacle Scan & Avoid)** | **Integrated on `main`:** `CAR_WIDTH_MM = 130 mm` measured; `task_obs_scan.c` watches ahead at `90°`, commands stop (`DREP_NAV_AVOID_SLOW` + `DREP_BYPASS_STOP`), confirms standstill, slews smoothly, and runs a stationary `5°` width sweep across `50°–130°` (4 pings / `12 ms` / `400 mm` cap -> 3-echo median, oblique dropout bridging, `OBS_BEAM_DEG = 40°`), feeding `tel_set_range_cm()` & `tel_post_obstacle()`. `task_obs_avoid.c` runs encoder-closed 4-turn `45°` bypass (`OBS_OBSTACLE_DEPTH_MM = 100 mm`) + directional rejoin search. Currently uses `OBS_BYPASS_SLOW_BRINGUP = 1U` (`5 cm/s`, `60 s` budget; `S5-U01..U31` and full bypass chain tested on car). |
+| **Software block diagram & documentation** | Updated vector + raster diagram at `docs/software_block_diagram.svg` and `.png`; host tests `14/14` PASS and all `3` firmware builds (`wifi`, `usb`, `test`) + `check_rules: PASS`. |
 
-**Commit status.** The merge + Week 8 work is committed and pushed on `main` (`559f479`,
-`8d083ca` = `origin/main`), so every member can see `app_program/`, `TEAM.md` and the new pin
-map. Batch B work goes on one branch and one pull request per stage (`batchB/bN-<name>`).
-
-**Rough completion estimate** (judgement, not a measurement):
-
-| Scope | Done | Basis |
-|---|---|---|
-| Phase 1 platform skeleton | about 60 % | Build, config, rules, layout, docs done. Batch B (boot, port, debug ring, IPC) is the remaining and riskiest part: the kernel has never booted on the board |
-| Whole project (a car that meets design.md) | about 30 % | Subsystem 2 (motor driver, quadrature PIO encoder, motion control, vehicle controller, 28/28 hardware tests) complete and merged on main; Subsystems 1, 3, 4, 5 and final full integration still ahead |
-
-**Is more merging needed?** No. The template merge is finished. What remains shared is
-Batch B (platform code in `src/`), which everyone's on-target tests depend on.
-
-**Can everyone start on their own subsystem now?** Yes, with one limit:
-
-- Now: write your drivers (`drv_*.c/.h`), task skeletons and test cases. Everything you
-  register in your `sources.cmake` is compiled with `-Werror` and rule-checked on every build.
-- After Batch B milestone M1 (stage B5, plan section 3): flash the firmware, run your tasks,
-  see `[TEST]` lines on USB CDC. Until then the firmware cannot link (no `main()`, no kernel
-  port), so nothing runs on the car from this repo. The message types stay provisional until
-  milestone M2 (stage B7), so code that reads or writes message fields may need edits between
-  M1 and M2.
+**What is next:** Run and save formal console logs (`testing/integration/logs/`, `testing/system/logs/`, `testing/subsystem*/logs/`) and unlisted YouTube links (`videos/README.md`) for the final sign-off tests (`INT-01..05`, `SYS-02..06`, `S1-M03/M04/M05`, post-95mm `S4-U26` & `S4-U22`, `5°`-sweep `S5-U33` & `INT-S5-02..04`). If running the `NFR14` (`<= 5.0 s`) bypass timing check at nominal bypass speed, clear `OBS_BYPASS_SLOW_BRINGUP` (`0U`) and restore `MOTION_SPEED_BYPASS_BRINGUP_CMPS` (`25U`) / `MOTION_SPEED_BYPASS_MIN_CMPS` (`15U`) in `config/thresholds.h` and `config/timing.h`.
 
 ---
 
@@ -90,9 +47,10 @@ board, in **C** with **Pico SDK 1.5.1** and **micro T-Kernel 3.0** (official sin
 `tron-forum/mtk3_bsp`, branch `pico_rp2040`, submodule `external/mtk3_bsp` pinned at
 `15ed232c08f2d89e54e514db79de150e224307e3`). CMake + Ninja on Windows, Barr C style. The SDK
 owns startup, linker script and vector table; the kernel is a static library (`mtk3`) behind a
-port layer. Team code is in `app_program/subsystem1..5/`; platform code goes in `src/`.
-Sources of truth: `design.md` (team design), `specs.md` (brief), `INF 2004 Embedded Systems.md`
-(Week 8 submission, read only), plus the deltas in `ARCHITECTURE.md`.
+port layer. Team code is in `app_program/subsystem1..5/`; platform code goes in `src/`;
+laptop dashboard tooling is in `tools/dashboard/`. Baseline sources of truth: `design.md`
+(team design), `specs.md` (brief), `INF 2004 Embedded Systems.md` (Week 8 submission, read only),
+plus all active deltas in `ARCHITECTURE.md`.
 
 ---
 
@@ -138,111 +96,64 @@ elimination, and RP2040 peripheral offloads for each subsystem are in
 
 | | |
 |---|---|
-| Tasks | Telemetry, priority 9 (`TASK_PRI_TEL`, `TASK_STACK_TEL_BYTES`), wakes every 20 ms (`app_period_wait`, D2), publishes every 200 ms, heartbeat every 1 s |
-| Pins / peripherals | none with the console backend. WiFi build: CYW43 (GP23-25, GP29), PIO1, 2 DMA channels (claimed at run time, reserved in TEAM.md) |
-| Interfaces | owns IF-04 MBF_TELEMETRY (`tel_post_*()` helpers, never wait); sends validated remote commands into IF-01 MBF_NAV_IN (5 ms); reads IF-08 through `motion_get_state()`; sets/clears EVF_SAFETY b8 FAULT_WIFI_LOSS; proposes IF-12 (`tel_set_ir_raw/range_cm/attitude`, `tel_post_obstacle`) |
-| Docs | `app_program/subsystem1/MQTT.md` (API, topics, frames, QoS, connection handling, resource use, setup); dashboard `tools/dashboard/` |
-| Decisions open for you | approve D2 (implemented; poll-mode lwIP needs the 20 ms service, MQTT.md section 9); IF-12 row in TEAM.md with Buddies 3/4/5; release S1's unused cyclic handler in TEAM.md section 6; Barr C bit-fields (not needed: masks and shifts only) |
-| Status | **Code complete and merged on `main` (PR #12, 2 Nov 2026), not yet run on the car.** Console backend (default) and WiFi/MQTT backend (`-DTEL_BACKEND_WIFI=ON`, needs `config/secrets.h`) both build with 0 warnings and `check_rules: PASS`; host tests S1-H01..H05 pass; on-target tests S1-U01..U10 and car tests S1-M01..M06 defined in `testing/subsystem1/TEST_LOG.md`. **Next: flash the APP_TEST build, then the WiFi build; run S1-M01..M04 (A9 soak).** Shared files touched (need team OK): `CMakeLists.txt` (TEL_BACKEND_WIFI block), `tests/CMakeLists.txt` (+ `tests/host/test_tel.c`), `config/secrets.h.example`, new `tools/dashboard/` |
+| Tasks | Telemetry (`tel`), priority 9 (`TASK_PRI_TEL`, `TASK_STACK_TEL_BYTES`), wakes every 20 ms (`app_period_wait`, D2), publishes motion/sensor every 200 ms, heartbeat every 1 s |
+| Pins / peripherals | none with console backend. Wi-Fi build: CYW43 (`GP23`–`25`, `GP29`), `PIO1`, 2 DMA channels (`TEL_BACKEND_WIFI=ON`, poll mode) |
+| Interfaces | owns `IF-04` `MBF_TELEMETRY` (`tel_post_*()` / `tel_post_barcode_letter()`, never wait); sends validated remote commands into `IF-01` `MBF_NAV_IN` (5 ms); applies runtime barcode map `car/cmd/bc_map` via `bc_task_set_map()`; reads `IF-08` through `motion_get_state()`; sets/clears `EVF_SAFETY` `b8 FAULT_WIFI_LOSS`; owns `IF-12` (`tel_set_ir_raw/range_cm/attitude`, `tel_post_obstacle`) |
+| Docs | `app_program/subsystem1/MQTT.md`; laptop CLI & browser dashboard in `tools/dashboard/` (`README.md`, `SUBSYSTEM_TESTS.md`) |
+| Status | **Integrated on `main` and live over Wi-Fi/MQTT.** Console backend and Wi-Fi/MQTT backend (`-DTEL_BACKEND_WIFI=ON`, needs `config/secrets.h`) both build with 0 warnings and `check_rules: PASS`; single buffered state-change heartbeat (`s_outbox`), framed non-retained `car/cmd/bc_map` (`DREP_FT_CMD_BC_MAP = 11`), full `A–Z` barcode event decoding, and browser dashboard (`tools/dashboard/tel_web.py` with Overview Demo Rubric & Barcode tab) are active. `test_tel` (`S1-H01..H04`), `7/7` dashboard test files (`test_tel_*.py`), and `S1-U01..U10` PASS; `S1-M01` (partial) & `S1-M02` PASS in `testing/subsystem1/TEST_LOG.md`. Remaining: full driving `S1-M01`, `S1-M03..M06` soak/reconnect/hump logs. |
 
 ### Buddy 2: Ruo Chen (2500530, leeruochen), motion + Vehicle Controller, `app_program/subsystem2/`
 
 | | |
 |---|---|
-| Tasks | Vehicle Controller, priority 2; Motion Control, priority 3 (20 ms PID, `MOTION_PERIOD_MS`) |
-| Pins | motors GP8/GP9 (left, PWM slice 4), GP10/GP11 (right, slice 5), 20 kHz; encoders GP0/GP1 (right, PIO0 SM0), GP16/GP17 (left, PIO0 SM1) |
-| Interfaces | owns IF-01 MBF_NAV_IN, IF-02 MBF_MOTION_CMD, IF-08 MTX_MOTION + `motion_state_t`, IF-10 encoder counts, IF-11 `motion_emergency_brake()`; VC clears FAULT_LATCHED |
-| Start with (motors) | 1. `drv_motor.c/.h`: PWM slices 4 and 5 at `MOTOR_PWM_FREQ_HZ`, duty capped at `MOTOR_DUTY_MAX_PCT`, `MOTOR_x_DIR_INVERT`, brake = both inputs LOW, coast = both HIGH. 2. `motion_emergency_brake()` (declared in `subsystem2.h`): all four channels LOW inside a critical section. 3. `drv_encoder.c`: copy pico-examples `quadrature_encoder.pio` (tag `sdk-1.5.1`, keep its header; notice already in `NOTICE.md`), load at offset 0 on PIO0, SM0 right / SM1 left, non-blocking `enc_get_count()` (prototype in `drv_encoder.h`), add `pico_generate_pio_header` in `CMakeLists.txt` (shared file: tell the team). 4. Motion task: 20 ms PID per wheel, `MOTION_T_HOLD_MS`. 5. VC task |
-| Bring-up order | motor direction first (`MOTOR_x_DIR_INVERT`), then encoder sign (`ENC_x_DIR_INVERT`) by hand-spin and forward-drive tests |
-| Values to measure | `ENC_CPR`, `WHEEL_CIRC_MM` (0 = not measured; code using them must `#error` while 0), `MOTOR_DUTY_MAX_PCT`, `POWER_GROVE_3V3_BUDGET_MA` |
-| Also yours | Batch B platform work (section 4), labelled `TODO(phase 1 batch B, buddy 2)` across the repo; it unblocks everyone's hardware tests. Buddy 3 writes it as the helper (C1). You own the decisions, review and merge each stage PR, and run every hardware stage: from B4, build the `.uf2` from the PR commit, flash the Pico W and run the hardware/USB tests (C7, plan section 2). NFR2 wording test: drive a measured distance at 50 cm/s and compare counts, both wheels (ARCHITECTURE.md D7) |
-| Status | **COMPLETE and MERGED ON MAIN (31 Oct 2026; S8 safe optimizations applied 13 Nov 2026):** S0-S7 done + **all 28/28 hardware tests PASS** on board and floor (16 automated unit tests + 6 Phase 1 bench calibration tests + 6 Phase 2 floor trials recorded in `testing/subsystem2/TEST_LOG.md`, `PID_TUNING_REPORT.md`, `MOTION_ACCURACY_EVALUATION.md`). Calibrated hardware parameters: `MOTOR_L_DIR_INVERT=1U`, `MOTOR_R_DIR_INVERT=0U`, `ENC_L_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U` (66 mm wheel diameter), `ENC_CPR=616U` (2,464 quad counts/rev), `MOTION_EFF_TRACK_MM=114U` (skid-steer 90.0° in-place turns). Motion Library API (`moveForward`, `moveBackward`, `turnLeft`, `turnRight`, `stop`), `motion_emergency_brake()`, Vehicle Controller FSM & arbitration (`MBF_NAV_IN`), and `motion_state_t` publishing under `MTX_MOTION` are live and ready for all team members. S8 (`OPT-01`..`OPT-04` in `docs/EMBEDDED_OPTIMIZATIONS.md`) compacts `task_motion.c` and `task_vc.c` into single base-pointer context structs with 10-bit packed VC state, branchless Thumb-1 math, and 32-bit hardware division. Full progress history: `app_program/subsystem2/subsystem2_roadmap.md` |
+| Tasks | Vehicle Controller (`vc`), priority 2; Motion Control (`motion`), priority 3 (20 ms PID, `MOTION_PERIOD_MS`) |
+| Pins | motors `GP8`/`GP9` (left, PWM slice 4), `GP10`/`GP11` (right, slice 5), 20 kHz; encoders `GP0`/`GP1` (right, `PIO0 SM0`), `GP16`/`GP17` (left, `PIO0 SM1`) |
+| Interfaces | owns `IF-01` `MBF_NAV_IN`, `IF-02` `MBF_MOTION_CMD`, `IF-08` `MTX_MOTION` + `motion_state_t`, `IF-10` encoder counts, `IF-11` `motion_emergency_brake()`; VC clears `FAULT_LATCHED`; reads `subsystem4_get_pitch_half_deg()` for gradual hump climb assist |
+| Measured geometry | `MOTOR_L_DIR_INVERT=1U`, `MOTOR_R_DIR_INVERT=0U`, `ENC_L_DIR_INVERT=0U`, `ENC_R_DIR_INVERT=1U`, `WHEEL_CIRC_MM=207U`, `ENC_CPR=616U` (`2464` quad counts/rev), `MOTION_EFF_TRACK_MM=114U`, `POWER_GROVE_3V3_BUDGET_MA` verified (`72 mA` typ / `110 mA` pk < `300 mA`) |
+| Status | **Integrated on `main` (`28/28` HW tests `S2-U01..U28` PASS).** Deliverables complete (`PID_TUNING_REPORT.md`, `MOTION_ACCURACY_EVALUATION.md`, `subsystem2_roadmap.md`); `OPT-01..04` (`docs/EMBEDDED_OPTIMIZATIONS.md`), `S2-U24/U25` fault-latch reset fix (`INTEGRATION_FIXES.md`), `BC_D_CMD_CM=60U`, `-DMOTION_STEER_TARGETS=1`, and gradual IMU-pitch hump climb speed/torque assist (`MOTION_HUMP_*`) active. |
 
 ### Buddy 3: Jin Yong (2503319, jyong1101), line following + barcode, `app_program/subsystem3/`
 
 | | |
 |---|---|
-| Tasks | Line-Following, priority 4 (5 ms sampling); Barcode Decode, priority 5 (2 ms poll while capturing, D3) |
-| Pins / peripherals | IR_R GP26 = ADC0 (car's RIGHT, Grove 5), IR_C GP28 = ADC2 (CENTRE, Grove 7, VBAT jumper must stay OPEN); barcode IR_BC GP27 digital edge IRQ (never `adc_gpio_init()`); owns the ADC |
-| Interfaces | sends steering (TMO_POL) and barcode commands (5 ms) into IF-01; sets LINE_FOUND in IF-07 EVF_NAV; reads IF-08; owns IF-09 edge ring (20-bit gaps, D8) |
-| Files | On `main`: `bc_decode.c/.h` (BC-1, pure Code 39 decoder: 29 elements, width = gap x Motion speed, narrow/wide by ratio to the median, 3-of-9 and start/stop checks, returns A-Z, reads either direction) and `bc_frame.c/.h` (BC-2A.1, pure capture framing: drops the first gap, ends a capture on `BC_CAPTURE_TIMEOUT_MS` or 3 x the widest element, keeps up to 33 elements and accepts a read only if exactly one 29-element window decodes). Host tests `tests/host/test_bc_decode.c`, `tests/host/test_bc_frame.c`. `drv_ir.h/.c` is still the stub. On branch `buddy3/bc2a-hw` (not merged): `drv_bc.c/.h` (GP27 edge ISR into the IF-09 ring) and `task_bc.c/.h` (Barcode task, P5) with on-target tests S3-U03..U06 and printable test cards in `testing/subsystem3/cards/` |
-| Decisions made | No hard-coded movement mapping (module clarification, 1 Nov 2026): the four letters for forward / left / right / U-turn are given at the demo and sent over MQTT, so the letter-to-movement step (BC-2B) needs Buddy 1 (remote command) and Buddy 2 (Vehicle Controller). `BC_CAPTURE_TIMEOUT_MS` means "no edge for this long", not a limit on the whole symbol |
-| Decisions open for you | steering sign for CENTRE + RIGHT sensors (proposal `steer_err > 0` = line to the right, D11); `BC_CAPTURE_TIMEOUT_MS` value (still the provisional 1000); `BC_WIDE_RATIO_X100` and `BC_MIN_SPEED_MMPS` (TUNE); ADC sanity limits; tape the Grove 6 GP26 lead (TEAM.md hardware checklist) |
-| Also | Batch B helper for Buddy 2 (C1, section 4): Batch B complete, B0-B7 merged (PRs #1-#7, milestone M2). Runs the official compile gates on SDK 1.5.1 + GCC 10.3.1 (C7, plan O11) |
-| Status | **Barcode, host side done (2 Nov 2026):** BC-1 (PR #9) and BC-2A.1 (PR #11) merged. S3-U01 PASS at `e063471` (1980 checks); S3-U02 passes per commit `1540148` (26420 checks) but has no result row in `testing/subsystem3/TEST_LOG.md` yet. **In progress:** BC-2A.2 hardware capture on `buddy3/bc2a-hw` (firmware gates pass, not run on the car; Buddy 2 runs it with `.agents/tasks/s3-bc2a-test.md`). **Not started:** `drv_ir.c`, the Line-Following task (P4), BC-2B (letter to movement) |
+| Tasks | Line-Following (`lf`), priority 4 (5 ms sampling, 20 ms aligned steering); Barcode Decode (`bc`), priority 5 (GP27 IRQ-woken, 2 ms poll while capturing, D3) |
+| Pins / peripherals | `IR_R` `GP26` = `ADC0` (RIGHT, Grove 5), `IR_C` `GP28` = `ADC2` (CENTRE, or LEFT under `-DS3_LF_STRADDLE=ON`, Grove 7, VBAT jumper OPEN); barcode `IR_BC` `GP27` digital edge IRQ (never `adc_gpio_init()`); owns the ADC |
+| Interfaces | sends steering (`TMO_POL`), LF events & barcode commands (5 ms) into `IF-01`; sets `LINE_FOUND` in `IF-07` `EVF_NAV`; reads `IF-08` (`motion_get_state()`); owns `IF-09` edge ring (20-bit gaps, D8); calls `tel_set_ir_raw()` & `tel_post_barcode_letter()` (`IF-12`); exposes `bc_task_set_map()` / `bc_task_get_map()` (`subsystem3.h`) |
+| Modules | Edge follower (`lf_core.c/.h`, `lf_link.c/.h`), straddle follower (`lf_straddle.c/.h`, active car build uses `-DS3_LF_STRADDLE=ON -DLF_SD_SIMPLE=1 -DLF_SD_BANG=1`), ADC sanity (`drv_ir.c/.h`, `lf_sanity.c/.h`), `task_lf.c/.h`, Code 39 decode & edge capture (`drv_bc.c/.h`, `bc_edge.c/.h`, `bc_frame.c/.h`, `bc_decode.c/.h`, `task_bc.c/.h`, `BC_MIN_SPEED_MMPS = 20 mm/s`), printable cards (`testing/subsystem3/cards/`) |
+| Status | **Integrated on `main`.** Line following (both edge & straddle cores) and `A–Z` Code 39 barcode decoding + runtime mapping run live on the car; all `7` S3 host tests (`test_bc_decode`, `test_bc_edge`, `test_bc_frame`, `test_lf_sanity`, `test_lf_core`, `test_lf_link`, `test_lf_straddle`) PASS. |
 
 ### Buddy 4: Vincent (2500709, Vincent6430), IMU + safety, `app_program/subsystem4/`
 
 | | |
 |---|---|
-| Tasks | Safety, priority 1 (`task_safety.c`, in this folder); IMU Processing, priority 8 (10 ms) |
-| Pins / peripherals | IMU on I2C1, SDA GP2, SCL GP3 (Grove 2 stays unused); owns I2C1 |
-| Interfaces | owns IF-06 EVF_SAFETY; Safety waits on `LIFTED|IMU_ALIVE` with `TWF_ORW|TWF_BITCLR` (never `TWF_CLR`), watchdog `SAFETY_IMU_WDOG_MS`; brakes only through `motion_emergency_brake()` in `../subsystem2/subsystem2.h`; never takes MTX_MOTION |
-| Files | `drv_imu.c/.h`: LSM303DLHC accelerometer on I2C1 at 400 kHz, 400 Hz, +-4 g, high resolution, block data update. Probes 0x19 and 0x1E once in `imu_init()` (called from `subsystem4_init()`). Integer pitch = atan2(x, sqrt(y^2 + z^2)) in half-degrees, within 0.5 deg. `task_imu.c/.h`: IMU Processing task (P8, 10 ms `app_period_wait`), the only user of I2C1 after init. Sets IMU_ALIVE after every good sample, LIFTED once per pick-up (tilt > 30 deg or upward speed > 0.10 m/s for 50 ms, measured against the boot level reference by the pure module `imu_lift.c`; re-armed after 0.5 s level and still; replaced collision detection on 11 Nov 2026), FAULT_IMU_I2C after 5 failed reads, and sends one `DREP_TEL_HUMP` event per hump (pitch >= 5 deg for 3 samples). `task_safety.c/.h`: Safety task (P1). On LIFTED or the 50 ms IMU watchdog it calls `motion_emergency_brake()` and sets FAULT_LATCHED (+ FAULT_IMU_WDOG); one `DREP_TEL_FAULT` event per fault, not per timeout. `subsystem4_test.c`: S4-U01..U12 and U17 (read cached results only, never I2C), operator-guided S4-U14..U16 and U18..U20 |
-| Decisions open for you | confirm the addresses 0x19/0x1E (S4-U01/U02); pitch axis and sign (the code assumes +X points to the front: tilt the nose up, pitch must go positive); gyro or not (`IMU_HAS_GYRO`, still 0); tune `IMU_LIFT_TILT_DEG` (30 deg), `IMU_LIFT_V_MMPS` (0.10 m/s; the console prints `[IMU] lift peak 1s` lines to tune it) and `IMU_HUMP_PITCH_DEG` (5 deg) on the car (S4-U18..U20, S4-U15; no false lifts over humps, design.md A4); hump height is sent as 0 until a height estimate exists (Buddy 1's run summary uses the peak hump, S1-M06); whether to feed pitch/roll to Buddy 1's proposed IF-12 `tel_set_attitude()` |
-| Status | **Code written and merged on `main` (1 Nov 2026, `9fed418`, fixes `682043a`), not yet run on the car.** Kernel-side files compile with `-Wall -Wextra -Werror` against the kernel headers and `check_rules: PASS`; not yet built with the official SDK 1.5.1 toolchain. 12 automated tests (S4-U01..U12) and 3 manual tests (S4-U13..U15) defined in `testing/subsystem4/TEST_LOG.md`, no results yet. **Next: official build, flash the `APP_TEST` build with the car flat and still, run S4-U01..U12, then S4-U13..U15.** Note: if the IMU is missing or unplugged, Safety keeps the car braked (NFR13), so the IMU must be connected for any other member's on-car test. **13 Nov 2026: requirement change (11 Nov) implemented on branch `buddy4/lift-detection`: collision detection replaced by lift/overturn detection, `EVF_SAFETY_COLLISION` renamed `EVF_SAFETY_LIFTED`; lifting the car latches the fault, so power it on where it starts or send `car/cmd/reset` after placing it. See `docs/REQ_CHANGE_LIFT.md`.** |
+| Tasks | Safety / Lift Response (`safety`), priority 1 (`task_safety.c`); IMU Processing (`imu`), priority 8 (10 ms `app_period_wait`) |
+| Pins / peripherals | IMU GY-511 on `I2C1`, SDA `GP2`, SCL `GP3` (Grove 2 stays unused); owns `I2C1` |
+| Interfaces | owns `IF-06` `EVF_SAFETY` (`LIFTED\|IMU_ALIVE` with `TWF_ORW\|TWF_BITCLR`, watchdog `SAFETY_IMU_WDOG_MS = 50 ms`); brakes only through `motion_emergency_brake()` in `../subsystem2/subsystem2.h` (`IF-11`); never takes `MTX_MOTION`; reads `IF-08` (`motion_get_state()`); calls `tel_set_attitude()` & `tel_post_hump()` (`IF-04` / `IF-12`); exposes `subsystem4_get_pitch_half_deg()` (`subsystem4.h`) |
+| Modules | `drv_imu.c/.h` (I2C1 `400 kHz`, auto-detects LSM303DLHC `0x19`/`0x1E` or LSM303D `0x1D`/`0x1E`, integer pitch & roll); `imu_lift.c/.h` (lift/overturn `> 30°` or `> 0.10 m/s` for `50 ms`, replaced collision on 11 Nov per `docs/REQ_CHANGE_LIFT.md`); `imu_hump.c/.h` (calibrated `IMU_HUMP_WHEELBASE_MM = 95U` mm, `3°` entry / `2.5°` exit, `120 mm` level-end, `15 mm` min travel, `9 mm` min height, `max(tilt, climb)` + turn/speed-change gating) |
+| Status | **Integrated on `main`.** Lift-while-driving stop verified at `134 ms` (`S4-U23`, < `200 ms` NFR10 limit) and hump/safety tests recorded in `testing/subsystem4/TEST_LOG.md`; both host tests (`imu_lift`, `imu_hump`) PASS at `95 mm` wheelbase. Note: lifting the car latches `FAULT_LATCHED` (end of run), so place the car before power-on or send `car/cmd/reset`. |
 
-### Buddy 5: Chay Han (2500596, longchayhan03-eng, to confirm), obstacle scan + avoid, `app_program/subsystem5/`
+### Buddy 5: Chay Han (2500596, longchayhan03-eng), obstacle scan + avoid, `app_program/subsystem5/`
 
 | | |
 |---|---|
-| Tasks | Obstacle Scanning, priority 6 (60 ms servo step); Obstacle Avoidance, priority 7 |
-| Pins / peripherals | ultrasonic TRIG GP4, ECHO GP5 (Grove 3, echo must be 3.3 V-safe); servo GP15 = PWM slice 7 B (never GP12); owns PWM slice 7 |
-| Interfaces | owns IF-03 MBF_OBSTACLE, IF-05 SEM_ECHO, IF-07 EVF_NAV (AVOID_ACTIVE, LINE_REACQUIRED) and EVF_SAFETY b7 STATUS_NO_ECHO; sends bypass commands into IF-01. All four claimed in TEAM.md section 5 |
-| Files | `drv_servo.c/.h` (PWM slice 7 B), `drv_ultrasonic.c/.h` (trigger + echo ISR via `hal_gpio_irq_register`, signals SEM_ECHO with `hal_isr_sig`), `task_obs_scan.c/.h` (sweep, median filter, obstacle profiling, drain-then-send on MBF_OBSTACLE), `task_obs_avoid.c/.h` (side choice, four-turn bypass, line reacquisition), `subsystem5.c/.h`, `subsystem5_test.c` (S5-U01..S5-U26) |
-| Decisions made | **sequence number: KEPT** (Avoidance uses it to ignore a repeated profile). **Bypass commands: the existing `DREP_BYPASS_*` values are used as-is.** **Settle vs 60 ms step: resolved** — a period either settles or pings, never both, and the settle allowance scales with how far the horn actually travels, so a 10 deg fine step still pings in its own period (see the `task_obs_scan.c` header) |
-| Decisions still open | `CAR_WIDTH_MM` is still the 120 mm ASSUMPTION: measure the car. `OBS_TURN_DWELL_MS`, `OBS_SERVO_SETTLE_MS`, `OBS_EDGE_TOL_MM`, `OBS_BEAM_DEG` are TUNE and must be measured on the track (S5-U31..S5-U33), then promoted to `config/*.h` the way S2 promoted its constants |
-| Status | **Code complete, DESK-VERIFIED ONLY (1 Nov 2026).** All six files compile clean under the project's `-Wall -Wextra -Werror` and pass the R1-R6 rule checks; the 16 pure geometry/decision tests pass on a host stub harness. **Nothing has run on the Pico W.** Next step: flash an `APP_TEST` build and work through S5-U01..S5-U26, then the manual and INT-S5-* tests in `testing/subsystem5/TEST_LOG.md` |
+| Tasks | Obstacle Scanning (`obs_scan`), priority 6 (60 ms servo step); Obstacle Avoidance (`obs_avoid`), priority 7 |
+| Pins / peripherals | ultrasonic TRIG `GP4`, ECHO `GP5` (Grove 3, 3.3 V-safe echo); servo `GP15` = PWM slice 7 B (never `GP12`); owns PWM slice 7 |
+| Interfaces | owns `IF-03` `MBF_OBSTACLE` (drain-then-send newest-wins), `IF-05` `SEM_ECHO`, `IF-07` `EVF_NAV` (`AVOID_ACTIVE`, `LINE_REACQUIRED`) and `EVF_SAFETY b7 STATUS_NO_ECHO`; sends bypass commands into `IF-01`; reads `IF-08`; calls `tel_set_range_cm()` & `tel_post_obstacle()` (`IF-12`); exposes `subsystem5_sensors_ok()`, `subsystem5_get_avoid_state()`, `subsystem5_avoid_is_active()` |
+| Modules | `drv_servo.c/.h`, `drv_ultrasonic.c/.h`, `task_obs_scan.c/.h` (`90°` watch-ahead -> stop & standstill confirm -> smooth slew & stationary `5°` sweep across `50°–130°`, 4 pings / `12 ms` / `400 mm` cap -> 3-echo median, oblique dropout bridging, `OBS_BEAM_DEG = 40°`, `OBS_EDGE_STEP_MM = 55 mm`), `task_obs_avoid.c/.h` (clearance decision using `CAR_WIDTH_MM = 130U` mm + `50 mm` margin, encoder-closed 4-turn `45°` bypass with `OBS_OBSTACLE_DEPTH_MM = 100U` mm, directional rejoin search + immediate `LINE_FOUND` handoff) |
+| Status | **Integrated on `main`.** `S5-U01..U31` and full bypass chain tested on car (`testing/subsystem5/TEST_LOG.md`). Currently `OBS_BYPASS_SLOW_BRINGUP = 1U` (`5 cm/s`, `60 s` budget) for reliable slow line reacquisition; revert to `0` (`25 cm/s` bypass, `15 cm/s` floor) for the `NFR14` (`<= 5.0 s`) timing run. |
 
 ---
 
-## 4. Batch B: platform work still to do (Buddy 2, helper Buddy 3)
+## 4. Batch B: platform work (COMPLETE — Buddy 2, helper Buddy 3)
 
-**The plan is `.agents/tasks/batchB-plan.md`** (stages, decisions, open questions, gate
-commands, stop conditions). It wins over this summary where they differ. Stage status:
+Batch B (`stages B0..B7` in `.agents/tasks/batchB-plan.md`) is **complete on `main`**:
 
 | Stage | What | Status |
 |---|---|---|
-| B0 | records and prerequisites (docs only) | done, merged (PR #1) |
-| B1 | `dbg_` ring API; `APP_TEST=ON` builds | done, merged (PR #2, with B2 and B3) |
-| B2 | IPC objects, task start, stack painting (`src/common`) | done, merged (PR #2) |
-| B3 | kernel port layer (`src/rtos/port`), fault record, system-message ring | done, merged (PR #2) |
-| B4 | SDK `main()` + debug drain: first firmware, first flash: **milestone M1-lite** (members may add tasks) | done: B4a and B4b passed on the board, merged (PRs #3, #4). **M1-lite reached, 31 Oct 2026.** B4b found and fixed a task-exit fault (rule R6) |
-| B5 | heartbeats + USB CDC bring-up test: **milestone M1** (Phase 1 acceptance), in parallel with subsystem work | done: passed on the board 31 Oct 2026 (SYS-01, `testing/system/TEST_LOG.md`; worst jitter 566 µs of the 1000 µs limit), merged (PR #5). **M1 reached** |
-| B6 | baseline measurement, tag `baseline/week6-unpacked` | done: measured on the board 31 Oct 2026 (`docs/measurements/week6-baseline.txt`), merged (PR #6); tag on the merge commit (Buddy 2). Every debug build prints a `[STACK]`/`[MBF]` report every 60 s |
-| B7 | B-packed types + host tests: **milestone M2** (messages final) | done: packed formats in `src/common/data_repr.h`, 273 host checks, re-measured (`docs/measurements/week8-packed.txt`), board re-run passed 31 Oct 2026, merged (PR #7). **M2 reached: Batch B complete** |
-
-Since B4 (M1-lite) members can run their own tasks on the car. Planned as two
-parts (owner decision C4): **B-baseline** (unpacked Week 6 types, measured, tagged
-`baseline/week6-unpacked`) then **B-packed** (shared header + host tests). The toolchain does
-not change: section 5 (SDK 1.5.1 + GCC 10.3.1) is the official environment for every gate.
-
-**Workflow (C7).** For each stage the helper pushes a branch and posts the official compile
-gates (SDK 1.5.1, fresh build directories) on the PR. Buddy 2 reviews and merges (since 31 Oct
-2026 the helper may merge a stage PR after Buddy 2's test PASS is on it, with his OK). For hardware
-stages (B4 on) he builds the `.uf2` from that commit, flashes it, runs the checks and posts the
-logs. The stage is marked done here only after that. Critical path to members adding tasks:
-B0 merge → B1-B3 PR → B4 flash (M1-lite). Details: plan section 2.
-
-B-baseline contents, with file names already fixed by the `check_rules` allow-lists (full
-file list per stage in the plan):
-
-| File | What it does |
-|---|---|
-| `src/app/main.c` | SDK `main()`: SDK init, wait up to `DBG_USB_CONNECT_WAIT_MS` for USB CDC (line marked `RULE-ALLOW: pre-kernel`), then `hal_kernel_start()` |
-| `src/rtos/port/` (`port_kernel_internal.c`, `port_boot.c`, `port_fault.c`, `port_irq.c`) | kernel pool, SHPR priorities, PendSV/SysTick vectors, `knl_lowmem_top/limit`, `knl_shutdown_hw`, `knl_restart_hw`, `tm_com_init/tm_snd_dat/tm_rcv_dat` (into the system-message ring, never stdio, C3), the RAM fault record and HardFault handler, `hal_irq_register()` / `hal_gpio_irq_register()` with the `knl_taskindp` wrapper (integration report section 16) |
-| `src/debug/dbg_drain.c` (+ ring) | `dbg_` ring and the drain task (priority 10), the only stdio caller; empties the system-message ring every cycle; prints and clears the RAM fault record only if magic and CRC-32 match |
-| `src/common/` | `ipc_init()`: every IPC object at its design.md 3.3 depth; message-buffer size macro; kernel version self-test; stack painting |
-| `app_program/app_main.c` | replace the `ipc_init()` TODO and the `app_start_task()` stub (shared file) |
-| `app_program/test_report.h` | replace the deliberate `#error` with `dbg_` output, so `APP_TEST=ON` builds |
-
-Acceptance: boots, creates every object, nine heartbeat lines on USB CDC, the mandatory USB
-CDC bring-up test in `docs/DEBUG.md` (10 minutes, no gaps, jitter within 1 ms).
-
-Details: `.agents/tasks/batchB-plan.md` first (its section 5 lists the stale parts of the
-reports below); `.agents/tasks/mtk3-rp2040-integration-report.md` sections 10, 14, 16;
-`.agents/tasks/week8-impact-report.md` section D (baseline plan);
-`docs/DATA_REPRESENTATION.md` sections 5-7.
+| B0–B3 | Docs, `dbg_` ring, `APP_TEST=ON`, `ipc_init()`, stack painting, kernel port layer (`src/rtos/port/`) | **done & merged** (PRs #1, #2) |
+| B4 | SDK `main()` + debug drain: **milestone M1-lite** (tasks run on car, RAM fault record) | **done & merged** (PRs #3, #4) |
+| B5 | Heartbeats + USB CDC bring-up test (`SYS-01`): **milestone M1** | **done & merged** (PR #5, `testing/system/TEST_LOG.md`) |
+| B6–B7 | Baseline (`docs/measurements/week6-baseline.txt`) & packed `src/common/data_repr.h` (`week8-packed.txt`): **milestone M2** | **done & merged** (PRs #6, #7) |
 
 ---
 
@@ -268,16 +179,33 @@ $common = @("-G","Ninja","-DCMAKE_BUILD_TYPE=Debug",
   "-DPICO_TOOLCHAIN_PATH=C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/gcc-arm-none-eabi")
 ```
 
-4. Build and checks (expected today: exit 0, 0 warnings, `check_rules: PASS`,
-   `firmware target skipped, app_program compile-checked`):
+4. Firmware builds, host C tests, dashboard Python tests, and rule checks (all must pass with 0 warnings and `check_rules: PASS`):
 
 ```powershell
+# USB-console firmware
 & $CM -S . -B build/usb @common -DDBG_BACKEND=USB
 & $CM --build build/usb
-& $CM -P cmake/check_rules_selftest.cmake      # expect PASS
+
+# Active car Wi-Fi/MQTT + straddle firmware (requires local config/secrets.h)
+& $CM -S . -B build/wifi @common -DDBG_BACKEND=USB -DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=ON '-DCMAKE_C_FLAGS=-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1'
+& $CM --build build/wifi
+
+# On-target test firmware (add -DAPP_TEST_ONLY=N for subsystem N only)
+& $CM -S . -B build/test @common -DDBG_BACKEND=USB -DAPP_TEST=ON
+& $CM --build build/test
+
+# Host C unit tests (14/14) & Python dashboard tests (7 files)
+& $CM -S tests -B build/host -G Ninja
+& $CM --build build/host
+ctest --test-dir build/host --output-on-failure
+python -m unittest discover -s tools/dashboard -p "test_*.py" -v
+
+# Standalone rule checks
+& $CM -DRULES_ROOT=. -P cmake/check_rules.cmake
+& $CM -P cmake/check_rules_selftest.cmake
 ```
 
-`DBG_BACKEND=UART0` is removed and fails at configure (GP0/GP1 are the right encoder). USB CDC
+`DBG_BACKEND=UART0` is removed and fails at configure (`GP0`/`GP1` are the right encoder). USB CDC
 is the only console; the Debug Probe is SWD only (`docs/DEBUG.md`).
 
 ---
@@ -307,76 +235,61 @@ is the only console; the Debug Probe is SWD only (`docs/DEBUG.md`).
 
 ## 7. Decisions already made (binding)
 
-Full text: "OWNER CORRECTIONS" at the top of `.agents/tasks/week8-impact-report.md`, and the
-brief `.agents/tasks/merge-week8-brief.md`.
+Full text of early platform decisions: "OWNER CORRECTIONS" at the top of
+`.agents/tasks/week8-impact-report.md` and `.agents/tasks/merge-week8-brief.md` (with subsequent
+design deltas `D1`–`D17` recorded in [`ARCHITECTURE.md`](ARCHITECTURE.md)).
 
 - Template merge Option C: our build and kernel; the template's `app_program/subsystemN/`,
-  `TEAM.md`, `testing/`, `videos/` layout. Deviations T1-T7 in `ARCHITECTURE.md`.
-- Pin map v2 (`config/pins.h`, ARCHITECTURE.md D5). Servo on GP15. Encoders on PIO0, one state
-  machine per wheel, API `enc_get_count()` (D7).
-- USB CDC is the only console (D6). Kernel text from `tm_snd_dat` (boot banner, system
-  messages) goes into a system-message ring that the debug drain empties every cycle (C3
-  below). Faults go to a separate RAM fault record in `.uninitialized_data` with a magic
-  number and a CRC. Both implemented in Batch B.
-- NFR2: no team document is edited; the proposed wording waits in D7 for the team, after a
-  top-speed zero-missed-counts test.
-- Data representation (D8, `docs/DATA_REPRESENTATION.md`): pitch ±45° at 0.5° in 8 bits;
-  `motion_cmd_t` 19 bits; `obstacle_profile_t` with clearances, no timestamp, no bypass state,
-  optional 2-bit sequence kept; system FSM 4 bits (10 states); EVF_SAFETY fault bits (D9);
-  binary MQTT (D10).
-- **D2 (20 ms telemetry wake) is NOT approved.**
-- `BC_CAPTURE_TIMEOUT_MS = 1000` stays provisional with a static assert. `ENC_CPR` and
-  `WHEEL_CIRC_MM` are 0 until measured.
-
-**Batch B decisions.** These are not binding until Buddy 2 confirms them on the B0 PR; the
-status of each is in `.agents/tasks/batchB-plan.md` sections 0 and 1, and the reasons are in
-`batchB-b0-review-report.md`:
-
-- **C1:** Buddy 2 approves Batch B work by the helper, Buddy 3 (Jin Yong). Given verbally,
-  recorded here. Buddy 2 still owns Batch B and reviews every stage.
-- **C2:** each member writes the tests for their own subsystem (`subsystemN_test.c`).
-- **C3:** the kernel's own text (the `tm_printf` boot banner, system messages) is kept
-  **separate** from the RAM fault record. It goes into a system-message ring that the drain
-  empties every cycle, so no `tm_*` output is lost after boot either. The fault record holds
-  faults only.
-- C4 (B-baseline then B-packed), C5 (approach (a)) and C6 (`ipc_init()` creates every object
-  first, T5) restate earlier decisions.
-- **C7 (Buddy 2 in chat, 30 Oct 2026; confirm on the PR):** the helper writes each stage and
-  runs the official compile gates on the section 5 toolchain; Buddy 2 reviews, merges, and runs
-  every hardware stage. B1-B3 ship as one PR.
-- **C8 (Buddy 2 in chat, 30 Oct 2026):** the only toolchain is Pico SDK 1.5.1 + GCC 10.3.1
-  (section 5). No SDK migration.
-- Answers following Buddy 2's review (plan section 1):
-  - O1: temporary heartbeat tasks behind `PLATFORM_BRINGUP`, default OFF; B4 self-tests behind
-    `PLATFORM_SELFTEST`, default OFF.
-  - O2: platform writes `src/common/ipc_types.h`; the B2 baseline uses the Week 6 field set,
-    and the Week 8 fields come in B7.
-  - O4: fault record magic `0x464C5452`, CRC-32 IEEE in a pure `crc32.h`.
-  - O5/O6: ring sizes and policies as proposed.
-  - O7: after a HardFault, record, then `watchdog_reboot`; halt only on a RAM flag or the build
-    option `PORT_FAULT_HALT`.
-  - O8: stacks stay kernel-allocated and are painted by a start-up trampoline, including the
-    init task; `config/priorities.h` is unchanged.
-  - O9: `ipc` is added to the R1 project-header check.
-  - Still open: O3 (default: out of Batch B), O10 (B7), and owner questions Q3, Q7, Q8 and Q9
-    (plan section 1).
+  `TEAM.md`, `testing/`, `videos/` layout. Deviations T1–T7 in `ARCHITECTURE.md`.
+- Pin map v2 (`config/pins.h`, `ARCHITECTURE.md` D5). Servo on `GP15`. Encoders on `PIO0`, one
+  state machine per wheel, API `enc_get_count()` (D7).
+- USB CDC is the only console (D6). Kernel text from `tm_snd_dat` (boot banner, system messages)
+  goes into a system-message ring emptied by the debug drain task (C3). Faults go to a separate
+  RAM fault record in `.uninitialized_data` with magic `0x464C5452` and IEEE CRC-32 (`crc32.h`).
+- NFR2: `design.md` / `specs.md` stay untouched per Section 6; updated wording is tracked in D7
+  (`ARCHITECTURE.md`) pending final top-speed zero-missed-counts sign-off.
+- Data representation (D8, `docs/DATA_REPRESENTATION.md`): pitch in `0.5°` steps in 8 bits;
+  `motion_cmd_t` / `nav_input_t` packed payloads; `obstacle_profile_t` with left/right clearances
+  and 2-bit sequence; system FSM 4 bits; `EVF_SAFETY` fault bits (D9); binary MQTT wire frames
+  `1..11` (D10).
+- **D2 (`TEL_WAKE_PERIOD_MS` = 20 ms wake, `TEL_STATUS_PERIOD_MS` = 200 ms publish):** **Approved
+  and implemented** on `main` (`app_program/subsystem1/task_tel.c`).
+- **Calibrated chassis parameters (`config/thresholds.h`):** `ENC_CPR = 616U`, `WHEEL_CIRC_MM =
+  207U`, `CAR_WIDTH_MM = 130U`, and `IMU_HUMP_WHEELBASE_MM = 95U` are measured and active on `main`.
+- **Batch B decisions (C1–C8, O1–O9):** **Completed and merged** (`src/common/ipc_types.h` Week 8
+  types, `PLATFORM_BRINGUP` / `PLATFORM_SELFTEST` default OFF, `PORT_FAULT_HALT`, Pico SDK 1.5.1 +
+  GCC 10.3.1 toolchain, per-subsystem tests).
+- **Post-integration design deltas (`D14`–`D17`, `ARCHITECTURE.md`):**
+  - **D14 (Line Following straddle mode):** `S3_LF_STRADDLE` defaults `ON` in `CMakeLists.txt`; active
+    car tracks the black tape edge with Centre (`GP28`) + Right (`GP26`) ADC sensors and
+    `MOTION_STEER_TARGETS`.
+  - **D15 (Lift/overturn safety + 95 mm hump calibration):** `docs/REQ_CHANGE_LIFT.md` replaces
+    collision detection with lift/overturn safety (`>30°` tilt or `>0.10 m/s` vertical velocity) plus
+    the 50 ms `IMU_ALIVE` watchdog (`task_safety.c`); `IMU_HUMP_WHEELBASE_MM` updated to `95U` with
+    motion hump climb boost (`tests/host/test_imu_hump.c` is updated to `WHEELBASE_MM = 95.0` and
+    passes `S4-U24` in `ctest`).
+  - **D16 (Obstacle 90° watch & slow bypass bring-up):** `task_obs_scan` monitors straight ahead at
+    `90°` (`25 cm` threshold), halts the car, runs a fine `5°` scan, and executes an encoder-closed
+    bypass; `OBS_BYPASS_SLOW_BRINGUP = 1U` (`5/5/5 cm/s`) is temporarily active during bring-up.
+  - **D17 (Dynamic Barcode A–Z & `car/cmd/bc_map`):** Barcode decodes Code 39 `A–Z` and executes
+    the runtime dashboard mapping within `BC_D_CMD_CM = 60 cm`; `car/cmd/bc_map` uses framed type `11`
+    (`DREP_FT_CMD_BC_MAP`) with non-retained publish, and Telemetry emits a single buffered
+    state-change heartbeat (`app_program/subsystem1/MQTT.md`).
 
 ---
 
-## 8. Open questions (with suggested answers)
+## 8. Open questions & remaining follow-ups
 
-| # | Question | Suggested answer |
+| # | Item | Current status / next action |
 |---|---|---|
-| 1 | Buddy 5's GitHub username: design.md reads "Chay Hanlongchayhan03-eng" | Confirm `longchayhan03-eng` (used in TEAM.md, marked to confirm) |
-| 2 | design.md Team Role table: Buddy 1's cell has a line break after "Damian-oliveiro", which breaks the markdown table | Join it onto one line: `2501299 (Damian/Damian-oliveiro)` |
-| 3 | Instructor's build preference (make/WSL vs CMake/Ninja) | Ask before the Week 10 demo; keep the README TODO |
-| 4 | D2: 20 ms telemetry wake | Buddy 1 decides; FR1 rates hold either way |
-| 5 | 2-bit sequence number in `obstacle_profile_t` | Buddy 5 decides after drain-then-send is tested |
-| 6 | NFR2 wording (D7) | Team approves after the top-speed count test |
-| 7 | `ENC_CPR`, `WHEEL_CIRC_MM`, `CAR_WIDTH_MM`, IMU addresses, servo pulse range | Measure on the car |
-| 8 | Barr C: bit-fields for private state? | Buddy 1 checks the standard; masks and shifts until then |
-| 9 | Template author for NOTICE.md | The module instructor's name as given on the course page |
-| 10 | Should each buddy get a small SDK-only bring-up program to test hardware before Batch B lands? | Optional; Batch B first is simpler. Needs team agreement because it adds a CMake target |
+| 1 | Buddy 5 GitHub username in `design.md` (`"Chay Hanlongchayhan03-eng"`) | Open in `design.md` (untouched per Section 6); `TEAM.md` uses `longchayhan03-eng`. |
+| 2 | `design.md` Team Role table line break on Buddy 1's cell | Open in `design.md` (untouched per Section 6). |
+| 3 | `README.md` stale Phase 1 / build TODO text | `README.md` kept untouched per Section 6; update after showing diff to team. |
+| 4 | `D2` (`20 ms` wake), `ENC_CPR`/`WHEEL_CIRC_MM`/`CAR_WIDTH_MM`, `95 mm` `imu_hump` host test (`S4-U24`), single state-change heartbeat, framed non-retained `car/cmd/bc_map`, Barr C masks/shifts, Batch B `C1–C8` | **Resolved** and merged on `main`. |
+| 5 | `S1-M01`, `S1-M03`..`S1-M06` formal Wi-Fi soak / drop / hump summary logs | Remaining formal captures in `testing/subsystem1/logs/` (`MQTT.md` Section 9). |
+| 6 | `OBS_BYPASS_SLOW_BRINGUP = 1U` (`5/5/5 cm/s`) & wide-block ultrasonic width accuracy | Buddy 5 to tune speeds toward `NFR14` (`<= 3.0 s / 5.0 s`) and investigate `50–65 mm` reads on `150 mm` block. |
+| 7 | NFR2 wording sign-off (`design.md` / `specs.md`) & `NOTICE.md` instructor attribution | Team sign-off before final submission. |
+| 8 | Full-course `INT-01..INT-05` & `SYS-01..SYS-06` hardware logs & demo videos | Run final course tests and log verified results in `testing/integration/TEST_LOG.md`, `testing/system/TEST_LOG.md`, and `videos/README.md`. |
 
 ---
 

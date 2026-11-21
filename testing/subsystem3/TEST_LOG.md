@@ -88,3 +88,8 @@ Add a new row for every run. Never edit or delete old rows.
 | 2026-11-02 | S3-U04 | `561bd35` | 2503319 | FAIL | `testing/subsystem3/logs/2026-11-02_s3_bc2a_desk_run4.txt` | Window timing: fewer than 9 slides fell inside each 60 s window. Decoding itself on the car, by hand, all windows and prep times: 38 correct (A 4, Z 5, F 15, W 4, X 5, Y 5), 3 refused, 0 misread; the 5 Z passes slid during U03 (speed 0, so STALL) also decode as Z when replayed at the bench speed |
 | 2026-11-02 | S3-U06 | `561bd35` | 2503319 | FAIL | `testing/subsystem3/logs/2026-11-02_s3_bc2a_desk_run4.txt` | (a), (b): the slides came after the windows closed. Behaviour correct: half passes (13, 17 elements) and covered-end passes (27 elements) were all refused, no letter. (c)-(e) not run |
 | 2026-11-02 | S3-U05 | `561bd35` | 2503319 | not run | `testing/subsystem3/logs/2026-11-02_s3_bc2a_desk_run4.txt` | Car on the desk; Safety braked the motors at boot (`[S4] IMU not found on I2C1`, Buddy 4's fix is on `main` but not in this firmware) |
+
+## Current status (as of 22 Nov 2026)
+
+- Line-following (`task_lf.c`, `drv_ir.c`, `lf_core.c`, plus active track straddle build `-DS3_LF_STRADDLE=ON -DLF_SD_SIMPLE=1 -DLF_SD_BANG=1`), `tel_set_ir_raw()` (IF-12), and `A–Z` Code 39 barcode decoding (`task_bc.c`, `BC_MIN_SPEED_MMPS = 20 mm/s`, runtime 4-letter map `bc_task_set_map()`, `tel_post_barcode_letter()`) are merged and active on `main`.
+- All `7` Subsystem 3 host C test suites (`bc_decode`, `bc_edge`, `bc_frame`, `lf_sanity`, `lf_core`, `lf_link`, `lf_straddle`) PASS (`ctest --test-dir build/host`, verified at `0b07b0a`). Formal saved `APP_TEST` / track captures for straddle bends and A–Z MQTT barcode runs can be appended above once recorded in `testing/subsystem3/logs/`.

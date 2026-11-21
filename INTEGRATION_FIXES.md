@@ -1,6 +1,9 @@
 # Subsystem 2 & 5 Integration Fixes: Fault Latch, Bypass Speed & NFR15 (`INTEGRATION_FIXES.md`)
 
-**Date:** 2026-11-04  
+> **STATUS: RESOLVED / HISTORICAL REFERENCE (all 3 items applied; last reviewed 2026-11-22).**  
+> All three issues below were implemented on `main` (Note: Issue 2's bring-up bypass speed was later temporarily lowered to `5 cm/s` under `OBS_BYPASS_SLOW_BRINGUP = 1U` in `config/thresholds.h` / `config/timing.h` so line reacquisition is reliable at bring-up cruise speed; nominal remains `25 cm/s`, and Issue 3 was further refined in `task_obs_scan.c` with a stationary `5°` width sweep across `50°–130°`).
+
+**Date:** 2026-11-04 (Reviewed 2026-11-22)  
 **Author:** Buddy 2 (Ruo Chen, `2500530`)  
 **Context:** Resolution of blockers and requests raised by Buddy 5 (Chay Han, `2500596`) in `testing/subsystem5/logs/2026-11-04_s5_bypass_runs.txt` and `testing/subsystem5/TEST_LOG.md`.
 
@@ -8,11 +11,11 @@
 
 ## Executive Summary
 
-| Issue | Problem / Request | Root Cause | Proposed Action |
+| Issue | Problem / Request | Root Cause | Action & Current Status (`22 Nov 2026`) |
 |---|---|---|---|
-| **1. S2-U25 Failure & `FAULT_LATCHED` Deadlock** | S2-U25 fails in combined test builds; car is blocked on boot with `[S5] avoid ABORT: safety fault latched` until an explicit `REMOTE_RESET`. | 1. `task_vc.c` only clears its internal `s_sys_state` on `RESET` if the flag bit `FAULT_LATCHED` is currently 1; if cleared out-of-band, VC stays permanently deadlocked in fault state.<br>2. `subsystem2_test.c` (S2-U24) directly clears `FAULT_LATCHED` via `tk_clr_flg`, desyncing VC.<br>3. S2-U25 uses `EVF_SAFETY_STATUS_NO_ECHO` as a test bit, which S5's `task_obs_scan` actively clears in the background. | Patch `task_vc.c`, `subsystem2_test.c` S2-U24/S2-U25, and add test cleanup. |
-| **2. `MOTION_SPEED_BYPASS_CMPS = 25 cm/s`** | Chay Han requested raising bypass speed to 25 cm/s to close NFR14 (3.0 s target). | Currently set to 15 cm/s (`BRINGUP`) / 20 cm/s (`NOMINAL`). | Update `config/thresholds.h` to 25 cm/s for both nominal and bring-up bypass. |
-| **3. NFR15 Rewording (Obstacle Width Error)** | ±10% width estimation error cannot be met for small (e.g. 50 mm) boxes due to sensor angular resolution (10° fine scan = ~27.6 mm/slot). | Geometric quantization limit: 1-slot ambiguity is ±27.6 mm at 158 mm range. | Add Delta D12 to `ARCHITECTURE.md` and update `design.md`: "within ±10 % or ±1 bearing slot, whichever is larger". |
+| **1. S2-U25 Failure & `FAULT_LATCHED` Deadlock** | S2-U25 failed in combined test builds; car blocked on boot until explicit `REMOTE_RESET`. | `task_vc.c` only cleared internal state on `RESET` when the eventflag bit was 1; `S2-U24` bypassed VC reset; `S2-U25` used `EVF_SAFETY_STATUS_NO_ECHO` which S5 actively clears. | **DONE & MERGED (`main`):** Patched `task_vc.c`, `S2-U24` (`vc_reset`), `S2-U25` (`EVF_SAFETY_FAULT_ENCODER`), and post-test cleanup. |
+| **2. `MOTION_SPEED_BYPASS_CMPS = 25 cm/s`** | Requested raising bypass speed to `25 cm/s` for NFR14 (`3.0 s` target / `5.0 s` hard limit). | Was `15 cm/s` (`BRINGUP`) / `20 cm/s` (`NOMINAL`). | **APPLIED (`NOMINAL`), OVERRIDDEN AT BRING-UP:** `MOTION_SPEED_BYPASS_NOMINAL_CMPS` is `25U`; `MOTION_SPEED_BYPASS_BRINGUP_CMPS` was set to `25U`, then temporarily lowered to `5U` under `OBS_BYPASS_SLOW_BRINGUP = 1U` (19 Nov) so line reacquisition succeeds reliably at bring-up speed. Flip `OBS_BYPASS_SLOW_BRINGUP = 0U` and restore `25U`/`15U` for the NFR14 timing run. |
+| **3. NFR15 Rewording (Obstacle Width Error)** | `±10%` error impossible on small boxes with `10°` servo slots (`~27.6 mm/slot` at `158 mm`). | Geometric angular quantization limit. | **DONE (`D12` + `5°` sweep):** Added `D12` in `ARCHITECTURE.md` ("within ±10% or ±1 fine-scan bearing slot, whichever is larger"); later improved in `task_obs_scan.c` (`D16`) with a stationary `5°` sweep (`50°–130°`), oblique dropout bridging, and 40° beam removal. |
 
 ---
 
@@ -186,29 +189,13 @@ Under Section *"Design deltas against design.md"*:
 
 ---
 
-## 4. Step-by-Step Implementation Checklist for the Next Device
+## 4. Implementation Status Checklist (`main`)
 
-1. [ ] **Pull Latest `main`**:
-   ```powershell
-   git pull origin main
-   ```
-2. [ ] **Apply Code Fixes**:
-   - `app_program/subsystem2/task_vc.c` (handle `RESET` when `s_sys_state == VC_SYS_SAFETY_FAULT_LATCHED`).
-   - `app_program/subsystem2/subsystem2_test.c` (proper S2-U24 reset, S2-U25 flag change to `EVF_SAFETY_FAULT_ENCODER`, and post-test clean state).
-   - `config/thresholds.h` (set `MOTION_SPEED_BYPASS_*_CMPS` to `25U`).
-   - `ARCHITECTURE.md` (add D12).
-   - `design.md` (update NFR15 and fix typo in line 312).
-3. [ ] **Verify Builds & Rule Checks**:
-   ```powershell
-   cmake -P cmake/check_rules.cmake
-   cmake --build build/test --parallel 8
-   cmake --build build/s0b --parallel 8
-   ```
-4. [ ] **Commit & Push to `main`**:
-   ```powershell
-   git add app_program/subsystem2/task_vc.c app_program/subsystem2/subsystem2_test.c config/thresholds.h ARCHITECTURE.md design.md INTEGRATION_FIXES.md
-   git commit -m "fix(subsystem2): resolve fault latch reset deadlock, set bypass speed to 25 cm/s, and reword NFR15"
-   git push origin main
-   ```
-5. [ ] **Notify Buddy 5 (Chay Han)**:
-   - Let him know `main` is updated and `S2-U25` / `FAULT_LATCHED` is fixed so he can flash and re-run his bypass tests without manual `REMOTE_RESET` workarounds.
+1. [x] **Pull Latest `main`**
+2. [x] **Apply Code & Doc Fixes (`main`)**:
+   - [x] `app_program/subsystem2/task_vc.c` (handle `RESET` when `s_sys_state == VC_SYS_SAFETY_FAULT_LATCHED` even if the eventflag bit was cleared out-of-band).
+   - [x] `app_program/subsystem2/subsystem2_test.c` (proper `S2-U24` VC reset, `S2-U25` scratch flag moved to `EVF_SAFETY_FAULT_ENCODER`, and post-test cleanup).
+   - [x] `config/thresholds.h` (`MOTION_SPEED_BYPASS_NOMINAL_CMPS = 25U`; `BRINGUP` initially raised to `25U`, later set to `5U` under `OBS_BYPASS_SLOW_BRINGUP = 1U` — see Executive Summary).
+   - [x] `ARCHITECTURE.md` (added Delta `D12`; later superseded in hardware accuracy by `D16` stationary `5°` sweep). Note: `design.md` stays team-edited per `HANDOVER.md` Section 6.
+3. [x] **Verify Builds & Rule Checks (`check_rules: PASS`, 0 warnings)**
+4. [x] **Commit & Push to `main`** and unblock Subsystem 5 bypass runs (`2026-11-19_s5_bypass_drive.txt` verified full bypass state sequence).

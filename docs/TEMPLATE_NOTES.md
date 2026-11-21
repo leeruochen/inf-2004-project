@@ -32,8 +32,10 @@ from it, what we did not, and why. The full list of deviations is the
 The template's CYW43 / lwIP / MQTT stack (`lib/libwifi`, `lib/liblwip`, the
 built-in `cyw43_utk_task` and `mqtt_utk.c`) is reference only. It is part of
 the template's SMP kernel copy, and its sources mix kernel and SDK headers in
-one file (rule R1). Telemetry (subsystem 1) designs its own WiFi/MQTT
-ownership in Phase 2: TODO(phase 2, buddy 1).
+one file (rule R1). Telemetry (Subsystem 1, Buddy 1) implements its own
+poll-mode CYW43 + lwIP MQTT client in `app_program/subsystem1/drv_wifi.c`
+(`TEL_BACKEND_WIFI=ON`), keeping all network calls inside `task_tel.c` so R1
+is preserved (`app_program/subsystem1/MQTT.md`).
 
 ## Not used at all
 

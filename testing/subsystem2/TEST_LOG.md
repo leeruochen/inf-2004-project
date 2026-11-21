@@ -77,6 +77,11 @@ Add a new row for every run. Never edit or delete old rows.
 | 2026-10-31 | S2-U20 | `e794f8e` | 2500530 | PASS | `testing/subsystem2/logs/floor_run3.txt`, `testing/subsystem2/logs/floor_run4_topspeed.txt` | `turnLeft(90)` -> `turnRight(90)` floor runs: Run 3 (`TRACK=138 mm`: `L90 dL=-1293 dR=1421`, `R90 dL=1371 dR=-1346`, `~104 deg`, returned to `0 deg`); Run 4 (`TRACK=120 mm`: `L90 dL=-1164 dR=1252`, `R90 dL=1218 dR=-1194`, `~95 deg`, returned to `0 deg`) -> `MOTION_EFF_TRACK_MM = 114U` calibrated for `90.0 deg` |
 | 2026-10-31 | S2-U21 | `e794f8e` | 2500530 | PASS | `testing/subsystem2/logs/floor_run4_topspeed.txt`, `testing/subsystem2/MOTION_ACCURACY_EVALUATION.md` | NFR2 top-speed `50 cm/s` (`dt=1763 ms`, `pk=51.1 cm/s`, actual `103 cm`, expected `12260` counts): `dL=12418 (+1.29 %)`, `dR=12374 (+0.93 %)`, `df=44 (0.35 %)`; zero missed counts within 1 wheel-slip tolerance |
 
+## Current status (as of 22 Nov 2026)
+
+- All `28/28` baseline Subsystem 2 tests (`S2-U01..U28`) PASS and remain intact above.
+- For post-`S7` updates on `main` — `S8` safe ARMv6-M optimizations (`OPT-01..04`), `S2-U24/U25` fault-latch reset fix (`INTEGRATION_FIXES.md`), `BC_D_CMD_CM = 60 cm`, `-DMOTION_STEER_TARGETS=1` differential steering targets, gradual IMU-pitch hump climb assist (`MOTION_HUMP_*`), and `5 cm/s` bring-up speeds (`OBS_BYPASS_SLOW_BRINGUP = 1U`) — see `app_program/subsystem2/subsystem2_roadmap.md`.
+
 
 
 

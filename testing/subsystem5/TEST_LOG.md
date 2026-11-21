@@ -105,35 +105,15 @@ Add a new row for every run. Never edit or delete old rows.
 | 2026-11-19 | Start pose is mandatory | — | longchayhan03-eng | **operational note** | `2026-11-19_s5_fullchain.txt` | Several runs where "the car did not move at all" were all one cause: the car must **boot** in Subsystem 3's start pose (CENTRE on the middle of the line, RIGHT on white). `lf_cal_from_start_pose()` refuses a low-contrast reading and line following then never steers. One recorded failure read C 162 / R 154 — a contrast of 8 against ~1000 for a good pose. The bring-up harness now prints the verdict and refuses to start the motors on a refusal. |
 | 2026-11-19 | **NFR14 is RED** | — | longchayhan03-eng | **deliberate, must be reverted** | — | At the 5 cm/s bring-up bypass a full manoeuvre runs to roughly 40 s against NFR14's 5.0 s. `OBS_BYPASS_SLOW_BRINGUP` (config/timing.h) is 1, which disables the NFR14 assertion in `timing.h`, the 15 cm/s floor in `thresholds.h` and the static assert in `config/mtk3/config_check.h`. **To restore:** set it to 0, `MOTION_SPEED_BYPASS_BRINGUP_CMPS` to 25 and `MOTION_SPEED_BYPASS_MIN_CMPS` to 15 — all guards return and the scaled dwells follow automatically. |
 
-## Open items for the owner
+## Current status & open items for the owner (as of 22 Nov 2026)
 
-1. ~~Everything above is desk-verified only.~~ **Done 2026-11-04:** S5-U01…S5-U26 have now run on the
-   Pico W from an `APP_TEST` build. 25 of 26 pass; S5-U24's failure is environmental (see Results).
-   Two real defects were found on hardware that desk testing could not reach, both now fixed:
-   - **`OBS_BEAM_DEG` was 15°, the real beam is ~40°** — width over-reported by 280 %
-     (`logs/2026-11-04_s5_beam_calib.txt`).
-   - **The whole-manoeuvre budget deadline was never armed on entry to `OBS_AV_SLOW`.** It is set
-     only in `start_manoeuvre()`, but `SLOW` is entered from `IDLE` without going through it, so
-     `s_budget_deadline_ms` stayed at its previous value (0 on the first detection). The task loop
-     checks the budget in every state but `IDLE`, read it as already spent, and aborted the
-     manoeuvre one iteration after it began. **The car detected every obstacle correctly and then
-     drove straight through it.** Only reproducible with the Vehicle Controller in a live nav state.
-2. **INT-S5-01 is done; the other three integration tests are not.** The car has now physically
-   avoided an obstacle while driving (see Results). Still outstanding: INT-S5-02 (line
-   reacquisition with Buddy 3 — now testable since their line-following landed), INT-S5-03 (safety
-   abort) and INT-S5-04 (blocked obstacle). The legs remain open-loop timed rather than
-   encoder-closed, so lateral distance has still not been measured against a ruler.
-3. **Measure, then promote.** Measured on 2026-11-04 and no longer guesses: `OBS_BEAM_DEG` (40°,
-   from the beam calibration) and `OBS_TURN_DWELL_MS` (550 ms, from six timed turns). Still
-   unmeasured and marked TUNE: `OBS_SERVO_SETTLE_MS`, `OBS_EDGE_TOL_MM`, `OBS_WIDTH_MIN_MM` and
-   `OBS_ALONG_EXTRA_MM`. All of them should be promoted into `config/thresholds.h` /
-   `config/timing.h` once settled, the way Subsystem 2 promoted its calibrated constants. Measure them
-   (S5-U31, S5-U32, S5-U33) and promote the measured values into `config/thresholds.h` /
-   `config/timing.h`, the way Subsystem 2 promoted its calibrated constants.
-4. **`CAR_WIDTH_MM` is still an assumption** (120 mm in `config/thresholds.h`). Measure the car at
-   its widest point, including wheels, and update it — it feeds `OBS_BYPASS_CLEAR_MIN_MM`.
-5. **Ask Buddy 2** to confirm `VC_BYPASS_TURN_DEG` (45°) and `VC_BYPASS_REV_CM` (15 cm), which are
-   private to `task_vc.c` but mirrored in `task_obs_avoid.c`, or to export them.
-6. **Ask Buddy 1** whether Telemetry wants an obstacle event type. `DREP_TEL_TYPE_COUNT` is 5 today
-   with no obstacle type, so S5 sends no telemetry. Adding one is a change to shared
-   `src/common/data_repr.h` and needs team agreement.
+1. ~~Everything above is desk-verified only.~~ **Done:** `S5-U01..U31` have run on the Pico W (`logs/2026-11-04_s5_unit_all.txt`, `2026-11-19_s5_bypass_drive.txt`), and watch-ahead + stop-and-confirm + stationary `5°` sweep (`50°–130°`, 4 tries / `12 ms` / `400 mm` cap -> 3-echo median + oblique dropout bridging) + encoder-closed 4-turn bypass (`OBS_OBSTACLE_DEPTH_MM = 100U` mm) + directional rejoin are active on `main`.
+2. **Closed design/telemetry items (now on `main`):**
+   - `CAR_WIDTH_MM` measured at **`130U` mm** (`config/thresholds.h`, `OBS_BYPASS_CLEAR_MIN_MM = 180 mm`).
+   - Obstacle telemetry via IF-12 **`tel_post_obstacle()`** (seq-locked slot -> `DREP_FT_EVENT_OBSTACLE`) and **`tel_set_range_cm()`** are merged on `main`.
+   - Avoidance legs and `45°` pivots are now **encoder-closed** (`motion_get_state()`) rather than purely open-loop timed.
+3. **Remaining captures & verification:**
+   - Re-run `S5-U05` / `S5-U24` in a clear field at boot so the final `APP_TEST` log is `0` failed without environmental interference.
+   - Capture formal saved logs (`logs/` + `videos/README.md`) for stationary `5°`-sweep width accuracy (`S5-U33` on 85 mm and 150 mm blocks), `INT-S5-02` (clean rejoin hold on line), `INT-S5-03` (safety abort), and `INT-S5-04` (blocked obstacle reverse).
+   - **Restore `NFR14` (`<= 5.0 s`) when ready:** `OBS_BYPASS_SLOW_BRINGUP` (`config/timing.h` / `config/thresholds.h`) is currently `1U` (`5 cm/s` bypass, `60 s` budget) so slow line reacquisition succeeds reliably; clear it to `0U` and restore `MOTION_SPEED_BYPASS_BRINGUP_CMPS = 25U` and `MOTION_SPEED_BYPASS_MIN_CMPS = 15U` for nominal `NFR14` timing verification.
+4. **Constants still kept local to S5 (`TUNE`):** `OBS_EDGE_TOL_MM` (`120U`), `OBS_EDGE_STEP_MM` (`55U`), `OBS_BEAM_DEG` (`40U`), `OBS_ALONG_CHASSIS_MM` (`190U`), and `OBS_OUT_EXTRA_MM` (`20U`) live in `task_obs_scan.c` / `task_obs_avoid.c` (can stay local or be promoted if shared). `OBS_BYPASS_TURN_DEG` (`45°`) and `VC_BYPASS_REV_CM` (`15 cm`) match `task_vc.c`.
