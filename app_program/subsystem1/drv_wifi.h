@@ -44,7 +44,7 @@
 
 /** Received command message, as delivered by the broker. */
 #define NET_RX_TOPIC_MAX        (32U)   /**< bytes incl. NUL */
-#define NET_RX_DATA_MAX         (8U)    /**< commands are 3 bytes; longer = rejected later */
+#define NET_RX_DATA_MAX         (8U)    /**< commands are 3-7 bytes; longer = rejected later */
 
 typedef struct
 {

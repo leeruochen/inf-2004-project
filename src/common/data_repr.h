@@ -741,12 +741,13 @@ static inline bool drep_edge_pop(drep_edge_ring_t *p_ring, uint32_t *p_gap_us)
 #define DREP_FT_CMD_START           (8U)    /**< no payload */
 #define DREP_FT_CMD_STOP            (9U)
 #define DREP_FT_CMD_RESET           (10U)
-#define DREP_FT_COUNT               (11U)
+#define DREP_FT_CMD_BC_MAP          (11U)   /**< 4 distinct ASCII 'A'..'Z' [L, R, S, U] -> 4 B */
+#define DREP_FT_COUNT               (12U)
 
 /** Payload length per frame type (0 = no payload); index 0 is not a type. */
 static inline uint32_t drep_frame_len(uint32_t type)
 {
-    static uint8_t const k_len[DREP_FT_COUNT] = { 0U, 15U, 10U, 4U, 5U, 8U, 5U, 6U, 0U, 0U, 0U };
+    static uint8_t const k_len[DREP_FT_COUNT] = { 0U, 15U, 10U, 4U, 5U, 8U, 5U, 6U, 0U, 0U, 0U, 4U };
 
     return (type < DREP_FT_COUNT) ? k_len[type] : 0U;
 }
@@ -915,6 +916,17 @@ static inline uint32_t drep_frame_cmd(uint8_t *p_buf, uint32_t cmd_type)
 {
     (void)drep_frame_begin(p_buf, cmd_type);
     return DREP_FRAME_HDR_BYTES;
+}
+
+/** Barcode letter mapping command frame: 4 ASCII bytes [L, R, S, U]. */
+static inline uint32_t drep_frame_cmd_bc_map(uint8_t *p_buf, char left, char right, char straight, char uturn)
+{
+    (void)drep_frame_begin(p_buf, DREP_FT_CMD_BC_MAP);
+    p_buf[DREP_FRAME_HDR_BYTES + 0U] = (uint8_t)left;
+    p_buf[DREP_FRAME_HDR_BYTES + 1U] = (uint8_t)right;
+    p_buf[DREP_FRAME_HDR_BYTES + 2U] = (uint8_t)straight;
+    p_buf[DREP_FRAME_HDR_BYTES + 3U] = (uint8_t)uturn;
+    return DREP_FRAME_HDR_BYTES + drep_frame_len(DREP_FT_CMD_BC_MAP);
 }
 
 /* Frame check results. */

@@ -390,6 +390,9 @@ static void test_frames_reject(void)
     CHECK(drep_cmd_to_nav(f, n, &nav) == DREP_FRAME_UNKNOWN_TYPE);
     n = drep_frame_barcode(f, 1U, 0U);                                /* valid, not a command */
     CHECK(drep_cmd_to_nav(f, n, &nav) == DREP_FRAME_NOT_COMMAND);
+    n = drep_frame_cmd_bc_map(f, 'A', 'B', 'C', 'D');
+    CHECK((n == 7U) && (drep_frame_check(f, n) == DREP_FRAME_OK));
+    CHECK(drep_cmd_to_nav(f, n, &nav) == DREP_FRAME_NOT_COMMAND);
     CHECK(nav.w == 0xDEADBEEFU);
 }
 

@@ -21,6 +21,7 @@
  *    car/telemetry/heartbeat   frame type 7, every 1 s          QoS 0
  *    car/status                1 byte '1' online / '0' offline (MQTT last will), retained
  *    car/cmd/start|stop|reset  frame types 8/9/10 (dashboard -> car), subscribed QoS 1
+ *    car/cmd/bc_map            frame type 11, 4 bytes [L, R, S, U] (dashboard -> car), QoS 1
  */
 
 #ifndef TEL_WIRE_H
@@ -34,6 +35,7 @@
 #define TEL_TOPIC_STATUS            "car/status"
 #define TEL_TOPIC_CMD_FILTER        "car/cmd/#"
 #define TEL_TOPIC_CMD_PREFIX        "car/cmd/"
+#define TEL_TOPIC_CMD_BC_MAP        "car/cmd/bc_map"
 #define TEL_STATUS_ONLINE           "1"
 #define TEL_STATUS_OFFLINE          "0"
 
@@ -43,6 +45,7 @@
 /* Extra reject reasons on top of DREP_FRAME_* (data_repr.h). */
 #define TEL_WIRE_BAD_TOPIC          (-6)    /**< not car/cmd/start|stop|reset */
 #define TEL_WIRE_TOPIC_MISMATCH     (-7)    /**< e.g. a STOP frame on car/cmd/start */
+#define TEL_WIRE_BAD_PAYLOAD        (-8)    /**< valid header, invalid payload (e.g. bc_map) */
 
 /** Topic for a telemetry frame type (DREP_FT_TELEMETRY_MOTION .. DREP_FT_HEARTBEAT), or NULL. */
 char const *tel_wire_topic(uint32_t frame_type);
@@ -59,6 +62,14 @@ bool tel_wire_is_periodic(uint32_t frame_type);
  * reach the Vehicle Controller.
  */
 int32_t tel_wire_cmd(char const *p_topic, uint8_t const *p_buf, uint32_t n, nav_input_t *p_nav);
+
+/**
+ * Receive check for car/cmd/bc_map (frame type 11, 4 distinct uppercase letters
+ * [L, R, S, U]).  On success fills out_map and returns DREP_FRAME_OK; otherwise
+ * returns the reject reason and leaves out_map unchanged.
+ */
+int32_t tel_wire_bc_map(char const *p_topic, uint8_t const *p_buf, uint32_t n,
+                        char out_map[DREP_BC_CMD_COUNT]);
 
 /** Short name of a reject reason for logs ("BAD_VERSION", ...). */
 char const *tel_wire_reject_name(int32_t rc);

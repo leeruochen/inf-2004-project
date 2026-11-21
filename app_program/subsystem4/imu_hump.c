@@ -12,6 +12,9 @@
 #error "IMU_HUMP_WHEELBASE_MM (config/thresholds.h) must be measured on the car"
 #endif
 
+_Static_assert(IMU_HUMP_EXIT_HALF_DEG < IMU_HUMP_ENTRY_HALF_DEG,
+               "IMU_HUMP_EXIT_HALF_DEG must stay below IMU_HUMP_ENTRY_HALF_DEG");
+
 /* sin(0..90 deg) x 10000, 1 deg steps; half-degrees are interpolated. */
 static int16_t const s_sin_x10000[91] =
 {
@@ -36,6 +39,10 @@ static int16_t const s_sin_x10000[91] =
 /* Level travel that ends a hump even if the car never came back down
  * (a step up, not a hump), mm. */
 #define IMU_HUMP_END_MAX_MM         (1000)
+/* Level travel that groups front and rear wheels over a short hump into one
+ * report (mm): at least the physical axle-to-caster span (120 mm) even when
+ * IMU_HUMP_WHEELBASE_MM is calibrated smaller for tilt height. */
+#define IMU_HUMP_END_LEVEL_MM       ((IMU_HUMP_WHEELBASE_MM > 120U) ? (int32_t)IMU_HUMP_WHEELBASE_MM : 120)
 
 int32_t imu_hump_sin_x10000(int32_t half_deg)
 {
@@ -250,7 +257,7 @@ imu_hump_event_t imu_hump_step(imu_hump_t *p_hump, int32_t pitch_half_deg, int32
     int32_t const down_um = (p_hump->climb_peak_um / 4 > IMU_HUMP_DOWN_UM)
                             ? (p_hump->climb_peak_um / 4) : IMU_HUMP_DOWN_UM;
     bool const    back_down = (p_hump->climb_um <= down_um);
-    bool const    ended     = ((p_hump->level_um >= ((int32_t)IMU_HUMP_WHEELBASE_MM * 1000)) && back_down)
+    bool const    ended     = ((p_hump->level_um >= (IMU_HUMP_END_LEVEL_MM * 1000)) && back_down)
                               || (p_hump->level_um >= (IMU_HUMP_END_MAX_MM * 1000))
                               || (p_hump->level_n >= IMU_HUMP_END_SAMPLES);
 

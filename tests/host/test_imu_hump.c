@@ -29,7 +29,7 @@
 #include "test_check.h"
 
 #define PI              (3.14159265358979)
-#define WHEELBASE_MM    (120.0)     /* config/thresholds.h, typed in */
+#define WHEELBASE_MM    (95.0)      /* config/thresholds.h, typed in */
 #define DT_S            (0.010)     /* IMU period */
 
 typedef double (*profile_fn)(double x_mm);
@@ -193,7 +193,7 @@ static void test_flat_no_hump(void)
 static void test_static_book(void)
 {
     /* S4-U15/U25 on the desk: a 20 mm object under the front wheels, car not
-     * moving.  pitch = asin(20 / 120) = 9.59 deg. */
+     * moving.  pitch = asin(20 / 95) = 12.15 deg (24 half-deg). */
     imu_hump_t        h;
     imu_hump_report_t rep = { 0 };
     uint32_t          ends = 0U;
@@ -201,7 +201,7 @@ static void test_static_book(void)
     imu_hump_init(&h);
     for (uint32_t i = 0U; i < 200U; i++)            /* 2 s on the book */
     {
-        ends += (imu_hump_step(&h, 19, 0, false, false, &rep) == IMU_HUMP_END) ? 1U : 0U;
+        ends += (imu_hump_step(&h, 24, 0, false, false, &rep) == IMU_HUMP_END) ? 1U : 0U;
     }
     CHECK(ends == 0U);
     for (uint32_t i = 0U; i < 49U; i++)             /* book removed, 0.49 s */
@@ -212,7 +212,7 @@ static void test_static_book(void)
     CHECK(imu_hump_step(&h, 0, 0, false, false, &rep) == IMU_HUMP_END);    /* 0.5 s */
     CHECK(within_nfr11(rep.height_mm, 20.0));
     CHECK((rep.height_mm >= 19) && (rep.height_mm <= 21));
-    CHECK(rep.pitch_half_deg == 19);
+    CHECK(rep.pitch_half_deg == 24);
     CHECK(rep.climb_mm == 0);
 }
 
@@ -441,6 +441,35 @@ static void test_two_humps(void)
     CHECK((r1.ends == 1U) && (r2.ends == 1U));
 }
 
+static void test_flat_noise_ends_promptly(void)
+{
+    /* +-2.0 deg (+-4 half-deg) flat-cruise ripples after a hump must not
+     * reset level_um and delay reporting for 8-15 s. */
+    imu_hump_t        h;
+    imu_hump_report_t rep = { 0 };
+    uint32_t          ends = 0U;
+
+    imu_hump_init(&h);
+    for (uint32_t i = 0U; i < 40U; i++)
+    {
+        ends += (imu_hump_step(&h, -18, 500, false, false, &rep) == IMU_HUMP_END) ? 1U : 0U;
+    }
+    CHECK(ends == 0U);
+
+    for (uint32_t i = 0U; i < 300U; i++)            /* 3 s / 150 mm at 50 mm/s */
+    {
+        int32_t pitch = 0;
+
+        if ((i % 40U) < 5U)
+        {
+            pitch = (((i / 40U) % 2U) == 0U) ? 4 : -4;
+        }
+        ends += (imu_hump_step(&h, pitch, 500, false, false, &rep) == IMU_HUMP_END) ? 1U : 0U;
+    }
+    CHECK(ends == 1U);
+    CHECK((rep.height_mm >= 14) && (rep.height_mm <= 16));
+}
+
 int main(void)
 {
     test_sin_table();
@@ -455,6 +484,7 @@ int main(void)
     test_turn_drops();
     test_reverse();
     test_two_humps();
+    test_flat_noise_ends_promptly();
 
     return TEST_RESULT("imu_hump (S4-U24)");
 }

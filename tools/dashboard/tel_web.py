@@ -60,6 +60,7 @@ CONSOLE_MAX = 600               # raw console lines kept
 TRACKED = ("[LF]", "[BC]", "[VC]", "[S5] avoid", "[SAFETY]", "[capture]")
 # task_lf.c: "[LF] ON_LINE -> LINE_LOST  c=1712 r=180 dc=... dr=... vc=4"
 _LF_MOVE = re.compile(r"\[LF\] ([A-Z_]+) -> ([A-Z_]+)\s+c=(\d+) r=(\d+)")
+_DEFAULT_BC_MAP = {"LEFT": "A", "RIGHT": "B", "STRAIGHT": "C", "UTURN": "D"}
 
 
 def _r(name: str, value: object, kind: str, note: str = "") -> dict:
@@ -271,9 +272,8 @@ class Monitor:
                 self.ctl.set_connected(True, _mono())
                 bc_map = dict(self.demo.bc_map)
             c.subscribe("car/#", qos=1)
-            if bc_map != {"LEFT": "A", "RIGHT": "B", "STRAIGHT": "C", "UTURN": "D"}:
-                payload = (bc_map["LEFT"] + bc_map["RIGHT"] + bc_map["STRAIGHT"] + bc_map["UTURN"]).encode("ascii")
-                c.publish("car/cmd/bc_map", payload, qos=1, retain=True)
+            if bc_map != _DEFAULT_BC_MAP:
+                self._publish_bc_map(c, bc_map)
 
         def on_disconnect(c, userdata, *rest):
             if self._client is not c:
@@ -292,17 +292,22 @@ class Monitor:
         def on_message(c, userdata, msg):
             if self._client is not c or msg.topic.startswith("car/cmd/"):
                 return
+            bc_map_sync = None
             if msg.topic == codec.STATUS_TOPIC:
                 state = "ONLINE" if msg.payload == b"1" else "OFFLINE (last will)"
                 with self.lock:
                     self.src["car_status"] = state
                     self.ctl.set_car_status(state)
+                    if state == "ONLINE" and self.demo.bc_map != _DEFAULT_BC_MAP:
+                        bc_map_sync = dict(self.demo.bc_map)
                 line = f"{dash._stamp()}  [DASH] car/status {state}"
             else:
                 line = f"{dash._stamp()}  [TEL] {msg.topic} {bytes(msg.payload).hex()}"
             if self._save:
                 self._save.write(line + "\n")
             self.feed_line(line)
+            if bc_map_sync is not None:
+                self._publish_bc_map(c, bc_map_sync, dash._stamp())
 
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
@@ -372,6 +377,16 @@ class Monitor:
         with self.lock:
             self.demo.clear()
 
+    def _publish_bc_map(self, client, mapping: dict, stamp: str = "") -> None:
+        """Publish a non-retained car/cmd/bc_map binary frame (never retain on the broker)."""
+        topic, frame = codec.encode_bc_map(mapping)
+        client.publish(topic, frame, qos=1)
+        if stamp:
+            self.feed_line(
+                f"{stamp}  [DASH] sent bc_map: {topic} {frame.hex()} "
+                f"(L={mapping['LEFT']} R={mapping['RIGHT']} S={mapping['STRAIGHT']} U={mapping['UTURN']})"
+            )
+
     def set_barcode_map(self, req: dict) -> Tuple[int, dict]:
         """Update the 4-event barcode letter mapping (A-Z) and publish to car/cmd/bc_map if connected."""
         stamp = dash._stamp()
@@ -383,9 +398,7 @@ class Monitor:
             client = self._client if self.src.get("mqtt_connected") else None
         sent_mqtt = False
         if client is not None:
-            payload = (mapping["LEFT"] + mapping["RIGHT"] + mapping["STRAIGHT"] + mapping["UTURN"]).encode("ascii")
-            client.publish("car/cmd/bc_map", payload, qos=1, retain=True)
-            self.feed_line(f"{stamp}  [DASH] sent bc_map: car/cmd/bc_map {payload.decode('ascii')}")
+            self._publish_bc_map(client, mapping, stamp)
             sent_mqtt = True
         return 200, {"ok": True, "mapping": mapping, "sent_mqtt": sent_mqtt}
 

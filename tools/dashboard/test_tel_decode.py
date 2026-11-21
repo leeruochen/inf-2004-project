@@ -45,6 +45,21 @@ class GoldenFrames(unittest.TestCase):
         self.assertEqual(codec.encode_cmd("start"), ("car/cmd/start", bytes.fromhex("010800")))
         self.assertEqual(codec.encode_cmd("stop"), ("car/cmd/stop", bytes.fromhex("010900")))
         self.assertEqual(codec.encode_cmd("reset"), ("car/cmd/reset", bytes.fromhex("010a00")))
+        self.assertEqual(
+            codec.encode_bc_map({"LEFT": "A", "RIGHT": "B", "STRAIGHT": "C", "UTURN": "D"}),
+            ("car/cmd/bc_map", bytes.fromhex("010b0441424344")),
+        )
+        fr = codec.decode(bytes.fromhex("010b0441424344"))
+        self.assertEqual(fr.fields["left"], "A")
+        self.assertEqual(fr.fields["right"], "B")
+        self.assertEqual(fr.fields["straight"], "C")
+        self.assertEqual(fr.fields["uturn"], "D")
+        self.assertEqual(fr.fields["letters"], "ABCD")
+        self.assertIn("L=A", fr.summary())
+        with self.assertRaises(ValueError):
+            codec.encode_bc_map({"LEFT": "A", "RIGHT": "A", "STRAIGHT": "C", "UTURN": "D"})
+        with self.assertRaises(ValueError):
+            codec.encode_bc_map({"LEFT": "1", "RIGHT": "B", "STRAIGHT": "C", "UTURN": "D"})
 
     def test_barcode_letter_a_to_z(self):
         # Mapped letter 'M' (offset 13) -> LEFT (cmd 0): byte6 = 0 | (13 << 2) = 0x34
@@ -72,7 +87,8 @@ class Rejects(unittest.TestCase):
         self.reject("0107", "SHORT")
         self.reject("020900", "BAD_VERSION")
         self.reject("010000", "UNKNOWN_TYPE")
-        self.reject("010b00", "UNKNOWN_TYPE")
+        self.reject("010c00", "UNKNOWN_TYPE")
+        self.reject("010b00", "BAD_LENGTH")
         self.reject("01090100", "BAD_LENGTH")             # len field 1 for a 0-byte command
         self.reject("010706efbeaddef9", "BAD_LENGTH")     # heartbeat one byte short
         self.reject("010706efbeaddef93f00", "BAD_LENGTH")  # one byte too many

@@ -440,6 +440,30 @@ class WebV2(unittest.TestCase):
         self.assertEqual(rm3["pickup_stop"], "WAITING")
         self.assertEqual(st3["demo"]["summary"]["done"], 1)
 
+    def test_barcode_map_framed_and_not_retained(self):
+        fake = self._mqtt()
+        recorded = []
+
+        def publish(topic, frame, qos=0, retain=False):
+            fake.published.append((topic, frame))
+            recorded.append((topic, frame, retain))
+            mid = len(fake.published)
+            if fake.on_publish:
+                fake.on_publish(fake, None, mid)
+            return _Info(mid)
+
+        fake.publish = publish
+        code, j = self.s.post("/api/barcode_map", {"LEFT": "A", "RIGHT": "B", "STRAIGHT": "C", "UTURN": "F"})
+        self.assertEqual(code, 200, j)
+        self.assertTrue(j["sent_mqtt"])
+        expected = ("car/cmd/bc_map", bytes.fromhex("010b0441424346"), False)
+        self.assertEqual(recorded[-1], expected)
+
+        # When the car reconnects (car/status = ONLINE), re-send non-retained.
+        fake.on_message(fake, None, tv._FakeMsg("car/status", b"1"))
+        self.assertEqual(len(recorded), 2)
+        self.assertEqual(recorded[-1], expected)
+
 
 class OneConnection(unittest.TestCase):
     """Regression, 19 Nov 2026: two clients with one id took the broker connection off each other."""

@@ -60,10 +60,10 @@
  *  S4-U26 traces of the 10 mm hump (19 Nov 2026) gives 9 and 10 mm with 1,
  *  5 and 8 mm with 2.  Raise it if noise spikes set false heights. TUNE */
 #define IMU_HUMP_HOLD_SAMPLES       (1U)
-/** Entry and exit pitch, half-degrees.  Exit is 2/3 of the entry (hysteresis;
- *  cruise noise on the car stays within about +-2 deg). */
+/** Entry and exit pitch, half-degrees.  Exit stays above +-2 deg (4 half-deg)
+ *  cruise noise so flat-floor vibration does not keep resetting level_um. */
 #define IMU_HUMP_ENTRY_HALF_DEG     ((int32_t)IMU_HUMP_PITCH_DEG * 2)
-#define IMU_HUMP_EXIT_HALF_DEG      ((IMU_HUMP_ENTRY_HALF_DEG * 2) / 3)
+#define IMU_HUMP_EXIT_HALF_DEG      ((((IMU_HUMP_ENTRY_HALF_DEG * 2) / 3) < 5) ? 5 : ((IMU_HUMP_ENTRY_HALF_DEG * 2) / 3))
 
 typedef enum
 {

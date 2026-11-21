@@ -299,6 +299,65 @@ static void test_wire_cmd(void)
 
     CHECK_STR(tel_wire_reject_name(TEL_WIRE_TOPIC_MISMATCH), "TOPIC_MISMATCH");
     CHECK_STR(tel_wire_reject_name(DREP_FRAME_BAD_VERSION), "BAD_VERSION");
+    CHECK_STR(tel_wire_reject_name(TEL_WIRE_BAD_PAYLOAD), "BAD_PAYLOAD");
+}
+
+static void test_wire_bc_map(void)
+{
+    static char const k_untouched[DREP_BC_CMD_COUNT] = { 'Q', 'W', 'E', 'R' };
+    uint8_t           f[DREP_FRAME_MAX_BYTES];
+    char              out[DREP_BC_CMD_COUNT];
+    nav_input_t       nav = { 0xA5A5A5A5U };
+    uint32_t          n;
+
+    n = drep_frame_cmd_bc_map(f, 'A', 'B', 'C', 'D');
+    CHECK(n == 7U);
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == DREP_FRAME_OK);
+    CHECK((out[0] == 'A') && (out[1] == 'B') && (out[2] == 'C') && (out[3] == 'D'));
+
+    n = drep_frame_cmd_bc_map(f, 'W', 'X', 'Y', 'Z');
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == DREP_FRAME_OK);
+    CHECK((out[0] == 'W') && (out[1] == 'X') && (out[2] == 'Y') && (out[3] == 'Z'));
+
+    /* bc_map frames are rejected by the nav command checker. */
+    CHECK(tel_wire_cmd(TEL_TOPIC_CMD_BC_MAP, f, n, &nav) == TEL_WIRE_BAD_TOPIC);
+    CHECK(tel_wire_cmd("car/cmd/stop", f, n, &nav) == DREP_FRAME_NOT_COMMAND);
+    CHECK(nav.w == 0xA5A5A5A5U);
+
+    /* Every reject leaves out untouched. */
+    memcpy(out, k_untouched, sizeof(out));
+    CHECK(tel_wire_bc_map("car/cmd/start", f, n, out) == TEL_WIRE_BAD_TOPIC);
+    CHECK(tel_wire_bc_map("car/cmd/bc_mapp", f, n, out) == TEL_WIRE_BAD_TOPIC);
+    CHECK(tel_wire_bc_map(NULL, f, n, out) == TEL_WIRE_BAD_TOPIC);
+    /* Raw unframed ASCII "ABCD" starts with 'A' (0x41 != 0x01) -> BAD_VERSION. */
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, (uint8_t const *)"ABCD", 4U, out) == DREP_FRAME_BAD_VERSION);
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, 2U, out) == DREP_FRAME_SHORT);
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n - 1U, out) == DREP_FRAME_BAD_LENGTH);
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n + 1U, out) == DREP_FRAME_BAD_LENGTH);
+    f[2] = 3U;
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == DREP_FRAME_BAD_LENGTH);
+    f[2] = 4U;
+    f[0] = (uint8_t)(DREP_WIRE_VER + 1U);
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == DREP_FRAME_BAD_VERSION);
+    f[0] = (uint8_t)DREP_WIRE_VER;
+    f[1] = 0U;
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == DREP_FRAME_UNKNOWN_TYPE);
+    f[1] = (uint8_t)DREP_FT_COUNT;
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == DREP_FRAME_UNKNOWN_TYPE);
+    n = drep_frame_cmd(f, DREP_FT_CMD_STOP);
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == TEL_WIRE_TOPIC_MISMATCH);
+    n = drep_frame_fault(f, 1U, 0U);
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == DREP_FRAME_NOT_COMMAND);
+
+    /* Invalid payload characters or duplicates -> BAD_PAYLOAD. */
+    n = drep_frame_cmd_bc_map(f, 'a', 'B', 'C', 'D');
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == TEL_WIRE_BAD_PAYLOAD);
+    n = drep_frame_cmd_bc_map(f, '1', 'B', 'C', 'D');
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == TEL_WIRE_BAD_PAYLOAD);
+    n = drep_frame_cmd_bc_map(f, 'A', 'B', 'A', 'D');
+    CHECK(tel_wire_bc_map(TEL_TOPIC_CMD_BC_MAP, f, n, out) == TEL_WIRE_BAD_PAYLOAD);
+
+    CHECK(memcmp(out, k_untouched, sizeof(out)) == 0);
 }
 
 static void test_wire_hex(void)
@@ -350,6 +409,7 @@ static void test_golden_frames(void)
     check_hex(b, drep_frame_cmd(b, DREP_FT_CMD_START), "010800");
     check_hex(b, drep_frame_cmd(b, DREP_FT_CMD_STOP), "010900");
     check_hex(b, drep_frame_cmd(b, DREP_FT_CMD_RESET), "010a00");
+    check_hex(b, drep_frame_cmd_bc_map(b, 'A', 'B', 'C', 'D'), "010b0441424344");
 }
 
 int main(void)
@@ -363,6 +423,7 @@ int main(void)
     test_outbox();
     test_wire_topics();
     test_wire_cmd();
+    test_wire_bc_map();
     test_wire_hex();
     test_golden_frames();
     return TEST_RESULT("tel");

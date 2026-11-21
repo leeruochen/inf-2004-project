@@ -31,13 +31,15 @@ FT_HEARTBEAT = 7
 FT_CMD_START = 8
 FT_CMD_STOP = 9
 FT_CMD_RESET = 10
+FT_CMD_BC_MAP = 11
 
 # Payload length per frame type (drep_frame_len).
-FRAME_LEN = {1: 15, 2: 10, 3: 4, 4: 5, 5: 8, 6: 5, 7: 6, 8: 0, 9: 0, 10: 0}
+FRAME_LEN = {1: 15, 2: 10, 3: 4, 4: 5, 5: 8, 6: 5, 7: 6, 8: 0, 9: 0, 10: 0, 11: 4}
 
 FRAME_NAME = {
     1: "motion", 2: "sensor", 3: "barcode", 4: "hump", 5: "obstacle",
     6: "fault", 7: "heartbeat", 8: "cmd_start", 9: "cmd_stop", 10: "cmd_reset",
+    11: "cmd_bc_map",
 }
 
 TOPIC = {
@@ -47,6 +49,7 @@ TOPIC = {
 }
 CMD_TOPIC = {"start": "car/cmd/start", "stop": "car/cmd/stop", "reset": "car/cmd/reset"}
 CMD_TYPE = {"start": FT_CMD_START, "stop": FT_CMD_STOP, "reset": FT_CMD_RESET}
+BC_MAP_TOPIC = "car/cmd/bc_map"
 STATUS_TOPIC = "car/status"
 
 # Vehicle Controller system FSM, 4 bits (app_program/subsystem2/subsystem2.h VC_SYS_*).
@@ -150,6 +153,8 @@ class Frame:
         if self.type == FT_HEARTBEAT:
             return (f"up={f['uptime_ms'] / 1000:.1f}s state={f['state']} "
                     f"faults={','.join(f['fault_names']) or '-'}")
+        if self.type == FT_CMD_BC_MAP:
+            return f"L={f['left']} R={f['right']} S={f['straight']} U={f['uturn']}"
         return ""
 
 
@@ -216,6 +221,10 @@ def decode(data: bytes) -> Frame:
         f["state"] = SYS_STATE[s] if s < len(SYS_STATE) else f"?{s}"
         f["fault_bits"] = b.u(10)
         f["fault_names"] = _bit_names(f["fault_bits"], SAFETY_BITS)
+    elif t == FT_CMD_BC_MAP:
+        letters = [chr(v) for v in data[HDR_BYTES:HDR_BYTES + 4]]
+        f["left"], f["right"], f["straight"], f["uturn"] = letters
+        f["letters"] = "".join(letters)
     return Frame(t, FRAME_NAME[t], f)
 
 
@@ -223,6 +232,21 @@ def encode_cmd(cmd: str) -> Tuple[str, bytes]:
     """(topic, frame) for a remote command: 'start', 'stop' or 'reset'."""
     t = CMD_TYPE[cmd]
     return CMD_TOPIC[cmd], bytes([WIRE_VER, t, 0])
+
+
+def encode_bc_map(mapping: Dict[str, str]) -> Tuple[str, bytes]:
+    """(topic, frame) for car/cmd/bc_map (4 distinct uppercase letters A-Z)."""
+    letters: List[str] = []
+    for key in ("LEFT", "RIGHT", "STRAIGHT", "UTURN"):
+        if key not in mapping:
+            raise ValueError(f"missing barcode mapping key: {key}")
+        ltr = str(mapping[key]).strip().upper()
+        if len(ltr) != 1 or not ("A" <= ltr <= "Z"):
+            raise ValueError(f"{key} must be a single letter A-Z")
+        letters.append(ltr)
+    if len(set(letters)) != 4:
+        raise ValueError("Each event must be assigned to a distinct letter A-Z")
+    return BC_MAP_TOPIC, bytes([WIRE_VER, FT_CMD_BC_MAP, 4] + [ord(ch) for ch in letters])
 
 
 _LOG_LINE = re.compile(r"\[TEL\]\s+(car/\S+)\s+([0-9a-fA-F]+)\s*$")

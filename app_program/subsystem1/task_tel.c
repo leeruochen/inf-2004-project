@@ -55,7 +55,6 @@ static volatile uint32_t s_evt_post_drops = 0U;        /* producer (any task) */
 static tel_link_t        s_link;
 static tel_outbox_t      s_outbox;
 static bool              s_publish_failed = false;      /* this wake */
-static bool              s_hb_due = false;              /* state changed: heartbeat now */
 static bool              s_wifi_loss_set = false;
 static uint32_t          s_periodic_tick = 0U;
 static uint32_t          s_heartbeat_tick = 0U;
@@ -306,23 +305,21 @@ int32_t tel_cmd_receive(char const *p_topic, uint8_t const *p_buf, uint32_t n)
     int32_t     rc;
     ER          er;
 
-    if (topic_equal(p_topic, "car/cmd/bc_map") && (p_buf != NULL))
+    if (topic_equal(p_topic, TEL_TOPIC_CMD_BC_MAP))
     {
-        if ((n == DREP_BC_CMD_COUNT)
-            && (p_buf[0] >= (uint8_t)'A') && (p_buf[0] <= (uint8_t)'Z')
-            && (p_buf[1] >= (uint8_t)'A') && (p_buf[1] <= (uint8_t)'Z')
-            && (p_buf[2] >= (uint8_t)'A') && (p_buf[2] <= (uint8_t)'Z')
-            && (p_buf[3] >= (uint8_t)'A') && (p_buf[3] <= (uint8_t)'Z'))
+        char map[DREP_BC_CMD_COUNT];
+
+        rc = tel_wire_bc_map(p_topic, p_buf, n, map);
+        if (rc != DREP_FRAME_OK)
         {
-            bc_task_set_map((char)p_buf[0], (char)p_buf[1], (char)p_buf[2], (char)p_buf[3]);
-            s_stats.cmd_accepted++;
-            dbg_printf("[TEL] bc_map L=%c R=%c S=%c U=%c",
-                       (char)p_buf[0], (char)p_buf[1], (char)p_buf[2], (char)p_buf[3]);
-            return DREP_FRAME_OK;
+            s_stats.cmd_rejected++;
+            dbg_printf("[TEL] cmd rejected: %s (%lu B)", tel_wire_reject_name(rc), (unsigned long)n);
+            return rc;
         }
-        s_stats.cmd_rejected++;
-        dbg_printf("[TEL] cmd rejected: bc_map (%lu B)", (unsigned long)n);
-        return DREP_FRAME_BAD_LENGTH;
+        bc_task_set_map(map[0], map[1], map[2], map[3]);
+        s_stats.cmd_accepted++;
+        dbg_printf("[TEL] bc_map L=%c R=%c S=%c U=%c", map[0], map[1], map[2], map[3]);
+        return DREP_FRAME_OK;
     }
 
     nav.w = 0U;
@@ -406,7 +403,6 @@ static void handle_event(tel_evt_t e)
             len = drep_frame_heartbeat(frame, app_period_now_ms(),
                                        e.payload & DREP_MASK(DREP_FSM_SYSTEM_BITS),
                                        safety_bits());
-            s_hb_due = true;    /* the heartbeat carries the 4-bit system state */
             break;
         default:
             s_stats.evt_invalid++;
@@ -550,17 +546,14 @@ static uint32_t safety_bits(void)
     return (uint32_t)rflg.flgptn & EVF_SAFETY_ALL_MASK;
 }
 
-static void publish_heartbeat(uint32_t now_ms, bool forced)
+static void publish_heartbeat(uint32_t now_ms)
 {
     uint8_t frame[DREP_FRAME_MAX_BYTES];
 
-    if (!forced)
+    s_heartbeat_tick++;
+    if (!console_takes(s_heartbeat_tick))
     {
-        s_heartbeat_tick++;
-        if (!console_takes(s_heartbeat_tick))
-        {
-            return;
-        }
+        return;
     }
     send_periodic(frame, drep_frame_heartbeat(frame, now_ms, vc_get_system_state(), safety_bits()));
 }
@@ -686,18 +679,9 @@ static void tel_task(INT stacd, void *p_exinf)
         {
             publish_periodic();
         }
-        if (s_hb_due)
+        if ((s_stats.wakes % TEL_HEARTBEAT_EVERY_N_WAKES) == 0U)
         {
-            s_hb_due = false;
-            publish_heartbeat(now_ms, true);
-        }
-        else if ((s_stats.wakes % TEL_HEARTBEAT_EVERY_N_WAKES) == 0U)
-        {
-            publish_heartbeat(now_ms, false);
-        }
-        else
-        {
-            /* nothing periodic this wake */
+            publish_heartbeat(now_ms);
         }
 
         handle_commands();
