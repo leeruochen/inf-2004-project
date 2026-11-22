@@ -204,11 +204,13 @@ def decode(data: bytes) -> Frame:
         bearing_idx = b.u(4)
         f["bearing_idx"] = bearing_idx
         f["bearing_deg"] = OBS_BEARING_BASE_DEG + OBS_BEARING_STEP_DEG * bearing_idx
-        f["width_mm"] = b.u(7) * OBS_MM_PER_UNIT
+        width_q5 = b.u(7)
         f["clear_l_mm"] = b.u(7) * OBS_MM_PER_UNIT
         f["seq"] = b.u(2)
         f["oor"] = bool(b.u(1))
         f["clear_r_mm"] = b.u(7) * OBS_MM_PER_UNIT
+        width_rem = b.u(3)
+        f["width_mm"] = width_q5 * OBS_MM_PER_UNIT + (width_rem if width_rem < OBS_MM_PER_UNIT else 0)
         f["no_echo"] = f["distance_cm"] == 0
     elif t == FT_EVENT_FAULT:
         f["ts_ms"] = b.u(24)

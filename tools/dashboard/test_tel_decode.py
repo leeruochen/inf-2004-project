@@ -22,8 +22,8 @@ GOLDEN = [
      {"ts_ms": 777, "cmd": 3, "command": "U-TURN (D)"}),
     ("010405881300aa70",                                 # hump(5000, 42 mm, -31 Q1)
      {"ts_ms": 5000, "height_mm": 42, "pitch_deg": -15.5, "oor": False}),
-    ("01050840e201192c43d41f",                           # obstacle(25 cm, idx 6, 123 mm, 340, 635, seq 2)
-     {"ts_ms": 123456, "distance_cm": 25, "bearing_idx": 6, "bearing_deg": 90, "width_mm": 125,
+    ("01050840e201190c43d47f",                           # obstacle(25 cm, idx 6, 123 mm, 340, 635, seq 2)
+     {"ts_ms": 123456, "distance_cm": 25, "bearing_idx": 6, "bearing_deg": 90, "width_mm": 123,
       "clear_l_mm": 340, "clear_r_mm": 635, "seq": 2, "oor": False, "no_echo": False}),
     ("0106056300000501",                                 # fault(99, 0x105)
      {"ts_ms": 99, "bits": 0x105, "names": ["LIFTED", "FAULT_LATCHED", "WIFI_LOSS"]}),
@@ -40,6 +40,12 @@ class GoldenFrames(unittest.TestCase):
                 for k, v in expected.items():
                     self.assertEqual(fr.fields[k], v, k)
                 self.assertTrue(fr.summary())
+
+    def test_legacy_obstacle_width_spare_zero_compat(self):
+        # Older firmware wrote ceil(width / 5) with spare bits [63:61] == 0.
+        fr = codec.decode(bytes.fromhex("01050840e201192c43d41f"))
+        self.assertEqual(fr.fields["width_mm"], 125)
+        self.assertEqual(fr.fields["clear_r_mm"], 635)
 
     def test_commands_match_firmware(self):
         self.assertEqual(codec.encode_cmd("start"), ("car/cmd/start", bytes.fromhex("010800")))

@@ -355,11 +355,11 @@ static inline bool drep_mc_valid(motion_cmd_t m)
 }
 
 /* ===========================================================================
- * IF-03 obstacle_profile_t (MBF_OBSTACLE): 37 bits in two words
- *   lo: [8:0] distance cm  [12:9] bearing index  [19:13] width (5 mm)
+ * IF-03 obstacle_profile_t (MBF_OBSTACLE): 40 bits in two words
+ *   lo: [8:0] distance cm  [12:9] bearing index  [19:13] width / 5 (5 mm)
  *       [26:20] clear_L (5 mm)  [28:27] sequence  [29] OOR
- *   hi: [6:0] clear_R (5 mm)
- * Wire: lo little-endian in bytes 0-3, hi in byte 4 (5 B).
+ *   hi: [6:0] clear_R (5 mm)  [9:7] width % 5 (0..4 mm)
+ * Wire: lo little-endian bits [29:0], hi bits [9:0] -> 40 bits (5 B).
  * ========================================================================= */
 
 #define DREP_OBS_DIST_SHIFT         (0U)
@@ -375,7 +375,10 @@ static inline bool drep_mc_valid(motion_cmd_t m)
 #define DREP_OBS_OOR_SHIFT          (29U)
 #define DREP_OBS_LO_BITS            (30U)
 #define DREP_OBS_CLRR_SHIFT         (0U)    /**< in hi */
-#define DREP_OBS_TOTAL_BITS         (37U)
+#define DREP_OBS_WREM_SHIFT         (7U)    /**< in hi: width_mm % 5 (0..4 mm) */
+#define DREP_OBS_WREM_BITS          (3U)
+#define DREP_OBS_HI_BITS            (DREP_OBS_CLR_BITS + DREP_OBS_WREM_BITS)
+#define DREP_OBS_TOTAL_BITS         (40U)
 #define DREP_OBS_WIRE_BYTES         (5U)
 
 #define DREP_OBS_DIST_MAX_CM        (400)   /**< 0 = no echo (replaces "valid") */
@@ -386,9 +389,8 @@ static inline bool drep_mc_valid(motion_cmd_t m)
 
 /** Pack an obstacle profile.  distance, bearing and width clamp with OOR;
  *  the clearances SATURATE at 635 mm (no OOR); the sequence wraps (0-3).
- *  Rounding to 5 mm is conservative: the width rounds UP and the clearances
- *  round DOWN, so a profile never shows a smaller obstacle or a wider gap
- *  than measured. */
+ *  width_mm is exact (1 mm): floor(width / 5) in lo and width % 5 in hi;
+ *  clearances round DOWN in 5 mm units, never showing a wider gap than measured. */
 static inline obstacle_profile_t drep_obs_pack(int32_t distance_cm, int32_t bearing_idx, int32_t width_mm,
                                                int32_t clear_l_mm, int32_t clear_r_mm, uint32_t seq)
 {
@@ -403,13 +405,15 @@ static inline obstacle_profile_t drep_obs_pack(int32_t distance_cm, int32_t bear
     p.lo = drep_set(p.lo, DREP_OBS_DIST_SHIFT, DREP_OBS_DIST_BITS, (uint32_t)dist);
     p.lo = drep_set(p.lo, DREP_OBS_BEAR_SHIFT, DREP_OBS_BEAR_BITS, (uint32_t)bear);
     p.lo = drep_set(p.lo, DREP_OBS_WIDTH_SHIFT, DREP_OBS_WIDTH_BITS,
-                    (uint32_t)((width + (DREP_OBS_MM_PER_UNIT - 1)) / DREP_OBS_MM_PER_UNIT));
+                    (uint32_t)(width / DREP_OBS_MM_PER_UNIT));
     p.lo = drep_set(p.lo, DREP_OBS_CLRL_SHIFT, DREP_OBS_CLR_BITS,
                     (uint32_t)(clr_l / DREP_OBS_MM_PER_UNIT));
     p.lo = drep_set(p.lo, DREP_OBS_SEQ_SHIFT, DREP_OBS_SEQ_BITS, seq);
     p.lo = drep_set(p.lo, DREP_OBS_OOR_SHIFT, 1U, oor ? 1U : 0U);
     p.hi = drep_set(0U, DREP_OBS_CLRR_SHIFT, DREP_OBS_CLR_BITS,
                     (uint32_t)(clr_r / DREP_OBS_MM_PER_UNIT));
+    p.hi = drep_set(p.hi, DREP_OBS_WREM_SHIFT, DREP_OBS_WREM_BITS,
+                    (uint32_t)(width % DREP_OBS_MM_PER_UNIT));
     return p;
 }
 
@@ -436,7 +440,11 @@ static inline uint32_t drep_obs_bearing_deg(obstacle_profile_t p)
 
 static inline uint32_t drep_obs_width_mm(obstacle_profile_t p)
 {
-    return drep_get(p.lo, DREP_OBS_WIDTH_SHIFT, DREP_OBS_WIDTH_BITS) * (uint32_t)DREP_OBS_MM_PER_UNIT;
+    uint32_t const q5 = drep_get(p.lo, DREP_OBS_WIDTH_SHIFT, DREP_OBS_WIDTH_BITS);
+    uint32_t const rem = drep_get(p.hi, DREP_OBS_WREM_SHIFT, DREP_OBS_WREM_BITS);
+
+    return (q5 * (uint32_t)DREP_OBS_MM_PER_UNIT)
+           + ((rem < (uint32_t)DREP_OBS_MM_PER_UNIT) ? rem : 0U);
 }
 
 static inline uint32_t drep_obs_clear_l_mm(obstacle_profile_t p)
@@ -735,7 +743,7 @@ static inline bool drep_edge_pop(drep_edge_ring_t *p_ring, uint32_t *p_gap_us)
 #define DREP_FT_TELEMETRY_SENSOR    (2U)    /**< ts 24, IR_R 12, IR_C 12, ultrasonic 9, pitch 8, roll 8 -> 10 B */
 #define DREP_FT_EVENT_BARCODE       (3U)    /**< ts 24, command 2 -> 4 B */
 #define DREP_FT_EVENT_HUMP          (4U)    /**< ts 24, height 7, pitch 8, OOR 1 -> 5 B */
-#define DREP_FT_EVENT_OBSTACLE      (5U)    /**< ts 24, obstacle profile 37 -> 8 B */
+#define DREP_FT_EVENT_OBSTACLE      (5U)    /**< ts 24, obstacle profile 40 -> 8 B */
 #define DREP_FT_EVENT_FAULT         (6U)    /**< ts 24, EVF_SAFETY b0-b9 -> 5 B */
 #define DREP_FT_HEARTBEAT           (7U)    /**< uptime 32, state 4, fault bits 10 -> 6 B */
 #define DREP_FT_CMD_START           (8U)    /**< no payload */
@@ -887,7 +895,7 @@ static inline uint32_t drep_frame_obstacle(uint8_t *p_buf, uint32_t ts_ms, obsta
 
     drep_bits_put(p_buf, &pos, ts_ms, 24U);
     drep_bits_put(p_buf, &pos, prof.lo, DREP_OBS_LO_BITS);
-    drep_bits_put(p_buf, &pos, prof.hi, DREP_OBS_CLR_BITS);
+    drep_bits_put(p_buf, &pos, prof.hi, DREP_OBS_HI_BITS);
     return DREP_FRAME_HDR_BYTES + drep_frame_len(DREP_FT_EVENT_OBSTACLE);
 }
 
@@ -1039,8 +1047,12 @@ _Static_assert(DREP_MC_SPEED_MAX < (1 << DREP_MC_SPEED_BITS), "speed fits 6 bits
 _Static_assert(DREP_MC_DIST_MAX < (1 << DREP_MC_ARG_BITS), "distance fits 9 bits");
 
 _Static_assert((DREP_OBS_DIST_BITS + DREP_OBS_BEAR_BITS + DREP_OBS_WIDTH_BITS + (2U * DREP_OBS_CLR_BITS)
-                + DREP_OBS_SEQ_BITS + 1U) == DREP_OBS_TOTAL_BITS, "obstacle: 9 + 4 + 7 + 7 + 7 + 2 + 1 = 37 bits");
+                + DREP_OBS_SEQ_BITS + 1U + DREP_OBS_WREM_BITS) == DREP_OBS_TOTAL_BITS,
+               "obstacle: 9 + 4 + 7 + 7 + 7 + 2 + 1 + 3 = 40 bits");
 _Static_assert(DREP_OBS_LO_BITS == (DREP_OBS_OOR_SHIFT + 1U), "obstacle lo layout");
+_Static_assert((DREP_OBS_CLRR_SHIFT + DREP_OBS_CLR_BITS) == DREP_OBS_WREM_SHIFT, "obstacle hi layout");
+_Static_assert(DREP_OBS_HI_BITS == (DREP_OBS_WREM_SHIFT + DREP_OBS_WREM_BITS), "obstacle hi width");
+_Static_assert((1U << DREP_OBS_WREM_BITS) > (uint32_t)(DREP_OBS_MM_PER_UNIT - 1), "width_rem fits 3 bits");
 _Static_assert(((DREP_OBS_TOTAL_BITS + 7U) / 8U) == DREP_OBS_WIRE_BYTES, "obstacle is 5 B on the wire");
 _Static_assert(DREP_OBS_DIST_MAX_CM < (1 << DREP_OBS_DIST_BITS), "distance fits 9 bits");
 _Static_assert(DREP_OBS_BEAR_MAX < (1 << DREP_OBS_BEAR_BITS), "bearing fits 4 bits");

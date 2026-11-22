@@ -403,7 +403,7 @@ static void test_golden_frames(void)
     check_hex(b, DREP_FRAME_HDR_BYTES + drep_frame_len(DREP_FT_TELEMETRY_SENSOR), "01020ae80300ff0f80904d5b04");
     check_hex(b, drep_frame_barcode(b, 777U, DREP_BC_CMD_UTURN), "01030409030003");
     check_hex(b, drep_frame_hump(b, 5000U, hump.payload & 0xFFFFU), "010405881300aa70");
-    check_hex(b, drep_frame_obstacle(b, 123456U, prof), "01050840e201192c43d41f");
+    check_hex(b, drep_frame_obstacle(b, 123456U, prof), "01050840e201190c43d47f");
     check_hex(b, drep_frame_fault(b, 99U, 0x105U), "0106056300000501");
     check_hex(b, drep_frame_heartbeat(b, 0xDEADBEEFU, 9U, 0x3FFU), "010706efbeaddef93f");
     check_hex(b, drep_frame_cmd(b, DREP_FT_CMD_START), "010800");

@@ -184,15 +184,19 @@ static void test_obstacle(void)
     p = drep_obs_pack(10, 0, 0, 10000, 636, 0U);
     CHECK((drep_obs_clear_l_mm(p) == 635U) && (drep_obs_clear_r_mm(p) == 635U) && !drep_obs_oor(p));
 
-    /* Conservative rounding: width up, clearances down. */
+    /* Exact 1 mm width round-trip; clearances round down in 5 mm units. */
     p = drep_obs_pack(10, 0, 121, 634, 4, 0U);
-    CHECK(drep_obs_width_mm(p) == 125U);
+    CHECK(drep_obs_width_mm(p) == 121U);
     CHECK(drep_obs_clear_l_mm(p) == 630U);
     CHECK(drep_obs_clear_r_mm(p) == 0U);
+    CHECK(drep_obs_width_mm(drep_obs_pack(24, 6, 123, 300, 635, 1U)) == 123U);
+    CHECK(drep_obs_width_mm(drep_obs_pack(24, 6, 144, 300, 635, 1U)) == 144U);
+    CHECK(drep_obs_width_mm(drep_obs_pack(24, 6, 145, 300, 635, 1U)) == 145U);
+    CHECK(drep_obs_width_mm(drep_obs_pack(400, 12, 399, 635, 635, 3U)) == 399U);
 
     CHECK(drep_obs_seq(drep_obs_pack(10, 0, 0, 0, 0, 5U)) == 1U);   /* wraps */
     CHECK((drep_obs_pack(400, 12, 400, 635, 635, 3U).lo >> DREP_OBS_LO_BITS) == 0U);
-    CHECK((drep_obs_pack(400, 12, 400, 635, 635, 3U).hi >> DREP_OBS_CLR_BITS) == 0U);
+    CHECK((drep_obs_pack(400, 12, 399, 635, 635, 3U).hi >> DREP_OBS_HI_BITS) == 0U);
 }
 
 /* -------------------------------------------------------- motion_state_t word */
@@ -339,13 +343,14 @@ static void test_frames_encode(void)
     CHECK(drep_frame_check(f, n) == DREP_FRAME_OK);
 
     {
-        obstacle_profile_t const p = drep_obs_pack(321, 11, 95, 600, 45, 3U);
+        obstacle_profile_t const p = drep_obs_pack(321, 11, 97, 600, 45, 3U);
 
         n = drep_frame_obstacle(f, 7U, p);
         CHECK(n == 11U);
         pos = 24U + 24U;
         CHECK(drep_bits_get(f, &pos, DREP_OBS_LO_BITS) == p.lo);
-        CHECK(drep_bits_get(f, &pos, DREP_OBS_CLR_BITS) == p.hi);
+        CHECK(drep_bits_get(f, &pos, DREP_OBS_HI_BITS) == p.hi);
+        CHECK(drep_obs_width_mm(p) == 97U);
     }
 
     CHECK(drep_frame_sensor(f, 1U, 4095U, 0U, 400U, -90, 90) == 13U);

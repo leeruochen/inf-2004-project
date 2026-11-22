@@ -64,7 +64,7 @@ def hump(ts, height=0, pitch=6.0):
 
 def obstacle(ts, cm, bearing_deg=90, width_mm=120, cl=300, cr=635):
     w = _W(codec.FT_EVENT_OBSTACLE).put(ts, 24).put(cm, 9).put((bearing_deg - 30) // 10, 4)
-    w.put(width_mm // 5, 7).put(cl // 5, 7).put(1, 2).put(0, 1).put(cr // 5, 7)
+    w.put(width_mm // 5, 7).put(cl // 5, 7).put(1, 2).put(0, 1).put(cr // 5, 7).put(width_mm % 5, 3)
     return f"[TEL] car/telemetry/obstacle {w.hex()}"
 
 

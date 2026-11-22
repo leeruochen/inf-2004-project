@@ -69,14 +69,14 @@ TURN_L, TURN_R, UTURN, STEER, BRAKE), each at min, max, min−1 and max+1.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | obstacle_profile_t | distance | 2-400 cm; 0 = no echo | 1 cm | no | 9 | 16 (slot 20) | 5 / 12 | HC-SR04 range; raw 0-511 fits 9 bits; 0 replaces `valid` | clamp to 400, OOR | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | bearing index | 0-12 (30° + 10° × i) | 10° | no | 4 | | | 13 values ≤ 16 | clamp 0..12, OOR (fine-scan ±30° around 30°/150° can reach 0°/180°) | Obstacle Scanning | Obstacle Avoidance | 5 |
-| obstacle_profile_t | width | 0-400 mm | 5 mm | no | 7 | | | 81 values ≤ 128 | clamp, OOR | Obstacle Scanning | Obstacle Avoidance | 5 |
+| obstacle_profile_t | width | 0-400 mm | 1 mm (`width / 5` + 3-bit `width % 5`) | no | 7 + 3 | | | exact 1 mm width; remainder stored in the 3 formerly spare bits after `clear_R` | clamp, OOR | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | clear_L | 0-635 mm | 5 mm | no | 7 | | | specs.md left-side clearance; 127 = "≥ 635, clear" | saturate at 127 | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | clear_R | 0-635 mm | 5 mm | no | 7 | | | specs.md right-side clearance; saturating | saturate at 127 | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | sequence (optional) | 0-3, wraps | 1 | no | 2 | | | lets Avoidance spot a stale or repeated profile; kept until the owner decides. TODO(owner-to-confirm, buddy 5) | wraps | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | OOR | 0/1 | | no | 1 | | | | | Obstacle Scanning | Obstacle Avoidance | 5 |
 
-Total 9 + 4 + 7 + 7 + 7 + 2 (sequence) + 1 (OOR) = 37 bits → 5 B on the wire
-(12 B MBF slot); 35 bits if the sequence is dropped, still 5 B. The timestamp
+Total 9 + 4 + (7 + 3) + 7 + 7 + 2 (sequence) + 1 (OOR) = 40 bits → 5 B on the wire
+(12 B MBF slot); still fits in 2 × 32-bit words (`lo` 30 bits, `hi` 10 bits). The timestamp
 is **dropped**, and "bypass state" is **removed** (it is Avoidance's own state;
 the 3-bit bypass command goes in `nav_input_t` instead, flagged for Buddy 5).
 
@@ -272,7 +272,7 @@ the heartbeat and the commands):
 | telemetry_sensor (`2`) | 24 + 12 + 12 + 9 + 8 + 8 + 3 = 76 → 10 | ts, IR_R raw, IR_C raw, ultrasonic cm, pitch, roll (roll uses pitch format), then 3 validity flags in bits 73..75 (IR, ultrasonic, attitude; 1 = written by producer since boot) |
 | event_barcode (`3`) | 24 + 8 = 32 → 4 | ts, then byte 6 = `cmd[1:0]` (LEFT/RIGHT/STRAIGHT/UTURN) \| `letter[6:2]` (`0 = legacy 'A'+cmd`, `1..26 = 'A'..'Z'`) \| `unmapped[7]` (`0 = mapped`, `1 = unmapped`) |
 | event_hump (`4`) | 24 + 7 + 8 + 1 = 40 → 5 | ts, height, pitch, OOR |
-| event_obstacle (`5`) | 24 + 37 = 61 → 8 | ts, obstacle_profile_t fields incl. the 2-bit sequence and OOR |
+| event_obstacle (`5`) | 24 + 40 = 64 → 8 | ts, obstacle_profile_t fields incl. 3-bit `width % 5` (1 mm width), 2-bit sequence and OOR |
 | event_fault (`6`) | 24 + 10 = 34 → 5 | ts, EVF_SAFETY bits b0-b9 |
 | heartbeat (`7`) | 32 + 4 + 10 = 46 → 6 | uptime ms, system state, fault bits |
 | cmd_start (`8`), cmd_stop (`9`), cmd_reset (`10`) | 0 | type only (`3` B frame on `car/cmd/start\|stop\|reset`) |
@@ -314,7 +314,7 @@ Baseline measured (stage B6). Packed formats implemented and host-tested
 (stage B7, `src/common/data_repr.h`). All protocol details are now settled on `main`:
 
 - Containers: `nav_input_t` and `motion_cmd_t` one word; `obstacle_profile_t`
-  two words (`lo` = 30 bits, `hi` = clear_R, so no field straddles a word;
+  two words (`lo` = 30 bits, `hi` = 10 bits: `clear_R` + `width % 5`, so no field straddles a word;
   5 B on the wire); `tel_evt_t` header word + payload word; `motion_state_t`
   packed word + the unpacked encoder words + tick.
 - `nav_input_t` from REMOTE: the type is the command (`START`, `STOP`, `RESET`);

@@ -419,6 +419,60 @@ void subsystem5_test(void)
                && (obs_mm_to_counts(207U) == 2464U),
                "along-leg uses 100 mm depth + chassis margin (150 mm floor); 207 mm = 2464 counts");
 
+    {
+        /* 2-hit 3-degree sweep tangent-geometry width checks (NFR15). */
+        obs_scan3_t       scan3;
+        static uint16_t const k_flat145_dist[12] =
+        {
+            240U, 240U, 241U, 243U, 245U, 248U,
+            252U, 257U, 263U, 269U, 277U, 286U
+        };
+
+        /* (a) 145 mm flat block (60..117 deg, 60 deg span at 2-hit threshold) -> 138 mm. */
+        for (uint32_t i = 0U; i < OBS_FINE3_SLOTS; i++)
+        {
+            scan3.dist_mm[i] = 0U;
+        }
+        scan3.lo_slot = (uint8_t)OBS_FINE3_DEG_TO_SLOT(51U);
+        scan3.hi_slot = (uint8_t)OBS_FINE3_DEG_TO_SLOT(129U);
+        for (uint32_t deg = 60U; deg <= 117U; deg += OBS_FINE3_STEP_DEG)
+        {
+            uint32_t const off = (deg >= 90U) ? (deg - 90U) : (90U - deg);
+
+            scan3.dist_mm[OBS_FINE3_DEG_TO_SLOT(deg)] = k_flat145_dist[off / OBS_FINE3_STEP_DEG];
+        }
+        bool const ok_145 = obs_analyse_fine3(&scan3, &res) && res.valid
+                            && (res.width_mm >= 135U) && (res.width_mm <= 155U);
+
+        /* (b) Symmetric 145 mm flat block centered at 90 deg (60..120 deg at 235 mm) -> 148 mm. */
+        for (uint32_t i = 0U; i < OBS_FINE3_SLOTS; i++)
+        {
+            scan3.dist_mm[i] = 0U;
+        }
+        for (uint32_t deg = 60U; deg <= 120U; deg += OBS_FINE3_STEP_DEG)
+        {
+            scan3.dist_mm[OBS_FINE3_DEG_TO_SLOT(deg)] = 235U;
+        }
+        bool const ok_145_sym = obs_analyse_fine3(&scan3, &res) && res.valid
+                                && (res.bearing_deg == 90U)
+                                && (res.width_mm >= 135U) && (res.width_mm <= 155U);
+
+        /* (c) 86 mm block at 240 mm (66..111 deg, 48 deg span) -> 85 mm. */
+        for (uint32_t i = 0U; i < OBS_FINE3_SLOTS; i++)
+        {
+            scan3.dist_mm[i] = 0U;
+        }
+        for (uint32_t deg = 66U; deg <= 111U; deg += OBS_FINE3_STEP_DEG)
+        {
+            scan3.dist_mm[OBS_FINE3_DEG_TO_SLOT(deg)] = 240U;
+        }
+        bool const ok_86 = obs_analyse_fine3(&scan3, &res) && res.valid
+                           && (res.width_mm >= 77U) && (res.width_mm <= 95U);
+
+        TEST_CHECK("S5-U34", ok_145 && ok_145_sym && ok_86,
+                   "3-degree scan resolves 145 mm and 86 mm flat blocks within NFR15");
+    }
+
     TEST_SUMMARY("subsystem5");
 }
 
