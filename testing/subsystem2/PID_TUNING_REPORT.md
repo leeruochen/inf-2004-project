@@ -45,7 +45,7 @@ Each 20 ms control cycle performs:
      duty_right  += sync_corr_pm
      ```
 4. **Hardware PWM Actuation**:
-   - Clamps total duty to `±(MOTOR_DUTY_MAX_PCT * 10)` permille (`±800` permille = 80% default cap) and drives PWM slice 4 (`GP8`/`GP9`, left motor) and slice 5 (`GP10`/`GP11`, right motor) at `MOTOR_PWM_FREQ_HZ = 20 kHz`.
+   - Clamps total duty to `±(MOTOR_DUTY_MAX_PCT * 10)` permille (`±950` permille = 95% cap, `MOTOR_DUTY_MAX_PCT = 95U`) and drives PWM slice 4 (`GP8`/`GP9`, left motor) and slice 5 (`GP10`/`GP11`, right motor) at `MOTOR_PWM_FREQ_HZ = 20 kHz`.
 
 ---
 

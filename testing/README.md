@@ -46,7 +46,7 @@ Test IDs never change and are never reused, even if a test is dropped.
    `[TEST] <ID> PASS|FAIL` line per check on the USB CDC console through the `dbg_` ring.
    (A normal build leaves the tests out.) Add `-DAPP_TEST_ONLY=N` (1..5) to run only
    subsystem N's tests, for a faster run of your own tests (default 0 = all).
-   Flash it as in `START_GUIDE.md` section 2.
+   Flash it as in `README.md` section 3.
    For host unit tests (`14` C tests) and dashboard unit tests (`7` Python files, no Pico needed):
    ```powershell
    & $CM -S tests -B build/host -G Ninja; & $CM --build build/host; ctest --test-dir build/host --output-on-failure

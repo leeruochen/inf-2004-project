@@ -16,26 +16,22 @@ The car stops by itself at the distance or time limit (the test sends STOP), at 
 stops), or when lifted (Safety brakes and latches; the test sends RESET once the car is still).
 Catching and lifting the car is always a safe stop.
 
-Build both (WSL, repo root, on the branch you are testing):
+Build both from the repo root in PowerShell (after running the Pico SDK 1.5.1 setup preamble in `README.md` section 1):
 
-```bash
-. ~/pico-1.5.1/env.sh
-H=$(git rev-parse --short HEAD)
-C="-G Ninja -DCMAKE_BUILD_TYPE=Debug -DPICO_TOOLCHAIN_PATH=$PICO_TOOLCHAIN_PATH -DDBG_BACKEND=USB -DTEL_STATUS_PERIOD_MS=1000"
-cmake -S . -B ~/robocar-build/team-stationary $C && cmake --build ~/robocar-build/team-stationary
-cmake -S . -B ~/robocar-build/team-drive $C -DAPP_TEST=ON -DAPP_TEST_ONLY=3 -DS3_DRIVE_MM=3000 && cmake --build ~/robocar-build/team-drive
-cp ~/robocar-build/team-stationary/robocar.uf2 build/robocar-team-stationary-$H.uf2
-cp ~/robocar-build/team-drive/robocar.uf2 build/robocar-team-drive3000-$H.uf2
+```powershell
+& $CM -S . -B build/dash-stationary @common -DDBG_BACKEND=USB -DTEL_STATUS_PERIOD_MS=1000
+& $CM --build build/dash-stationary
+& $CM -S . -B build/team-drive @common -DDBG_BACKEND=USB -DAPP_TEST=ON -DAPP_TEST_ONLY=3 -DS3_DRIVE_MM=3000 -DTEL_STATUS_PERIOD_MS=1000
+& $CM --build build/team-drive
 ```
 
-Flash: hold BOOTSEL, plug in the USB, release, then drag the `.uf2` onto the RPI-RP2 drive (or use
-`stationary_test.ps1`, which flashes for you).
+Flash: hold BOOTSEL, plug in the USB, release, then copy the `.uf2` (e.g. `build\dash-stationary\robocar.uf2` or `build\team-drive\robocar.uf2`) onto the RPI-RP2 drive (or use `stationary_test.ps1`, which flashes for you).
 
 ## The quickest way: the browser dashboard
 
 Double-click `tools\dashboard\dashboard.cmd`, or run `python tools\dashboard\tel_web.py` from the repo root.
 
-1. Flash the stationary firmware: drag `build\robocar-dash-stationary-<hash>.uf2` onto the RPI-RP2 drive.
+1. Flash the stationary firmware: drag `build\dash-stationary\robocar.uf2` onto the RPI-RP2 drive.
 2. **USB (Windows) → Start capture**. This runs `tools\serial_capture.ps1` into `build\dash-live-*.txt` and shows it live.
 3. Open your subsystem's tab, follow its *Test procedure*, then press **Run check**.
 
@@ -65,14 +61,11 @@ This is the normal firmware (APP_TEST=OFF) with the console backend and status l
 `car/cmd/start` over MQTT can move it, which can't reach a console-backend build. The scanner
 servo still sweeps.
 
-Build (WSL, from the repo root):
+Build from the repo root in PowerShell (using `$CM` and `@common` from `README.md` section 1):
 
-```bash
-. ~/pico-1.5.1/env.sh
-cmake -S . -B ~/robocar-build/dash-stationary -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-      -DPICO_TOOLCHAIN_PATH=$PICO_TOOLCHAIN_PATH -DDBG_BACKEND=USB -DTEL_STATUS_PERIOD_MS=1000
-cmake --build ~/robocar-build/dash-stationary
-cp ~/robocar-build/dash-stationary/robocar.uf2 build/robocar-dash-stationary-$(git rev-parse --short HEAD).uf2
+```powershell
+& $CM -S . -B build/dash-stationary @common -DDBG_BACKEND=USB -DTEL_STATUS_PERIOD_MS=1000
+& $CM --build build/dash-stationary
 ```
 
 ## IMU (Buddy 4): stationary, about 4 minutes
@@ -114,7 +107,7 @@ For live Wi-Fi track tests, build with `-DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=O
 
 1. Browser dashboard: **Live car (MQTT)** or **USB capture → Start capture**, then check the *Overview* (Demo Rubric), *Barcode*, *Line calibration*, and *Subsystem tests* tabs.
 2. At power-up, put the car on the line in the configured mount pose (CENTRE on black / RIGHT on white for edge mode; sensors straddling white/line for straddle mode), still, and wait for `[LF] boot calibration` and `[IMU] level reference`.
-3. **Obstacle avoidance (Buddy 5):** put the obstacle on the line ahead (`>= 60 cm` after start). The car halts on watch-ahead confirmation, runs a stationary `5°` sweep (`50°–130°`), sends `event_obstacle`, drives an encoder-closed 4-turn bypass (`OBSTACLE_AVOIDANCE`, `5 cm/s` under `OBS_BYPASS_SLOW_BRINGUP=1U`), and hands back on `EVF_NAV_LINE_FOUND`.
+3. **Obstacle avoidance (Buddy 5):** put the obstacle on the line ahead (`>= 60 cm` after start). The car halts on watch-ahead confirmation, runs a stationary `3°` sweep (`51°–129°`), sends `event_obstacle`, drives an encoder-closed 4-turn bypass (`OBSTACLE_AVOIDANCE`, `5 cm/s` under `OBS_BYPASS_SLOW_BRINGUP=1U`), and hands back on `EVF_NAV_LINE_FOUND`.
 
 ## Per-subsystem CLI views (`main`)
 
@@ -124,7 +117,7 @@ For live Wi-Fi track tests, build with `-DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=O
 | Line following | `decode-log <log> --view lf` | Live IR_C / IR_R raw (`MEASURED` via `tel_set_ir_raw()` every `200 ms`) and `[LF]` state transitions |
 | Barcode | `decode-log <log> --view barcode` | `A–Z` Code 39 decodes + `car/cmd/bc_map` mapping + VC turn telemetry |
 | IMU & hump | `decode-log <log> --view imu` | Attitude (`tel_set_attitude()`), lift/watchdog faults, calibrated hump height (`95 mm` wheelbase) |
-| Obstacle | `decode-log <log> --view obstacle` | Forward range (`tel_set_range_cm()`), `event_obstacle` width & clearances (`5°` sweep), avoid states |
+| Obstacle | `decode-log <log> --view obstacle` | Forward range (`tel_set_range_cm()`), `event_obstacle` width & clearances (`3°` sweep), avoid states |
 | MQTT | `listen --broker <ip> --save run.txt`, then `check mqtt run.txt` | Full Wi-Fi/MQTT client (`-DTEL_BACKEND_WIFI=ON`, `config/secrets.h`), broker and dashboard |
 
 `send start` needs `--allow-motion` on the CLI, because `START` drives the motors. Always run moving tests on a track with someone ready to catch (lifting the car ends the run via `EVF_SAFETY_LIFTED`).

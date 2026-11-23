@@ -1,8 +1,8 @@
 Week 8 packed formats (Batch B stage B7): measured with the B6 commands
 ================================================================================
 Compare with docs/measurements/week6-baseline.txt (tag baseline/week6-unpacked).
-Same toolchain and commands; part A by the helper (WSL), re-checked by Buddy 2;
-part B from Buddy 2's 2-minute bring-up re-run (.agents/tasks/batchB-b7-test.md).
+Same toolchain and commands; part A by Buddy 3 (2503319, WSL), re-checked by Buddy 2;
+part B from Buddy 2's 2-minute bring-up re-run.
 
 A1. Message types and buffers (bytes)
     arm-none-eabi-nm -S --size-sort build/b7/CMakeFiles/size_report.dir/cmake/size_report.c.obj
@@ -48,7 +48,7 @@ A2. Firmware sections: UNCHANGED
 B. Run time (Buddy 2's Pico W, Debug + PLATFORM_BRINGUP, 2-minute re-run)
 
 Buddy 2, 31 Oct 2026, commit 842dc03; bringup_check -MinMinutes 2 -NoStress
-PASS (re-run by the helper); A1 re-checked on his build: equal.
+PASS (re-run by Buddy 3); A1 re-checked on his build: equal.
 Log: testing/system/logs/2026-10-31_b7-packed-rerun.txt
 
 B1. [MBF] lines (Week 6 -> Week 8)

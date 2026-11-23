@@ -80,7 +80,7 @@ Add a new row for every run. Never edit or delete old rows.
 ## Current status (as of 22 Nov 2026)
 
 - All `28/28` baseline Subsystem 2 tests (`S2-U01..U28`) PASS and remain intact above.
-- For post-`S7` updates on `main` — `S8` safe ARMv6-M optimizations (`OPT-01..04`), `S2-U24/U25` fault-latch reset fix (`INTEGRATION_FIXES.md`), `BC_D_CMD_CM = 60 cm`, `-DMOTION_STEER_TARGETS=1` differential steering targets, gradual IMU-pitch hump climb assist (`MOTION_HUMP_*`), and `5 cm/s` bring-up speeds (`OBS_BYPASS_SLOW_BRINGUP = 1U`) — see `app_program/subsystem2/subsystem2_roadmap.md`.
+- For post-`S7` updates on `main` — `S8` safe ARMv6-M optimizations (`OPT-01..04`, `docs/EMBEDDED_OPTIMIZATIONS.md`), `S2-U24/U25` fault-latch reset fix, `BC_D_CMD_CM = 60 cm`, `-DMOTION_STEER_TARGETS=1` differential steering targets, gradual IMU-pitch hump climb assist (`MOTION_HUMP_*`), and `5 cm/s` bring-up speeds (`OBS_BYPASS_SLOW_BRINGUP = 1U`) — see `ARCHITECTURE.md` (D14–D17).
 
 
 

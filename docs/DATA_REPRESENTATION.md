@@ -42,7 +42,7 @@ Columns: Item | Field | Range | Resolution | Signed | Bits | Baseline bytes | Pa
 | nav_input_t | source | LINE, BARCODE, AVOID, REMOTE | 1 | no | 2 | 4 (whole struct) | 4 / 8 (whole) | 4 sources | reject unknown | sender | VC | 2 |
 | nav_input_t | type | per source: STEER, JUNCTION, TRACK_LOST; CMD; SLOW, BYPASS, RELEASE, BLOCKED; START, STOP, RESET | 1 | no | 3 | | | ≤ 8 types per source | reject unknown | sender | VC | 2 |
 | nav_input_t | payload | steer −128..+127 (Q7, ±1.0 normalised), or barcode command 2 bits, or remote command 2 bits | 1/128 for steer | steer yes | 8 | | | steer error is a normalised ratio | clamp ±1.0, OOR | sender | VC | 2 |
-| nav_input_t | bypass command | stop, continue, left, right, reverse (with type BYPASS) | 1 | no | 3 | | | 5 values; replaces "bypass state" from `obstacle_profile_t`. TODO(owner-to-confirm, buddy 5) | reject 5-7 | Obstacle Avoidance | VC | 5 |
+| nav_input_t | bypass command | stop, continue, left, right, reverse (with type BYPASS) | 1 | no | 3 | | | 5 values; replaces "bypass state" from `obstacle_profile_t`. Confirmed by Buddy 5 | reject 5-7 | Obstacle Avoidance | VC | 5 |
 | nav_input_t | OOR | 0/1 | | no | 1 | | | clamp marker | | sender | VC | 2 |
 
 Total 2 + 3 + 8 + 3 + 1 = 17 bits → `uint32_t` (the bypass command may share
@@ -59,8 +59,8 @@ slot stays 8 B, so the RAM saving is 0 B).
 | motion_cmd_t | OOR | 0/1 | | no | 1 | | | | | VC | Motion | 2 |
 
 Total 19 bits → `uint32_t`. Per-type range check: distance ≤ 511, angle ≤ 180,
-steer −256..+255, STOP/UTURN/BRAKE arg = 0. Planned host tests (Batch
-B-packed): one per type, IDs `HOST-MC-01`..`HOST-MC-08` (STOP, FWD, BACK,
+steer −256..+255, STOP/UTURN/BRAKE arg = 0. Host tests (`tests/host/test_data_repr.c`):
+one per type, IDs `HOST-MC-01`..`HOST-MC-08` (STOP, FWD, BACK,
 TURN_L, TURN_R, UTURN, STEER, BRAKE), each at min, max, min−1 and max+1.
 
 ### 2.3 `obstacle_profile_t` (MBF_OBSTACLE, 2 slots)
@@ -72,7 +72,7 @@ TURN_L, TURN_R, UTURN, STEER, BRAKE), each at min, max, min−1 and max+1.
 | obstacle_profile_t | width | 0-400 mm | 1 mm (`width / 5` + 3-bit `width % 5`) | no | 7 + 3 | | | exact 1 mm width; remainder stored in the 3 formerly spare bits after `clear_R` | clamp, OOR | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | clear_L | 0-635 mm | 5 mm | no | 7 | | | specs.md left-side clearance; 127 = "≥ 635, clear" | saturate at 127 | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | clear_R | 0-635 mm | 5 mm | no | 7 | | | specs.md right-side clearance; saturating | saturate at 127 | Obstacle Scanning | Obstacle Avoidance | 5 |
-| obstacle_profile_t | sequence (optional) | 0-3, wraps | 1 | no | 2 | | | lets Avoidance spot a stale or repeated profile; kept until the owner decides. TODO(owner-to-confirm, buddy 5) | wraps | Obstacle Scanning | Obstacle Avoidance | 5 |
+| obstacle_profile_t | sequence | 0-3, wraps | 1 | no | 2 | | | lets Avoidance spot a stale or repeated profile; kept (Buddy 5) | wraps | Obstacle Scanning | Obstacle Avoidance | 5 |
 | obstacle_profile_t | OOR | 0/1 | | no | 1 | | | | | Obstacle Scanning | Obstacle Avoidance | 5 |
 
 Total 9 + 4 + (7 + 3) + 7 + 7 + 2 (sequence) + 1 (OOR) = 40 bits → 5 B on the wire
@@ -101,8 +101,7 @@ sends. Notes:
   *repeated* reading (no new scan since the last receive) and of a lost
   profile (gap of 2). Without drain-then-send it is the only way to tell that
   a received profile is stale. It costs 2 bits and no MBF bytes (the slot is
-  12 B either way). Recommendation for Buddy 5: keep it until the drain is
-  implemented and tested, then decide. TODO(owner-to-confirm, buddy 5).
+  12 B either way), and is kept in `obstacle_profile_t`.
 
 ### 2.4 `motion_state_t` (MTX_MOTION; shared data, not a queue)
 
@@ -130,7 +129,7 @@ sends. Notes:
 | hump report | height | 0-100 mm | 1 mm | no | 7 | in tel_evt_t | in payload | 101 values ≤ 128 | clamp 100, OOR | IMU | Telemetry | 4 |
 | pitch | pitch | ±45° | 0.5° | yes | 8 | in tel_evt_t | in payload | int8 Q1 covers −64.0..+63.5°; ±45° = 181 values | clamp ±45°, OOR; sign-extend on unpack | IMU | Safety, Telemetry | 4 |
 | barcode command | cmd | A-D (LEFT, RIGHT, STRAIGHT, U-TURN) | 1 | no | 2 | 1 | in nav_input_t payload | invalid reads are never posted | n/a | Barcode Decode | VC | 3 |
-| steering sign | steer_err | > 0 = line to the car's RIGHT = steer right (proposal) | | yes | | | | sensors are CENTRE + RIGHT (D11), the mirror of design.md; redefined, not copied. TODO(owner-to-confirm, buddy 3) | | Line-Following | VC | 3 |
+| steering sign | steer_err | > 0 = line to the car's RIGHT = steer right (confirmed by Buddy 3) | | yes | | | | sensors are GP28 + GP26 (`lf_core.c` CENTRE + RIGHT, or `lf_straddle.c` LEFT + RIGHT); redefined, not copied from design.md | | Line-Following | VC | 3 |
 
 ### 2.7 Barcode edge ring (IF-09)
 
@@ -156,8 +155,8 @@ takes at least 171.8 s even at the decoder limit; per-period deltas stay exact.
 
 ## 3. EVF_SAFETY bits (D9)
 
-One eventflag, 32-bit pattern (`UINT`), about 10 bits used. Bit positions are
-proposed; Batch B fixes them in the shared header.
+One eventflag, 32-bit pattern (`UINT`), 10 bits used (`b0..b9`). Bit positions are
+fixed in `src/common/ipc_types.h`.
 
 | Bit | Name | Setter (single) | Clearer | In Safety's wait mask | Counted as fault |
 |---|---|---|---|---|---|
@@ -319,17 +318,17 @@ Baseline measured (stage B6). Packed formats implemented and host-tested
   packed word + the unpacked encoder words + tick.
 - `nav_input_t` from REMOTE: the type is the command (`START`, `STOP`, `RESET`);
   the payload is 0.
-- Obstacle rounding is conservative: the width rounds UP and the clearances
-  round DOWN to 5 mm, so a profile never shows a smaller obstacle or a wider
-  gap than measured.
+- Obstacle width is encoded at exact **1 mm resolution** (`width / 5` + 3-bit
+  `width % 5`), while the clearances (`clear_L`, `clear_R`) round DOWN to 5 mm,
+  so a profile never shows a wider gap than measured.
 - MQTT frame type numbers (`DREP_FT_COUNT = 12U`): telemetry_motion `1`,
   telemetry_sensor `2`, event_barcode `3`, event_hump `4`, event_obstacle `5`,
   event_fault `6`, heartbeat `7`, cmd_start `8`, cmd_stop `9`, cmd_reset `10`,
   cmd_bc_map `11`; wire version `1`.
 - `tel_evt_t` types (`DREP_TEL_*`): HUMP `1`, BARCODE `2`, FAULT `3`, STATE `4`.
-  Full 37-bit `obstacle_profile_t` values travel via the seq-locked IF-12 slot
+  Full 40-bit `obstacle_profile_t` values travel via the seq-locked IF-12 slot
   (`tel_post_obstacle()`) and are framed as `DREP_FT_EVENT_OBSTACLE` (type `5`),
-  keeping all 37 bits intact (`TEAM.md` section 5).
+  keeping all 40 bits intact (`TEAM.md` section 5).
 - Previously open placeholders are confirmed and active: steering sign
   (`> 0` = steer right, Buddy 3), `DREP_BYPASS_*` values and 2-bit obstacle
   sequence (Buddy 5).

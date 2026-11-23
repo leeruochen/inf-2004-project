@@ -1,7 +1,5 @@
 # Notice
 
-owner: 16
-
 This product uses the source code of micro T-Kernel 3.0 BSP (uT-Kernel 3.0
 BSP, branch `pico_rp2040`) released by TRON Forum (https://www.tron.org),
 under the T-License 2.2.
@@ -23,20 +21,18 @@ BSD-3-Clause.
 
 INF2004 course project template provided by the module instructor.
 
-- Author: TODO(owner-to-confirm)
-- Kept unchanged in `ProjectTemplate/` as reference only. Its layout
-  (`app_program/subsystemN/`, `TEAM.md`, `testing/`, `videos/`) and the
-  patterns listed in `docs/TEMPLATE_NOTES.md` are adapted in this repo.
-- The template carries no licence file of its own (UNVERIFIED). Its kernel
+- Its project layout (`app_program/subsystemN/`, `TEAM.md`, `testing/`,
+  `videos/`) and task/driver structure conventions are adapted in this
+  repository (deviations documented in `ARCHITECTURE.md` T1–T8). Its kernel
   files keep their T-License 2.2 headers.
 
-## Raspberry Pi pico-examples (planned)
+## Raspberry Pi pico-examples
 
-The wheel encoders will use `pio/quadrature_encoder/quadrature_encoder.pio`
+The wheel encoders use `pio/quadrature_encoder/quadrature_encoder.pio`
 from Raspberry Pi pico-examples, tag `sdk-1.5.1`
-(https://github.com/raspberrypi/pico-examples/tree/sdk-1.5.1/pio/quadrature_encoder).
-It is copied in Batch B (it is not in the repo yet) and must keep its
-original header: "Copyright (c) 2023 Raspberry Pi (Trading) Ltd.",
+(https://github.com/raspberrypi/pico-examples/tree/sdk-1.5.1/pio/quadrature_encoder),
+stored at `app_program/subsystem2/quadrature_encoder.pio` with its original header:
+"Copyright (c) 2023 Raspberry Pi (Trading) Ltd.",
 `SPDX-License-Identifier: BSD-3-Clause`. The pico-examples repository licence
 (`LICENSE.TXT` at that tag):
 

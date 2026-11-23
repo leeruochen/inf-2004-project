@@ -57,7 +57,7 @@ All calls work from any task, never from an ISR, and **never wait** (NFR1).
 | `tel_set_ir_raw(ir_r, ir_c)` | Buddy 3, Line-Following | Latest raw ADC values (12 bit) for the 200 ms sensor frame |
 | `tel_set_range_cm(cm)` | Buddy 5, Scanning | Latest forward range, 0-400 cm (0 = no echo) |
 | `tel_set_attitude(pitch, roll)` | Buddy 4, IMU | Latest pitch and roll in 0.5° units |
-| `tel_post_obstacle(prof)` | Buddy 5, one task | Newest obstacle profile, all 37 bits; published once |
+| `tel_post_obstacle(prof)` | Buddy 5, one task | Newest obstacle profile, all 40 bits; published once |
 | `tel_get_stats(&st)`, `tel_is_running()` | anyone | Counters (section 7) |
 
 The Vehicle Controller sends `DREP_TEL_STATE` events into `MBF_TELEMETRY` on every
@@ -71,7 +71,7 @@ That would push 200 IR samples a second into a 32-slot queue. Each setter
 does one aligned 32-bit store (atomic on the M0+, one writer per word), and the
 Telemetry task reads the newest value every 200 ms. `tel_post_obstacle()`
 settles the open question in `docs/DATA_REPRESENTATION.md` section 10: a
-37-bit profile does not fit the 32-bit `tel_evt_t` payload, so it goes through
+40-bit profile does not fit the 32-bit `tel_evt_t` payload, so it goes through
 a sequence-locked two-word slot instead, with no bits dropped and no second
 event.
 
@@ -111,7 +111,7 @@ packed LSB-first and little-endian, with masks and shifts only.
 | 2 sensor | ts 24, IR_R 12, IR_C 12, range 9 (cm), pitch 8, roll 8 (signed, 0.5°), valid 3 (bits 73..75: IR, range, attitude; 1 = a producer wrote it, 0 = not available) | 13 |
 | 3 barcode | ts 24, byte 6 = `cmd[1:0]` (0 L, 1 R, 2 straight, 3 U-turn) \| `letter[6:2]` (`0 = legacy 'A'+cmd`, `1..26 = 'A'..'Z'`) \| `unmapped[7]` (`0 = mapped`, `1 = unmapped`) | 7 |
 | 4 hump | ts 24, height 7 (mm), pitch 8 (signed, 0.5°), OOR 1 | 8 |
-| 5 obstacle | ts 24, distance 9, bearing index 4 (30° + 10° × i), width 7, clear_L 7 (×5 mm), seq 2, OOR 1, clear_R 7 (×5 mm) | 11 |
+| 5 obstacle | ts 24, distance 9, bearing index 4 (30° + 10° × i), width 7, clear_L 7 (×5 mm), seq 2, OOR 1, clear_R 7 (×5 mm), width_rem 3 (`width % 5`, 1 mm resolution) | 11 |
 | 6 fault | ts 24, EVF_SAFETY b0-b9 | 8 |
 | 7 heartbeat | uptime 32 (ms), system state 4, EVF_SAFETY b0-b9 | 9 |
 | 8/9/10 command | none | 3 |

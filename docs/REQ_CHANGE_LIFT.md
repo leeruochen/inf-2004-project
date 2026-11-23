@@ -6,7 +6,7 @@
 
 ## The instruction
 
-Prof Fauzi agreed that collision avoidance (obstacle bypass, FR8) and IMU
+Prof Fauzi agreed that collision avoidance (obstacle bypass, FR13/FR14) and IMU
 collision detection conflict, and simplified the requirement:
 
 - **Collision detection using the IMU is removed.**
@@ -68,5 +68,4 @@ one event. Because lifting ends the run, the car stays stopped until a remote
   driving over humps never triggers a false stop.
 - Edits outside Subsystem 4 (`src/common/ipc_types.h`, `config/*.h`,
   `TEAM.md`, Subsystem 5's `task_obs_avoid.c` / `subsystem5.h`, the dashboard)
-  are an identifier rename and comments only, and need the team's agreement
-  (HANDOVER.md section 0, rule 5) before this branch is merged.
+  were identifier renames and comments only, agreed by the team and merged on `main`.

@@ -59,7 +59,7 @@ to the RPI-RP2 drive.
 USB CDC cannot be used from a HardFault or with interrupts masked (TinyUSB
 needs its IRQ and a 1 ms alarm), and there is no UART any more. So the kernel
 side never writes to stdio. Its output goes to two separate places in RAM
-(ARCHITECTURE.md D6, owner decision C3 in `.agents/tasks/batchB-plan.md`).
+(ARCHITECTURE.md D6).
 
 ### System-message ring (kernel text)
 
@@ -72,8 +72,7 @@ side never writes to stdio. Its output goes to two separate places in RAM
   bytes are dropped and counted; the drain prints the counter when it changes.
 - Text written during a HardFault is lost with the reset. The fault record
   below is the authority for crashes.
-- Planned defaults (512 B, single writer and single reader, no lock):
-  `.agents/tasks/batchB-plan.md` O5.
+- Implemented defaults: 512 B ring, single writer and single reader, no lock.
 
 ### RAM fault record (faults only)
 
@@ -108,7 +107,7 @@ side never writes to stdio. Its output goes to two separate places in RAM
 that checks the platform once per power-up and forces a HardFault on purpose,
 so the board resets twice by itself: the fault record must then print exactly
 once with the right PC, and not again after a plain reset. Never flash it on
-the car for normal work. Step by step: `.agents/tasks/batchB-b4b-test.md`.
+the car for normal work.
 
 ## Build options
 
@@ -128,7 +127,7 @@ The backend is a configure-time option. Only `USB` is accepted.
 | `PLATFORM_SELFTEST` | `ON` (Debug only, not with `APP_TEST`), `OFF` | `OFF` |
 | `PLATFORM_BRINGUP` | `ON` (Debug only, not with `APP_TEST` or `PLATFORM_SELFTEST`), `OFF` | `OFF` |
 
-See `START_GUIDE.md` section 2 and `CMakeLists.txt` for the full active Wi-Fi +
+See `README.md` section 2 and `CMakeLists.txt` for the full active Wi-Fi +
 straddle build flags (`-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1`)
 and additional Subsystem 3 test options (`S3_STEP_DIAG`, `S3_TURN_DIAG`,
 `S3_CURVE_TEST`, `S3_BC_TEST`, `S3_BC_QUICK`, `S3_DRIVE_MM`, `S3_TURN`, `S3_QUICK_CAL`).
@@ -204,7 +203,7 @@ task adds 9 filler lines per report (10x the line rate, between
 `[BRINGUP] stress ON` and `OFF`), so the ring overflows. Event-driven tasks
 use a stand-in period: VC 20 ms, Obstacle Avoidance 100 ms; Barcode uses its
 2 ms poll period. `tools/bringup_check.ps1` checks a log against the pass
-rules. Step by step: `.agents/tasks/batchB-b5-test.md`.
+rules.
 
 ## Periodic tasks: `app_period_wait()`, not `tk_dly_tsk(P)`
 
@@ -241,5 +240,3 @@ runs the tests in a dedicated test task at priority 11, below the debug drain
   in that folder's `TEST_LOG.md` (`testing/README.md`).
 - `APP_TEST=ON` needs `DBG_ENABLE=ON`. A Release build (`DBG_ENABLE=OFF`) with
   `APP_TEST=ON` fails at configure.
-- `APP_TEST=ON` builds since Batch B stage B1 (the `dbg_` ring exists). The
-  test lines only appear on the console once the debug drain runs (stage B4).

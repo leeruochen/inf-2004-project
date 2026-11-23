@@ -1,6 +1,6 @@
 # Team and subsystems
 
-Ported from the course template (`ProjectTemplate/TEAM.md`) and filled in
+Ported from the INF2004 course project template and filled in
 with this project's data. Pins come from `config/pins.h`, priorities from
 `config/priorities.h`, interfaces from design.md section 3.3 and object
 limits from `config/mtk3/config.h`.
@@ -27,7 +27,7 @@ entries in design.md (Team Role and Subsystem Ownership table).
 | 2 | Motion control (motors, encoders, PID) and Vehicle Controller | 2500530 (Ruo Chen) | leeruochen | `app_program/subsystem2/` | `testing/subsystem2/` |
 | 3 | Line following and barcode decode | 2503319 (Jin Yong) | jyong1101 | `app_program/subsystem3/` | `testing/subsystem3/` |
 | 4 | IMU processing and safety / lift-overturn response (incl. `task_safety.c`) | 2500709 (Vincent) | Vincent6430 | `app_program/subsystem4/` | `testing/subsystem4/` |
-| 5 | Obstacle scanning and obstacle avoidance / recovery | 2500596 (Chay Han) | longchayhan03-eng (TODO(owner-to-confirm): design.md reads "Chay Hanlongchayhan03-eng", no separator) | `app_program/subsystem5/` | `testing/subsystem5/` |
+| 5 | Obstacle scanning and obstacle avoidance / recovery | 2500596 (Chay Han) | longchayhan03-eng | `app_program/subsystem5/` | `testing/subsystem5/` |
 
 Shared files (`app_program/app_main.c`, `app_program/app.h`,
 `app_program/test_report.h`, this file) are changed only by agreement of the
@@ -36,7 +36,7 @@ peripheral, an interface ID), which anyone may do (section 2).
 
 Platform code in `src/` (`src/app/main.c`, `src/rtos/port/`, `src/debug/`,
 `src/common/`) and `config/` is maintained centrally (Batch A/B completed by
-Buddy 2 Ruo Chen with Buddy 3 Jin Yong as helper).
+Buddy 2 Ruo Chen and Buddy 3 Jin Yong).
 
 ## 2. Pins
 
@@ -93,9 +93,9 @@ at build time.
 
 Check these on the car before power-on with the Week 8 wiring:
 
-- [ ] Grove 6's GP26 lead is taped or capped. It is the same pin as Grove 5's
+- [x] Grove 6's GP26 lead is taped or capped. It is the same pin as Grove 5's
       GP26 (IR_R); firmware cannot disconnect it.
-- [ ] The GP28 VBAT-sense jumper is OPEN (unsoldered), or ADC2 (IR_C) reads
+- [x] The GP28 VBAT-sense jumper is OPEN (unsoldered), or ADC2 (IR_C) reads
       the battery divider.
 - [x] Line sensors: only VCC, GND and AO are wired (`drv_ir.c` verified on track). DO is not wired, so GP6
       and GP7 stay spare (inputs only).
@@ -145,7 +145,7 @@ mixed up, and the SDK drivers have no locking to stop it.
 | USB (CDC) | platform | debug drain task (debug console, `DBG_ENABLE` builds) | USB port |
 | UART0, UART1, I2C0, SPI0, SPI1 | | unused | |
 
-Wi-Fi/MQTT ownership (`TEL_BACKEND_WIFI=ON`): `task_tel.c` (Priority 9) is the sole caller of `drv_wifi.c` (`pico_cyw43_arch_lwip_poll` + `pico_lwip_mqtt`), keeping all network work inside one task (`app_program/subsystem1/MQTT.md`). The template's `cyw43_utk`/lwIP/MQTT design is reference only (`docs/TEMPLATE_NOTES.md`).
+Wi-Fi/MQTT ownership (`TEL_BACKEND_WIFI=ON`): `task_tel.c` (Priority 9) is the sole caller of `drv_wifi.c` (`pico_cyw43_arch_lwip_poll` + `pico_lwip_mqtt`), keeping all network work inside one task (`app_program/subsystem1/MQTT.md`).
 
 ## 4. Task priorities
 
@@ -176,14 +176,14 @@ in `usermain()` step 1, before any `subsystemN_init()`.
 | IF-02 | S2 VC → S2 Motion (internal) | message buffer, 4 slots (owned by S2) | `MBF_MOTION_CMD` | `motion_cmd_t`; VC sends `TMO_POL`, Motion polls every `20 ms` | Active (`main`) |
 | IF-03 | S5 Scan → S5 Avoid (internal) | message buffer, 2 slots (owned by S5) | `MBF_OBSTACLE` | `obstacle_profile_t`; newest profile wins. Sender drains then sends (`DATA_REPRESENTATION.md` 2.3) | Active (`main`) |
 | IF-04 | S2 VC, S3 BC, S4 IMU/Safety, S1 Tel → S1 Tel | message buffer, 32 slots (owned by S1) | `MBF_TELEMETRY` | `tel_evt_t` (`DREP_TEL_HUMP`, `BARCODE` incl. `A–Z` + unmapped bit, `FAULT`, `STATE`); senders use `TMO_POL`, overflow dropped and counted (NFR1). Obstacle profiles use IF-12 instead of 32-bit `tel_evt_t` | Active (`main`) |
-| IF-05 | echo ISR → S5 Scan | semaphore (owned by S5) | `SEM_ECHO` | echo received; `30 ms` watch / `12 ms` sweep timeout = nothing in range. Signalled from `echo_isr` via `hal_isr_sig()` | Active (`main`) |
+| IF-05 | echo ISR → S5 Scan | semaphore (owned by S5) | `SEM_ECHO` | echo received; `30 ms` watch / `8 ms` sweep timeout = nothing in range. Signalled from `echo_isr` via `hal_isr_sig()` | Active (`main`) |
 | IF-06 | S4 IMU → S4 Safety; S4 Safety, S2 Motion, S5 Scan, S1 Tel, S3 LF → readers; S2 VC clears `FAULT_LATCHED` | eventflag, `TA_WSGL` (owned by S4) | `EVF_SAFETY` | `b0 LIFTED` & `b1 IMU_ALIVE` (S4 IMU; Safety waits `TWF_ORW\|TWF_BITCLR`); `b2 FAULT_LATCHED` (Safety sets, VC clears on stationary RESET); `b3 FAULT_STALL` & `b4 FAULT_ENCODER` (S2 Motion); `b5 FAULT_IMU_I2C` (S4 IMU); `b6 FAULT_IMU_WDOG` (S4 Safety); `b7 STATUS_NO_ECHO` (S5 Scan, informational); `b8 FAULT_WIFI_LOSS` (S1 Tel); `b9 FAULT_IR_SENSOR` (S3 LF). S5 Avoid reads `LIFTED\|FAULT_LATCHED` | Active (`main`) |
 | IF-07 | S5 Avoid, S3 LF → readers | eventflag, `TA_WMUL` (owned by S5) | `EVF_NAV` | `AVOID_ACTIVE`, `LINE_REACQUIRED` (S5 Avoid), `LINE_FOUND` (S3 LF); readers poll via `tk_ref_flg()` | Active (`main`) |
 | IF-08 | S2 Motion → P2 VC, P4 LF, P5 BC, P6 Obs Scan, P7 Obs Avoid, P8 IMU, P9 Tel | shared data under a mutex, `TA_INHERIT` (owned by S2) | `MTX_MOTION`, `motion_state_t` | speed, distance, encoder counts `[0]=L, [1]=R`, `tick_ms`; copy through `motion_get_state()` and release at once. **P1 Safety never takes it** | Active (`main`) |
 | IF-09 | barcode ISR → S3 BC (internal) | ISR ring buffer, 64 edges (owned by S3) | barcode edge ring (`drep_edge_ring_t`) | 20-bit bar/space edge times (`bc_edge.c`); overflow forces `INVALID_READ_RESET` | Active (`main`) |
 | IF-10 | PIO0 → S2 Motion (internal) | hardware counters read via `enc_get_count()` (owned by S2) | encoder count words | free-running signed X4 counts written only by Motion task (`ARCHITECTURE.md` D7) | Active (`main`) |
 | IF-11 | S4 Safety → S2 | function call through `subsystem2.h` | `motion_emergency_brake()` | drives all four motor channels (`GP8`–`GP11`) LOW inside a critical section | Active (`main`) |
-| IF-12 | S3 LF, S4 IMU, S5 Scan/Avoid, S3 BC → S1 Tel | function calls through `subsystem1.h` into single-writer shared words / seq-locked slot | `tel_set_ir_raw()`, `tel_set_range_cm()`, `tel_set_attitude()`, `tel_post_obstacle()`, `tel_post_barcode_letter()` | newest IR raws (`ir_r`, `ir_c`), forward range (`cm`), pitch/roll (`0.5°`), newest 37-bit obstacle profile (seq-locked slot), and decoded `A–Z` barcode letter + action; non-blocking (single stores / `TMO_POL`), merged on `main` | Active (`main`) |
+| IF-12 | S3 LF, S4 IMU, S5 Scan/Avoid, S3 BC → S1 Tel | function calls through `subsystem1.h` into single-writer shared words / seq-locked slot | `tel_set_ir_raw()`, `tel_set_range_cm()`, `tel_set_attitude()`, `tel_post_obstacle()`, `tel_post_barcode_letter()` | newest IR raws (`ir_r`, `ir_c`), forward range (`cm`), pitch/roll (`0.5°`), newest 40-bit obstacle profile (seq-locked slot), and decoded `A–Z` barcode letter + action; non-blocking (single stores / `TMO_POL`), merged on `main` | Active (`main`) |
 
 #### Cross-subsystem read & configuration helpers (through `subsystemN.h`)
 

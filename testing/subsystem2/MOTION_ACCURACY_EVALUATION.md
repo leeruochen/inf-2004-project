@@ -10,15 +10,15 @@
 
 ### 1.1 Encoder & Wheel Geometry (`config/thresholds.h`, `config/pins.h`)
 
-| Parameter | Header | Default / Status | Measurement Method (`TEST_LOG.md`) | Measured Value |
+| Parameter | Header | Active Header Value / Status | Measurement Method (`TEST_LOG.md`) | Measured Value |
 |---|---|---|---|---|
-| `MOTOR_L_DIR_INVERT` | `config/pins.h` | `0U` (needs `1U` in `config/pins.h`) | `S2-U03`: Left `+40%` spun backward (`dL=-7610`), `-40%` spun forward (`dL=+7790`) | `1U` |
+| `MOTOR_L_DIR_INVERT` | `config/pins.h` | `1U` (active on `main`) | `S2-U03`: Left `+40%` spun backward (`dL=-7610`), `-40%` spun forward (`dL=+7790`) | `1U` |
 | `MOTOR_R_DIR_INVERT` | `config/pins.h` | `0U` (confirmed on car) | `S2-U03`: Right `+40%` spun forward (`dR=-7901`), `-40%` spun backward (`dR=+7948`) | `0U` |
 | `ENC_L_DIR_INVERT` | `config/pins.h` | `0U` (confirmed on car) | `S2-U03` / `S2-U08`: Forward physical motion (`-40%` on uninverted motor) gave `dL=+7790` (counts up) | `0U` |
-| `ENC_R_DIR_INVERT` | `config/pins.h` | `0U` (needs `1U` in `config/pins.h`) | `S2-U03` / `S2-U08`: Forward physical motion (`+40%` on right motor) gave `dR=-7901` (counts down) | `1U` |
-| `ENC_CPR` | `config/thresholds.h` | `0U` (needs `616U` in `config/thresholds.h`) | `S2-U10` / `S2-U18`: Hand-spin (`dL=15572`) + `101 cm` floor run (`dL=12025, dR=12018` = `119.03` counts/cm -> `2,464` quad counts/rev) | **`616U`** (`2,464` quad counts/rev) |
-| `WHEEL_CIRC_MM` | `config/thresholds.h` | `0U` (needs `207U` in `config/thresholds.h`) | `S2-U11`: Wheel diameter `66 mm` (`pi * 66 mm = 207.3 mm`) | **`207U`** (`207 mm`) |
-| `CAR_WIDTH_MM` (Effective Track) | `config/thresholds.h` | `120U` (`MOTION_EFF_TRACK_MM = 114U`) | `S2-U20`: Calibrated from `turnLeft(90)` / `turnRight(90)` floor runs (`138 mm -> 104°`, `120 mm -> 95°`, `114 mm -> 90.0°`) | **`114U`** (`114 mm` skid-steer effective track) |
+| `ENC_R_DIR_INVERT` | `config/pins.h` | `1U` (active on `main`) | `S2-U03` / `S2-U08`: Forward physical motion (`+40%` on right motor) gave `dR=-7901` (counts down) | `1U` |
+| `ENC_CPR` | `config/thresholds.h` | `616U` (active on `main`) | `S2-U10` / `S2-U18`: Hand-spin (`dL=15572`) + `101 cm` floor run (`dL=12025, dR=12018` = `119.03` counts/cm -> `2,464` quad counts/rev) | **`616U`** (`2,464` quad counts/rev) |
+| `WHEEL_CIRC_MM` | `config/thresholds.h` | `207U` (active on `main`) | `S2-U11`: Wheel diameter `66 mm` (`pi * 66 mm = 207.3 mm`) | **`207U`** (`207 mm`) |
+| `CAR_WIDTH_MM` (Effective Track) | `config/thresholds.h` | `130U` (`MOTION_EFF_TRACK_MM = 114U`, active on `main`) | `S2-U20`: Calibrated from `turnLeft(90)` / `turnRight(90)` floor runs (`138 mm -> 104°`, `120 mm -> 95°`, `114 mm -> 90.0°`); physical car width measured `130 mm` | **`114U`** (`114 mm` skid-steer effective track) |
 | `MOTOR_DUTY_MAX_PCT` | `config/thresholds.h` | `95U` | `S2-U02` (auto) + top-speed load check at `POWER_VIN_MIN_MV` (`3.6 V`) | **`95 %`** (`950` permille) |
 
 ### 1.2 3.3 V Grove Power Budget Verification (`POWER_GROVE_3V3_BUDGET_MA`)

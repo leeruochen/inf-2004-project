@@ -9,7 +9,7 @@
 
 ## 0. Purpose & How to Use This Guide
 
-Because Subsystems 1, 3, 4, and 5 are currently completing their initial on-car hardware and track integration tests (`HANDOVER.md` section 1 & section 3), **only safe, zero-behavioral-impact optimizations inside Subsystem 2 (`app_program/subsystem2/`) have been applied directly to the codebase.**
+Because Subsystems 1, 3, 4, and 5 are undergoing on-car hardware and track integration tests, **only safe, zero-behavioral-impact optimizations inside Subsystem 2 (`app_program/subsystem2/`) have been applied directly to the codebase.**
 
 All cross-subsystem (`app_program/subsystem1..5/`) and shared platform (`src/`) optimizations are documented in this file with ready-to-integrate code blocks, cycle/memory savings, and a **Car Behavioral Impact Assessment** so each owner buddy can adopt them safely once their baseline hardware tests pass.
 
@@ -55,15 +55,15 @@ All cross-subsystem (`app_program/subsystem1..5/`) and shared platform (`src/`) 
 The following four Tier-1 optimizations have already been implemented and verified in `app_program/subsystem2/` (`0` warnings under `-Wall -Wextra -Werror`, `check_rules: PASS`, 100% bit-identical behavior for `S2-U01`..`S2-U28`).
 
 ### OPT-01: Single Base-Pointer Context Struct (`s_mot`) in `task_motion.c`
-- **File:** [task_motion.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/task_motion.c#L111-L163)
+- **File:** [task_motion.c](../app_program/subsystem2/task_motion.c#L111-L163)
 - **Why it works on ARMv6-M (Thumb-1):**
   - The Cortex-M0+ Thumb-1 instruction set has no PC-relative `STR` and can only load 32-bit addresses into low registers (`r0`–`r7`) via `LDR Rd, [PC, #imm8]` from a literal pool in `.text`.
   - When 16 module-private `static` variables are declared separately, GCC emits separate 32-bit literal-pool entries and reloads base pointers repeatedly inside the 50 Hz PID control loop (`motion_step_cycle` -> `poll_command_queue` -> `check_manoeuvre_completion` -> `apply_control`).
   - Grouping all 16 variables into `static motion_ctx_t s_mot` (68 bytes total, down from 84 bytes) allows GCC to load `&s_mot` **once** into a callee-saved register (e.g. `r4`) and access every field with a single 16-bit instruction (`LDR`/`STR`/`LDRH`/`LDRB [r4, #imm]`).
-  - Narrow fields (`cmd_type`, `setpoint_cmps`, `stall_ticks`, `hold_elapsed_ms`, `cmd_arg`) and explicit mask/shift flags (`MOT_FLG_TASK_RUNNING`, `MOT_FLG_CALIB_HOLD`, `MOT_FLG_CMD_ACTIVE`) shrink `.bss` by 16 bytes without using C bit-fields (`HANDOVER.md` section 6).
+  - Narrow fields (`cmd_type`, `setpoint_cmps`, `stall_ticks`, `hold_elapsed_ms`, `cmd_arg`) and explicit mask/shift flags (`MOT_FLG_TASK_RUNNING`, `MOT_FLG_CALIB_HOLD`, `MOT_FLG_CMD_ACTIVE`) shrink `.bss` by 16 bytes without using C bit-fields (`docs/DATA_REPRESENTATION.md` section 1).
 
 ### OPT-02: 10-Bit Packed Private State Word (`s_vc.state_bits`) in `task_vc.c`
-- **File:** [task_vc.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/task_vc.c#L37-L115)
+- **File:** [task_vc.c](../app_program/subsystem2/task_vc.c#L37-L115)
 - **Why it works:**
   - `task_vc.c` previously held 6 discrete state/flag variables across separate 32-bit/bool statics (`s_sys_state`, `s_authority`, `s_bc_cmd`, `s_bc_pending`, `s_stationary_valid`, `s_task_running`).
   - Their true information content (`ARCHITECTURE.md` D8) is only **10 bits**:
@@ -76,14 +76,14 @@ The following four Tier-1 optimizations have already been implemented and verifi
   - Packing all 6 fields into `s_vc.state_bits` (`uint16_t`) inside `static vc_ctx_t s_vc` using `drep_get()` / `drep_set()` reduces `task_vc.c`'s `.bss` footprint from **44 bytes to 24 bytes (-45%)** and eliminates 9 literal-pool pointers.
 
 ### OPT-03: Branchless ARMv6-M Thumb-1 `abs_i32()` & Encoder Sign Inversion
-- **Files:** [task_motion.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/task_motion.c#L179-L193), [drv_encoder.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/drv_encoder.c#L191-L200)
+- **Files:** [task_motion.c](../app_program/subsystem2/task_motion.c#L179-L193), [drv_encoder.c](../app_program/subsystem2/drv_encoder.c#L191-L200)
 - **Why it works:**
   - Conditional branches (`CMP` + `BLT`/`BGE`) on Cortex-M0+ incur a 2-cycle pipeline refill penalty whenever taken.
   - `abs_i32(int32_t v)` uses the arithmetic right shift mask `mask = (uint32_t)(v >> 31)` (`0` for non-negative, `0xFFFFFFFF` for negative) and computes `((uint32_t)v + mask) ^ mask`, which compiles to 3 single-cycle 16-bit Thumb-1 instructions (`ASRS`, `ADDS`, `EORS` — 6 bytes, 3 cycles constant time).
   - Similarly, `enc_get_count()` replaces the `if (invert != 0U)` branch at the end of every encoder read with `inv_mask = 0U - invert; return (raw ^ inv_mask) - inv_mask;` (`EORS` + `SUBS`).
 
 ### OPT-04: 32-Bit Hardware Division in `drv_motor.c` & `.rodata` Compaction
-- **Files:** [drv_motor.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/drv_motor.c#L56-L97), [drv_motor.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/drv_motor.c#L256-L282), [drv_encoder.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/drv_encoder.c#L46-L79)
+- **Files:** [drv_motor.c](../app_program/subsystem2/drv_motor.c#L56-L97), [drv_motor.c](../app_program/subsystem2/drv_motor.c#L256-L282), [drv_encoder.c](../app_program/subsystem2/drv_encoder.c#L46-L79)
 - **Why it works:**
   - `motor_get_pwm_freq_hz()` previously cast `clock_get_hz(clk_sys) * 16U` to `uint64_t`, pulling in `__aeabi_uldivmod` (~300 cycles in software). Since `125,000,000 * 16 = 2,000,000,000 < UINT32_MAX` (safe up to `clk_sys = 268.4 MHz`), keeping both operands in `uint32_t` uses the RP2040's **8-cycle hardware SIO divider**.
   - `k_motor_pins[]`, `k_all_pins[]`, and `k_enc_wheels[]` now use `uint8_t` instead of `uint32_t`, saving **42 bytes of `.rodata`**.
@@ -99,7 +99,7 @@ The following four Tier-1 optimizations have already been implemented and verifi
 Inspired by the RP2040 SDK's `0x924U` multiplication bit-spreading idiom (`((m_lo & 0x5U) * 0x924U)`), we can exploit the Cortex-M0+'s **single-cycle 32×32->32 hardware multiplier (`MULS`)** to process all bits of a word in parallel without loops or branches.
 
 ### OPT-05: SWAR 9-Bit Reversal (`bc_mirror`), SWAR Popcount (`bc_wide_count`), & Half-Width LUT in `bc_decode.c`
-- **Owner:** **Buddy 3 (Jin Yong)** — [bc_decode.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem3/bc_decode.c#L32-L97)
+- **Owner:** **Buddy 3 (Jin Yong)** — [bc_decode.c](../app_program/subsystem3/bc_decode.c#L32-L97)
 - **Current Code:**
   - `s_letters[26]` stores a 9-bit Code 39 mask (`0x001..0x1FF`) inside a `uint32_t` field alongside `char ch`, padded to 8 bytes/entry (**208 bytes** or 104 bytes of masks).
   - `bc_wide_count(uint32_t mask)` loops 9 times (`for (i = 0; i < 9; i++)`) to count set bits (~45 cycles).
@@ -149,7 +149,7 @@ Inspired by the RP2040 SDK's `0x924U` multiplication bit-spreading idiom (`((m_l
 ---
 
 ### OPT-06: Byte-Chunked Bit Packing (`drep_bits_put` / `drep_bits_get`) & 2-Instruction `drep_sext` in `src/common/data_repr.h`
-- **Owner:** **Platform (Buddy 2 / Buddy 3) & Buddy 1 (Damian)** — [data_repr.h](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/src/common/data_repr.h#L58-L64), [data_repr.h](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/src/common/data_repr.h#L750-L785)
+- **Owner:** **Platform (Buddy 2 / Buddy 3) & Buddy 1 (Damian)** — [data_repr.h](../src/common/data_repr.h#L58-L64), [data_repr.h](../src/common/data_repr.h#L750-L785)
 - **Current Code:**
   1. `drep_sext(uint32_t raw, uint32_t bits)` computes `sign = 1UL << (bits - 1U); raw &= DREP_MASK(bits); return (int32_t)(raw ^ sign) - (int32_t)sign;` (6 instructions).
   2. `drep_bits_put()` and `drep_bits_get()` loop **1 bit at a time** (`for (i = 0; i < bits; i++)`), executing 120 loop iterations to pack a single 15-byte `DREP_FT_TELEMETRY_MOTION` frame.
@@ -217,7 +217,7 @@ Inspired by the RP2040 SDK's `0x924U` multiplication bit-spreading idiom (`((m_l
 ---
 
 ### OPT-07: Branchless SWAR Nibble-to-Hex (`tel_wire.c`) & Reciprocal Decimal Formatting (`dbg_ring.c`)
-- **Owners:** **Buddy 1 (Damian)** — [tel_wire.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem1/tel_wire.c#L66-L86); **Platform** — [dbg_ring.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/src/debug/dbg_ring.c#L60-L81)
+- **Owners:** **Buddy 1 (Damian)** — [tel_wire.c](../app_program/subsystem1/tel_wire.c#L66-L86); **Platform** — [dbg_ring.c](../src/debug/dbg_ring.c#L60-L81)
 - **Current Code:**
   - `tel_wire_hex()` uses a 16-byte lookup table `static char const k_hex[16] = "0123456789ABCDEF";` in `.rodata` (which can suffer XIP flash cache misses).
   - `put_dec()` in `dbg_ring.c` performs `v % 10U` and `v /= 10U` in a loop (2 hardware divider waits = ~18 cycles per digit).
@@ -242,7 +242,7 @@ Inspired by the RP2040 SDK's `0x924U` multiplication bit-spreading idiom (`((m_l
 ## 3. ARMv6-M (Cortex-M0+ Thumb-1) Inline Assembly Optimizations
 
 ### OPT-08: Flatten `run_slot()` ISR Wrapper in `src/rtos/port/port_irq.c`
-- **Owner:** **Platform (Buddy 2 / Buddy 3)**, directly benefiting **Buddy 3 (Barcode `GP27`)** and **Buddy 5 (Ultrasonic `GP5`)** — [port_irq.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/src/rtos/port/port_irq.c#L46-L70)
+- **Owner:** **Platform (Buddy 2 / Buddy 3)**, directly benefiting **Buddy 3 (Barcode `GP27`)** and **Buddy 5 (Ultrasonic `GP5`)** — [port_irq.c](../src/rtos/port/port_irq.c#L46-L70)
 - **Why it matters (`design.md` Risk R1):**
   - Every shared GPIO edge interrupt (`IO_IRQ_BANK0`) and peripheral IRQ passes through `port_irq_wrap_N()` -> `run_slot(N)` -> `knl_taskindp++` -> handler -> `knl_taskindp--`.
   - Under `-Og` / `-O0` (`CMAKE_BUILD_TYPE=Debug`), GCC emits two full stack frames (`PUSH {r4, lr}` in `port_irq_wrap_N`, `PUSH {r4, r5, lr}` in `run_slot`, multiply `slot * 8`, three reloads of `&knl_taskindp`), adding ~20–25 cycles before `time_us_32()` is sampled inside `echo_isr()` or `bc_gpio_isr()`.
@@ -277,7 +277,7 @@ Inspired by the RP2040 SDK's `0x924U` multiplication bit-spreading idiom (`((m_l
 ---
 
 ### OPT-09: Multi-Word `STMIA` Block Store for Stack Painting in `src/common/stack_mon.c`
-- **Owner:** **Platform (Buddy 2 / Buddy 3)** — [stack_mon.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/src/common/stack_mon.c#L64-L74)
+- **Owner:** **Platform (Buddy 2 / Buddy 3)** — [stack_mon.c](../src/common/stack_mon.c#L64-L74)
 - **Current Code:** `paint_words()` writes `0xA5A5A5A5UL` one 32-bit word at a time (`STR` + `ADDS` + `CMP` + `BCC` = 5 cycles per 4 bytes). Painting ~12 KB of task stacks takes ~15,000 cycles.
 - **Proposed Thumb-1 Inline Assembly Optimization:**
   ```c
@@ -314,7 +314,7 @@ Inspired by the RP2040 SDK's `0x924U` multiplication bit-spreading idiom (`((m_l
 ---
 
 ### OPT-10: Carry-Flag (`LSRS` + `BCC`) Thumb-1 Assembly for `crc32_ieee()` in `src/common/crc32.h`
-- **Owner:** **Platform (Buddy 2 / Buddy 3)** — [crc32.h](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/src/common/crc32.h#L18-L35)
+- **Owner:** **Platform (Buddy 2 / Buddy 3)** — [crc32.h](../src/common/crc32.h#L18-L35)
 - **Why it works:** On ARMv6-M, `LSRS Rd, Rd, #1` shifts bit 0 directly into the CPSR Carry flag (`C`) in the same single-cycle instruction. Testing Carry via `BCC` avoids masking `crc & 1UL` into a scratch register on every bit:
   ```c
   #if defined(__ARM_ARCH_6M__)
@@ -343,7 +343,7 @@ The RP2040 has an **8-cycle hardware 32-bit divider** in the SIO block (`SIO_DIV
 We found **four places** in Subsystems 4 and 5 where `uint64_t`/`int64_t` division is called periodically despite the values fitting in 32-bit fixed-point math:
 
 ### OPT-11: 32-Bit Reciprocal Multiply in `drv_ultrasonic.c` (Buddy 5)
-- **File:** [drv_ultrasonic.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem5/drv_ultrasonic.c#L166-L169)
+- **File:** [drv_ultrasonic.c](../app_program/subsystem5/drv_ultrasonic.c#L166-L169)
 - **Current Code:**
   ```c
   dist_mm = (uint32_t)(((uint64_t)dt * (uint64_t)US_SPEED_OF_SOUND_MPS) / 2000ULL);
@@ -364,7 +364,7 @@ We found **four places** in Subsystems 4 and 5 where `uint64_t`/`int64_t` divisi
 ---
 
 ### OPT-12: 32-Bit Polar-to-Cartesian Projection & Folded Quadrant Trig LUT in `task_obs_scan.c` (Buddy 5)
-- **File:** [task_obs_scan.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem5/task_obs_scan.c#L72-L99), [task_obs_scan.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem5/task_obs_scan.c#L261-L265)
+- **File:** [task_obs_scan.c](../app_program/subsystem5/task_obs_scan.c#L72-L99), [task_obs_scan.c](../app_program/subsystem5/task_obs_scan.c#L261-L265)
 - **Current Code:**
   1. `build_profile_from_sweep()` computes:
      ```c
@@ -400,7 +400,7 @@ We found **four places** in Subsystems 4 and 5 where `uint64_t`/`int64_t` divisi
 ---
 
 ### OPT-13: 32-Bit Pre-Scaled `atan2_half_deg`, 32-Bit Lift Projection, & Unified `isqrt` in Subsystem 4 (Buddy 4)
-- **Files:** [drv_imu.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem4/drv_imu.c#L168-L246), [imu_lift.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem4/imu_lift.c#L12-L81)
+- **Files:** [drv_imu.c](../app_program/subsystem4/drv_imu.c#L168-L246), [imu_lift.c](../app_program/subsystem4/imu_lift.c#L12-L81)
 - **Current Code:**
   1. **Duplicate `isqrt`:** `drv_imu.c` defines `isqrt_u32(uint32_t n)` while `imu_lift.c` defines an identical `isqrt32(uint32_t x)` (~80 bytes of duplicated `.text`).
   2. **64-bit divisions in `atan2_half_deg` (`drv_imu.c` lines 224–225):**
@@ -455,7 +455,7 @@ flowchart LR
   - **Linear scaling / blend mode:** `lf_norm(uint16_t raw, uint16_t black, uint16_t white)` in `lf_core.c` maps raw 12-bit ADC readings onto `0..1000` every 5 ms (`200 Hz`). Using `interp0` clamp + shift/scale reduces per-sample normalization to a few cycles.
 - **Impact on Car (Tier 3):**
   - **Crucial RTOS Constraint:** Because `interp0` is a per-core hardware peripheral NOT saved by micro T-Kernel's context switcher (`knl_setup_context`), if two tasks at different priorities use `interp0`, the higher-priority task would overwrite `BASE0`/`BASE1` unless saved/restored.
-  - **Safe Rule:** Dedicate `interp0` exclusively to **Line-Following (`task_lf`, P4)** and `interp1` exclusively to **Motion Control (`task_motion`, P3)** — one owning task per interpolator (matching `HANDOVER.md` section 6: *"One owning task per peripheral"*).
+  - **Safe Rule:** Dedicate `interp0` exclusively to **Line-Following (`task_lf`, P4)** and `interp1` exclusively to **Motion Control (`task_motion`, P3)** — one owning task per interpolator (matching `TEAM.md` section 3: *"One owning task per peripheral"*).
 
 ---
 
@@ -524,13 +524,13 @@ flowchart LR
 
 ### OPT-19: Single Context Struct (`s_ctx`) & D8 State Packing Across Subsystems 4 & 5
 - **Target Files:**
-  - **Buddy 4 (Vincent):** [task_imu.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem4/task_imu.c#L32-L46) (14 separate `static` variables -> `static imu_ctx_t s_imu`) and [task_safety.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem4/task_safety.c#L26-L33) (7 separate `static` variables -> `static safety_ctx_t s_safety`).
-  - **Buddy 5 (Chay Han):** [task_obs_scan.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem5/task_obs_scan.c#L54-L66) (11 separate `static` variables -> `static obs_scan_ctx_t s_scan`) and [task_obs_avoid.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem5/task_obs_avoid.c#L47-L58) (10 separate `static` variables -> `static obs_avoid_ctx_t s_avoid`).
+  - **Buddy 4 (Vincent):** [task_imu.c](../app_program/subsystem4/task_imu.c#L32-L46) (14 separate `static` variables -> `static imu_ctx_t s_imu`) and [task_safety.c](../app_program/subsystem4/task_safety.c#L26-L33) (7 separate `static` variables -> `static safety_ctx_t s_safety`).
+  - **Buddy 5 (Chay Han):** [task_obs_scan.c](../app_program/subsystem5/task_obs_scan.c#L54-L66) (11 separate `static` variables -> `static obs_scan_ctx_t s_scan`) and [task_obs_avoid.c](../app_program/subsystem5/task_obs_avoid.c#L47-L58) (10 separate `static` variables -> `static obs_avoid_ctx_t s_avoid`).
 - **How it works:**
   - Applies the exact same ARMv6-M base-pointer consolidation and `ARCHITECTURE.md` D8 minimum-width state packing already proven in Subsystem 2 (`OPT-01` and `OPT-02`).
   - For example, in `task_imu.c`, packing `s_state` (3-bit `DREP_FSM_IMU_BITS`), `s_fail_streak` (3 bits, `0..5`), `s_hump_streak` (2 bits, `0..3`), `s_in_hump` (1 bit), `s_lift_latched` (1 bit), and `s_running` (1 bit) into a single `uint16_t flags_and_state` inside `s_imu` cuts `.bss` by 28 bytes and removes 13 literal-pool pointers in the 100 Hz IMU task.
 - **Impact on Car (Tier 1):**
-  - Zero behavioral impact on the car. Buddies 4 and 5 can copy the `s_mot` / `s_vc` pattern directly from [task_motion.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/task_motion.c#L111-L163) and [task_vc.c](file:///c:/Users/Admin/Downloads/Projects/inf-2004-project/app_program/subsystem2/task_vc.c#L37-L115).
+  - Zero behavioral impact on the car. Buddies 4 and 5 can copy the `s_mot` / `s_vc` pattern directly from [task_motion.c](../app_program/subsystem2/task_motion.c#L111-L163) and [task_vc.c](../app_program/subsystem2/task_vc.c#L37-L115).
 
 ---
 
