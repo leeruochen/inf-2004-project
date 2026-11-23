@@ -41,6 +41,9 @@
 /** Speed of sound at 20 C, in millimetres per second / 1000 (343 mm/ms). */
 #define US_SOUND_MM_PER_MS      (343U)
 
+_Static_assert(((uint64_t)US_ECHO_MAX_US * (uint64_t)US_SOUND_MM_PER_MS) <= (uint64_t)UINT32_MAX,
+               "us_echo_us_to_mm 32-bit product must not overflow");
+
 /* Shared with the echo handler: read and written under a critical section on
  * the task side, written only by the handler on the interrupt side. */
 static volatile uint32_t s_rise_us = 0U;
@@ -208,8 +211,9 @@ uint32_t us_echo_us_to_mm(uint32_t echo_us)
         return 0U;
     }
 
-    /* One way: (echo_us x 343 mm/ms) / (1000 us/ms x 2). */
-    return (uint32_t)(((uint64_t)echo_us * (uint64_t)US_SOUND_MM_PER_MS) / 2000ULL);
+    /* One way: (echo_us x 343 mm/ms) / (1000 us/ms x 2).  Exact in uint32_t
+     * (uses RP2040's 8-cycle SIO divider instead of 64-bit __aeabi_uldivmod). */
+    return (echo_us * (uint32_t)US_SOUND_MM_PER_MS) / 2000U;
 }
 
 uint32_t us_echo_count(void)

@@ -24,31 +24,35 @@
 #include "../subsystem2/subsystem2.h"
 #include "config/timing.h"
 
-static volatile bool     s_running;
-static volatile uint32_t s_brake_count;
-static volatile uint32_t s_wdog_timeout_count;
+typedef struct
+{
+    volatile bool     running;
+    bool              wdog_tripped;
+    volatile uint32_t brake_count;
+    volatile uint32_t wdog_timeout_count;
+} safety_ctx_t;
 
-static bool s_wdog_tripped;
+static safety_ctx_t s_safety;
 
 bool safety_is_task_running(void)
 {
-    return s_running;
+    return s_safety.running;
 }
 
 uint32_t safety_get_brake_count(void)
 {
-    return s_brake_count;
+    return s_safety.brake_count;
 }
 
 uint32_t safety_get_wdog_timeout_count(void)
 {
-    return s_wdog_timeout_count;
+    return s_safety.wdog_timeout_count;
 }
 
 static void brake_and_latch(uint32_t reason_bits)
 {
     motion_emergency_brake();
-    s_brake_count++;
+    s_safety.brake_count++;
     (void)tk_set_flg(EVF_SAFETY, EVF_SAFETY_FAULT_LATCHED | reason_bits);
 }
 
@@ -71,10 +75,10 @@ void safety_task_entry(INT stacd, void *p_exinf)
     (void)stacd;
     (void)p_exinf;
 
-    s_brake_count        = 0U;
-    s_wdog_timeout_count = 0U;
-    s_wdog_tripped       = false;
-    s_running            = true;
+    s_safety.brake_count        = 0U;
+    s_safety.wdog_timeout_count = 0U;
+    s_safety.wdog_tripped       = false;
+    s_safety.running            = true;
 
     dbg_puts("[SAFETY] task started");
 
@@ -87,12 +91,12 @@ void safety_task_entry(INT stacd, void *p_exinf)
 
         if (er == E_TMOUT)
         {
-            s_wdog_timeout_count++;
+            s_safety.wdog_timeout_count++;
             brake_and_latch(EVF_SAFETY_FAULT_IMU_WDOG);
 
-            if (!s_wdog_tripped)
+            if (!s_safety.wdog_tripped)
             {
-                s_wdog_tripped = true;
+                s_safety.wdog_tripped = true;
                 report_fault("IMU watchdog");
             }
             continue;
@@ -113,9 +117,9 @@ void safety_task_entry(INT stacd, void *p_exinf)
             report_fault("lifted or overturned");
         }
 
-        if (((flg_pattern & EVF_SAFETY_IMU_ALIVE) != 0U) && s_wdog_tripped)
+        if (((flg_pattern & EVF_SAFETY_IMU_ALIVE) != 0U) && s_safety.wdog_tripped)
         {
-            s_wdog_tripped = false;
+            s_safety.wdog_tripped = false;
             dbg_puts("[SAFETY] IMU heartbeat back (fault stays latched)");
         }
     }

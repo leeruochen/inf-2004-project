@@ -9,10 +9,10 @@
 #include <stddef.h>
 
 /* Integer square root (floor), for vector lengths in mg. */
-static uint32_t lift_isqrt(uint64_t v)
+static uint32_t lift_isqrt(uint32_t v)
 {
-    uint64_t r   = 0U;
-    uint64_t bit = (uint64_t)1U << 62U;
+    uint32_t r   = 0U;
+    uint32_t bit = 1UL << 30U;
 
     while (bit > v)
     {
@@ -33,7 +33,7 @@ static uint32_t lift_isqrt(uint64_t v)
         bit >>= 2U;
     }
 
-    return (uint32_t)r;
+    return r;
 }
 
 static void reset_peaks(imu_lift_t *p_lift)
@@ -46,12 +46,16 @@ static void reset_peaks(imu_lift_t *p_lift)
 /* mg x 10 ms -> mm/s: 1 mg = 9.80665 mm/s^2, x 0.01 s. */
 static int32_t v_to_mmps(int32_t v_sum)
 {
-    return (int32_t)(((int64_t)v_sum * 981) / 10000);
+    return (v_sum * 981) / 10000;
 }
 
 static uint32_t lift_mag(int32_t x, int32_t y, int32_t z)
 {
-    return lift_isqrt((uint64_t)(((int64_t)x * x) + ((int64_t)y * y) + ((int64_t)z * z)));
+    uint32_t const ux = (x < 0) ? (0U - (uint32_t)x) : (uint32_t)x;
+    uint32_t const uy = (y < 0) ? (0U - (uint32_t)y) : (uint32_t)y;
+    uint32_t const uz = (z < 0) ? (0U - (uint32_t)z) : (uint32_t)z;
+
+    return lift_isqrt((ux * ux) + (uy * uy) + (uz * uz));
 }
 
 void imu_lift_init(imu_lift_t *p_lift)
@@ -95,14 +99,13 @@ imu_lift_event_t imu_lift_step(imu_lift_t *p_lift, int32_t x_mg, int32_t y_mg, i
         return IMU_LIFT_NONE;
     }
 
-    int64_t const  dot   = ((int64_t)x_mg * p_lift->up_x) + ((int64_t)y_mg * p_lift->up_y)
-                         + ((int64_t)z_mg * p_lift->up_z);
+    int32_t const  dot   = (x_mg * p_lift->up_x) + (y_mg * p_lift->up_y) + (z_mg * p_lift->up_z);
     uint32_t const f_mag = lift_mag(x_mg, y_mg, z_mg);
     int64_t const  den   = (int64_t)f_mag * (int64_t)p_lift->up_mag;
 
     /* No acceleration at all (free fall) counts as fully tilted. */
-    int32_t const cos_x1000 = (den > 0) ? (int32_t)((dot * 1000) / den) : 0;
-    int32_t const up_accel  = (int32_t)(dot / (int64_t)p_lift->up_mag) - (int32_t)p_lift->up_mag;
+    int32_t const cos_x1000 = (den > 0) ? (int32_t)(((int64_t)dot * 1000) / den) : 0;
+    int32_t const up_accel  = (dot / (int32_t)p_lift->up_mag) - (int32_t)p_lift->up_mag;
 
     /* Vertical speed: leaky integral of the acceleration along up. */
     p_lift->v_sum += up_accel - (p_lift->v_sum / IMU_LIFT_V_LEAK_DIV);

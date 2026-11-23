@@ -118,11 +118,25 @@ static uint32_t put_dec(char *p_out, int32_t value)
     uint32_t n_digits = 0U;
     uint32_t n_out = 0U;
 
+    /* Values above 65535 (rare for error codes) reduce via /10 into the
+     * exact 16-bit reciprocal-multiply range below. */
+    while (magnitude > 65535U)
+    {
+        uint32_t const q = magnitude / 10U;
+
+        digits[n_digits] = (char)('0' + (char)(magnitude - (q * 10U)));
+        n_digits++;
+        magnitude = q;
+    }
+
+    /* Exact reciprocal divide-by-10 for 0..65535: (m * 0xCCCD) >> 19. */
     do
     {
-        digits[n_digits] = (char)('0' + (char)(magnitude % 10U));
+        uint32_t const q = (magnitude * 0xCCCDU) >> 19U;
+
+        digits[n_digits] = (char)('0' + (char)(magnitude - (q * 10U)));
         n_digits++;
-        magnitude /= 10U;
+        magnitude = q;
     } while (magnitude != 0U);
 
     if (value < 0)

@@ -179,11 +179,20 @@ char const *tel_wire_reject_name(int32_t rc)
     }
 }
 
+/* Branchless nibble-to-lowercase-ASCII-hex without a .rodata table:
+ *   0..9   -> '0' (0x30) + n
+ *   10..15 -> 'a' (0x61) + (n - 10) = 0x30 + n + 39 */
+static inline char nibble_to_hex(uint32_t nib)
+{
+    uint32_t const n = nib & 0x0FU;
+
+    return (char)(0x30U + n + (((9U - n) >> 31U) * 39U));
+}
+
 uint32_t tel_wire_hex(char *p_out, uint32_t out_bytes, uint8_t const *p_buf, uint32_t n)
 {
-    static char const k_digits[] = "0123456789abcdef";
-    uint32_t          w = 0U;
-    uint32_t          i;
+    uint32_t w = 0U;
+    uint32_t i;
 
     if ((p_out == NULL) || (out_bytes == 0U))
     {
@@ -191,8 +200,8 @@ uint32_t tel_wire_hex(char *p_out, uint32_t out_bytes, uint8_t const *p_buf, uin
     }
     for (i = 0U; (i < n) && ((w + 2U) < out_bytes); i++)
     {
-        p_out[w] = k_digits[(p_buf[i] >> 4) & 0x0FU];
-        p_out[w + 1U] = k_digits[p_buf[i] & 0x0FU];
+        p_out[w] = nibble_to_hex((uint32_t)p_buf[i] >> 4U);
+        p_out[w + 1U] = nibble_to_hex((uint32_t)p_buf[i]);
         w += 2U;
     }
     p_out[w] = '\0';

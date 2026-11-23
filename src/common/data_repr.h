@@ -54,13 +54,12 @@ static inline uint32_t drep_set(uint32_t word, uint32_t shift, uint32_t bits, ui
     return (word & ~mask) | ((value << shift) & mask);
 }
 
-/** Sign-extend the low `bits` bits of `raw` (two's complement). */
+/** Sign-extend the low `bits` bits of `raw` (two's complement, 1 <= bits <= 32). */
 static inline int32_t drep_sext(uint32_t raw, uint32_t bits)
 {
-    uint32_t const sign = 1UL << (bits - 1U);
+    uint32_t const shift = 32U - bits;
 
-    raw &= DREP_MASK(bits);
-    return (int32_t)(raw ^ sign) - (int32_t)sign;
+    return ((int32_t)(raw << shift)) >> shift;
 }
 
 /** Clamp v to [lo, hi]; sets *p_oor (if not NULL) when it had to clamp. */
@@ -760,40 +759,50 @@ static inline uint32_t drep_frame_len(uint32_t type)
     return (type < DREP_FT_COUNT) ? k_len[type] : 0U;
 }
 
-/* Little-endian bit writer/reader, LSB first. */
+/* Little-endian bit writer/reader, LSB first (byte-chunked, up to 8 bits/step). */
 static inline void drep_bits_put(uint8_t *p_buf, uint32_t *p_pos, uint32_t value, uint32_t bits)
 {
-    uint32_t i;
+    uint32_t pos = *p_pos;
+    uint32_t rem = bits;
+    uint32_t val = value;
 
-    for (i = 0U; i < bits; i++)
+    while (rem > 0U)
     {
-        uint32_t const pos = *p_pos + i;
-        uint8_t const  bit = (uint8_t)(1U << (pos & 7U));
+        uint32_t const bit_off = pos & 7U;
+        uint32_t const space   = 8U - bit_off;
+        uint32_t const chunk   = (rem < space) ? rem : space;
+        uint8_t const  mask    = (uint8_t)(((1U << chunk) - 1U) << bit_off);
+        uint8_t const  bits_in = (uint8_t)((val << bit_off) & mask);
 
-        if (((value >> i) & 1U) != 0U)
-        {
-            p_buf[pos >> 3] = (uint8_t)(p_buf[pos >> 3] | bit);
-        }
-        else
-        {
-            p_buf[pos >> 3] = (uint8_t)(p_buf[pos >> 3] & (uint8_t)~bit);
-        }
+        p_buf[pos >> 3U] = (uint8_t)((p_buf[pos >> 3U] & (uint8_t)~mask) | bits_in);
+        val >>= chunk;
+        pos += chunk;
+        rem -= chunk;
     }
-    *p_pos += bits;
+    *p_pos = pos;
 }
 
 static inline uint32_t drep_bits_get(uint8_t const *p_buf, uint32_t *p_pos, uint32_t bits)
 {
-    uint32_t v = 0U;
-    uint32_t i;
+    uint32_t pos   = *p_pos;
+    uint32_t rem   = bits;
+    uint32_t shift = 0U;
+    uint32_t v     = 0U;
 
-    for (i = 0U; i < bits; i++)
+    while (rem > 0U)
     {
-        uint32_t const pos = *p_pos + i;
+        uint32_t const bit_off = pos & 7U;
+        uint32_t const space   = 8U - bit_off;
+        uint32_t const chunk   = (rem < space) ? rem : space;
+        uint32_t const mask    = (1U << chunk) - 1U;
+        uint32_t const part    = ((uint32_t)p_buf[pos >> 3U] >> bit_off) & mask;
 
-        v |= (uint32_t)((p_buf[pos >> 3] >> (pos & 7U)) & 1U) << i;
+        v |= (part << shift);
+        shift += chunk;
+        pos += chunk;
+        rem -= chunk;
     }
-    *p_pos += bits;
+    *p_pos = pos;
     return v;
 }
 

@@ -133,6 +133,14 @@
 /** Bearing the servo holds while watching ahead: straight on. */
 #define OBS_WATCH_AHEAD_DEG     (90U)
 
+_Static_assert(OBS_BEARING_SLOTS == 19U, "k_cos5_quad_m1000 stride-2 lookup assumes 19 coarse slots");
+_Static_assert(OBS_FINE5_SLOTS == 37U, "k_cos5_quad_m1000 assumes 37 fine-5 slots");
+_Static_assert(OBS_FINE3_SLOTS == 61U, "k_cos3_quad_m1000 assumes 61 fine-3 slots");
+_Static_assert((((uint64_t)(OBS_DETECT_MM + OBS_DETECT_HYST_MM) * 2000ULL) + 500ULL) <= (uint64_t)UINT32_MAX,
+               "fine width_mm 32-bit numerator must not overflow");
+_Static_assert(((uint64_t)OBS_DETECT_MM * 190ULL * (uint64_t)OBS_RAD_PER_DEG_M100K) <= (uint64_t)UINT32_MAX,
+               "coarse w_angle 32-bit numerator must not overflow");
+
 typedef enum
 {
     SCAN_WATCH = 0,
@@ -143,66 +151,68 @@ typedef enum
     SCAN_BYPASS_PARK
 } scan_phase_t;
 
-static bool               s_running = false;
-static obs_scan_t         s_scan;
-static obs_scan3_t        s_fine3;
-static obs_scan_t         s_last_sweep;
-static obstacle_profile_t s_last_profile;
-static uint32_t           s_profile_count = 0U;
-static uint32_t           s_sweep_count = 0U;
-static uint32_t           s_seq = 0U;
-static bool               s_no_echo_set = false;  /* last state written; diagnostics only */
+typedef struct
+{
+    volatile uint8_t   phase;             /* scan_phase_t (0..5) */
+    volatile bool      running;
+    bool               no_echo_set;       /* last state written; diagnostics only */
+    bool               slew_settled;
+    bool               sweep_settling;
+    uint16_t           confirm_buf[OBS_CONFIRM_SAMPLES];
+    obstacle_profile_t last_profile;
+    volatile uint32_t  profile_count;
+    volatile uint32_t  sweep_count;
+    uint32_t           seq;
+    uint32_t           confirm;
+    uint32_t           confirm_still_ticks;
+    uint32_t           confirm_n;
+    uint32_t           confirm_start_ms;
+    int32_t            confirm_prev_enc[2];
+    uint32_t           fine3_slot;
+    uint32_t           watch_cooldown_until_ms;
+    /* Large sweep arrays last so hot scalars stay inside Thumb-1 small offsets. */
+    obs_scan_t         scan;
+    obs_scan3_t        fine3;
+    obs_scan_t         last_sweep;
+} obs_scan_ctx_t;
 
-static scan_phase_t       s_phase = SCAN_WATCH;
-static uint32_t           s_confirm = 0U;
-static uint32_t           s_confirm_still_ticks = 0U;
-static uint32_t           s_confirm_n = 0U;
-static uint32_t           s_confirm_start_ms = 0U;
-static int32_t            s_confirm_prev_enc[2];
-static uint16_t           s_confirm_buf[OBS_CONFIRM_SAMPLES];
-static uint32_t           s_fine3_slot = OBS_FINE3_LO_SLOT;
-static bool               s_slew_settled = false;
-static bool               s_sweep_settling = false;
-static uint32_t           s_watch_cooldown_until_ms = 0U;
+static obs_scan_ctx_t s_ctx;
 
 /* ---------------------------------------------------------------------------
  * Pure geometry
  * ------------------------------------------------------------------------- */
 
-/* cos and sin x 1000 for 0, 10, ... 180 degrees.  A table keeps this task
- * free of floating point and of libm, which the firmware does not link. */
-static int16_t const k_cos_m1000[OBS_BEARING_SLOTS] =
+/* Folded quadrant cosine tables (0..90 degrees, scaled by 1000).  Keeps the
+ * task free of floating point and libm while cutting .rodata vs full tables. */
+
+/* cos x 1000 for 0, 5, ... 90 degrees (19 entries, 38 B).
+ * Also serves 10-degree cos (stride 2) and sin (mirrored about 90 deg). */
+static uint16_t const k_cos5_quad_m1000[19] =
 {
-    1000,  985,  940,  866,  766,  643,  500,  342,  174,    0,
-    -174, -342, -500, -643, -766, -866, -940, -985, -1000
+    1000U, 996U, 985U, 966U, 940U, 906U, 866U, 819U, 766U, 707U,
+     643U, 574U, 500U, 423U, 342U, 259U, 174U,  87U,   0U
 };
 
-static int16_t const k_sin_m1000[OBS_BEARING_SLOTS] =
+/* cos x 1000 for 0, 3, ... 90 degrees (31 entries, 62 B). */
+static uint16_t const k_cos3_quad_m1000[31] =
 {
-       0,  174,  342,  500,  643,  766,  866,  940,  985, 1000,
-     985,  940,  866,  766,  643,  500,  342,  174,     0
+    1000U, 999U, 995U, 988U, 978U, 966U, 951U, 934U, 914U, 891U,
+     866U, 839U, 809U, 777U, 743U, 707U, 669U, 629U, 588U, 545U,
+     500U, 454U, 407U, 358U, 309U, 259U, 208U, 156U, 105U,  52U,
+       0U
 };
 
-/* cos x 1000 for 0, 5, ... 180 degrees (37 slots). */
-static int16_t const k_cos5_m1000[OBS_FINE5_SLOTS] =
+static inline int32_t cos_from_quad(uint16_t const *p_quad, uint32_t max_slot,
+                                    uint32_t stride, uint32_t slot)
 {
-    1000,  996,  985,  966,  940,  906,  866,  819,  766,  707,
-     643,  574,  500,  423,  342,  259,  174,   87,    0,  -87,
-    -174, -259, -342, -423, -500, -574, -643, -707, -766, -819,
-    -866, -906, -940, -966, -985, -996, -1000
-};
+    uint32_t const mid = max_slot / 2U;
 
-/* cos x 1000 for 0, 3, ... 180 degrees (61 slots). */
-static int16_t const k_cos3_m1000[OBS_FINE3_SLOTS] =
-{
-    1000,  999,  995,  988,  978,  966,  951,  934,  914,  891,
-     866,  839,  809,  777,  743,  707,  669,  629,  588,  545,
-     500,  454,  407,  358,  309,  259,  208,  156,  105,   52,
-       0,  -52, -105, -156, -208, -259, -309, -358, -407, -454,
-    -500, -545, -588, -629, -669, -707, -743, -777, -809, -839,
-    -866, -891, -914, -934, -951, -966, -978, -988, -995, -999,
-    -1000
-};
+    if (slot <= mid)
+    {
+        return (int32_t)p_quad[slot * stride];
+    }
+    return -(int32_t)p_quad[(max_slot - slot) * stride];
+}
 
 /* round(2000 * tan(deg / 2)) for effective deconvolved span deg = 0..90. */
 static uint16_t const k_2tan_half_m1000[OBS_FINE_EFF_MAX_DEG + 1U] =
@@ -223,14 +233,15 @@ int32_t obs_cos_m1000(uint32_t deg)
 {
     uint32_t const slot = OBS_DEG_TO_SLOT((deg > 180U) ? 180U : deg);
 
-    return (int32_t)k_cos_m1000[slot];
+    return cos_from_quad(k_cos5_quad_m1000, OBS_BEARING_SLOTS - 1U, 2U, slot);
 }
 
 int32_t obs_sin_m1000(uint32_t deg)
 {
     uint32_t const slot = OBS_DEG_TO_SLOT((deg > 180U) ? 180U : deg);
+    uint32_t const dist = (slot <= 9U) ? (9U - slot) : (slot - 9U);
 
-    return (int32_t)k_sin_m1000[slot];
+    return (int32_t)k_cos5_quad_m1000[dist * 2U];
 }
 
 int32_t obs_lateral_mm(uint32_t dist_mm, uint32_t deg)
@@ -319,10 +330,12 @@ static bool analyse_sweep_common(uint16_t const *p_dist,
                                  uint32_t        step_deg,
                                  uint32_t        beam_deg,
                                  uint32_t        detect_cap_mm,
-                                 int16_t const  *p_cos_m1000,
+                                 uint16_t const *p_cos_quad,
+                                 uint32_t        cos_stride,
                                  obs_result_t   *p_out)
 {
-    if ((p_dist == NULL) || (p_cos_m1000 == NULL) || (p_out == NULL) || (slot_count == 0U))
+    if ((p_dist == NULL) || (p_cos_quad == NULL) || (cos_stride == 0U)
+        || (p_out == NULL) || (slot_count == 0U))
     {
         return false;
     }
@@ -422,7 +435,7 @@ static bool analyse_sweep_common(uint16_t const *p_dist,
             continue;
         }
 
-        int32_t const x = ((int32_t)d * (int32_t)p_cos_m1000[i]) / 1000;
+        int32_t const x = ((int32_t)d * cos_from_quad(p_cos_quad, slot_count - 1U, cos_stride, i)) / 1000;
 
         if (x < x_min)
         {
@@ -452,15 +465,12 @@ static bool analyse_sweep_common(uint16_t const *p_dist,
         {
             eff_deg = (uint32_t)OBS_FINE_EFF_MAX_DEG;
         }
-        width_mm = (uint32_t)((((uint64_t)near_mm * (uint64_t)k_2tan_half_m1000[eff_deg]) + 500ULL)
-                              / 1000ULL);
+        width_mm = ((near_mm * (uint32_t)k_2tan_half_m1000[eff_deg]) + 500U) / 1000U;
     }
     else
     {
-        uint32_t const w_angle = (uint32_t)(((uint64_t)near_mm * (uint64_t)eff_deg
-                                             * (uint64_t)OBS_RAD_PER_DEG_M100K) / 100000ULL);
-        uint32_t const beam_mm = (uint32_t)(((uint64_t)near_mm * (uint64_t)beam_deg
-                                             * (uint64_t)OBS_RAD_PER_DEG_M100K) / 100000ULL);
+        uint32_t const w_angle = (near_mm * eff_deg * (uint32_t)OBS_RAD_PER_DEG_M100K) / 100000U;
+        uint32_t const beam_mm = (near_mm * beam_deg * (uint32_t)OBS_RAD_PER_DEG_M100K) / 100000U;
         uint32_t const raw_extent = (uint32_t)(x_max - x_min);
         uint32_t const w_extent = (raw_extent > beam_mm) ? (raw_extent - beam_mm) : 0U;
 
@@ -495,7 +505,7 @@ static bool analyse_sweep_common(uint16_t const *p_dist,
             continue;                   /* open space on this bearing */
         }
 
-        int32_t const x = ((int32_t)d * (int32_t)p_cos_m1000[i]) / 1000;
+        int32_t const x = ((int32_t)d * cos_from_quad(p_cos_quad, slot_count - 1U, cos_stride, i)) / 1000;
 
         if (x > x_max)
         {
@@ -575,7 +585,8 @@ bool obs_analyse(obs_scan_t const *p_scan, obs_result_t *p_out)
                                 (uint32_t)OBS_FINE_STEP_DEG,
                                 (uint32_t)OBS_BEAM_DEG,
                                 OBS_DETECT_MM,
-                                k_cos_m1000,
+                                k_cos5_quad_m1000,
+                                2U,
                                 p_out);
 }
 
@@ -592,7 +603,8 @@ bool obs_analyse_fine5(obs_scan5_t const *p_scan, obs_result_t *p_out)
                                 (uint32_t)OBS_FINE5_STEP_DEG,
                                 (uint32_t)OBS_FINE5_BEAM_DEG,
                                 OBS_DETECT_MM + OBS_DETECT_HYST_MM,
-                                k_cos5_m1000,
+                                k_cos5_quad_m1000,
+                                1U,
                                 p_out);
 }
 
@@ -609,7 +621,8 @@ bool obs_analyse_fine3(obs_scan3_t const *p_scan, obs_result_t *p_out)
                                 (uint32_t)OBS_FINE3_STEP_DEG,
                                 (uint32_t)OBS_FINE3_BEAM_DEG,
                                 OBS_DETECT_MM + OBS_DETECT_HYST_MM,
-                                k_cos3_m1000,
+                                k_cos3_quad_m1000,
+                                1U,
                                 p_out);
 }
 
@@ -783,7 +796,7 @@ static void publish_no_echo(bool no_echo)
 
     if (er >= (ER)E_OK)
     {
-        s_no_echo_set = no_echo;        /* kept for the test read-back only */
+        s_ctx.no_echo_set = no_echo;        /* kept for the test read-back only */
     }
     else
     {
@@ -809,13 +822,13 @@ static void send_profile(obstacle_profile_t prof, bool publish_tel)
 
     if (er >= (ER)E_OK)
     {
-        s_last_profile = prof;
-        s_profile_count++;
+        s_ctx.last_profile = prof;
+        s_ctx.profile_count++;
         if (publish_tel)
         {
             tel_post_obstacle(prof);    /* dashboard integration (IF-12): newest wins, never waits */
         }
-        s_seq = (s_seq + 1U) & DREP_MASK(DREP_OBS_SEQ_BITS);
+        s_ctx.seq = (s_ctx.seq + 1U) & DREP_MASK(DREP_OBS_SEQ_BITS);
     }
     else
     {
@@ -871,9 +884,9 @@ static bool slew_step_toward(uint32_t target_deg)
 
 static void enter_watch(uint32_t cooldown_until_ms)
 {
-    s_phase = SCAN_WATCH;
-    s_confirm = 0U;
-    s_watch_cooldown_until_ms = cooldown_until_ms;
+    s_ctx.phase = (uint8_t)SCAN_WATCH;
+    s_ctx.confirm = 0U;
+    s_ctx.watch_cooldown_until_ms = cooldown_until_ms;
     if (servo_get_deg() != (uint32_t)OBS_WATCH_AHEAD_DEG)
     {
         servo_set_deg((uint32_t)OBS_WATCH_AHEAD_DEG);
@@ -884,16 +897,16 @@ static void enter_confirm(uint32_t now_ms)
 {
     motion_state_t ms;
 
-    s_phase = SCAN_CONFIRM;
-    s_confirm_still_ticks = 0U;
-    s_confirm_n = 0U;
-    s_confirm_start_ms = now_ms;
-    s_confirm_prev_enc[0] = 0;
-    s_confirm_prev_enc[1] = 0;
+    s_ctx.phase = (uint8_t)SCAN_CONFIRM;
+    s_ctx.confirm_still_ticks = 0U;
+    s_ctx.confirm_n = 0U;
+    s_ctx.confirm_start_ms = now_ms;
+    s_ctx.confirm_prev_enc[0] = 0;
+    s_ctx.confirm_prev_enc[1] = 0;
     if (motion_get_state(&ms) == E_OK)
     {
-        s_confirm_prev_enc[0] = ms.enc_count[0];
-        s_confirm_prev_enc[1] = ms.enc_count[1];
+        s_ctx.confirm_prev_enc[0] = ms.enc_count[0];
+        s_ctx.confirm_prev_enc[1] = ms.enc_count[1];
     }
     if (servo_get_deg() != (uint32_t)OBS_WATCH_AHEAD_DEG)
     {
@@ -903,8 +916,8 @@ static void enter_confirm(uint32_t now_ms)
 
 static void enter_bypass_park(void)
 {
-    s_phase = SCAN_BYPASS_PARK;
-    s_confirm = 0U;
+    s_ctx.phase = (uint8_t)SCAN_BYPASS_PARK;
+    s_ctx.confirm = 0U;
     if (servo_get_deg() != (uint32_t)OBS_WATCH_AHEAD_DEG)
     {
         servo_set_deg((uint32_t)OBS_WATCH_AHEAD_DEG);
@@ -913,14 +926,14 @@ static void enter_bypass_park(void)
 
 static void enter_slew_start(void)
 {
-    (void)memset(&s_fine3, 0, sizeof(s_fine3));
-    (void)memset(&s_scan, 0, sizeof(s_scan));
-    s_fine3.lo_slot = (uint8_t)OBS_FINE3_LO_SLOT;
-    s_fine3.hi_slot = (uint8_t)OBS_FINE3_HI_SLOT;
-    s_scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(50U);
-    s_scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(130U);
-    s_slew_settled = false;
-    s_phase = SCAN_SLEW_START;
+    (void)memset(&s_ctx.fine3, 0, sizeof(s_ctx.fine3));
+    (void)memset(&s_ctx.scan, 0, sizeof(s_ctx.scan));
+    s_ctx.fine3.lo_slot = (uint8_t)OBS_FINE3_LO_SLOT;
+    s_ctx.fine3.hi_slot = (uint8_t)OBS_FINE3_HI_SLOT;
+    s_ctx.scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(50U);
+    s_ctx.scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(130U);
+    s_ctx.slew_settled = false;
+    s_ctx.phase = (uint8_t)SCAN_SLEW_START;
 }
 
 /* Bring-up only: print every 3-degree bearing of the sweep that was just analysed. */
@@ -928,7 +941,7 @@ static void dump_sweep3(obs_result_t const *p_res)
 {
     for (uint32_t i = OBS_FINE3_LO_SLOT; i <= OBS_FINE3_HI_SLOT; i++)
     {
-        uint32_t const d = (uint32_t)s_fine3.dist_mm[i];
+        uint32_t const d = (uint32_t)s_ctx.fine3.dist_mm[i];
 
         if (d != 0U)
         {
@@ -974,21 +987,21 @@ static void watch_step(uint16_t mm, uint32_t now_ms)
     if (vc_st == VC_SYS_SAFETY_FAULT_LATCHED)
     {
         /* Do not sweep the servo while the car is picked up / fault-latched. */
-        s_confirm = 0U;
+        s_ctx.confirm = 0U;
         return;
     }
 #endif
 
-    if (!nav && ((int32_t)(now_ms - s_watch_cooldown_until_ms) < 0))
+    if (!nav && ((int32_t)(now_ms - s_ctx.watch_cooldown_until_ms) < 0))
     {
-        s_confirm = 0U;
+        s_ctx.confirm = 0U;
         return;
     }
 
     if ((mm != 0U) && (mm <= (uint16_t)OBS_DETECT_MM))
     {
-        s_confirm++;
-        if (s_confirm >= (uint32_t)OBS_DETECT_CONFIRM_COUNT)
+        s_ctx.confirm++;
+        if (s_ctx.confirm >= (uint32_t)OBS_DETECT_CONFIRM_COUNT)
         {
             int32_t dist_cm = (int32_t)((uint32_t)mm / 10U);
 
@@ -1007,7 +1020,7 @@ static void watch_step(uint16_t mm, uint32_t now_ms)
                 0,
                 (int32_t)DREP_OBS_CLR_MAX_MM,
                 (int32_t)DREP_OBS_CLR_MAX_MM,
-                s_seq);
+                s_ctx.seq);
 
             send_profile(halt_prof, false);
             enter_confirm(now_ms);
@@ -1015,7 +1028,7 @@ static void watch_step(uint16_t mm, uint32_t now_ms)
     }
     else
     {
-        s_confirm = 0U;
+        s_ctx.confirm = 0U;
     }
 }
 
@@ -1029,49 +1042,49 @@ static void confirm_step(uint16_t mm, uint32_t now_ms)
         int32_t const spd = drep_ms_speed_x10(ms.w);
 
         is_still = (spd == 0)
-                   && (ms.enc_count[0] == s_confirm_prev_enc[0])
-                   && (ms.enc_count[1] == s_confirm_prev_enc[1]);
-        s_confirm_prev_enc[0] = ms.enc_count[0];
-        s_confirm_prev_enc[1] = ms.enc_count[1];
+                   && (ms.enc_count[0] == s_ctx.confirm_prev_enc[0])
+                   && (ms.enc_count[1] == s_ctx.confirm_prev_enc[1]);
+        s_ctx.confirm_prev_enc[0] = ms.enc_count[0];
+        s_ctx.confirm_prev_enc[1] = ms.enc_count[1];
     }
 
-    if (s_confirm_still_ticks < (uint32_t)OBS_CONFIRM_STILL_TICKS)
+    if (s_ctx.confirm_still_ticks < (uint32_t)OBS_CONFIRM_STILL_TICKS)
     {
         if (is_still)
         {
-            s_confirm_still_ticks++;
+            s_ctx.confirm_still_ticks++;
         }
         else
         {
-            s_confirm_still_ticks = 0U;
+            s_ctx.confirm_still_ticks = 0U;
         }
-        if ((s_confirm_still_ticks < (uint32_t)OBS_CONFIRM_STILL_TICKS)
-            && ((now_ms - s_confirm_start_ms) < (uint32_t)OBS_CONFIRM_MAX_WAIT_MS))
+        if ((s_ctx.confirm_still_ticks < (uint32_t)OBS_CONFIRM_STILL_TICKS)
+            && ((now_ms - s_ctx.confirm_start_ms) < (uint32_t)OBS_CONFIRM_MAX_WAIT_MS))
         {
             return;
         }
-        s_confirm_still_ticks = (uint32_t)OBS_CONFIRM_STILL_TICKS;
+        s_ctx.confirm_still_ticks = (uint32_t)OBS_CONFIRM_STILL_TICKS;
         return;
     }
 
-    if (s_confirm_n < (uint32_t)OBS_CONFIRM_SAMPLES)
+    if (s_ctx.confirm_n < (uint32_t)OBS_CONFIRM_SAMPLES)
     {
-        s_confirm_buf[s_confirm_n] = mm;
-        s_confirm_n++;
+        s_ctx.confirm_buf[s_ctx.confirm_n] = mm;
+        s_ctx.confirm_n++;
     }
-    if (s_confirm_n < (uint32_t)OBS_CONFIRM_SAMPLES)
+    if (s_ctx.confirm_n < (uint32_t)OBS_CONFIRM_SAMPLES)
     {
         return;
     }
 
-    uint16_t const d_conf = obs_median3_mm(s_confirm_buf[0],
-                                           s_confirm_buf[1],
-                                           s_confirm_buf[2]);
+    uint16_t const d_conf = obs_median3_mm(s_ctx.confirm_buf[0],
+                                           s_ctx.confirm_buf[1],
+                                           s_ctx.confirm_buf[2]);
 
     if ((d_conf == 0U) || (d_conf > (uint16_t)(OBS_DETECT_MM + OBS_DETECT_HYST_MM)))
     {
         dbg_printf("[S5] confirm clear (%lu mm), resuming", (unsigned long)d_conf);
-        send_profile(obs_result_to_profile(NULL, s_seq), false);
+        send_profile(obs_result_to_profile(NULL, s_ctx.seq), false);
         enter_watch(0U);
         return;
     }
@@ -1086,36 +1099,36 @@ static void finish_fine3_sweep(void)
 {
     obs_result_t res;
 
-    s_fine3.lo_slot = (uint8_t)OBS_FINE3_LO_SLOT;
-    s_fine3.hi_slot = (uint8_t)OBS_FINE3_HI_SLOT;
-    s_scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(50U);
-    s_scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(130U);
-    s_last_sweep = s_scan;
-    s_sweep_count++;
+    s_ctx.fine3.lo_slot = (uint8_t)OBS_FINE3_LO_SLOT;
+    s_ctx.fine3.hi_slot = (uint8_t)OBS_FINE3_HI_SLOT;
+    s_ctx.scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(50U);
+    s_ctx.scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(130U);
+    s_ctx.last_sweep = s_ctx.scan;
+    s_ctx.sweep_count++;
 
-    if (obs_analyse_fine3(&s_fine3, &res))
+    if (obs_analyse_fine3(&s_ctx.fine3, &res))
     {
         dbg_printf("[S5] obstacle %lu mm @ %lu deg w=%lu clrL=%lu clrR=%lu",
                    (unsigned long)res.near_mm, (unsigned long)res.bearing_deg,
                    (unsigned long)res.width_mm, (unsigned long)res.clear_l_mm,
                    (unsigned long)res.clear_r_mm);
         dump_sweep3(&res);
-        send_profile(obs_result_to_profile(&res, s_seq), true);
+        send_profile(obs_result_to_profile(&res, s_ctx.seq), true);
     }
     else
     {
-        send_profile(obs_result_to_profile(NULL, s_seq), false);
+        send_profile(obs_result_to_profile(NULL, s_ctx.seq), false);
     }
 
-    s_slew_settled = false;
-    s_phase = SCAN_SLEW_HOME;
+    s_ctx.slew_settled = false;
+    s_ctx.phase = (uint8_t)SCAN_SLEW_HOME;
 }
 
 static void sweep_step(uint16_t mm)
 {
-    s_fine3.dist_mm[s_fine3_slot] = mm;
+    s_ctx.fine3.dist_mm[s_ctx.fine3_slot] = mm;
 
-    uint32_t const deg = OBS_FINE3_SLOT_TO_DEG(s_fine3_slot);
+    uint32_t const deg = OBS_FINE3_SLOT_TO_DEG(s_ctx.fine3_slot);
     uint32_t const rem = deg % 10U;
 
     if ((rem <= 1U) || (rem >= 9U))
@@ -1124,15 +1137,15 @@ static void sweep_step(uint16_t mm)
 
         if (slot10 < OBS_BEARING_SLOTS)
         {
-            s_scan.dist_mm[slot10] = mm;
+            s_ctx.scan.dist_mm[slot10] = mm;
         }
     }
 
-    if (s_fine3_slot < (uint32_t)OBS_FINE3_HI_SLOT)
+    if (s_ctx.fine3_slot < (uint32_t)OBS_FINE3_HI_SLOT)
     {
-        s_fine3_slot++;
-        servo_set_deg(OBS_FINE3_SLOT_TO_DEG(s_fine3_slot));
-        s_sweep_settling = true;
+        s_ctx.fine3_slot++;
+        servo_set_deg(OBS_FINE3_SLOT_TO_DEG(s_ctx.fine3_slot));
+        s_ctx.sweep_settling = true;
     }
     else
     {
@@ -1152,13 +1165,14 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
     app_period_t per;
     uint32_t     echo_missed = 0U;
 
-    (void)memset(&s_scan, 0, sizeof(s_scan));
-    (void)memset(&s_fine3, 0, sizeof(s_fine3));
-    (void)memset(&s_last_sweep, 0, sizeof(s_last_sweep));
-    s_scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(50U);
-    s_scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(130U);
+    (void)memset(&s_ctx.scan, 0, sizeof(s_ctx.scan));
+    (void)memset(&s_ctx.fine3, 0, sizeof(s_ctx.fine3));
+    (void)memset(&s_ctx.last_sweep, 0, sizeof(s_ctx.last_sweep));
+    s_ctx.scan.lo_slot = (uint8_t)OBS_DEG_TO_SLOT(50U);
+    s_ctx.scan.hi_slot = (uint8_t)OBS_DEG_TO_SLOT(130U);
+    s_ctx.fine3_slot = (uint32_t)OBS_FINE3_LO_SLOT;
 
-    s_running = true;
+    s_ctx.running = true;
     app_period_init(&per, (uint32_t)OBS_SERVO_STEP_PERIOD_MS);
     enter_watch(0U);
 
@@ -1174,7 +1188,7 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
         uint32_t const now_ms = app_period_now_ms();
         uint32_t const av_state = obs_avoid_get_state();
 
-        switch (s_phase)
+        switch ((scan_phase_t)s_ctx.phase)
         {
             case SCAN_WATCH:
             {
@@ -1215,15 +1229,15 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
             {
                 if (slew_step_toward((uint32_t)OBS_SWEEP_DEG_MIN))
                 {
-                    if (!s_slew_settled)
+                    if (!s_ctx.slew_settled)
                     {
-                        s_slew_settled = true;
+                        s_ctx.slew_settled = true;
                     }
                     else
                     {
-                        s_fine3_slot = (uint32_t)OBS_FINE3_LO_SLOT;
-                        s_sweep_settling = false;
-                        s_phase = SCAN_SWEEP;
+                        s_ctx.fine3_slot = (uint32_t)OBS_FINE3_LO_SLOT;
+                        s_ctx.sweep_settling = false;
+                        s_ctx.phase = (uint8_t)SCAN_SWEEP;
 
                         uint16_t const mm = ping_sweep_bearing_mm(OBS_SWEEP_BUDGET_MS);
 
@@ -1236,13 +1250,13 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
 
             case SCAN_SWEEP:
             {
-                if (s_sweep_settling)
+                if (s_ctx.sweep_settling)
                 {
-                    s_sweep_settling = false;
+                    s_ctx.sweep_settling = false;
                     break;
                 }
 
-                bool const     is_ahead = (s_fine3_slot == OBS_FINE3_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG));
+                bool const     is_ahead = (s_ctx.fine3_slot == OBS_FINE3_DEG_TO_SLOT(OBS_WATCH_AHEAD_DEG));
                 uint16_t const mm = ping_sweep_bearing_mm(OBS_SWEEP_BUDGET_MS);
 
                 record_ping_health(mm, is_ahead, &echo_missed);
@@ -1254,9 +1268,9 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
             {
                 if (slew_step_toward((uint32_t)OBS_WATCH_AHEAD_DEG))
                 {
-                    if (!s_slew_settled)
+                    if (!s_ctx.slew_settled)
                     {
-                        s_slew_settled = true;
+                        s_ctx.slew_settled = true;
                     }
                     else if (avoid_is_manoeuvring(av_state))
                     {
@@ -1302,33 +1316,33 @@ void obs_scan_task_entry(INT stacd, void *p_exinf)
 
 bool obs_scan_is_watching(void)
 {
-    return s_phase == SCAN_WATCH;
+    return s_ctx.phase == (uint8_t)SCAN_WATCH;
 }
 
 bool obs_scan_is_running(void)
 {
-    return s_running;
+    return s_ctx.running;
 }
 
 uint32_t obs_scan_get_profile_count(void)
 {
-    return s_profile_count;
+    return s_ctx.profile_count;
 }
 
 obstacle_profile_t obs_scan_get_last_profile(void)
 {
-    return s_last_profile;
+    return s_ctx.last_profile;
 }
 
 uint32_t obs_scan_get_sweep_count(void)
 {
-    return s_sweep_count;
+    return s_ctx.sweep_count;
 }
 
 void obs_scan_get_last_sweep(obs_scan_t *p_out)
 {
     if (p_out != NULL)
     {
-        *p_out = s_last_sweep;
+        *p_out = s_ctx.last_sweep;
     }
 }

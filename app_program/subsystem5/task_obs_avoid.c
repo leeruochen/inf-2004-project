@@ -121,32 +121,6 @@
 #error "task_obs_avoid.c: OBS_DIAG_PER_LATERAL_M1000 assumes a 45 degree bypass"
 #endif
 
-static bool     s_running = false;
-static uint32_t s_state = OBS_AV_IDLE;
-static uint32_t s_side = OBS_SIDE_LEFT;
-static uint32_t s_step_deadline_ms = 0U;
-static uint32_t s_budget_deadline_ms = 0U;
-static uint32_t s_grace_until_ms = 0U;
-static uint32_t s_leg_out_mm = 0U;
-static uint32_t s_leg_along_mm = 0U;
-static uint32_t s_leg_target_cnt = 0U;
-static int32_t  s_leg_start_enc[2] = { 0, 0 };
-static bool     s_leg_stopping = false;
-static bool     s_line_aligning = false;
-static int32_t  s_turn_start_enc[2] = { 0, 0 };
-static int32_t  s_turn_prev_enc[2] = { 0, 0 };
-static uint32_t s_turn_start_ms = 0U;
-static uint32_t s_turn_last_poll_ms = 0U;
-static uint32_t s_turn_still_ms = 0U;
-static bool     s_turn_moved = false;
-static bool     s_was_nav = false;
-static bool     s_have_seq = false;
-static uint32_t s_last_seq = 0U;
-static uint32_t s_bypass_count = 0U;
-static uint32_t s_abort_count = 0U;
-static uint32_t s_profile_count = 0U;
-static uint32_t s_sent_count = 0U;
-
 typedef enum
 {
     REJOIN_NONE = 0,
@@ -158,8 +132,38 @@ typedef enum
     REJOIN_UNNUDGE
 } rejoin_sub_t;
 
-static rejoin_sub_t s_rejoin_sub = REJOIN_NONE;
-static uint32_t     s_rejoin_unnudge_side = OBS_SIDE_LEFT;
+typedef struct
+{
+    volatile uint8_t  state;                /* OBS_AV_* (0..9) */
+    volatile uint8_t  side;                 /* OBS_SIDE_* (0..1) */
+    uint8_t           rejoin_sub;           /* rejoin_sub_t (0..6) */
+    uint8_t           rejoin_unnudge_side;  /* OBS_SIDE_* (0..1) */
+    uint8_t           last_seq;             /* 2-bit IF-03 sequence (0..3) */
+    volatile bool     running;
+    bool              leg_stopping;
+    bool              line_aligning;
+    bool              turn_moved;
+    bool              was_nav;
+    bool              have_seq;
+    uint32_t          step_deadline_ms;
+    uint32_t          budget_deadline_ms;
+    uint32_t          grace_until_ms;
+    uint32_t          leg_out_mm;
+    uint32_t          leg_along_mm;
+    uint32_t          leg_target_cnt;
+    int32_t           leg_start_enc[2];
+    int32_t           turn_start_enc[2];
+    int32_t           turn_prev_enc[2];
+    uint32_t          turn_start_ms;
+    uint32_t          turn_last_poll_ms;
+    uint32_t          turn_still_ms;
+    volatile uint32_t bypass_count;
+    volatile uint32_t abort_count;
+    volatile uint32_t profile_count;
+    volatile uint32_t sent_count;
+} obs_avoid_ctx_t;
+
+static obs_avoid_ctx_t s_av;
 
 /* ---------------------------------------------------------------------------
  * Pure decisions
@@ -256,7 +260,7 @@ static void send_nav(nav_input_t msg)
 
     if (er >= (ER)E_OK)
     {
-        s_sent_count++;
+        s_av.sent_count++;
     }
     else
     {
@@ -414,8 +418,8 @@ static uint32_t leg_fwd_counts(void)
         return 0U;
     }
 
-    int32_t const dl = (int32_t)((uint32_t)ms.enc_count[0] - (uint32_t)s_leg_start_enc[0]);
-    int32_t const dr = (int32_t)((uint32_t)ms.enc_count[1] - (uint32_t)s_leg_start_enc[1]);
+    int32_t const dl = (int32_t)((uint32_t)ms.enc_count[0] - (uint32_t)s_av.leg_start_enc[0]);
+    int32_t const dr = (int32_t)((uint32_t)ms.enc_count[1] - (uint32_t)s_av.leg_start_enc[1]);
     int32_t const mean = (dl + dr) / 2;
 
     return (mean > 0) ? (uint32_t)mean : 0U;
@@ -438,27 +442,27 @@ static char const *state_name(uint32_t state)
 
 static void enter_state(uint32_t state, uint32_t dwell_ms, uint32_t now_ms)
 {
-    s_state = state;
-    s_leg_stopping = false;
-    s_line_aligning = false;
-    s_step_deadline_ms = now_ms + dwell_ms;
+    s_av.state = (uint8_t)state;
+    s_av.leg_stopping = false;
+    s_av.line_aligning = false;
+    s_av.step_deadline_ms = now_ms + dwell_ms;
     dbg_printf("[S5] avoid -> %s (%lu ms)", state_name(state), (unsigned long)dwell_ms);
 }
 
 static void begin_bounded_manoeuvre(uint32_t state, uint32_t bypass_cmd,
                                     uint32_t max_ms, uint32_t now_ms)
 {
-    s_state = state;
-    s_leg_stopping = false;
-    s_line_aligning = false;
-    s_turn_moved = false;
-    s_turn_still_ms = 0U;
-    s_turn_start_ms = now_ms;
-    s_turn_last_poll_ms = now_ms;
-    snapshot_encoders(s_turn_start_enc);
-    s_turn_prev_enc[0] = s_turn_start_enc[0];
-    s_turn_prev_enc[1] = s_turn_start_enc[1];
-    s_step_deadline_ms = now_ms + max_ms;
+    s_av.state = (uint8_t)state;
+    s_av.leg_stopping = false;
+    s_av.line_aligning = false;
+    s_av.turn_moved = false;
+    s_av.turn_still_ms = 0U;
+    s_av.turn_start_ms = now_ms;
+    s_av.turn_last_poll_ms = now_ms;
+    snapshot_encoders(s_av.turn_start_enc);
+    s_av.turn_prev_enc[0] = s_av.turn_start_enc[0];
+    s_av.turn_prev_enc[1] = s_av.turn_start_enc[1];
+    s_av.step_deadline_ms = now_ms + max_ms;
     dbg_printf("[S5] avoid -> %s (%lu ms max)", state_name(state), (unsigned long)max_ms);
     send_bypass(bypass_cmd);
 }
@@ -474,25 +478,25 @@ static void begin_leg(uint32_t state, uint32_t dist_mm, uint32_t now_ms)
 {
     uint32_t const tmo_ms = leg_timeout_ms(dist_mm);
 
-    s_state = state;
-    s_leg_stopping = false;
-    s_line_aligning = false;
-    s_leg_target_cnt = obs_mm_to_counts(dist_mm);
-    snapshot_encoders(s_leg_start_enc);
-    s_step_deadline_ms = now_ms + tmo_ms;
+    s_av.state = (uint8_t)state;
+    s_av.leg_stopping = false;
+    s_av.line_aligning = false;
+    s_av.leg_target_cnt = obs_mm_to_counts(dist_mm);
+    snapshot_encoders(s_av.leg_start_enc);
+    s_av.step_deadline_ms = now_ms + tmo_ms;
     dbg_printf("[S5] avoid -> %s (%lu mm / %lu cnt, max %lu ms)",
                state_name(state), (unsigned long)dist_mm,
-               (unsigned long)s_leg_target_cnt, (unsigned long)tmo_ms);
+               (unsigned long)s_av.leg_target_cnt, (unsigned long)tmo_ms);
     send_bypass(DREP_BYPASS_CONTINUE);
 }
 
 static void begin_leg_back(uint32_t now_ms)
 {
-    s_state = OBS_AV_LEG_BACK;
-    s_leg_stopping = false;
-    s_line_aligning = false;
-    s_leg_target_cnt = 0U;
-    s_step_deadline_ms = now_ms + OBS_LEG_BACK_MAX_MS;
+    s_av.state = (uint8_t)OBS_AV_LEG_BACK;
+    s_av.leg_stopping = false;
+    s_av.line_aligning = false;
+    s_av.leg_target_cnt = 0U;
+    s_av.step_deadline_ms = now_ms + OBS_LEG_BACK_MAX_MS;
     dbg_printf("[S5] avoid -> %s (%lu ms max)",
                state_name(OBS_AV_LEG_BACK), (unsigned long)OBS_LEG_BACK_MAX_MS);
     send_bypass(DREP_BYPASS_CONTINUE);
@@ -500,8 +504,8 @@ static void begin_leg_back(uint32_t now_ms)
 
 static void begin_pre_turn_stop(uint32_t now_ms)
 {
-    s_leg_stopping = true;
-    s_step_deadline_ms = now_ms + (uint32_t)OBS_PRE_TURN_STOP_MS;
+    s_av.leg_stopping = true;
+    s_av.step_deadline_ms = now_ms + (uint32_t)OBS_PRE_TURN_STOP_MS;
     send_bypass(DREP_BYPASS_STOP);
 }
 
@@ -518,11 +522,11 @@ static bool poll_turn(uint32_t now_ms, uint32_t *p_mean_cnt)
         return false;
     }
 
-    uint32_t const dt_ms = (now_ms >= s_turn_last_poll_ms) ? (now_ms - s_turn_last_poll_ms) : 0U;
-    uint32_t const step_dl = abs_diff_i32(ms.enc_count[0], s_turn_prev_enc[0]);
-    uint32_t const step_dr = abs_diff_i32(ms.enc_count[1], s_turn_prev_enc[1]);
-    uint32_t const tot_dl = abs_diff_i32(ms.enc_count[0], s_turn_start_enc[0]);
-    uint32_t const tot_dr = abs_diff_i32(ms.enc_count[1], s_turn_start_enc[1]);
+    uint32_t const dt_ms = (now_ms >= s_av.turn_last_poll_ms) ? (now_ms - s_av.turn_last_poll_ms) : 0U;
+    uint32_t const step_dl = abs_diff_i32(ms.enc_count[0], s_av.turn_prev_enc[0]);
+    uint32_t const step_dr = abs_diff_i32(ms.enc_count[1], s_av.turn_prev_enc[1]);
+    uint32_t const tot_dl = abs_diff_i32(ms.enc_count[0], s_av.turn_start_enc[0]);
+    uint32_t const tot_dr = abs_diff_i32(ms.enc_count[1], s_av.turn_start_enc[1]);
     uint32_t const mean_cnt = (tot_dl + tot_dr) / 2U;
 
     if (p_mean_cnt != NULL)
@@ -530,29 +534,29 @@ static bool poll_turn(uint32_t now_ms, uint32_t *p_mean_cnt)
         *p_mean_cnt = mean_cnt;
     }
 
-    s_turn_last_poll_ms = now_ms;
-    s_turn_prev_enc[0] = ms.enc_count[0];
-    s_turn_prev_enc[1] = ms.enc_count[1];
+    s_av.turn_last_poll_ms = now_ms;
+    s_av.turn_prev_enc[0] = ms.enc_count[0];
+    s_av.turn_prev_enc[1] = ms.enc_count[1];
 
-    if (!s_turn_moved && ((tot_dl >= (uint32_t)OBS_TURN_MIN_MOVE_CNT)
-                          || (tot_dr >= (uint32_t)OBS_TURN_MIN_MOVE_CNT)))
+    if (!s_av.turn_moved && ((tot_dl >= (uint32_t)OBS_TURN_MIN_MOVE_CNT)
+                             || (tot_dr >= (uint32_t)OBS_TURN_MIN_MOVE_CNT)))
     {
-        s_turn_moved = true;
+        s_av.turn_moved = true;
     }
 
     if ((step_dl > 0U) || (step_dr > 0U))
     {
-        s_turn_still_ms = 0U;
+        s_av.turn_still_ms = 0U;
     }
-    else if (s_turn_moved)
+    else if (s_av.turn_moved)
     {
-        s_turn_still_ms += dt_ms;
-        if (s_turn_still_ms >= (uint32_t)OBS_TURN_STILL_MS)
+        s_av.turn_still_ms += dt_ms;
+        if (s_av.turn_still_ms >= (uint32_t)OBS_TURN_STILL_MS)
         {
             dbg_printf("[S5] %s done: %lu cnt in %lu ms",
-                       state_name(s_state),
+                       state_name((uint32_t)s_av.state),
                        (unsigned long)mean_cnt,
-                       (unsigned long)(now_ms - s_turn_start_ms));
+                       (unsigned long)(now_ms - s_av.turn_start_ms));
             return true;
         }
     }
@@ -574,26 +578,26 @@ static void release(uint32_t now_ms, bool reacquired, bool resume_lf)
     }
     if (reacquired)
     {
-        s_bypass_count++;
+        s_av.bypass_count++;
     }
     send_nav(drep_nav_avoid(DREP_NAV_AVOID_RELEASE, 0U));
     clear_nav_flag(EVF_NAV_AVOID_ACTIVE);
 
-    s_state = OBS_AV_IDLE;
-    s_rejoin_sub = REJOIN_NONE;
-    s_leg_stopping = false;
-    s_line_aligning = false;
-    s_step_deadline_ms = 0U;
-    s_budget_deadline_ms = 0U;
+    s_av.state = (uint8_t)OBS_AV_IDLE;
+    s_av.rejoin_sub = (uint8_t)REJOIN_NONE;
+    s_av.leg_stopping = false;
+    s_av.line_aligning = false;
+    s_av.step_deadline_ms = 0U;
+    s_av.budget_deadline_ms = 0U;
     dbg_printf("[S5] avoid -> IDLE (reacquired=%d)", reacquired ? 1 : 0);
 }
 
 /** Stop the car, count the abort and release authority on a safety fault. */
 static void abort_manoeuvre(uint32_t now_ms, char const *p_why)
 {
-    dbg_printf("[S5] avoid ABORT in %s: %s", state_name(s_state), p_why);
+    dbg_printf("[S5] avoid ABORT in %s: %s", state_name((uint32_t)s_av.state), p_why);
     send_bypass(DREP_BYPASS_STOP);
-    s_abort_count++;
+    s_av.abort_count++;
     release(now_ms, false, false);
 }
 
@@ -601,8 +605,8 @@ static void abort_manoeuvre(uint32_t now_ms, char const *p_why)
 static void handoff_no_line(uint32_t now_ms, char const *p_why)
 {
     dbg_printf("[S5] avoid handoff in %s, line not found: %s",
-               state_name(s_state), p_why);
-    s_abort_count++;
+               state_name((uint32_t)s_av.state), p_why);
+    s_av.abort_count++;
     release(now_ms, false, true);
 }
 
@@ -611,34 +615,34 @@ static void start_rejoin_turn(rejoin_sub_t sub, uint32_t side,
 {
     uint32_t const cmd = (side == OBS_SIDE_LEFT) ? DREP_BYPASS_LEFT : DREP_BYPASS_RIGHT;
 
-    s_rejoin_sub = sub;
+    s_av.rejoin_sub = (uint8_t)sub;
     begin_bounded_manoeuvre(OBS_AV_TURN_STRAIGHT, cmd, max_ms, now_ms);
 }
 
 static void start_rejoin_leg(rejoin_sub_t sub, uint32_t dist_mm, uint32_t now_ms)
 {
-    s_rejoin_sub = sub;
+    s_av.rejoin_sub = (uint8_t)sub;
     begin_leg(OBS_AV_TURN_STRAIGHT, dist_mm, now_ms);
 }
 
 /** Step TURN_STRAIGHT (early line lock) and the directional fallback rejoin. */
 static void handle_turn_straight(uint32_t cur_ms)
 {
-    if (s_leg_stopping)
+    if (s_av.leg_stopping)
     {
-        if ((int32_t)(cur_ms - s_step_deadline_ms) < 0)
+        if ((int32_t)(cur_ms - s_av.step_deadline_ms) < 0)
         {
             return;
         }
-        s_leg_stopping = false;
-        switch (s_rejoin_sub)
+        s_av.leg_stopping = false;
+        switch ((rejoin_sub_t)s_av.rejoin_sub)
         {
             case REJOIN_NUDGE1:
                 start_rejoin_leg(REJOIN_FWD1, (uint32_t)OBS_REJOIN_FWD1_MM, cur_ms);
                 break;
 
             case REJOIN_FWD1:
-                start_rejoin_turn(REJOIN_NUDGE2, s_side,
+                start_rejoin_turn(REJOIN_NUDGE2, (uint32_t)s_av.side,
                                   (uint32_t)OBS_REJOIN_NUDGE2_MAX_MS, cur_ms);
                 break;
 
@@ -647,7 +651,7 @@ static void handle_turn_straight(uint32_t cur_ms)
                 break;
 
             case REJOIN_ALIGN:
-                start_rejoin_turn(REJOIN_UNNUDGE, s_rejoin_unnudge_side,
+                start_rejoin_turn(REJOIN_UNNUDGE, (uint32_t)s_av.rejoin_unnudge_side,
                                   (uint32_t)OBS_REJOIN_NUDGE_MAX_MS, cur_ms);
                 break;
 
@@ -670,7 +674,7 @@ static void handle_turn_straight(uint32_t cur_ms)
 
     uint32_t mean_cnt = 0U;
 
-    switch (s_rejoin_sub)
+    switch ((rejoin_sub_t)s_av.rejoin_sub)
     {
         case REJOIN_NONE:
         {
@@ -681,7 +685,7 @@ static void handle_turn_straight(uint32_t cur_ms)
                 dbg_printf("[S5] straight lock at %lu cnt", (unsigned long)mean_cnt);
                 release(cur_ms, true, true);
             }
-            else if (turn_stopped || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+            else if (turn_stopped || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 if (line_is_found())
                 {
@@ -690,7 +694,7 @@ static void handle_turn_straight(uint32_t cur_ms)
                 else
                 {
                     dbg_puts("[S5] TURN_STRAIGHT ended off-line -> nudge1");
-                    start_rejoin_turn(REJOIN_NUDGE1, other_side(s_side),
+                    start_rejoin_turn(REJOIN_NUDGE1, other_side((uint32_t)s_av.side),
                                       (uint32_t)OBS_REJOIN_NUDGE_MAX_MS, cur_ms);
                 }
             }
@@ -708,7 +712,7 @@ static void handle_turn_straight(uint32_t cur_ms)
                 release(cur_ms, true, true);
             }
             else if ((mean_cnt >= (uint32_t)OBS_REJOIN_NUDGE_CNT)
-                     || turn_stopped || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+                     || turn_stopped || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 begin_pre_turn_stop(cur_ms);
             }
@@ -718,11 +722,11 @@ static void handle_turn_straight(uint32_t cur_ms)
         case REJOIN_FWD1:
             if (line_is_found())
             {
-                s_rejoin_unnudge_side = s_side;
+                s_av.rejoin_unnudge_side = s_av.side;
                 start_rejoin_leg(REJOIN_ALIGN, (uint32_t)OBS_REJOIN_SEARCH_ALIGN_MM, cur_ms);
             }
-            else if ((leg_fwd_counts() >= s_leg_target_cnt)
-                     || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+            else if ((leg_fwd_counts() >= s_av.leg_target_cnt)
+                     || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 dbg_puts("[S5] rejoin fwd1 done, trying other side");
                 begin_pre_turn_stop(cur_ms);
@@ -744,7 +748,7 @@ static void handle_turn_straight(uint32_t cur_ms)
                 release(cur_ms, true, true);
             }
             else if ((mean_cnt >= (uint32_t)OBS_REJOIN_NUDGE2_CNT)
-                     || turn_stopped || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+                     || turn_stopped || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 begin_pre_turn_stop(cur_ms);
             }
@@ -754,11 +758,11 @@ static void handle_turn_straight(uint32_t cur_ms)
         case REJOIN_FWD2:
             if (line_is_found())
             {
-                s_rejoin_unnudge_side = other_side(s_side);
+                s_av.rejoin_unnudge_side = (uint8_t)other_side((uint32_t)s_av.side);
                 start_rejoin_leg(REJOIN_ALIGN, (uint32_t)OBS_REJOIN_SEARCH_ALIGN_MM, cur_ms);
             }
-            else if ((leg_fwd_counts() >= s_leg_target_cnt)
-                     || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+            else if ((leg_fwd_counts() >= s_av.leg_target_cnt)
+                     || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 handoff_no_line(cur_ms, "rejoin search exhausted");
             }
@@ -769,8 +773,8 @@ static void handle_turn_straight(uint32_t cur_ms)
             break;
 
         case REJOIN_ALIGN:
-            if ((leg_fwd_counts() >= s_leg_target_cnt)
-                || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+            if ((leg_fwd_counts() >= s_av.leg_target_cnt)
+                || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 begin_pre_turn_stop(cur_ms);
             }
@@ -787,7 +791,7 @@ static void handle_turn_straight(uint32_t cur_ms)
 
             if (((mean_cnt >= (uint32_t)OBS_REJOIN_UNNUDGE_LOCK_CNT) && line_is_found())
                 || (mean_cnt >= (uint32_t)OBS_REJOIN_NUDGE_CNT)
-                || turn_stopped || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+                || turn_stopped || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 dbg_printf("[S5] rejoin unnudge done at %lu cnt", (unsigned long)mean_cnt);
                 release(cur_ms, true, true);
@@ -802,10 +806,10 @@ static void start_manoeuvre(obstacle_profile_t prof, uint32_t now_ms)
 {
     uint32_t side = OBS_SIDE_LEFT;
 
-    s_rejoin_sub = REJOIN_NONE;
+    s_av.rejoin_sub = (uint8_t)REJOIN_NONE;
     set_nav_flag(EVF_NAV_AVOID_ACTIVE);
     clear_nav_flag(EVF_NAV_LINE_REACQUIRED);
-    s_budget_deadline_ms = now_ms + (uint32_t)OBS_BYPASS_BUDGET_MS + OBS_LEG_BACK_MAX_MS;
+    s_av.budget_deadline_ms = now_ms + (uint32_t)OBS_BYPASS_BUDGET_MS + OBS_LEG_BACK_MAX_MS;
 
     if (!obs_choose_side(prof, &side))
     {
@@ -822,26 +826,26 @@ static void start_manoeuvre(obstacle_profile_t prof, uint32_t now_ms)
     uint32_t const dist_mm = drep_obs_distance_cm(prof) * 10U;
     uint32_t const width_mm = drep_obs_width_mm(prof);
 
-    s_side = side;
-    s_leg_out_mm = obs_leg_out_mm(width_mm);
-    s_leg_along_mm = obs_leg_along_mm(dist_mm, width_mm);
+    s_av.side = (uint8_t)side;
+    s_av.leg_out_mm = obs_leg_out_mm(width_mm);
+    s_av.leg_along_mm = obs_leg_along_mm(dist_mm, width_mm);
 
     dbg_printf("[S5] bypass %s: d=%lu cm w=%lu mm out=%lu mm (%lu cnt) along=%lu mm (%lu cnt)",
-               (s_side == OBS_SIDE_LEFT) ? "LEFT" : "RIGHT",
+               (s_av.side == (uint8_t)OBS_SIDE_LEFT) ? "LEFT" : "RIGHT",
                (unsigned long)drep_obs_distance_cm(prof),
                (unsigned long)width_mm,
-               (unsigned long)s_leg_out_mm,
-               (unsigned long)obs_mm_to_counts(s_leg_out_mm),
-               (unsigned long)s_leg_along_mm,
-               (unsigned long)obs_mm_to_counts(s_leg_along_mm));
+               (unsigned long)s_av.leg_out_mm,
+               (unsigned long)obs_mm_to_counts(s_av.leg_out_mm),
+               (unsigned long)s_av.leg_along_mm,
+               (unsigned long)obs_mm_to_counts(s_av.leg_along_mm));
 
-    begin_turn(OBS_AV_TURN_OUT, s_side, now_ms);
+    begin_turn(OBS_AV_TURN_OUT, (uint32_t)s_av.side, now_ms);
 }
 
 /** One manoeuvre step completed or timed out: advance to the next. */
 static void step_expired(uint32_t now_ms)
 {
-    switch (s_state)
+    switch ((uint32_t)s_av.state)
     {
         case OBS_AV_SLOW:
             /* Scan timed out or object gone: resume line following. */
@@ -849,32 +853,32 @@ static void step_expired(uint32_t now_ms)
             break;
 
         case OBS_AV_TURN_OUT:
-            begin_leg(OBS_AV_LEG_OUT, s_leg_out_mm, now_ms);
+            begin_leg(OBS_AV_LEG_OUT, s_av.leg_out_mm, now_ms);
             break;
 
         case OBS_AV_LEG_OUT:
-            if (!s_leg_stopping)
+            if (!s_av.leg_stopping)
             {
                 begin_pre_turn_stop(now_ms);
             }
             else
             {
-                begin_turn(OBS_AV_TURN_IN1, other_side(s_side), now_ms);
+                begin_turn(OBS_AV_TURN_IN1, other_side((uint32_t)s_av.side), now_ms);
             }
             break;
 
         case OBS_AV_TURN_IN1:
-            begin_leg(OBS_AV_LEG_ALONG, s_leg_along_mm, now_ms);
+            begin_leg(OBS_AV_LEG_ALONG, s_av.leg_along_mm, now_ms);
             break;
 
         case OBS_AV_LEG_ALONG:
-            if (!s_leg_stopping)
+            if (!s_av.leg_stopping)
             {
                 begin_pre_turn_stop(now_ms);
             }
             else
             {
-                begin_turn(OBS_AV_TURN_IN2, other_side(s_side), now_ms);
+                begin_turn(OBS_AV_TURN_IN2, other_side((uint32_t)s_av.side), now_ms);
             }
             break;
 
@@ -883,11 +887,11 @@ static void step_expired(uint32_t now_ms)
             break;
 
         case OBS_AV_LEG_BACK:
-            if (s_leg_stopping)
+            if (s_av.leg_stopping)
             {
-                begin_turn(OBS_AV_TURN_STRAIGHT, s_side, now_ms);
+                begin_turn(OBS_AV_TURN_STRAIGHT, (uint32_t)s_av.side, now_ms);
             }
-            else if (s_line_aligning)
+            else if (s_av.line_aligning)
             {
                 begin_pre_turn_stop(now_ms);
             }
@@ -918,33 +922,33 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
 {
     uint32_t const seq = drep_obs_seq(prof);
 
-    s_profile_count++;
+    s_av.profile_count++;
 
-    if (s_have_seq && (seq == s_last_seq))
+    if (s_av.have_seq && (seq == (uint32_t)s_av.last_seq))
     {
         return;
     }
-    s_have_seq = true;
-    s_last_seq = seq;
+    s_av.have_seq = true;
+    s_av.last_seq = (uint8_t)seq;
 
     if (drep_obs_no_echo(prof))
     {
-        if (s_state == OBS_AV_SLOW)
+        if (s_av.state == (uint8_t)OBS_AV_SLOW)
         {
             release(now_ms, false, true);
         }
         return;
     }
 
-    if ((s_state == OBS_AV_IDLE)
-        && ((int32_t)(now_ms - s_grace_until_ms) < 0))
+    if ((s_av.state == (uint8_t)OBS_AV_IDLE)
+        && ((int32_t)(now_ms - s_av.grace_until_ms) < 0))
     {
         return;
     }
 
     uint32_t const dist_mm = drep_obs_distance_cm(prof) * 10U;
 
-    if (s_state == OBS_AV_IDLE)
+    if (s_av.state == (uint8_t)OBS_AV_IDLE)
     {
         if (dist_mm > ((uint32_t)OBS_D_DETECT_CM * 10U))
         {
@@ -956,13 +960,13 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
         clear_nav_flag(EVF_NAV_LINE_REACQUIRED);
         send_nav(drep_nav_avoid(DREP_NAV_AVOID_SLOW, 0U));
         send_bypass(DREP_BYPASS_STOP);
-        s_budget_deadline_ms = now_ms + (uint32_t)OBS_BYPASS_BUDGET_MS
-                               + OBS_LEG_BACK_MAX_MS;
+        s_av.budget_deadline_ms = now_ms + (uint32_t)OBS_BYPASS_BUDGET_MS
+                                  + OBS_LEG_BACK_MAX_MS;
         enter_state(OBS_AV_SLOW, (uint32_t)OBS_SCAN_WAIT_MAX_MS, now_ms);
         return;
     }
 
-    if ((s_state == OBS_AV_SLOW) || (s_state == OBS_AV_BLOCKED))
+    if ((s_av.state == (uint8_t)OBS_AV_SLOW) || (s_av.state == (uint8_t)OBS_AV_BLOCKED))
     {
         uint32_t const width_mm = drep_obs_width_mm(prof);
 
@@ -973,7 +977,7 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
         }
         if (dist_mm > (((uint32_t)OBS_D_DETECT_CM * 10U) + (uint32_t)OBS_DETECT_HYST_MM))
         {
-            if (s_state == OBS_AV_SLOW)
+            if (s_av.state == (uint8_t)OBS_AV_SLOW)
             {
                 release(now_ms, false, true);
             }
@@ -989,39 +993,39 @@ static void on_profile(obstacle_profile_t prof, uint32_t now_ms)
 
 void obs_avoid_init(void)
 {
-    s_state = OBS_AV_IDLE;
-    s_rejoin_sub = REJOIN_NONE;
-    s_side = OBS_SIDE_LEFT;
-    s_rejoin_unnudge_side = OBS_SIDE_LEFT;
-    s_step_deadline_ms = 0U;
-    s_budget_deadline_ms = 0U;
-    s_grace_until_ms = 0U;
-    s_leg_out_mm = 0U;
-    s_leg_along_mm = 0U;
-    s_leg_target_cnt = 0U;
-    s_leg_stopping = false;
-    s_line_aligning = false;
-    s_turn_moved = false;
-    s_turn_still_ms = 0U;
-    s_was_nav = false;
-    s_have_seq = false;
-    s_last_seq = 0U;
+    s_av.state = (uint8_t)OBS_AV_IDLE;
+    s_av.rejoin_sub = (uint8_t)REJOIN_NONE;
+    s_av.side = (uint8_t)OBS_SIDE_LEFT;
+    s_av.rejoin_unnudge_side = (uint8_t)OBS_SIDE_LEFT;
+    s_av.step_deadline_ms = 0U;
+    s_av.budget_deadline_ms = 0U;
+    s_av.grace_until_ms = 0U;
+    s_av.leg_out_mm = 0U;
+    s_av.leg_along_mm = 0U;
+    s_av.leg_target_cnt = 0U;
+    s_av.leg_stopping = false;
+    s_av.line_aligning = false;
+    s_av.turn_moved = false;
+    s_av.turn_still_ms = 0U;
+    s_av.was_nav = false;
+    s_av.have_seq = false;
+    s_av.last_seq = 0U;
 }
 
 void obs_avoid_abandon(void)
 {
-    if (s_state != OBS_AV_IDLE)
+    if (s_av.state != (uint8_t)OBS_AV_IDLE)
     {
-        dbg_printf("[S5] avoid abandon in %s: run starting", state_name(s_state));
+        dbg_printf("[S5] avoid abandon in %s: run starting", state_name((uint32_t)s_av.state));
     }
     clear_nav_flag(EVF_NAV_AVOID_ACTIVE | EVF_NAV_LINE_REACQUIRED);
-    s_state = OBS_AV_IDLE;
-    s_rejoin_sub = REJOIN_NONE;
-    s_leg_stopping = false;
-    s_line_aligning = false;
-    s_step_deadline_ms = 0U;
-    s_budget_deadline_ms = 0U;
-    s_grace_until_ms = app_period_now_ms() + (uint32_t)OBS_START_GRACE_MS;
+    s_av.state = (uint8_t)OBS_AV_IDLE;
+    s_av.rejoin_sub = (uint8_t)REJOIN_NONE;
+    s_av.leg_stopping = false;
+    s_av.line_aligning = false;
+    s_av.step_deadline_ms = 0U;
+    s_av.budget_deadline_ms = 0U;
+    s_av.grace_until_ms = app_period_now_ms() + (uint32_t)OBS_START_GRACE_MS;
 }
 
 void obs_avoid_task_entry(INT stacd, void *p_exinf)
@@ -1029,34 +1033,34 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
     (void)stacd;
     (void)p_exinf;
 
-    s_running = true;
+    s_av.running = true;
 
     for (;;)
     {
         uint32_t const vc_pre = vc_get_system_state();
         bool const     nav_pre = vc_is_navigating(vc_pre);
 
-        if (nav_pre && !s_was_nav)
+        if (nav_pre && !s_av.was_nav)
         {
             drain_obstacle_mbf();
-            s_have_seq = false;
+            s_av.have_seq = false;
             clear_nav_flag(EVF_NAV_AVOID_ACTIVE | EVF_NAV_LINE_REACQUIRED);
-            s_was_nav = true;
+            s_av.was_nav = true;
         }
 
         uint32_t const now_ms = app_period_now_ms();
         uint32_t       wait_ms = OBS_IDLE_POLL_MS;
 
-        if (s_state != OBS_AV_IDLE)
+        if (s_av.state != (uint8_t)OBS_AV_IDLE)
         {
-            int32_t const  left = (int32_t)(s_step_deadline_ms - now_ms);
-            uint32_t const poll_cap_ms = state_uses_turn_poll(s_state, s_rejoin_sub)
+            int32_t const  left = (int32_t)(s_av.step_deadline_ms - now_ms);
+            uint32_t const poll_cap_ms = state_uses_turn_poll((uint32_t)s_av.state, (rejoin_sub_t)s_av.rejoin_sub)
                                          ? (uint32_t)OBS_TURN_POLL_MS
-                                         : (state_uses_leg_poll(s_state, s_rejoin_sub)
+                                         : (state_uses_leg_poll((uint32_t)s_av.state, (rejoin_sub_t)s_av.rejoin_sub)
                                             ? (uint32_t)OBS_CTRL_POLL_MS : 0U);
 
             wait_ms = (left > 0) ? (uint32_t)left : 0U;
-            if ((poll_cap_ms != 0U) && !s_leg_stopping && (wait_ms > poll_cap_ms))
+            if ((poll_cap_ms != 0U) && !s_av.leg_stopping && (wait_ms > poll_cap_ms))
             {
                 wait_ms = poll_cap_ms;
             }
@@ -1069,30 +1073,30 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
 
         if (!nav_now)
         {
-            if (s_state != OBS_AV_IDLE)
+            if (s_av.state != (uint8_t)OBS_AV_IDLE)
             {
                 clear_nav_flag(EVF_NAV_AVOID_ACTIVE | EVF_NAV_LINE_REACQUIRED);
-                s_state = OBS_AV_IDLE;
-                s_rejoin_sub = REJOIN_NONE;
-                s_leg_stopping = false;
-                s_line_aligning = false;
-                s_step_deadline_ms = 0U;
-                s_budget_deadline_ms = 0U;
+                s_av.state = (uint8_t)OBS_AV_IDLE;
+                s_av.rejoin_sub = (uint8_t)REJOIN_NONE;
+                s_av.leg_stopping = false;
+                s_av.line_aligning = false;
+                s_av.step_deadline_ms = 0U;
+                s_av.budget_deadline_ms = 0U;
                 dbg_puts("[S5] avoid reset: VC idle");
             }
-            s_was_nav = false;
+            s_av.was_nav = false;
             continue;
         }
 
-        if (!s_was_nav)
+        if (!s_av.was_nav)
         {
             clear_nav_flag(EVF_NAV_AVOID_ACTIVE | EVF_NAV_LINE_REACQUIRED);
-            s_have_seq = false;
-            s_was_nav = true;
+            s_av.have_seq = false;
+            s_av.was_nav = true;
         }
 
         /* Safety outranks everything (design.md section 4 precedence). */
-        if ((s_state != OBS_AV_IDLE) && safety_blocks())
+        if ((s_av.state != (uint8_t)OBS_AV_IDLE) && safety_blocks())
         {
             abort_manoeuvre(woke_ms, "safety fault latched");
             continue;
@@ -1111,7 +1115,7 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
             /* E_TMOUT: normal step poll / deadline wakeup. */
         }
 
-        if (s_state == OBS_AV_IDLE)
+        if (s_av.state == (uint8_t)OBS_AV_IDLE)
         {
             continue;
         }
@@ -1119,9 +1123,9 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
         uint32_t const cur_ms = app_period_now_ms();
 
         /* Whole-manoeuvre safety budget. */
-        if ((int32_t)(cur_ms - s_budget_deadline_ms) >= 0)
+        if ((int32_t)(cur_ms - s_av.budget_deadline_ms) >= 0)
         {
-            if (s_state == OBS_AV_BLOCKED)
+            if (s_av.state == (uint8_t)OBS_AV_BLOCKED)
             {
                 abort_manoeuvre(cur_ms, "blocked, budget spent");
             }
@@ -1132,24 +1136,24 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
             continue;
         }
 
-        if (s_state == OBS_AV_TURN_STRAIGHT)
+        if (s_av.state == (uint8_t)OBS_AV_TURN_STRAIGHT)
         {
             handle_turn_straight(cur_ms);
             continue;
         }
 
-        if (state_is_turn_or_blocked(s_state))
+        if (state_is_turn_or_blocked((uint32_t)s_av.state))
         {
-            if (poll_turn(cur_ms, NULL) || ((int32_t)(cur_ms - s_step_deadline_ms) >= 0))
+            if (poll_turn(cur_ms, NULL) || ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0))
             {
                 step_expired(cur_ms);
             }
             continue;
         }
 
-        if (s_state == OBS_AV_SLOW)
+        if (s_av.state == (uint8_t)OBS_AV_SLOW)
         {
-            if ((int32_t)(cur_ms - s_step_deadline_ms) >= 0)
+            if ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0)
             {
                 step_expired(cur_ms);
             }
@@ -1157,37 +1161,37 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
         }
 
         /* Straight legs: LEG_OUT, LEG_ALONG, LEG_BACK. */
-        if (s_leg_stopping)
+        if (s_av.leg_stopping)
         {
-            if ((int32_t)(cur_ms - s_step_deadline_ms) >= 0)
+            if ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0)
             {
                 step_expired(cur_ms);
             }
             continue;
         }
 
-        if ((s_state == OBS_AV_LEG_BACK) && !s_line_aligning && line_is_found())
+        if ((s_av.state == (uint8_t)OBS_AV_LEG_BACK) && !s_av.line_aligning && line_is_found())
         {
-            snapshot_encoders(s_leg_start_enc);
-            s_line_aligning = true;
-            s_leg_target_cnt = obs_mm_to_counts((uint32_t)OBS_REJOIN_ALIGN_MM);
-            s_step_deadline_ms = cur_ms + leg_timeout_ms((uint32_t)OBS_REJOIN_ALIGN_MM);
+            snapshot_encoders(s_av.leg_start_enc);
+            s_av.line_aligning = true;
+            s_av.leg_target_cnt = obs_mm_to_counts((uint32_t)OBS_REJOIN_ALIGN_MM);
+            s_av.step_deadline_ms = cur_ms + leg_timeout_ms((uint32_t)OBS_REJOIN_ALIGN_MM);
             dbg_printf("[S5] line found on LEG_BACK, aligning axle %lu mm",
                        (unsigned long)OBS_REJOIN_ALIGN_MM);
         }
 
-        if ((s_state == OBS_AV_LEG_OUT) || (s_state == OBS_AV_LEG_ALONG) || s_line_aligning)
+        if ((s_av.state == (uint8_t)OBS_AV_LEG_OUT) || (s_av.state == (uint8_t)OBS_AV_LEG_ALONG) || s_av.line_aligning)
         {
-            if (leg_fwd_counts() >= s_leg_target_cnt)
+            if (leg_fwd_counts() >= s_av.leg_target_cnt)
             {
                 dbg_printf("[S5] %s leg target %lu cnt reached -> stopping",
-                           state_name(s_state), (unsigned long)s_leg_target_cnt);
+                           state_name((uint32_t)s_av.state), (unsigned long)s_av.leg_target_cnt);
                 begin_pre_turn_stop(cur_ms);
                 continue;
             }
         }
 
-        if ((int32_t)(cur_ms - s_step_deadline_ms) >= 0)
+        if ((int32_t)(cur_ms - s_av.step_deadline_ms) >= 0)
         {
             step_expired(cur_ms);
         }
@@ -1201,35 +1205,35 @@ void obs_avoid_task_entry(INT stacd, void *p_exinf)
 
 bool obs_avoid_is_running(void)
 {
-    return s_running;
+    return s_av.running;
 }
 
 uint32_t obs_avoid_get_state(void)
 {
-    return s_state;
+    return (uint32_t)s_av.state;
 }
 
 uint32_t obs_avoid_get_side(void)
 {
-    return s_side;
+    return (uint32_t)s_av.side;
 }
 
 uint32_t obs_avoid_get_bypass_count(void)
 {
-    return s_bypass_count;
+    return s_av.bypass_count;
 }
 
 uint32_t obs_avoid_get_abort_count(void)
 {
-    return s_abort_count;
+    return s_av.abort_count;
 }
 
 uint32_t obs_avoid_get_profile_count(void)
 {
-    return s_profile_count;
+    return s_av.profile_count;
 }
 
 uint32_t obs_avoid_get_sent_count(void)
 {
-    return s_sent_count;
+    return s_av.sent_count;
 }

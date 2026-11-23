@@ -41,24 +41,17 @@
 /** Every Code 39 character has exactly 3 wide elements of 9 ("3 of 9"). */
 #define BC_WIDE_PER_CHAR            (3U)
 
-/** One letter and its pattern. */
-typedef struct
+/* A-Z only (module clarification, 1 Nov 2026).  Letter is implicit ('A' + idx).
+ * Digits and symbols are valid Code 39 but rejected (BC_ERR_NOT_LETTER). */
+static uint16_t const s_letter_patterns[BC_LETTERS] =
 {
-    char     letter;
-    uint16_t pattern;
-} bc_letter_t;
-
-/* A-Z only (module clarification, 1 Nov 2026).  Digits and symbols are
- * valid Code 39 but rejected (BC_ERR_NOT_LETTER). */
-static bc_letter_t const s_letters[BC_LETTERS] =
-{
-    { 'A', 0x109U }, { 'B', 0x049U }, { 'C', 0x148U }, { 'D', 0x019U },
-    { 'E', 0x118U }, { 'F', 0x058U }, { 'G', 0x00DU }, { 'H', 0x10CU },
-    { 'I', 0x04CU }, { 'J', 0x01CU }, { 'K', 0x103U }, { 'L', 0x043U },
-    { 'M', 0x142U }, { 'N', 0x013U }, { 'O', 0x112U }, { 'P', 0x052U },
-    { 'Q', 0x007U }, { 'R', 0x106U }, { 'S', 0x046U }, { 'T', 0x016U },
-    { 'U', 0x181U }, { 'V', 0x0C1U }, { 'W', 0x1C0U }, { 'X', 0x091U },
-    { 'Y', 0x190U }, { 'Z', 0x0D0U }
+    0x109U, 0x049U, 0x148U, 0x019U,     /* A..D */
+    0x118U, 0x058U, 0x00DU, 0x10CU,     /* E..H */
+    0x04CU, 0x01CU, 0x103U, 0x043U,     /* I..L */
+    0x142U, 0x013U, 0x112U, 0x052U,     /* M..P */
+    0x007U, 0x106U, 0x046U, 0x016U,     /* Q..T */
+    0x181U, 0x0C1U, 0x1C0U, 0x091U,     /* U..X */
+    0x190U, 0x0D0U                      /* Y..Z */
 };
 
 /* Median of n widths (n <= BC_CODED_BARS): an insertion-sorted copy, the
@@ -93,33 +86,26 @@ static bool bc_is_wide(uint32_t width_um, uint32_t median_um, uint32_t ratio_x10
     return ((uint64_t)width_um * BC_RATIO_SCALE) > ((uint64_t)median_um * ratio_x100);
 }
 
-/* Number of wide elements (set bits) in a 9-bit character pattern. */
+/* Number of wide elements (set bits) in a 9-bit character pattern (SWAR, 0 loops). */
 static uint32_t bc_wide_count(uint32_t pattern)
 {
-    uint32_t n = 0U;
-    uint32_t e;
+    uint32_t v = pattern & 0x1FFU;
 
-    for (e = 0U; e < BC_CHAR_ELEMENTS; e++)
-    {
-        n += (pattern >> e) & 1U;
-    }
-
-    return n;
+    v = v - ((v >> 1U) & 0x555U);
+    v = (v & 0x333U) + ((v >> 2U) & 0x333U);
+    return ((v + (v >> 4U)) & 0x0FU) + (v >> 8U);
 }
 
-/* A 9-bit pattern with its element order reversed: what the same character
- * looks like when the sensor crosses it the other way. */
+/* A 9-bit pattern with its element order reversed (SWAR, 0 loops): what the
+ * same character looks like when the sensor crosses it the other way. */
 static uint32_t bc_mirror(uint32_t pattern)
 {
-    uint32_t m = 0U;
-    uint32_t e;
+    uint32_t b = pattern & 0xFFU;
 
-    for (e = 0U; e < BC_CHAR_ELEMENTS; e++)
-    {
-        m = (m << 1U) | ((pattern >> e) & 1U);
-    }
-
-    return m;
+    b = ((b & 0xAAU) >> 1U) | ((b & 0x55U) << 1U);
+    b = ((b & 0xCCU) >> 2U) | ((b & 0x33U) << 2U);
+    b = ((b & 0xF0U) >> 4U) | ((b & 0x0FU) << 4U);
+    return (b << 1U) | ((pattern >> 8U) & 1U);
 }
 
 /* Width of each of the 27 coded elements (each with its own speed, NFR9),
@@ -257,9 +243,9 @@ bc_result_t bc_decode(bc_element_t const p_elem[], uint32_t count,
         result = BC_ERR_NOT_LETTER;
         for (i = 0U; i < BC_LETTERS; i++)
         {
-            if (data == s_letters[i].pattern)
+            if (data == (uint32_t)s_letter_patterns[i])
             {
-                letter = s_letters[i].letter;
+                letter = (char)('A' + (char)i);
                 result = BC_OK;
             }
         }
