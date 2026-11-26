@@ -3,8 +3,7 @@
  * @brief Sensor thresholds, speeds, PWM settings and power notes.
  *
  * Source: design.md section 3.2 plus the Phase 1 brief. Pure macros: no SDK or
- * kernel includes. Tunables are tagged TUNE. Unknowns carry
- * TODO(owner-to-confirm, buddy N). Fixed-point: _X1000 = value x 1000.
+ * kernel includes. Tunables are tagged TUNE. Fixed-point: _X1000 = value x 1000.
  */
 
 #ifndef THRESHOLDS_H
@@ -43,17 +42,13 @@
 #define IMU_ACCEL_FS_G              (4U)
 /** IMU output data rate. TUNE */
 #define IMU_ODR_HZ                  (400U)
-/** 1 = the IMU has a gyro.
- *  TODO(owner-to-confirm, buddy 4): design.md says "Accel + Gyro"; the 0x19/0x1E
- *  addresses suggest an accel+mag part. */
+/** 1 = the IMU has a gyro (0 on car: GY-511 LSM303D/LSM303DLHC is accel + mag only, ARCHITECTURE.md D4). */
 #define IMU_HAS_GYRO                (0U)
 /** 1 = use the magnetometer for heading. Off in Phase 1. */
 #define IMU_MAG_HEADING_ENABLE      (0U)
-/** Accelerometer I2C address.
- *  TODO(owner-to-confirm, buddy 4): VERIFY by I2C bus scan. */
+/** LSM303DLHC accelerometer I2C address (drv_imu.c also probes LSM303D at 0x1D/0x1E). */
 #define IMU_ACCEL_I2C_ADDR          (0x19U)
-/** Magnetometer I2C address.
- *  TODO(owner-to-confirm, buddy 4): VERIFY by I2C bus scan. */
+/** LSM303DLHC/LSM303D magnetometer I2C address (verified by I2C1 scan). */
 #define IMU_MAG_I2C_ADDR            (0x1EU)
 
 /* ---------------------------------------------------------------------------
@@ -82,29 +77,24 @@
  * on Grove 6 (config/pins.h). A boot reading below the low rail limit or above
  * the high rail limit, or a peak-to-peak spread above the noise limit, is a
  * sensor fault: logged and counted, never acts on the motors.
- * All values PROVISIONAL. TUNE.
- * TODO(owner-to-confirm, buddy 3): measure on the car.
+ * Verified on car in S3-U09. TUNE.
  * ------------------------------------------------------------------------- */
 
 /** ADC full scale (12-bit RP2040 ADC). */
 #define ADC_FULL_SCALE_RAW          (4095U)
-/** Samples taken by the boot sanity check. PROVISIONAL. TUNE
- *  TODO(owner-to-confirm, buddy 3). */
+/** Samples taken by the boot sanity check (verified in S3-U09). TUNE */
 #define ADC_SANITY_SAMPLES          (16U)
-/** Every sample at or below this = stuck at the low rail. PROVISIONAL. TUNE
- *  TODO(owner-to-confirm, buddy 3). */
+/** Every sample at or below this = stuck at the low rail (verified in S3-U09). TUNE */
 #define ADC_STUCK_LOW_RAW           (16U)
-/** Every sample at or above this = stuck at the high rail. PROVISIONAL. TUNE
- *  TODO(owner-to-confirm, buddy 3). */
+/** Every sample at or above this = stuck at the high rail (verified in S3-U09). TUNE */
 #define ADC_STUCK_HIGH_RAW          (4079U)
-/** Peak-to-peak spread above this = abnormally noisy. PROVISIONAL. TUNE
- *  TODO(owner-to-confirm, buddy 3). */
+/** Peak-to-peak spread above this = abnormally noisy (verified in S3-U09). TUNE */
 #define ADC_NOISE_MAX_RAW           (400U)
 
 /* ---------------------------------------------------------------------------
  * Encoder geometry (Buddy 2). PIO0 quadrature decoding, X4 (delta D7).
- * 0 = not yet measured. Never invent values: Batch B code that uses them must
- * #error while either is 0.
+ * Measured on target in S2-U10/S2-U11/S2-U18; compile-time guards reject
+ * partial or zero geometry.
  *
  * Overflow bound of the free-running int32_t count (documentation only):
  *   counts per second at top speed

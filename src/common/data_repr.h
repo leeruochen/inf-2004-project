@@ -15,14 +15,12 @@
  *    - signed fields are two's complement and are sign-extended on unpack;
  *    - every multi-byte wire field is little-endian.
  *
- *  Field meanings still waiting for their owner (placeholders, as proposed
- *  in docs/DATA_REPRESENTATION.md):
- *    - steering sign: steer > 0 = line to the car's RIGHT = steer right.
- *      TODO(owner-to-confirm, buddy 3)
- *    - bypass command values: stop, continue, left, right, reverse.
- *      TODO(owner-to-confirm, buddy 5)
- *    - the 2-bit obstacle sequence number (kept).  TODO(owner-to-confirm, buddy 5)
- *    - telemetry event types.  TODO(owner-to-confirm, buddy 1)
+ *  Confirmed interface conventions (docs/DATA_REPRESENTATION.md,
+ *  ARCHITECTURE.md D8-D11):
+ *    - steering sign: steer > 0 = line to the car's RIGHT = steer right;
+ *    - bypass command values: stop, continue, left, right, reverse;
+ *    - 2-bit obstacle profile sequence number (0..3);
+ *    - telemetry event types: DREP_TEL_HUMP..DREP_TEL_STATE (1..4).
  */
 
 #ifndef DATA_REPR_H
@@ -124,8 +122,7 @@ static inline int32_t drep_clamp(int32_t v, int32_t lo, int32_t hi, bool *p_oor)
 #define DREP_NAV_REMOTE_TYPES       (3U)
 
 /* Steering, payload of LINE/STEER: Q7, -128..+127 = -1.0..+0.992 of full
- * scale.  Sign: TODO(owner-to-confirm, buddy 3), proposal: > 0 = line to the
- * car's RIGHT = steer right (sensors are CENTRE + RIGHT, ARCHITECTURE.md D11). */
+ * scale.  Sign: > 0 = line to the car's RIGHT = steer right (ARCHITECTURE.md D11). */
 #define DREP_STEER_Q7_MIN           (-128)
 #define DREP_STEER_Q7_MAX           (127)
 
@@ -137,7 +134,7 @@ static inline int32_t drep_clamp(int32_t v, int32_t lo, int32_t hi, bool *p_oor)
 #define DREP_BC_CMD_BITS            (2U)
 #define DREP_BC_CMD_COUNT           (4U)
 
-/* Bypass commands, with AVOID/BYPASS.  TODO(owner-to-confirm, buddy 5). */
+/* Bypass commands, with AVOID/BYPASS (DREP_BYPASS_*). */
 #define DREP_BYPASS_STOP            (0U)
 #define DREP_BYPASS_CONTINUE        (1U)
 #define DREP_BYPASS_LEFT            (2U)
@@ -370,7 +367,7 @@ static inline bool drep_mc_valid(motion_cmd_t m)
 #define DREP_OBS_CLRL_SHIFT         (20U)
 #define DREP_OBS_CLR_BITS           (7U)
 #define DREP_OBS_SEQ_SHIFT          (27U)
-#define DREP_OBS_SEQ_BITS           (2U)    /**< TODO(owner-to-confirm, buddy 5): kept */
+#define DREP_OBS_SEQ_BITS           (2U)    /**< 2-bit obstacle profile sequence (0..3) */
 #define DREP_OBS_OOR_SHIFT          (29U)
 #define DREP_OBS_LO_BITS            (30U)
 #define DREP_OBS_CLRR_SHIFT         (0U)    /**< in hi */
@@ -526,7 +523,7 @@ static inline int32_t drep_pitch_q1(int32_t pitch_half_deg, bool *p_oor)
  * IF-04 tel_evt_t (MBF_TELEMETRY): header word + one payload word
  *   hdr: [4:0] type  [28:5] timestamp ms (24 bits, wraps after 4.66 h)
  *        [31:29] flags: [29] OOR, [31:30] spare
- * Event types: TODO(owner-to-confirm, buddy 1).
+ * Event types: DREP_TEL_HUMP..DREP_TEL_STATE (1..4).
  * ========================================================================= */
 
 #define DREP_TEL_TYPE_SHIFT         (0U)

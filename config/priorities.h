@@ -52,34 +52,34 @@
 
 /* ---------------------------------------------------------------------------
  * Stacks. Tasks run on MSP, so ISR frames land on the running task's stack:
- * final size = base need + STACK_IRQ_MARGIN_BYTES. Do not shrink until the
- * stack-painting high-water marks have been measured (Batch B).
+ * final size = base need + STACK_IRQ_MARGIN_BYTES. Verified against on-target
+ * stack high-water marks (src/common/stack_mon.c).
  * ------------------------------------------------------------------------- */
 
 /** Margin added to every task stack for interrupt frames. */
 #define STACK_IRQ_MARGIN_BYTES              (512U)
 
-/** Base stack need, Safety. ASSUMPTION. TUNE */
+/** Base stack need, Safety. TUNE */
 #define TASK_STACK_BASE_SAFETY_BYTES        (1024U)
-/** Base stack need, Vehicle Controller. ASSUMPTION. TUNE */
+/** Base stack need, Vehicle Controller. TUNE */
 #define TASK_STACK_BASE_VC_BYTES            (1024U)
-/** Base stack need, Motion Control. ASSUMPTION. TUNE */
+/** Base stack need, Motion Control. TUNE */
 #define TASK_STACK_BASE_MOTION_BYTES        (1024U)
-/** Base stack need, Line-Following. ASSUMPTION. TUNE */
+/** Base stack need, Line-Following. TUNE */
 #define TASK_STACK_BASE_LF_BYTES            (1024U)
-/** Base stack need, Barcode Decode. ASSUMPTION. TUNE */
+/** Base stack need, Barcode Decode. TUNE */
 #define TASK_STACK_BASE_BC_BYTES            (1024U)
-/** Base stack need, Obstacle Scanning. ASSUMPTION. TUNE */
+/** Base stack need, Obstacle Scanning. TUNE */
 #define TASK_STACK_BASE_OBS_SCAN_BYTES      (1024U)
-/** Base stack need, Obstacle Avoidance. ASSUMPTION. TUNE */
+/** Base stack need, Obstacle Avoidance. TUNE */
 #define TASK_STACK_BASE_OBS_AVOID_BYTES     (1024U)
-/** Base stack need, IMU Processing. ASSUMPTION. TUNE */
+/** Base stack need, IMU Processing. TUNE */
 #define TASK_STACK_BASE_IMU_BYTES           (1536U)
-/** Base stack need, Telemetry. ASSUMPTION. TUNE */
+/** Base stack need, Telemetry. TUNE */
 #define TASK_STACK_BASE_TEL_BYTES           (4096U)
-/** Base stack need, debug drain. ASSUMPTION. TUNE */
+/** Base stack need, debug drain. TUNE */
 #define TASK_STACK_BASE_DBG_DRAIN_BYTES     (1024U)
-/** Base stack need, APP_TEST test task. ASSUMPTION. TUNE */
+/** Base stack need, APP_TEST test task. TUNE */
 #define TASK_STACK_BASE_TEST_BYTES          (1024U)
 
 /** Final stack, Safety. */
@@ -120,11 +120,11 @@
  * Batch B high-water report. Recorded in ARCHITECTURE.md.
  */
 #define KERNEL_INIT_TASK_STACK_BYTES        (1024U)
-/** Static kernel pool. Do not shrink yet. */
+/** Static kernel pool (96 KB). */
 #define KERNEL_POOL_BYTES                   (96U * 1024U)
 /** Per-block Imalloc overhead (estimate). TUNE */
 #define KERNEL_POOL_ALLOC_OVERHEAD_BYTES    (16U)
-/** Pool reserved for message buffers (exact sizes from MBF_BUFSZ in Batch B). TUNE */
+/** Pool reserved for message buffers (sized for MBF_BUFSZ allocations in ipc.c). TUNE */
 #define KERNEL_POOL_MBF_RESERVE_BYTES       (4096U)
 
 /** Every task stack plus kernel overheads, as allocated from the pool. */

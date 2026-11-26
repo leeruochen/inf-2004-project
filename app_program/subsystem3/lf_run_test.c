@@ -47,7 +47,7 @@
  *  detections (a curve has no cross, so any is false) and judges the exit
  *  straight.  The steering is today's: this measures it, it changes nothing.
  *
- *  Guides: .agents/tasks/s3-lf33-test.md, s3-u14-test.md, s3-u15-test.md.  Expected values come from
+ *  Test specifications: testing/subsystem3/TEST_LOG.md (S3-U12..S3-U21).  Expected values come from
  *  config/timing.h, lf_core.h and design.md 3.2, typed in: 5 ms samples
  *  (200 per second), one steering post per 20 ms Motion period,
  *  LINE_LOST -> 120 ms stop -> 2 s search -> TRACK_LOST (2120 ms),
@@ -143,7 +143,7 @@
 #if (S3_DRIVE_MM > 0) && ((S3_DRIVE_MM < 300) || (S3_DRIVE_MM > 20000))
 #error "lf_run_test.c: S3_DRIVE_MM is 300..20000 mm"
 #endif
-/** EXPERIMENT straddle build (sources.cmake -DS3_LF_STRADDLE=ON): the
+/** Straddle line-following build (sources.cmake -DS3_LF_STRADDLE=ON): the
  *  sensors one each side of the line; placement and the start check follow. */
 #ifndef S3_LF_STRADDLE
 #define S3_LF_STRADDLE          (0)

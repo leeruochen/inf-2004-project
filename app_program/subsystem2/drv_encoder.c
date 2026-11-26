@@ -43,22 +43,13 @@
 /** Bounded poll iterations for a fresh push after draining the 4-word FIFO. */
 #define ENC_FRESH_POLL_MAX      (32U)
 
-/* Per-wheel PIO configuration.  Stored as uint8_t so k_enc_wheels[] occupies
- * 6 bytes in .rodata instead of 24 bytes. */
+/* Per-wheel PIO state-machine and polarity configuration. */
 typedef struct
 {
     uint8_t sm;
     uint8_t pin_a;
     uint8_t invert;     /* 0 = normal, 1 = negate count */
 } enc_wheel_cfg_t;
-
-/* Calibrated on target in S2-U03/S2-U08 (2026-10-31_s2_phase1_calib.txt):
- * Right encoder requires inversion (1U) so forward motion counts up. */
-#if ENC_R_DIR_INVERT != 0U
-#define ENC_R_EFF_INVERT        (1U)
-#else
-#define ENC_R_EFF_INVERT        (1U)
-#endif
 
 static enc_wheel_cfg_t const k_enc_wheels[ENC_WHEEL_COUNT] =
 {
@@ -72,7 +63,7 @@ static enc_wheel_cfg_t const k_enc_wheels[ENC_WHEEL_COUNT] =
     {
         (uint8_t)ENC_R_PIO_SM,
         (uint8_t)ENC_R_A_PIN,
-        (uint8_t)((ENC_R_EFF_INVERT != 0U) ? 1U : 0U)
+        (uint8_t)((ENC_R_DIR_INVERT != 0U) ? 1U : 0U)
     }
 };
 

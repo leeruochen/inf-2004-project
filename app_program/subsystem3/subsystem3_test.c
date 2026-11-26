@@ -14,8 +14,8 @@
  *  decides PASS/FAIL itself.  "Keep still" checks are timed; slide steps are
  *  COUNTED: they wait for a number of reads (with a time limit) and print
  *  each read as it happens (desk runs 2 Nov 2026: fixed 60 s windows lost
- *  slides made just before or after them).  Guide for the operator:
- *  .agents/tasks/s3-bc2a-test.md.  Order (the car starts on the stand,
+ *  Test specifications: testing/subsystem3/TEST_LOG.md (S3-U03..S3-U06).
+ *  Order (the car starts on the stand,
  *  because subsystem2_test() spins the wheels before this runs):
  *    S3-U03  GP27 edges, no barcode                 (stand)
  *    S3-U04  hand-slid cards, fixed bench speed     (stand)

@@ -53,29 +53,19 @@
 /** Largest integer clock divider of a PWM slice. */
 #define MOTOR_DIV_INT_MAX       (255UL)
 
-/* Forward and reverse input pin of each motor, after MOTOR_x_DIR_INVERT.
- * Stored as uint8_t (RP2040 GPIO 0..29) so k_motor_pins[] and k_all_pins[]
- * occupy 8 bytes total in .rodata instead of 32 bytes. */
+/* Forward and reverse input pin of each motor, after MOTOR_x_DIR_INVERT. */
 typedef struct
 {
     uint8_t pin_fwd;
     uint8_t pin_rev;
 } motor_pins_t;
 
-/* Calibrated on target in S2-U03 (2026-10-31_s2_phase1_calib.txt):
- * Left motor requires A/B swap (1U) so positive duty drives forward. */
-#if MOTOR_L_DIR_INVERT != 0U
-#define MOTOR_L_EFF_INVERT      (1U)
-#else
-#define MOTOR_L_EFF_INVERT      (1U)
-#endif
-
 static motor_pins_t const k_motor_pins[MOTOR_COUNT] =
 {
     [MOTOR_LEFT] =
     {
-        (uint8_t)((MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_B_PIN : MOTOR_L_A_PIN),
-        (uint8_t)((MOTOR_L_EFF_INVERT != 0U) ? MOTOR_L_A_PIN : MOTOR_L_B_PIN)
+        (uint8_t)((MOTOR_L_DIR_INVERT != 0U) ? MOTOR_L_B_PIN : MOTOR_L_A_PIN),
+        (uint8_t)((MOTOR_L_DIR_INVERT != 0U) ? MOTOR_L_A_PIN : MOTOR_L_B_PIN)
     },
     [MOTOR_RIGHT] =
     {

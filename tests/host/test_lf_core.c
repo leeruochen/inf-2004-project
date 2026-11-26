@@ -1984,7 +1984,7 @@ static void test_uturn_hold(void)
     CHECK(r.max_steer == 4);
 }
 
-/* Test 30 (EXPERIMENT C, branch buddy3/ab-rescue): RIGHT keeps the line.
+/* Test 30 (right-sensor rescue, S3-U17): RIGHT keeps the line.
  * S3-U17 A/B, 16 Nov 2026: on a right bend CENTRE went white, RIGHT reached the
  * line about 18-22 samples later, and in 8 of 10 drives LINE_LOST was declared
  * on a sample where RIGHT read black: T_lost (20 samples of both confirmed
@@ -2059,7 +2059,7 @@ static void test_rescue(void)
     CHECK(until_state(&lf, 0U, 0U, LF_ST_REACQUIRING, 40U) <= 40U);
 }
 
-/* Test 32 (EXPERIMENT T80, branch buddy3/ab-bend-150): bend memory.  S3-U17,
+/* Test 32 (bend steering floor memory, S3-U17): bend memory.  S3-U17,
  * C at 150 mm/s, 16 Nov 2026: RIGHT rescued the line on the right bend, the
  * recovery ramped past +100, CENTRE came back onto the body and the edge
  * steering fell to +4 (5 of 5 drives); the bend slid out again.  T80 keeps a

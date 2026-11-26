@@ -17,7 +17,7 @@
  *      180 deg = full LEFT       pulse SERVO_PULSE_MAX_US
  *  If the horn turns the other way once mounted, define SERVO_DIR_INVERT=1
  *  (a build option; drv_servo.c defaults it to 0) rather than editing the
- *  shared config/pins.h.  TODO(owner-to-confirm, buddy 5): check on the car.
+ *  shared config/pins.h.
  *
  *  Slice 7 is shared with GP14 (TEAM.md section 2: "50 Hz PWM or plain GPIO
  *  only"), because wrap and clock divider belong to the whole slice.  This

@@ -165,8 +165,7 @@ static void create_mbfs(ER *p_first)
 static void create_others(ER *p_first)
 {
     /* IF-05 SEM_ECHO: a doorbell from the echo ISR.  Max count 1: a second
-     * signal before the task runs adds nothing.
-     * TODO(owner-to-confirm, buddy 5): max count. */
+     * signal before the task runs adds nothing. */
     T_CSEM const csem = { .exinf = NULL, .sematr = TA_TFIFO, .isemcnt = 0, .maxsem = 1 };
     /* IF-06 EVF_SAFETY: only Safety waits (TA_WSGL, ARCHITECTURE.md D9). */
     T_CFLG const cflg_safety = { .exinf = NULL, .flgatr = TA_TFIFO | TA_WSGL, .iflgptn = 0U };

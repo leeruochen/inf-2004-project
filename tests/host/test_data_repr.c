@@ -1,6 +1,6 @@
 /*
  *  Host test for src/common/data_repr.h (Batch B stage B7, the packed
- *  formats).  Covers .agents/tasks/week8-impact-report.md section E.3:
+ *  formats).  Covers docs/DATA_REPRESENTATION.md:
  *  round trips at the limits and one past them (clamped, OOR set), sign
  *  extension, every motion_cmd_t type (HOST-MC-01..08), every nav_input_t
  *  source/type, the obstacle sentinel and saturation, the edge ring, and

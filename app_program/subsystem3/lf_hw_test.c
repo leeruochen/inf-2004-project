@@ -31,7 +31,7 @@
 /** Length of the sideways sweep and its log interval (300 lines). */
 #define LF1_SWEEP_MS            (15000U)
 #define LF1_SWEEP_LOG_MS        (50U)
-/** Provisional pass rule: black must differ from white by this much (raw,
+/** Contrast pass threshold (S3-U09): black must differ from white by this much (raw,
  *  about 10 % of full scale), whichever way.  The real thresholds come from
  *  the printed numbers, in LF-2. */
 #define LF1_MIN_CONTRAST        (400U)

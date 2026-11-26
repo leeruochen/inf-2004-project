@@ -10,6 +10,7 @@ Autonomous line-following robot car built on a **Raspberry Pi Pico W (RP2040)** 
 
 - **GitHub Repository:** <https://github.com/leeruochen/inf-2004-project>
 - **Team & Subsystems:** Group `IS16` — Subsystem 1 (`2501299` Damian), Subsystem 2 (`2500530` Ruo Chen), Subsystem 3 (`2503319` Jin Yong), Subsystem 4 (`2500709` Vincent), Subsystem 5 (`2500596` Chay Han). See [TEAM.md](TEAM.md).
+- **Full Autonomous Course Demo Video (Unlisted YouTube):** <https://www.youtube.com/watch?v=eDlNAmzyx_U> — continuous physical-track run demonstrating Code 39 barcode **`Q` → `STRAIGHT`** runtime mapping (`car/cmd/bc_map`), two-sensor IR straddle line following, `< 25 cm` obstacle stop + stationary `3°` ultrasonic sweep (`51°–129°`) + encoder-closed 4-turn `45°` bypass & line rejoin, and `15 mm` hump pitch detection (`>= 3°`) with gradual climb assist. Full video index & supplementary `10/10` dashboard rubric screenshots ([`videos/all_pass1.jpeg`](videos/all_pass1.jpeg), [`videos/all_pass2.jpeg`](videos/all_pass2.jpeg)): [videos/README.md](videos/README.md).
 
 ### 1. Requirements & Architecture Traceability
 
@@ -64,8 +65,8 @@ Tests are organized at three levels (see [testing/README.md](testing/README.md) 
 | [testing/subsystem3/TEST_LOG.md](testing/subsystem3/TEST_LOG.md) | S3 barcode, ADC, and line-following test cases (`S3-U01..U21`) + saved logs (`testing/subsystem3/logs/`) |
 | [testing/subsystem4/TEST_LOG.md](testing/subsystem4/TEST_LOG.md) | S4 IMU driver, hump height, watchdog, and lift stop test cases (`S4-U01..U26`) + saved logs (`testing/subsystem4/logs/`) |
 | [testing/subsystem5/TEST_LOG.md](testing/subsystem5/TEST_LOG.md) | S5 ultrasonic, servo sweep, width estimation, and bypass test cases (`S5-U01..U33`, `INT-S5-01..04`) + saved logs (`testing/subsystem5/logs/`) |
-| [testing/integration/TEST_LOG.md](testing/integration/TEST_LOG.md) | Cross-subsystem interface integration definitions (`INT-01`–`INT-05`) |
-| [testing/system/TEST_LOG.md](testing/system/TEST_LOG.md) | Whole-system acceptance definitions (`SYS-01` USB bring-up PASS, `SYS-02`–`SYS-06` full-course specs) + [videos/README.md](videos/README.md) |
+| [testing/integration/TEST_LOG.md](testing/integration/TEST_LOG.md) | Cross-subsystem interface integration definitions & results (`INT-01`–`INT-06`) |
+| [testing/system/TEST_LOG.md](testing/system/TEST_LOG.md) | Whole-system acceptance definitions & results (`SYS-01`–`SYS-07`), demo video link, and [videos/README.md](videos/README.md) |
 
 ### 4. Detailed Engineering Reports & Evidence
 
@@ -104,7 +105,9 @@ Every firmware build automatically runs `check_rules` ([ARCHITECTURE.md](ARCHITE
 - **Active car build (Wi-Fi/MQTT + straddle line following + differential steer targets):**
   First copy `config/secrets.h.example` to `config/secrets.h` and fill in your 2.4 GHz Wi-Fi SSID/password and MQTT broker IP (never commit `config/secrets.h`):
   ```powershell
-  & $CM -S . -B build/wifi @common -DDBG_BACKEND=USB -DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=ON '-DCMAKE_C_FLAGS=-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1'
+  $env:CFLAGS = "-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1"
+  & $CM -S . -B build/wifi @common -DDBG_BACKEND=USB -DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=ON
+  Remove-Item Env:CFLAGS -ErrorAction SilentlyContinue
   & $CM --build build/wifi
   ```
 - **USB-console build (no Wi-Fi/radio needed):**

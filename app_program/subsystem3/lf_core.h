@@ -135,7 +135,7 @@
 /** The same in encoder counts. */
 #define LF_UTURN_HOLD_CNT       ((LF_UTURN_HOLD_MM * ENC_QUAD_MULT * ENC_CPR) / WHEEL_CIRC_MM)
 
-/* EXPERIMENT C (branch buddy3/ab-rescue, 16 Nov 2026), NOT production: RIGHT
+/* Right-sensor bend rescue (S3-U17): RIGHT
  * keeps the line.  On a right bend the line slides right under the car:
  * CENTRE goes white first, and RIGHT reaches the line a few mm later.  On
  * the car (S3-U17 A/B) LINE_LOST was declared on a sample where RIGHT read
@@ -147,7 +147,7 @@
  * single noisy reading cannot keep the car going.  A/B on the car decides. TUNE */
 #define LF_RESCUE_N             (2U)
 
-/* EXPERIMENT T80 (branch buddy3/ab-bend-150, 17 Nov 2026, NOT for merge):
+/* Bend steering floor memory (S3-U17):
  * bend memory.  C at 150 mm/s, 16 Nov: RIGHT rescued the line on a right bend
  * and the recovery ramped to +105..+127, CENTRE came back onto the body, and
  * the edge steering dropped to +4 at once: the bend slid out again.

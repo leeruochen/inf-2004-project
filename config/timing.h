@@ -3,7 +3,7 @@
  * @brief Periods, timeouts and timing thresholds (design.md section 3.2 and 3.3).
  *
  * Pure macros: no SDK or kernel includes. Units are in every name.
- * Tunables are tagged TUNE. Unknowns carry TODO(owner-to-confirm, buddy N).
+ * Tunables are tagged TUNE.
  *
  * design.md 3.2 -> macro map (D_cmd, D_detect, side margin, a_move, degree_hump
  * and the lift thresholds are distances/accelerations/angles and live in thresholds.h):
@@ -21,14 +21,14 @@
  *   T_turn 500 ms ................ LF_T_TURN_MS
  *   T_uturn 1.0 s ................ LF_T_UTURN_MS
  *   T_search 2.0 s ............... LF_T_SEARCH_MS
- *   D_cmd 30 cm .................. BC_D_CMD_CM (thresholds.h)
+ *   D_cmd 60 cm .................. BC_D_CMD_CM (thresholds.h, D17)
  *   T_end 3 x widest ............. BC_T_END_WIDEST_MULT
  *   D_detect 25 cm ............... OBS_D_DETECT_CM (thresholds.h)
  *   Side margin 5 cm ............. OBS_SIDE_MARGIN_MM (thresholds.h)
  *   Bypass budget 3.0 s .......... OBS_BYPASS_BUDGET_MS
  *   T_hold 100 ms ................ MOTION_T_HOLD_MS
  *   a_move 0.05 g ................ IMU_A_MOVE_G_X1000 (thresholds.h)
- *   degree_hump 5 deg ............ IMU_HUMP_PITCH_DEG (thresholds.h)
+ *   degree_hump 3 deg ............ IMU_HUMP_PITCH_DEG (thresholds.h, D15)
  *   theta_lift 30 deg ............ IMU_LIFT_TILT_DEG (thresholds.h; replaced g_collision)
  *   v_lift 0.10 m/s .............. IMU_LIFT_V_MMPS (thresholds.h)
  *   T_still 500 ms ............... SAFETY_T_STILL_MS
@@ -93,8 +93,6 @@
  * Design delta vs design.md 3.1/3.3 (200 ms periodic, 200 ms receive timeout):
  * the task wakes every 20 ms, polls MBF_TELEMETRY, publishes every 10th wake
  * and sends a heartbeat every 50th wake. Recorded in ARCHITECTURE.md (D2).
- * TODO(owner-to-confirm, buddy 1): delta D2 is proposed, not yet approved; the
- * FR1 publish/heartbeat rates hold either way.
  * ------------------------------------------------------------------------- */
 
 /** Telemetry task wake period. */
@@ -131,8 +129,7 @@
 /** Fine sweep half-span around the detection bearing. Not in design.md. TUNE */
 #define OBS_FINE_HALF_SPAN_DEG          (30U)
 /** Servo settle time before a ping. TUNE
- *  TODO(owner-to-confirm, buddy 5): settle + 3 pings x 30 ms echo timeout can
- *  exceed the 60 ms step period. */
+ *  Stationary fine sweep steps every 3 deg after halt confirmation (ARCHITECTURE.md D16). */
 #define OBS_SERVO_SETTLE_MS             (50U)
 /** SEM_ECHO wait; no echo = nothing in range (design.md 3.3). */
 #define OBS_ECHO_TIMEOUT_MS             (30U)
@@ -177,8 +174,7 @@
  *  elements it is the only end rule (a partial pass); after them T_end ends
  *  the capture sooner (bc_frame_ended()). 1 s is far above the longest valid
  *  element (9 mm at 50 mm/s = 180 ms). TUNE
- *  TODO(owner-to-confirm, buddy 3): provisional value. Must fit a
- *  BC_GAP_BITS microsecond gap (checked below). */
+ *  Must fit a BC_GAP_BITS microsecond gap (checked below). */
 #define BC_CAPTURE_TIMEOUT_MS           (1000U)
 /** Edge-ring gap width in bits, microseconds (delta D8; docs/DATA_REPRESENTATION.md). */
 #define BC_GAP_BITS                     (20U)
@@ -202,8 +198,7 @@
 /** USB builds only: wait this long for stdio_usb_connected() before the kernel starts.
  *  This is the only allowed SDK wait, and only before hal_kernel_start(). */
 #define DBG_USB_CONNECT_WAIT_MS         (3000U)
-/** Debug drain task period. TUNE
- *  TODO(owner-to-confirm, buddy 1): provisional value. */
+/** Debug drain task period. TUNE */
 #define DBG_DRAIN_PERIOD_MS             (10U)
 
 /* ---------------------------------------------------------------------------

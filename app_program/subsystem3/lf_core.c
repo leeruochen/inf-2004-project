@@ -305,7 +305,7 @@ static void enter(lf_core_t *p_lf, lf_state_t st)
 }
 
 /*
- * EXPERIMENT T80: the bend floor, CENTRE back on the body during bend memory.
+ * Right-sensor bend floor (S3-U17), CENTRE back on the body during bend memory.
  * The first such sample decides: a floor below LF_BEND_MIN_Q7 means a short
  * rescue (a drift), and the memory ends.
  */
@@ -346,7 +346,7 @@ static void bend_floor(lf_core_t *p_lf)
 }
 
 /*
- * EXPERIMENT T80: bend memory entry and exit, each sample before the state
+ * Bend memory entry and exit (S3-U17), each sample before the state
  * handler (r_dark_n already counts this sample).
  */
 static void bend_track(lf_core_t *p_lf, lf_in_t const *p_in, lf_view_t const *p_v)

@@ -10,8 +10,8 @@
  *    LSM303DLHC  accel 0x19 + mag 0x1E; 12-bit accel, left-justified.
  *    LSM303D     accel + mag in one chip at 0x1D (or 0x1E), WHO_AM_I 0x49;
  *                16-bit accel.  Found on the team's car (I2C scan: 0x1D only).
- *  TODO(owner-to-confirm, buddy 4): the code assumes the board's +X axis
- *  points to the front of the car (pitch sign).  Check by tilting the nose up.
+ *  Board orientation verified on car (S4-U15 / S4-U26): +X points forward
+ *  (nose-up positive pitch).
  */
 
 #include "drv_imu.h"

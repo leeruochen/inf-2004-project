@@ -5,7 +5,7 @@
  *  and never blocking SDK waits (rule R2).
  *  Owner: Buddy 4, Student ID: 2500709 (Vincent).
  *
- *  Responsibilities (design.md 3.1, HANDOVER.md section 3):
+ *  Responsibilities (design.md 3.1, ARCHITECTURE.md D9, D15):
  *    - Waits on EVF_SAFETY for LIFTED | IMU_ALIVE with TWF_ORW | TWF_BITCLR
  *      (never TWF_CLR), so only the bits that woke it are cleared.
  *    - LIFTED (car lifted or overturned; replaced COLLISION on 11 Nov 2026):

@@ -5,7 +5,7 @@
  *  and never blocking SDK waits (rule R2).
  *  Owner: Buddy 2, Student ID: 2500530 (Ruo Chen).
  *
- *  Responsibilities (design.md sections 3-5, HANDOVER.md section 3,
+ *  Responsibilities (design.md sections 3-5, ARCHITECTURE.md,
  *  docs/DATA_REPRESENTATION.md sections 2-4):
  *    - Sole reader of MBF_NAV_IN (IF-01); validates every message with
  *      drep_nav_valid(), counting and logging rejects.
@@ -35,27 +35,15 @@
 #define VC_JUNCTION_TURN_DEG    (90)
 
 /* ---------------------------------------------------------------------------
- * Compact Vehicle Controller Context & Packed 10-bit Private State Word
- * (ARCHITECTURE.md D8, docs/DATA_REPRESENTATION.md section 4)
+ * Vehicle Controller context and packed 10-bit state word
+ * (ARCHITECTURE.md D8, docs/DATA_REPRESENTATION.md section 4):
  *
- * ARMv6-M (RP2040 Cortex-M0+ Thumb-1) Codegen & Memory Optimization:
- *   Previously, `task_vc.c` stored 10 separate `static` 32-bit/boolean
- *   variables (44 bytes in `.bss`, plus up to 10 literal-pool pointers in
- *   `.text`).  Six of those variables hold small discrete states totaling
- *   only 10 bits:
- *
- *     bits [3:0] (4b) : System FSM state (VC_SYS_INITIALISING .. VC_SYS_SAFETY_FAULT_LATCHED)
- *     bit  [4]   (1b) : Authority mode   (0 = VC_AUTH_LINE, 1 = VC_AUTH_AVOID)
- *     bits [6:5] (2b) : Pending barcode command (DREP_BC_CMD_STRAIGHT..UTURN)
- *     bit  [7]   (1b) : Barcode command pending flag (bc_pending)
- *     bit  [8]   (1b) : Stationary timer valid flag  (stationary_valid)
- *     bit  [9]   (1b) : VC task loop active flag     (task_running)
- *
- *   Packing these 10 bits into `s_vc.state_bits` using explicit masks and
- *   shifts (no C bit-fields per HANDOVER.md section 6) and grouping the
- *   remaining counters/timestamps into `static vc_ctx_t s_vc` shrinks `.bss`
- *   from 44 bytes to 24 bytes (-45%) and lets GCC address all VC state from a
- *   single base pointer (`LDR`/`LDRH [r4, #imm]`).
+ *   bits [3:0] (4b) : System FSM state (VC_SYS_INITIALISING .. VC_SYS_SAFETY_FAULT_LATCHED)
+ *   bit  [4]   (1b) : Authority mode   (0 = VC_AUTH_LINE, 1 = VC_AUTH_AVOID)
+ *   bits [6:5] (2b) : Pending barcode command (DREP_BC_CMD_STRAIGHT..UTURN)
+ *   bit  [7]   (1b) : Barcode command pending flag (bc_pending)
+ *   bit  [8]   (1b) : Stationary timer valid flag  (stationary_valid)
+ *   bit  [9]   (1b) : VC task loop active flag     (task_running)
  * ------------------------------------------------------------------------- */
 
 #define VC_ST_SYS_SHIFT         (0U)
@@ -211,7 +199,7 @@ static void handle_remote_msg(nav_input_t msg, bool fault_latched, uint32_t now_
     {
         /* Also accept RESET when only the VC state is latched (flag bit
          * already cleared out-of-band), otherwise VC deadlocks in
-         * FAULT_LATCHED (INTEGRATION_FIXES.md Issue 1). */
+         * FAULT_LATCHED (ARCHITECTURE.md D9). */
         if (fault_latched || (vc_sys_get() == VC_SYS_SAFETY_FAULT_LATCHED))
         {
             if (is_stationary_for_reset(now_ms))
@@ -355,7 +343,7 @@ static void handle_line_msg(nav_input_t msg, uint32_t cur_dist_cm, uint32_t now_
         return;
     }
 
-    /* Expire a pending barcode command if the car travelled past D_cmd (30 cm). */
+    /* Expire a pending barcode command once travel exceeds BC_D_CMD_CM (60 cm). */
     if (((s_vc.state_bits & VC_ST_FLG_BC_PENDING) != 0U)
         && ((uint16_t)(cur_dist_cm - s_vc.bc_dist_cm) > BC_D_CMD_CM))
     {

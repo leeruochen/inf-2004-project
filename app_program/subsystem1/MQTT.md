@@ -240,7 +240,9 @@ python tools/dashboard/tel_dashboard.py decode-log saved_log.txt
 3. Build in a fresh directory and flash `build/wifi/robocar.uf2` (active car build adds straddle LF & steer targets):
 
    ```powershell
-   & $CM -S . -B build/wifi @common -DDBG_BACKEND=USB -DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=ON '-DCMAKE_C_FLAGS=-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1'
+   $env:CFLAGS = "-DLF_SD_SIMPLE=1 -DLF_SD_BANG=1 -DMOTION_STEER_TARGETS=1"
+   & $CM -S . -B build/wifi @common -DDBG_BACKEND=USB -DTEL_BACKEND_WIFI=ON -DS3_LF_STRADDLE=ON
+   Remove-Item Env:CFLAGS -ErrorAction SilentlyContinue
    & $CM --build build/wifi
    ```
 

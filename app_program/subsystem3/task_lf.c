@@ -35,7 +35,7 @@
 #define S3_LF_STRADDLE          (0)
 #endif
 #if S3_LF_STRADDLE
-#include "lf_straddle.h"                /* EXPERIMENT: straddle core */
+#include "lf_straddle.h"                /* straddle line-following core (D14) */
 #endif
 #include "../subsystem1/subsystem1.h"   /* tel_set_ir_raw (IF-12, dashboard integration) */
 
@@ -46,7 +46,7 @@
 #define LF_RECAL_WAIT_MS        (1000U)
 
 /* The pure modules' state.  Static, not on the 1.5 KB task stack.  The
- * EXPERIMENT straddle build (S3_LF_STRADDLE) runs lf_straddle.c's core in
+ * straddle build (S3_LF_STRADDLE) runs lf_straddle.c's core in
  * place of lf_core.c's, behind the same inputs and outputs. */
 #if S3_LF_STRADDLE
 static lf_sd_t          s_core;

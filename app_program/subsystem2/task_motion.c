@@ -5,7 +5,7 @@
  *  never SDK headers (rule R1) and never blocking SDK waits (rule R2).
  *  Owner: Buddy 2, Student ID: 2500530 (Ruo Chen).
  *
- *  Responsibilities (design.md 3.1/3.2/3.3, specs.md, HANDOVER.md section 3):
+ *  Responsibilities (design.md 3.1/3.2/3.3, specs.md, ARCHITECTURE.md, TEAM.md):
  *    - Drift-free 20 ms periodic execution via app_period_wait()
  *      (MOTION_PERIOD_MS); logs any missed release through dbg_.
  *    - Polls MBF_MOTION_CMD (IF-02) with TMO_POL; validates each command with
@@ -34,7 +34,7 @@
 #include "task_vc.h"                    /* vc_get_system_state */
 
 /* ---------------------------------------------------------------------------
- * Geometry compile-time guards (HANDOVER.md section 3, config/thresholds.h):
+ * Geometry compile-time guards (ARCHITECTURE.md D7, config/thresholds.h):
  *   - Setting only one of ENC_CPR or WHEEL_CIRC_MM is always a build error.
  *   - Defining MOTION_REQUIRE_GEOMETRY=1 while either is 0 is a build error.
  *   - When both are > 0, closed-loop count<->distance/angle/speed conversion
@@ -77,7 +77,7 @@
 
 /* ---------------------------------------------------------------------------
  * Tuned PID and straight-line correction gains (fixed-point x100, TUNE).
- * Tuned for 2340 quad counts/rev (~45 counts per 20 ms at 20 cm/s).
+ * Calibrated for 2464 quad counts/rev (~48 counts per 20 ms at 20 cm/s).
  * ------------------------------------------------------------------------- */
 
 /** Velocity error proportional gain (permille duty per count/period error). TUNE */
@@ -96,62 +96,22 @@
 #ifndef MOTION_INTEGRAL_MAX
 #define MOTION_INTEGRAL_MAX     (400)
 #endif
-/* EXPERIMENT (Buddy 3, 20 Nov 2026, with Buddy 2's go-ahead): overridable for a test build
- * (-DMOTION_INTEGRAL_MAX=1200).  At 5 cm/s on the car both wheels ran below the target (L 25-34,
- * R 34-47 mm/s of 50, mean 38-44) and R/L = 1.4-1.5 on straights, a leftward heading drift of
- * 0.16-0.2 deg/mm: the integral term is capped at KI x 400 = 40 per mille, which the weaker left
- * motor cannot make up at this speed.  Default unchanged. */
 
 /** Consecutive 20 ms periods at >= 50% duty with zero counts -> stall/encoder fault. */
 #define MOTION_STALL_PERIODS    (25U)   /* 25 x 20 ms = 500 ms */
+/** Minimum duty magnitude (permille) before stall detection arms. */
+#define MOTION_STALL_DUTY_PM    (500)
 
-/* ---------------------------------------------------------------------------
- * EXPERIMENT (Buddy 3, branch buddy3/lf-straddle-openloop, 20 Nov 2026, with
- * Buddy 2's go-ahead): open-loop steering.  OFF by default: with 0 this file
- * behaves exactly as before.
- *
- * Why: DREP_MC_STEER sets a duty difference, but the per-wheel speed PID then
- * works toward the SAME target speed on both wheels and pushes back against the
- * turn.  On the car at 7 cm/s the half-steering command (a 50% difference, the
- * 15/45 of a plain differential car) ended as ~66/35 mm/s (about 1.9:1, not
- * 3:1), and the base duty at 5 cm/s is only 9.5%.
- *
- * What: while a STEER command with |cmd_arg| >= MOTION_STEER_OL_MIN_ARG is
- * active, the PID is skipped and each wheel gets its own learned straight-line
- * duty, scaled by (1 +/- cmd_arg x GAIN_PCT / 25600).  The straight-line duty is
- * learned per wheel (moving average) from FWD and STEER-0 cycles at the same
- * setpoint, so it follows the battery and the motors and nothing is hard-coded;
- * until MOTION_STEER_OL_LEARN_N cycles have been seen, or if the setpoint
- * differs, the closed-loop path is used.  Straight driving, TURN, UTURN, BACK
- * and every fault path are untouched.
- * ------------------------------------------------------------------------- */
-#ifndef MOTION_STEER_OPENLOOP
-#define MOTION_STEER_OPENLOOP       (0)
-#endif
-/* MOTION_STEER_TARGETS (default 0): during STEER the two wheels get DIFFERENT target
- * speeds, mag x (1 +/- cmd_arg x MOTION_STEER_TGT_GAIN_PCT / 25600), so the PID works WITH the
- * turn.  Without it both wheels chase the same target and the PID fights every turn: it winds up
- * against the steering and, when the steering returns to 0, the car rebounds the opposite way
- * (20 Nov, 5 cm/s: before any turn R/L was 0.93, after a left turn 0.53, after a right bend 1.55,
- * a drift of 0.2-0.4 deg/mm for 100 mm); at full lock the wheels managed only 2.4:1 at 0.41
- * deg/mm.  Off: this file is as before. */
+/* Differential per-wheel speed targets during DREP_MC_STEER (ARCHITECTURE.md D14).
+ * When enabled (-DMOTION_STEER_TARGETS=1), left and right wheels track distinct
+ * closed-loop target counts scaled by MOTION_STEER_TGT_GAIN_PCT so PID assists
+ * turns rather than winding up against steering. */
 #ifndef MOTION_STEER_TARGETS
 #define MOTION_STEER_TARGETS        (0)
 #endif
 #ifndef MOTION_STEER_TGT_GAIN_PCT
 #define MOTION_STEER_TGT_GAIN_PCT   (100)
 #endif
-#ifndef MOTION_STEER_OL_GAIN_PCT
-#define MOTION_STEER_OL_GAIN_PCT    (100)   /* % of the commanded differential applied */
-#endif
-#ifndef MOTION_STEER_OL_MIN_ARG
-#define MOTION_STEER_OL_MIN_ARG     (16)    /* |cmd_arg| below this stays closed-loop (Q7 x 2) */
-#endif
-#ifndef MOTION_STEER_OL_LEARN_N
-#define MOTION_STEER_OL_LEARN_N     (50U)   /* 50 x 20 ms of straight driving to learn the duty */
-#endif
-/** Minimum duty magnitude (permille) before stall detection arms. */
-#define MOTION_STALL_DUTY_PM    (500)
 
 /* ---------------------------------------------------------------------------
  * Gradual IMU-triggered hump climb speed & torque assist (TUNE).
@@ -181,21 +141,10 @@ typedef struct
 } motion_pid_t;
 
 /* ---------------------------------------------------------------------------
- * Compact Module Context & Minimum-Width State Packing (ARCHITECTURE.md D8)
- *
- * ARMv6-M (RP2040 Cortex-M0+ Thumb-1) Codegen Optimization:
- *   Thumb-1 lacks PC-relative stores and can only load 32-bit addresses via
- *   `LDR Rd, [PC, #imm8]` from a literal pool.  Declaring 16 separate `static`
- *   variables forces GCC to emit up to 16 literal-pool pointers in `.text` and
- *   repeatedly reload base addresses into low registers (`r0`-`r7`).
- *
- *   Consolidating all module-private state into a single `motion_ctx_t` struct
- *   (68 bytes total, vs 84 bytes unpacked) allows GCC to load `&s_mot` once
- *   into a single base register (e.g. `r4`) and reach every field via a single
- *   16-bit immediate-offset instruction (`LDR`/`STR`/`LDRH`/`LDRB [r4, #imm]`).
- *
- *   Boolean flags are packed into `flags` using explicit masks and shifts
- *   (no C bit-fields, per HANDOVER.md section 6 / Barr-C).
+ * Module context and packed flags (ARCHITECTURE.md D8).
+ * Grouping module-private state into s_mot lets Cortex-M0+ Thumb-1 address
+ * fields via immediate offsets from a single base pointer; boolean flags use
+ * explicit masks and shifts (no C bit-fields).
  * ------------------------------------------------------------------------- */
 
 #define MOT_FLG_TASK_RUNNING    (1U << 0)   /* motion_task_entry loop active */
@@ -218,11 +167,6 @@ typedef struct
 #if MOTION_HAS_GEOMETRY
     uint16_t         fault_bits_set;    /* EVF_SAFETY b5..b6                 */
     uint8_t          stall_ticks;       /* 0..MOTION_STALL_PERIODS (25)      */
-#endif
-#if MOTION_HAS_GEOMETRY && MOTION_STEER_OPENLOOP
-    int16_t          cruise_duty_pm[ENC_WHEEL_COUNT]; /* learned straight-line duty */
-    uint8_t          cruise_n;          /* straight cycles seen at cruise_cmps   */
-    uint8_t          cruise_cmps;       /* the setpoint they were seen at        */
 #endif
     uint8_t          cmd_type;          /* 3-bit DREP_MC_* (0..7)            */
     uint8_t          setpoint_cmps;     /* 6-bit speed (0..50 cm/s)          */
@@ -247,15 +191,7 @@ static int32_t clamp_i32(int32_t v, int32_t lo, int32_t hi)
     return v;
 }
 
-/*
- * Branchless 32-bit absolute value for ARMv6-M (Cortex-M0+ Thumb-1):
- *   mask = (uint32_t)(v >> 31);        // ASRS r1, r0, #31 (0 or 0xFFFFFFFF)
- *   return ((uint32_t)v + mask) ^ mask;// ADDS r0, r0, r1  ; EORS r0, r1
- *
- * Compiles to 3 single-cycle 16-bit Thumb-1 instructions (6 bytes, 3 cycles
- * constant time) with zero conditional branch penalty, and is bit-for-bit
- * identical to `(v < 0) ? -v : v` across all 2^32 signed 32-bit inputs.
- */
+/* Branchless two's-complement absolute value for signed 32-bit integers. */
 static uint32_t abs_i32(int32_t v)
 {
     uint32_t const mask = (uint32_t)(v >> 31);
@@ -684,38 +620,8 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
 #endif
         int32_t const  mean_d = (dl + dr) / 2;
 
-#if MOTION_STEER_OPENLOOP
-        bool const ol_steer = (cmd_type == DREP_MC_STEER)
-                              && ((int32_t)abs_i32((int32_t)s_mot.cmd_arg) >= MOTION_STEER_OL_MIN_ARG)
-                              && (s_mot.cruise_n >= MOTION_STEER_OL_LEARN_N)
-                              && ((uint32_t)s_mot.cruise_cmps == setpoint_cmps);
-#else
-        bool const ol_steer = false;
-#endif
-
-        if (ol_steer)
-        {
-#if MOTION_STEER_OPENLOOP
-            /* Open loop: each wheel's own straight-line duty, scaled by the steering. */
-            int32_t const cl = s_mot.cruise_duty_pm[ENC_WHEEL_LEFT];
-            int32_t const cr = s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT];
-            int32_t const g = (int32_t)s_mot.cmd_arg * (int32_t)MOTION_STEER_OL_GAIN_PCT;
-
-            duty_l = cl + ((cl * g) / 25600);
-            duty_r = cr - ((cr * g) / 25600);
-            if (duty_l < 0) { duty_l = 0; }
-            if (duty_r < 0) { duty_r = 0; }
-            /* keep the PID's memory of the error current, its integral untouched, so
-             * the first closed-loop cycle after the turn has no derivative kick */
-            s_mot.pid[ENC_WHEEL_LEFT].prev_err = tgt_l - dl;
-            s_mot.pid[ENC_WHEEL_RIGHT].prev_err = tgt_r - dr;
-#endif
-        }
-        else
-        {
-            duty_l += pid_step_wheel(ENC_WHEEL_LEFT, tgt_l, dl);
-            duty_r += pid_step_wheel(ENC_WHEEL_RIGHT, tgt_r, dr);
-        }
+        duty_l += pid_step_wheel(ENC_WHEEL_LEFT, tgt_l, dl);
+        duty_r += pid_step_wheel(ENC_WHEEL_RIGHT, tgt_r, dr);
 
         if ((cmd_type == DREP_MC_FWD) || (cmd_type == DREP_MC_BACK))
         {
@@ -742,32 +648,6 @@ static void apply_control(int32_t dl, int32_t dr, int32_t *p_speed_x10)
                 if (duty_r > 0) { duty_r = 0; }
             }
         }
-
-#if MOTION_STEER_OPENLOOP
-        /* Learn each wheel's straight-line duty from FWD and STEER-0 cycles. */
-        if (((cmd_type == DREP_MC_FWD) || ((cmd_type == DREP_MC_STEER) && (s_mot.cmd_arg == 0)))
-            && (dl > 0) && (dr > 0))
-        {
-            if ((uint32_t)s_mot.cruise_cmps != setpoint_cmps)
-            {
-                s_mot.cruise_cmps = (uint8_t)setpoint_cmps;
-                s_mot.cruise_n = 0U;
-                s_mot.cruise_duty_pm[ENC_WHEEL_LEFT] = (int16_t)duty_l;
-                s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT] = (int16_t)duty_r;
-            }
-            else
-            {
-                s_mot.cruise_duty_pm[ENC_WHEEL_LEFT] = (int16_t)(s_mot.cruise_duty_pm[ENC_WHEEL_LEFT]
-                    + ((duty_l - s_mot.cruise_duty_pm[ENC_WHEEL_LEFT]) / 8));
-                s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT] = (int16_t)(s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT]
-                    + ((duty_r - s_mot.cruise_duty_pm[ENC_WHEEL_RIGHT]) / 8));
-            }
-            if (s_mot.cruise_n < 255U)
-            {
-                s_mot.cruise_n++;
-            }
-        }
-#endif
 
         if ((dl == 0) && (dr == 0))
         {

@@ -2,14 +2,13 @@
  *  ipc_types.h
  *  Message and shared-data types carried by the IPC objects (design.md 3.3,
  *  TEAM.md section 5).  Owner: platform (Batch B, stage B2); each type's
- *  fields belong to its interface owner (TODO markers below).
+ *  fields belong to its interface owner (docs/DATA_REPRESENTATION.md).
  *  Pure header: <stdint.h> only, so drivers and host tests may include it.
  *
  *  PACKED minimum-bit Week 8 formats since stage B7 (ARCHITECTURE.md D8).
- *  Read and write fields only through src/common/data_repr.h.  Three field
- *  meanings still wait for their owner (TODO(owner-to-confirm) in
- *  data_repr.h): the steering sign (buddy 3), the bypass command values and
- *  the 2-bit obstacle sequence (buddy 5).
+ *  Read and write fields only through src/common/data_repr.h.  All field
+ *  layouts, clamping rules, and wire formats are specified in
+ *  docs/DATA_REPRESENTATION.md.
  */
 
 #ifndef IPC_TYPES_H

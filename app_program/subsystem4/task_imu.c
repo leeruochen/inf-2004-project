@@ -5,7 +5,7 @@
  *  never SDK headers (rule R1) and never blocking SDK waits (rule R2).
  *  Owner: Buddy 4, Student ID: 2500709 (Vincent).
  *
- *  Responsibilities (design.md 3.1/3.2, HANDOVER.md section 3):
+ *  Responsibilities (design.md 3.1/3.2, ARCHITECTURE.md D4, D9, D15):
  *    - Drift-free 10 ms period via app_period_wait() (IMU_SAMPLE_PERIOD_MS).
  *    - Sole user of I2C1 after init: reads the accelerometer via drv_imu.
  *    - Pitch from the low-passed accelerometer only (no gyro, D4), measured

@@ -41,9 +41,9 @@
  * i.e. the A pin and A + 1, so each pair must be adjacent with A on the even,
  * lower pin.
  *
- * "A on the lower pin" is a PROVISIONAL label. The wiring table's black/white
- * A/B labels are not authoritative; the harness colours are green and red.
- * The sign is fixed in firmware by ENC_x_DIR_INVERT.
+ * Channel polarity is calibrated on the car via MOTOR_x_DIR_INVERT and
+ * ENC_x_DIR_INVERT (confirmed in S2-U03/S2-U07/S2-U08). The harness colours
+ * are green and red.
  *
  * 6-pin motor/encoder connector (per motor):
  *   pin 1     GND
@@ -57,13 +57,13 @@
  * (hand-spin test, then a forward-drive test).
  * ------------------------------------------------------------------------- */
 
-/** Right wheel encoder phase A (Grove 1). PROVISIONAL label. */
+/** Right wheel encoder phase A (Grove 1). */
 #define ENC_R_A_PIN             (0U)
-/** Right wheel encoder phase B (Grove 1). PROVISIONAL label. */
+/** Right wheel encoder phase B (Grove 1). */
 #define ENC_R_B_PIN             (1U)
-/** Left wheel encoder phase A (Grove 4). PROVISIONAL label. */
+/** Left wheel encoder phase A (Grove 4). */
 #define ENC_L_A_PIN             (16U)
-/** Left wheel encoder phase B (Grove 4). PROVISIONAL label. */
+/** Left wheel encoder phase B (Grove 4). */
 #define ENC_L_B_PIN             (17U)
 
 /** 1 = swap A/B for the left motor so "forward" drives forward.
@@ -88,10 +88,9 @@
 
 /* ---------------------------------------------------------------------------
  * Line-following IR sensors (ADC). Buddy 3.
- * CENTER + RIGHT: the mirror of design.md's left + centre (delta D11). Buddy 3
- * must REDEFINE the steering sign, not copy it from design.md.
- * TODO(owner-to-confirm, buddy 3): proposal: steer_err > 0 = line to the car's
- * right = steer right.
+ * Steering convention (ARCHITECTURE.md D11): steer_err > 0 = line to the
+ * car's right = steer right (under -DS3_LF_STRADDLE=ON, IR_C sits on the left
+ * and IR_R on the right of the line).
  * Only VCC, GND and AO are wired on both line sensors; DO is not wired.
  *
  * GP26 is declared ONCE, as an ADC input with pull-up and pull-down disabled,
@@ -123,7 +122,8 @@
 /* ---------------------------------------------------------------------------
  * IMU (GY-511 LSM303DLHC, I2C1 via the Maker/Qwiic port). Buddy 4.
  * GP2/GP3 are shared with Grove 2, so Grove 2 must stay unused.
- * Accel 0x19 and mag 0x1E (thresholds.h): VERIFY by I2C bus scan.
+ * drv_imu.c auto-detects LSM303D (0x1D/0x1E, fitted on car) or LSM303DLHC
+ * (0x19/0x1E) at boot (ARCHITECTURE.md D4).
  * INT1, INT2 and SAO are not connected.
  * ------------------------------------------------------------------------- */
 
@@ -136,7 +136,7 @@
 
 /* ---------------------------------------------------------------------------
  * Ultrasonic sensor (Grove 3). Buddy 5.
- * ECHO must be 3.3 V-safe for GP5 (assumption A8).
+ * ECHO verified 3.3 V-safe on GP5 (S5-U05 / S5-U26, assumption A8 closed).
  * ------------------------------------------------------------------------- */
 
 /** Ultrasonic trigger output. */

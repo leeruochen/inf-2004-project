@@ -7,7 +7,7 @@
 # lf_core.c and lf_link.c are pure C (host-tested by tests/host/
 # test_lf_core.c, S3-U10, and test_lf_link.c, S3-U11); they sit on the
 # kernel side with their caller, the Line-Following task (task_lf.c).
-# lf_straddle.c (EXPERIMENT) is pure C, host-tested by tests/host/
+# lf_straddle.c (ARCHITECTURE.md D14) is pure C, host-tested by tests/host/
 # test_lf_straddle.c: the straddle core, used in place of lf_core.c's steering
 # with -DS3_LF_STRADDLE=ON (always compiled, so the rules check it).
 # lf_run_test.c is the on-target S3-U12 (APP_TEST builds only).
@@ -97,10 +97,10 @@ if(S3_CURVE_TEST)
     set_property(SOURCE "${CMAKE_CURRENT_LIST_DIR}/lf_run_test.c"
         APPEND PROPERTY COMPILE_DEFINITIONS "S3_CURVE_TEST=1")
 endif()
-# -DS3_LF_STRADDLE=ON (EXPERIMENT, branch buddy3/lf-straddle): the
+# -DS3_LF_STRADDLE=ON (ARCHITECTURE.md D14): the
 # Line-Following task runs the straddle core (lf_straddle.c), the sensors
 # re-mounted one each side of the line; OFF = the edge-following core.
-option(S3_LF_STRADDLE "Subsystem 3 EXPERIMENT: straddle line following (sensors re-mounted)" OFF)
+option(S3_LF_STRADDLE "Subsystem 3: straddle line following (sensors re-mounted, D14)" OFF)
 if(S3_LF_STRADDLE)
     set_property(SOURCE "${CMAKE_CURRENT_LIST_DIR}/task_lf.c" "${CMAKE_CURRENT_LIST_DIR}/lf_run_test.c"
         APPEND PROPERTY COMPILE_DEFINITIONS "S3_LF_STRADDLE=1")

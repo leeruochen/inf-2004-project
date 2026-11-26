@@ -1,6 +1,6 @@
 /*
  *  lf_straddle.c
- *  Subsystem 3 -- EXPERIMENT: straddle line following (see lf_straddle.h).
+ *  Subsystem 3 -- Straddle line-following core (see lf_straddle.h, ARCHITECTURE.md D14).
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *  Pure C: no kernel or SDK header (check_rules R1).
  *

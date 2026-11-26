@@ -7,7 +7,7 @@
  *  Two-phase start (app.h): subsystem5_init() runs after ipc_init(), so
  *  SEM_ECHO already exists and can be handed to the SDK-side echo handler.
  *  Neither task needs a cyclic handler: Obstacle Scanning keeps its 60 ms
- *  grid with app_period_wait() (HANDOVER.md section 3 step 7) and Obstacle
+ *  grid with app_period_wait() (ARCHITECTURE.md T8) and Obstacle
  *  Avoidance is driven by MBF_OBSTACLE with a timeout.
  */
 

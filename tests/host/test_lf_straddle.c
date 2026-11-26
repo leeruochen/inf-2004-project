@@ -1,8 +1,8 @@
 /*
  *  test_lf_straddle.c
- *  Host tests for the EXPERIMENT straddle line-following core
+ *  Host tests for the straddle line-following core
  *  (app_program/subsystem3/lf_straddle.c) and the two-pose calibration
- *  (lf_core.c lf_cal_from_two_poses).  Branch buddy3/lf-straddle.
+ *  (lf_core.c lf_cal_from_two_poses).
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *
  *  Expected values are worked by hand from the constants:

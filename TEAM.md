@@ -62,7 +62,7 @@ at build time.
 | Pin | Owner | Used for |
 |---|---|---|
 | GP23, GP24, GP25, GP29 | *reserved* | Pico W radio (CYW43). Never use |
-| GP0 | S2 | ENC_R_A, right wheel encoder phase A (Grove 1), PIO0 SM0. A/B label provisional |
+| GP0 | S2 | ENC_R_A, right wheel encoder phase A (Grove 1), PIO0 SM0 |
 | GP1 | S2 | ENC_R_B, right wheel encoder phase B (Grove 1), PIO0 SM0 |
 | GP2 | S4 | IMU_SDA, I2C1 (Maker port; shared with Grove 2, so Grove 2 stays unused) |
 | GP3 | S4 | IMU_SCL, I2C1 |
@@ -78,7 +78,7 @@ at build time.
 | GP13 | spare | Servo header |
 | GP14 | spare | Servo header. PWM slice 7 A, shares the slice with the servo: 50 Hz PWM or plain GPIO only |
 | GP15 | S5 | SERVO_SIG, scanning servo, PWM slice 7 B, 50 Hz |
-| GP16 | S2 | ENC_L_A, left wheel encoder phase A (Grove 4), PIO0 SM1. A/B label provisional |
+| GP16 | S2 | ENC_L_A, left wheel encoder phase A (Grove 4), PIO0 SM1 |
 | GP17 | S2 | ENC_L_B, left wheel encoder phase B (Grove 4), PIO0 SM1 |
 | GP18 | *reserved* | Onboard NeoPixel (WS2812 via PIO), not implemented |
 | GP19 | | unclaimed |

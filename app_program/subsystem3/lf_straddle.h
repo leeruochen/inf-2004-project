@@ -1,11 +1,11 @@
 /*
  *  lf_straddle.h
- *  Subsystem 3 -- EXPERIMENT (branch buddy3/lf-straddle, not for merge until
- *  the car shows it works): straddle line following, a second core behind
- *  the same inputs and outputs as lf_core.h (lf_in_t, lf_out_t, lf_state_t,
- *  lf_event_t), so task_lf.c, the Vehicle Controller (IF-01), LINE_FOUND
- *  (IF-07) and telemetry see no difference.  Built in with -DS3_LF_STRADDLE=ON
- *  (sources.cmake); the edge-following core stays the default.
+ *  Subsystem 3 -- Straddle line-following core (ARCHITECTURE.md D11, D14):
+ *  a second core behind the same inputs and outputs as lf_core.h (lf_in_t,
+ *  lf_out_t, lf_state_t, lf_event_t), so task_lf.c, the Vehicle Controller
+ *  (IF-01), LINE_FOUND (IF-07) and telemetry see no difference.  Built in with
+ *  -DS3_LF_STRADDLE=ON (sources.cmake); the edge-following core stays the
+ *  default.
  *  Owner: Buddy 3, Student ID: 2503319 (Jin Yong).
  *
  *  Pure module (check_rules R1): <stdint.h>, <stdbool.h> and pure project
@@ -179,7 +179,7 @@
 #define LF_SD_FLIP_Q7           (96)
 #endif
 #ifndef LF_SD_COMP_DZ
-/** EXPERIMENT: steering dead-zone compensation, Q7.  Measured on the car at
+/** Optional steering dead-zone compensation, Q7 (0 = disabled).  Measured on the car at
  *  7 cm/s, steady steering, 20 Nov traces (state 1, 4-9 stretches each): steer
  *  24 -> 0.06 deg/mm, 96 -> 0.33, 127 -> 0.45: a dead zone of about 11 units
  *  and 0.72 of the host model's authority.  (An earlier fit of 56 mixed in a
